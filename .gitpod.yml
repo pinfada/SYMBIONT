@@ -1,0 +1,44 @@
+# .gitpod.yml
+image: 
+  file: .gitpod.Dockerfile
+
+tasks:
+  - name: Install Dependencies
+    init: |
+      npm install
+      npm run build
+    command: npm run dev
+
+  - name: Start Chrome with Extension
+    command: |
+      google-chrome \
+        --no-sandbox \
+        --disable-dev-shm-usage \
+        --load-extension=/workspace/symbiont-extension/dist \
+        --user-data-dir=/tmp/chrome-profile \
+        http://localhost:3000
+
+ports:
+  - port: 5000
+    onOpen: open-preview
+    visibility: public
+  - port: 3000
+    onOpen: open-preview
+    visibility: public
+  - port: 9229
+    onOpen: ignore
+    visibility: private
+
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
+    - ms-vscode.vscode-typescript-next
+    - bradlc.vscode-tailwindcss
+    - dsznajder.es7-react-js-snippets
+
+github:
+  prebuilds:
+    master: true
+    branches: true
+    pullRequests: true
