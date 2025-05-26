@@ -41,8 +41,10 @@ module.exports = {
       '@background': path.resolve(__dirname, 'src/background'),
       '@content': path.resolve(__dirname, 'src/content'),
       '@popup': path.resolve(__dirname, 'src/popup'),
+      '@generative': path.resolve(__dirname, 'src/generative'),
       '@behavioral': path.resolve(__dirname, 'src/behavioral'),
-      '@types': path.resolve(__dirname, 'src/types')
+      '@types': path.resolve(__dirname, 'src/types'),
+      '@shaders': path.resolve(__dirname, 'src/shaders')
     }
   },
   plugins: [
@@ -58,17 +60,5 @@ module.exports = {
       filename: 'popup/index.html',
       chunks: ['popup']
     })
-  ],
-  optimization: {
-    splitChunks: {
-      chunks: 'all',
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all'
-        }
-      }
-    }
-  }
-};
+  ]
+}

@@ -23,7 +23,7 @@ SYMBIONT is a revolutionary browser extension that creates a living digital orga
 
 #### From Source (Development)
 ```bash
-git clone https://github.com/yourusername/symbiont-extension.git
+git clone https://github.com/pinfada/symbiont.git
 cd symbiont-extension
 npm install
 npm run build

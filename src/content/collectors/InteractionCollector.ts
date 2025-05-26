@@ -1,0 +1,1 @@
+// Collecte interactions utilisateur

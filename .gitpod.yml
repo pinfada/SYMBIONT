@@ -1,33 +1,34 @@
-# .gitpod.yml
-image: 
+image:
   file: .gitpod.Dockerfile
 
-tasks:
-  - name: Install Dependencies
-    init: |
-      npm install
-      npm run build
-    command: npm run dev
-
-  - name: Start Chrome with Extension
-    command: |
-      google-chrome \
-        --no-sandbox \
-        --disable-dev-shm-usage \
-        --load-extension=/workspace/symbiont-extension/dist \
-        --user-data-dir=/tmp/chrome-profile \
-        http://localhost:3000
-
 ports:
-  - port: 5000
-    onOpen: open-preview
-    visibility: public
   - port: 3000
     onOpen: open-preview
     visibility: public
-  - port: 9229
+  - port: 5000
+    onOpen: open-browser
+    visibility: public
+  - port: 9222
     onOpen: ignore
     visibility: private
+
+tasks:
+  - name: Setup & Install
+    init: |
+      npm install
+      npm run build
+    command: |
+      echo "Extension ready for development!"
+      npm run dev
+
+  - name: Chrome Extension Preview
+    command: |
+      gp await-port 5000
+      npm run preview
+
+  - name: Test Runner
+    command: |
+      npm run test:watch
 
 vscode:
   extensions:
@@ -35,10 +36,4 @@ vscode:
     - esbenp.prettier-vscode
     - ms-vscode.vscode-typescript-next
     - bradlc.vscode-tailwindcss
-    - dsznajder.es7-react-js-snippets
-
-github:
-  prebuilds:
-    master: true
-    branches: true
-    pullRequests: true
+    - christian-kohler.path-intellisense
