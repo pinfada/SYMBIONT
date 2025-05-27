@@ -91,10 +91,15 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
   const [specialBadge, setSpecialBadge] = useState(localStorage.getItem('symbiont_special_badge') || '');
   // Inactivité (mock)
   const [lastActive, setLastActive] = useState(Date.now());
-  // --- Connexion à l'API réseau réelle ---
+  // --- Connexion backend réelle & synchro WebSocket ---
   const [apiNetwork, setApiNetwork] = useState<{ nodes: any[]; links: any[] } | null>(null);
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  // URL backend (adapter selon env)
+  const API_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://symbiont-backend.onrender.com';
+  const WS_URL = process.env.NODE_ENV === 'development' ? 'ws://localhost:8080' : 'wss://symbiont-backend.onrender.com';
   // Timeline (filtrage par date)
   const [timeline, setTimeline] = useState<number | null>(null); // timestamp max
   // Filtres
@@ -554,11 +559,11 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
     }
   }, [fusionResult]);
 
-  // Fetch API réseau (mock pour la démo)
+  // Fetch initial du réseau
   useEffect(() => {
     setApiLoading(true);
     setApiError(null);
-    fetch('https://mock.symbiont.network/api/network')
+    fetch(API_URL + '/api/network')
       .then(res => {
         if (!res.ok) throw new Error('Erreur réseau');
         return res.json();
@@ -572,6 +577,60 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
         setApiLoading(false);
       });
   }, []);
+
+  // Connexion WebSocket pour synchro temps réel
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let fallbackInterval: NodeJS.Timeout | null = null;
+    let closed = false;
+    function startFallback() {
+      fallbackInterval = setInterval(() => {
+        fetch(API_URL + '/api/network')
+          .then(res => res.json())
+          .then(data => setApiNetwork(data));
+      }, 10000);
+    }
+    try {
+      ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
+      ws.onopen = () => setWsConnected(true);
+      ws.onclose = () => { setWsConnected(false); if (!closed) startFallback(); };
+      ws.onerror = () => { setWsConnected(false); if (!closed) startFallback(); };
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'network_update') {
+            setApiNetwork({ nodes: msg.nodes, links: msg.links });
+          }
+        } catch {}
+      };
+    } catch {
+      startFallback();
+    }
+    return () => {
+      closed = true;
+      if (ws) ws.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
+  }, []);
+
+  // --- Fonctions pour POST invitation/fusion et attendre synchro WebSocket ---
+  async function postInvite({ source, target, traits }: { source: string, target: string, traits: any }) {
+    await fetch(API_URL + '/api/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source, target, traits })
+    });
+    // Attendre la synchro WebSocket (ou polling fallback)
+  }
+  async function postRitual({ type, participants, result, traits }: { type: string, participants: string[], result: string, traits: any }) {
+    await fetch(API_URL + '/api/ritual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, participants, result, traits })
+    });
+    // Attendre la synchro WebSocket (ou polling fallback)
+  }
 
   // Application des filtres/timeline
   const filteredNodes = apiNetwork ? apiNetwork.nodes.filter(n => {
