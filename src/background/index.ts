@@ -1,10 +1,9 @@
 // src/background/index.ts
 // Point d'entrée Service Worker (Neural Core)
-import { MessageBus } from '@shared/messaging/MessageBus';
+import { MessageBus, MessageType } from '@shared/messaging/MessageBus';
 import { SymbiontStorage } from '@storage/SymbiontStorage';
 import { NavigationObserver } from '@shared/observers/NavigationObserver';
-import { MessageType } from '@shared/types/messages';
-import { OrganismState } from '@shared/types/organism';
+import { OrganismState, OrganismMutation } from '@shared/types/organism';
 
 class BackgroundService {
   private messageBus: MessageBus;
@@ -44,6 +43,7 @@ class BackgroundService {
   }
 
   private createNewOrganism(): OrganismState {
+    const visualDNA = this.generateVisualDNA();
     return {
       id: crypto.randomUUID(),
       generation: 1,
@@ -56,8 +56,11 @@ class BackgroundService {
         empathy: Math.random() * 100,
         creativity: Math.random() * 100,
       },
-      visualDNA: this.generateVisualDNA(),
+      visualDNA,
       lastMutation: Date.now(),
+      mutations: [],
+      createdAt: Date.now(),
+      dna: visualDNA
     };
   }
 
@@ -73,7 +76,7 @@ class BackgroundService {
 
   private setupMessageHandlers(): void {
     // Handle page visits
-    this.messageBus.on(MessageType.PAGE_VISIT, async (message) => {
+    this.messageBus.on(MessageType.PAGE_VISIT, async (message: any) => {
       const { url, title } = message.payload;
       
       // Update behavior data
@@ -96,7 +99,7 @@ class BackgroundService {
     });
 
     // Handle scroll events
-    this.messageBus.on(MessageType.SCROLL_EVENT, async (message) => {
+    this.messageBus.on(MessageType.SCROLL_EVENT, async (message: any) => {
       const { url, scrollDepth } = message.payload;
       
       const behavior = await this.storage.getBehavior(url);
@@ -140,6 +143,7 @@ class BackgroundService {
     }
     
     // Normalize traits (keep between 0-100)
+    if (!this.organism) return;
     Object.keys(this.organism.traits).forEach(trait => {
       this.organism.traits[trait as keyof typeof this.organism.traits] = 
         Math.max(0, Math.min(100, this.organism.traits[trait as keyof typeof this.organism.traits]));

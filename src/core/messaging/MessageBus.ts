@@ -1,4 +1,4 @@
-import { Message, MessageType } from '../types/messages';
+import type { Message, MessageType } from '../../types';
 
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
@@ -124,3 +124,5 @@ export class MessageBus {
     }
   }
 }
+
+export default MessageBus;

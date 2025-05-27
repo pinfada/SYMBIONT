@@ -1,7 +1,7 @@
 // src/popup/components/SettingsPanel.tsx
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
-import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
+import { SymbiontStorage } from '@storage/SymbiontStorage';
 import { AnimatedButton } from './ui/AnimatedButton';
 
 interface Settings {

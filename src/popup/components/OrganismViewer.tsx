@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useMessaging } from '../hooks/useMessaging';
 import { useOrganism } from '../hooks/useOrganism';
 import { WebGLMessageAdapter } from '../../integration/WebGLMessageAdapter';
-import { MessageType } from '../../core/messaging';
+import { MessageType } from '@shared/messaging/MessageBus';
 
 export const OrganismViewer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);

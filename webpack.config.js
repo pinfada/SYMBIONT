@@ -28,7 +28,7 @@ module.exports = {
         use: ['style-loader', 'css-loader', 'postcss-loader']
       },
       {
-        test: /\.(vert|frag)$/,
+        test: /\.(vert|frag|glsl)$/,
         type: 'asset/source'
       }
     ]

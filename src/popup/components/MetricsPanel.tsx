@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { BehaviorPatterns } from './BehaviorPatterns';
 import { ActivityTimeline } from './ActivityTimeline';
 import { useOrganism } from '../hooks/useOrganism';
-import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
+import { SymbiontStorage } from '@storage/SymbiontStorage';
 
 export const MetricsPanel: React.FC = () => {
   const { organism } = useOrganism();
-  const [behaviorData, setBehaviorData] = useState([]);
-  const [activityData, setActivityData] = useState([]);
+  const [behaviorData, setBehaviorData] = useState<any[]>([]);
+  const [activityData, setActivityData] = useState<any[]>([]);
   
   useEffect(() => {
     const loadData = async () => {

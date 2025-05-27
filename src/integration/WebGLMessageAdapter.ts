@@ -1,8 +1,13 @@
 // src/integration/WebGLMessageAdapter.ts
-import {OrganismEngine} from '../generative/OrganismEngine';
-import { MessageBus, MessageType } from '../core/messaging';
+import { OrganismEngine } from '../generative/OrganismEngine';
 import { OrganismState, OrganismMutation } from '../types';
 
+// MessageBus et MessageType doivent être importés selon votre architecture
+import { MessageBus, MessageType } from '../core/messaging';
+
+/**
+ * Adaptateur entre le bus de messages et le moteur WebGL
+ */
 export class WebGLMessageAdapter {
     private engine: OrganismEngine;
     private messageBus: MessageBus;
@@ -13,35 +18,41 @@ export class WebGLMessageAdapter {
       this.setupListeners();
     }
     
+  /**
+   * Mise en place des listeners sur le bus de messages
+   */
     private setupListeners(): void {
       // Écoute des mutations
-      this.messageBus.on(MessageType.ORGANISM_MUTATE, (message) => {
-        const { mutation, state } = message.payload;
-        
-        // Conversion du format message en format moteur
-        const engineMutation: VisualMutation = {
-          type: mutation.type,
-          magnitude: mutation.intensity,
-          duration: mutation.duration || 1000,
-          easing: mutation.easing || 'ease-out'
-        };
-        
-        this.engine.mutate(engineMutation);
+    this.messageBus.on(MessageType.ORGANISM_MUTATE, (message: any) => {
+      try {
+        const { mutation } = message.payload;
+        this.engine.mutate(mutation as OrganismMutation);
+      } catch (err) {
+        console.error('Erreur lors de l’application de la mutation WebGL :', err);
+      }
       });
       
       // Écoute des changements d'état
-      this.messageBus.on(MessageType.ORGANISM_STATE_CHANGE, (message) => {
+    this.messageBus.on(MessageType.ORGANISM_STATE_CHANGE, (message: any) => {
+      try {
         const { state } = message.payload;
-        this.engine.render(state);
+        this.engine.render(state as OrganismState);
+      } catch (err) {
+        console.error('Erreur lors du rendu WebGL :', err);
+      }
       });
       
       // Notification de performance
       setInterval(() => {
+      try {
         const metrics = this.engine.getPerformanceMetrics();
         this.messageBus.send({
           type: MessageType.PERFORMANCE_UPDATE,
           payload: metrics
         });
+      } catch (err) {
+        // On ignore les erreurs de métriques pour ne pas polluer la console
+      }
       }, 1000);
     }
 }

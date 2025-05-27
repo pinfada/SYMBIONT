@@ -1,7 +1,7 @@
 // src/popup/hooks/useWebGL.ts
 import { useState, useEffect } from 'react';
 import { useMessaging } from './useMessaging';
-import { MessageType } from '../../core/messaging';
+import { MessageType } from '@shared/messaging/MessageBus';
 import { WebGLState } from '../../types/webgl';
 
 export const useWebGL = () => {

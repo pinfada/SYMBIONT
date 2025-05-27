@@ -22,16 +22,47 @@ SYMBIONT is a revolutionary browser extension that creates a living digital orga
 3. Click "Add to Chrome"
 
 #### From Source (Development)
+
+## Prérequis
+
+1. Node.js (v18 ou supérieur)
+2. npm (inclus avec Node.js)
+
+## Installation
+
+1. Téléchargez et installez Node.js depuis [le site officiel](https://nodejs.org/)
+2. Clonez ce dépôt :
 ```bash
-git clone https://github.com/pinfada/symbiont.git
-cd symbiont-extension
+git clone [URL_DU_REPO]
+cd SYMBIONT
+```
+3. Installez les dépendances :
+```bash
 npm install
-npm run build
 ```
 
-1. Open Chrome → `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked" → Select the `dist` folder
+## Structure du Projet
+
+Le projet utilise une architecture "Neural Mesh" avec les composants suivants :
+
+- `NeuralMesh` : Composant principal qui coordonne tous les autres composants
+- `SynapticRouter` : Gère la communication entre les composants
+- `OrganismCore` : Gère le cycle de vie et les ressources du système
+- `NavigationCortex` : Gère la navigation et l'interaction avec le DOM
+
+## Tests
+
+Pour exécuter les tests :
+
+```bash
+npm test
+```
+
+## Performance
+
+Le système est conçu pour respecter les contraintes de performance suivantes :
+- Utilisation CPU < 1%
+- Utilisation mémoire < 5MB pour le content script
 
 ### First Launch
 1. Click the SYMBIONT icon in your Chrome toolbar

@@ -1,8 +1,15 @@
 // src/popup/hooks/useOrganism.ts
-import { useContext } from 'react';
-import { OrganismContext } from '../contexts/OrganismContext';
+import React, { useContext, createContext } from 'react';
+import { OrganismState } from '@shared/types/organism';
 
-export const useOrganism = () => {
+export interface OrganismContextType {
+  organism: OrganismState | null;
+  isLoading: boolean;
+}
+
+export const OrganismContext = createContext<OrganismContextType | null>(null);
+
+export const useOrganism = (): OrganismContextType => {
   const context = useContext(OrganismContext);
   if (!context) {
     throw new Error('useOrganism must be used within OrganismProvider');
@@ -12,7 +19,6 @@ export const useOrganism = () => {
 
 // src/popup/hooks/useWebGL.ts
 import { useRef, useEffect, useState } from 'react';
-import { OrganismState } from '../../types/organism';
 
 export const useWebGL = () => {
   const [isSupported, setIsSupported] = useState<boolean | null>(null);

@@ -5,6 +5,7 @@ import { ConsciousnessGauge } from './ConsciousnessGauge';
 import { TraitsRadarChart } from './TraitsRadarChart';
 import { useOrganism } from '../hooks/useOrganism';
 import { LoadingSpinner } from './ui/LoadingSpinner';
+// import { OrganismState } from '@shared/types/organism';
 
 export const OrganismDashboard: React.FC = () => {
   const { organism, isLoading } = useOrganism();
