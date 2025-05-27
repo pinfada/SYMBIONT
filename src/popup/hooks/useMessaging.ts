@@ -1,6 +1,9 @@
 // src/popup/hooks/useMessaging.ts
+// Hook React pour la messagerie SYMBIONT
+// Utilisez ce hook UNIQUEMENT dans les composants ou hooks React pour bénéficier du cycle de vie (abonnement/désabonnement automatique).
+// Pour les services ou modules non-React, utilisez directement la classe MessageBus.
 import { useEffect, useRef } from 'react';
-import { useMessageBus } from '../contexts/MessageBusContext';
+import { useMessageBus } from './MessageBusContext';
 
 export const useMessaging = () => {
   const messageBus = useMessageBus();

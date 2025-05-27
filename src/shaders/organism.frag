@@ -12,6 +12,8 @@ uniform vec3 u_secondaryColor;
 uniform float u_mutation;
 uniform float u_colorVariance;
 uniform float u_patternDensity;
+uniform float u_fluidity;
+uniform sampler2D u_fractalTex;
 
 out vec4 fragColor;
 
@@ -27,6 +29,10 @@ void main() {
     float pattern = v_pattern * u_patternDensity;
     pattern += sin(length(v_position.xy) * 10.0 + u_time) * 0.1;
     
+    // Coordonnées pour la texture fractale (centrées et normalisées)
+    vec2 texCoord = v_position.xy * 0.5 + 0.5;
+    float fractal = texture(u_fractalTex, texCoord).r;
+    
     // Mutation color shift
     vec3 color = mix(u_primaryColor, u_secondaryColor, pattern);
     
@@ -37,11 +43,20 @@ void main() {
     vec3 hsv = vec3(hue, 0.8, 0.9);
     color = hsv2rgb(hsv);
     
+    // Modulation par la texture fractale
+    color = mix(color, color * fractal, 0.5);
+    
     // Effet de mutation
     color = mix(color, vec3(1.0) - color, u_mutation * 0.3);
     
+    // Effet de halo pulsant selon l'énergie (u_fluidity)
+    float dist = length(v_position.xy);
+    float halo = smoothstep(0.6, 0.9, dist) * (0.4 + 0.6 * abs(sin(u_time * u_fluidity)));
+    color = mix(color, vec3(0.8, 1.0, 1.0), halo);
+    
     // Anti-aliasing simple
     float alpha = smoothstep(0.0, 0.01, pattern);
+    alpha = max(alpha, halo * 0.5);
     
     fragColor = vec4(color, alpha * 0.95);
 }

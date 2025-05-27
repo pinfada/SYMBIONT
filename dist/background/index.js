@@ -195,8 +195,6 @@ class BackgroundService {
                 break;
             case 'cognitive':
                 // Affect multiple traits slightly
-                if (!this.organism)
-                    return;
                 Object.keys(this.organism.traits).forEach(trait => {
                     this.organism.traits[trait] +=
                         (Math.random() - 0.5) * mutation.magnitude * 5;

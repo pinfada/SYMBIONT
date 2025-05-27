@@ -1,7 +1,59 @@
-import type { Message, MessageType } from '../../types';
+import { Message, MessageType } from '../../shared/messaging/MessageBus';
+import { OrganismState, OrganismMutation } from '../../shared/types/organism';
+import { InvitationPayload, InvitationResult } from '../../shared/types/invitation';
+import { Murmur } from '../../shared/types/murmur';
 
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
+
+function isOrganismState(obj: any): obj is OrganismState {
+  return obj && typeof obj.id === 'string' && typeof obj.generation === 'number';
+}
+
+function isOrganismMutation(obj: any): obj is OrganismMutation {
+  return obj && typeof obj.type === 'string' && typeof obj.trigger === 'string';
+}
+
+function isBehaviorData(obj: any): boolean {
+  return obj && typeof obj.url === 'string' && typeof obj.visitCount === 'number';
+}
+
+function isMurmur(obj: any): obj is Murmur {
+  return obj && typeof obj.text === 'string' && typeof obj.timestamp === 'number';
+}
+
+function isInvitationPayload(obj: any): obj is InvitationPayload {
+  return obj && typeof obj.code === 'string';
+}
+
+function isInvitationResult(obj: any): obj is InvitationResult {
+  return obj && typeof obj.code === 'string' && typeof obj.status === 'string';
+}
+
+function validatePayload(type: MessageType, payload: any): boolean {
+  switch (type) {
+    case MessageType.ORGANISM_UPDATE:
+      return isOrganismState(payload);
+    case MessageType.ORGANISM_MUTATE:
+      return isOrganismMutation(payload);
+    case MessageType.PAGE_VISIT:
+    case MessageType.SCROLL_EVENT:
+      return isBehaviorData(payload);
+    case MessageType.MURMUR:
+      return isMurmur(payload);
+    case MessageType.GENERATE_INVITATION:
+    case MessageType.CONSUME_INVITATION:
+    case MessageType.CHECK_INVITATION:
+      return isInvitationPayload(payload);
+    case MessageType.INVITATION_GENERATED:
+    case MessageType.INVITATION_CONSUMED:
+    case MessageType.INVITATION_CHECKED:
+      return isInvitationResult(payload);
+    // Ajouter d'autres cas selon les besoins
+    default:
+      return true; // Par défaut, on accepte (à affiner selon les besoins)
+  }
+}
 
 export class MessageBus {
   private handlers: Map<MessageType, Set<MessageHandler>> = new Map();
@@ -46,6 +98,12 @@ export class MessageBus {
   }
 
   private async processMessage(message: Message): Promise<void> {
+    // --- Validation stricte du payload ---
+    if (!validatePayload(message.type, message.payload)) {
+      console.warn(`[MessageBus] Payload non valide pour le type ${message.type}`, message.payload);
+      return;
+    }
+
     // Global handlers
     for (const handler of this.globalHandlers) {
       try {

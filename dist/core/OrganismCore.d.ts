@@ -1,5 +1,4 @@
-import { ShaderParameters } from '../types';
-import { OrganismTraits, OrganismState } from '../types';
+import { OrganismState, OrganismTraits } from "@/shared/types";
 export declare class OrganismCore {
     private mesh;
     private dna;
@@ -8,29 +7,46 @@ export declare class OrganismCore {
     private energy;
     private health;
     private lastMutation;
+    private metabolismRate;
     constructor(dna: string, traits?: Partial<OrganismTraits>);
     /**
-     * Initialise un réseau neuronal de base (modifiable)
+     * Initialise le réseau neuronal avec les traits de l'organisme
      */
-    private setupDefaultMesh;
+    private initializeNeuralNetwork;
+    /**
+     * Met à jour l'état de l'organisme (appelé périodiquement)
+     */
+    update(deltaTime?: number): void;
+    /**
+     * Met à jour l'énergie basée sur l'activité neurale
+     */
+    private updateEnergy;
+    /**
+     * Met à jour la santé basée sur les conditions actuelles
+     */
+    private updateHealth;
+    /**
+     * Fait évoluer les traits basés sur l'activité neurale
+     */
+    private evolveTraits;
     /**
      * Stimule le réseau (ex : perception sensorielle)
      */
     stimulate(inputId: string, value: number): void;
     /**
-     * Propage l'activation et met à jour les traits/états
-     */
-    propagate(): void;
-    /**
-     * Applique une mutation (neural ou ADN)
+     * Applique une mutation (neural et potentiellement ADN)
      */
     mutate(rate?: number): void;
+    /**
+     * Nourrit l'organisme pour restaurer l'énergie
+     */
+    feed(amount?: number): void;
     /**
      * Récupère les traits courants
      */
     getTraits(): OrganismTraits;
     /**
-     * Définit de nouveaux traits (ex : adaptation externe)
+     * Définit de nouveaux traits
      */
     setTraits(traits: Partial<OrganismTraits>): void;
     /**
@@ -38,11 +54,23 @@ export declare class OrganismCore {
      */
     getState(): OrganismState;
     /**
-     * Export JSON pour debug/visualisation (types internes anonymisés)
+     * Récupère les métriques de performance
      */
-    toJSON(): any;
+    getPerformanceMetrics(): Promise<PerformanceMetrics>;
+    /**
+     * Export JSON typé pour debug/visualisation
+     */
+    toJSON(): OrganismJSON;
     /**
      * Récupère les paramètres shaders courants (pour WebGL)
      */
     getShaderParameters(): ShaderParameters;
+    /**
+     * Initialise l'organisme
+     */
+    boot(): Promise<void>;
+    /**
+     * Met l'organisme en hibernation
+     */
+    hibernate(): Promise<void>;
 }

@@ -41,7 +41,7 @@ class WebGLBridge {
     }
     updateState(state) {
         // Validation basique de l'état
-        if (!state || typeof state.id !== 'string') {
+        if (!state) {
             console.error('État d\'organisme invalide:', state);
             return;
         }

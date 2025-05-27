@@ -9,7 +9,7 @@ export const OrganismViewer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const adapterRef = useRef<WebGLMessageAdapter | null>(null);
   const { organism } = useOrganism();
-  const { messageBus } = useMessaging();
+  const messageBus = useMessaging();
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<any>(null);
   

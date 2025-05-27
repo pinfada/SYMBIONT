@@ -39,6 +39,8 @@ export class OrganismEngine {
   private traits: OrganismTraits;
   private visualProperties: VisualProperties;
   private currentState: OrganismState;
+  private lastGeometryComplexity: number = 0;
+  private fractalTexture: WebGLTexture | null = null;
   
   /**
    * Constructeur
@@ -71,10 +73,13 @@ export class OrganismEngine {
       primaryColor: { h: 200, s: 80, l: 60 },
       secondaryColor: { h: 340, s: 60, l: 40 }
     };
-    this.currentState = { instances: 1, complexity: 0.5, timeStamp: Date.now(), traits: this.traits };
+    this.currentState = { complexity: 0.5, timeStamp: Date.now(), traits: this.traits };
     
     // Génération de la géométrie initiale
     this.geometry = this.generator.generateBaseForm(this.dnaInterpreter.getCurrentParameters());
+    // Génération et upload de la texture fractale
+    const fractal = this.generator.generateFractalPattern(Date.now());
+    this.fractalTexture = this.createGLTexture(fractal);
     this.setupGL();
     this.setupShaders();
     this.setupBuffers();
@@ -179,7 +184,24 @@ export class OrganismEngine {
    * Rendu principal
    */
   public render(state?: OrganismState): void {
-    if (state) this.currentState = state;
+    if (state) {
+      this.currentState = state;
+      // Adapter dynamiquement les paramètres selon les traits
+      const traits = state.traits || this.traits;
+      const params = this.dnaInterpreter.getCurrentParameters();
+      // Influence des traits sur les paramètres visuels
+      params.complexity = 0.3 + 0.7 * (traits.curiosity ?? 0.5); // curiosité → complexité
+      params.patternDensity = 0.2 + 0.8 * (traits.creativity ?? 0.5); // créativité → densité
+      params.colorVariance = 0.1 + 0.7 * (traits.creativity ?? 0.5); // créativité → variance chromatique
+      params.symmetry = 0.2 + 0.7 * (traits.focus ?? 0.5); // focus → symétrie
+      params.fluidity = 0.2 + 0.7 * (traits.energy ?? 0.5); // énergie → fluidité
+      // Régénérer la géométrie si la complexité change beaucoup
+      if (Math.abs(params.complexity - this.lastGeometryComplexity) > 0.2) {
+        this.geometry = this.generator.generateBaseForm(params);
+        this.setupBuffers();
+        this.lastGeometryComplexity = params.complexity;
+      }
+    }
     this.performanceMonitor.startFrame();
     const gl = this.gl;
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -230,6 +252,13 @@ export class OrganismEngine {
     this.mutationEngine.update(performance.now());
     const mutationState = this.mutationEngine.getCurrentState();
     gl.uniform1f(gl.getUniformLocation(this.program, 'u_mutation'), mutationState.colorShift || 0);
+    // Texture fractale
+    if (this.fractalTexture) {
+      const fractalLoc = gl.getUniformLocation(this.program, 'u_fractalTex');
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.fractalTexture);
+      gl.uniform1i(fractalLoc, 0);
+    }
     // (ajouter d'autres uniforms selon le shader)
   }
   
@@ -238,9 +267,7 @@ export class OrganismEngine {
    */
   public mutate(mutation: OrganismMutation): void {
     // On ignore les mutations non visuelles pour le moteur WebGL
-    if (mutation.type === 'visual_evolution') {
-      // Option : ici, on pourrait déclencher une régénération de géométrie si besoin
-      // (non supporté par MutationEngine, à gérer dans un autre flux)
+    if (mutation.type !== 'color_shift' && mutation.type !== 'pattern_change' && mutation.type !== 'size_fluctuation' && mutation.type !== 'opacity_variation') {
       return;
     }
     this.mutationEngine.apply(mutation as any); // Cast sûr car on filtre ci-dessus
@@ -273,5 +300,28 @@ export class OrganismEngine {
    */
   public isInitialized(): boolean {
     return !!this.gl && !!this.program;
+  }
+  
+  private createGLTexture(textureData: { data: Uint8Array; width: number; height: number }): WebGLTexture {
+    const gl = this.gl;
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      textureData.width,
+      textureData.height,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      textureData.data
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    return tex!;
   }
 }
