@@ -26,3 +26,4 @@ interface NetworkContextType {
 export declare function NetworkProvider({ children }: PropsWithChildren): import("react/jsx-runtime").JSX.Element;
 export declare function useNetwork(): NetworkContextType;
 export {};
+//# sourceMappingURL=NetworkContext.d.ts.map

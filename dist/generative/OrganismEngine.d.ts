@@ -71,3 +71,4 @@ export declare class OrganismEngine {
     isInitialized(): boolean;
     private createGLTexture;
 }
+//# sourceMappingURL=OrganismEngine.d.ts.map

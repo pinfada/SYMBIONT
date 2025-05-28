@@ -1,31 +1,44 @@
 {
     "compilerOptions": {
       "target": "ES2020",
-      "module": "commonjs",
-      "lib": ["ES2020", "DOM"],
-      "declaration": true,
-      "outDir": "./dist",
-      "rootDir": "./src",
-      "strict": true,
-      "esModuleInterop": true,
+      "lib": ["ES2020", "DOM", "DOM.Iterable"],
+      "allowJs": true,
       "skipLibCheck": true,
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "strict": true,
       "forceConsistentCasingInFileNames": true,
-      "baseUrl": "./src",
+      "noFallthroughCasesInSwitch": true,
+      "module": "ESNext",
+      "moduleResolution": "bundler",
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "jsx": "react-jsx",
+      "declaration": true,
+      "declarationMap": true,
+      "sourceMap": true,
+      "outDir": "./dist",
+      "baseUrl": ".",
       "paths": {
-        "@/*": ["*"],
-        "@core/*": ["core/*"],
-        "@background/*": ["background/*"],
-        "@content/*": ["content/*"],
-        "@popup/*": ["popup/*"],
-        "@generative/*": ["generative/*"],
-        "@behavioral/*": ["behavioral/*"],
-        "@types/*": ["types/*"],
-        "@shaders/*": ["shaders/*"],
-        "@shared/*": ["shared/*"],
-        "@storage/*": ["storage/*"]
+        "@/*": ["./src/*"],
+        "@types/*": ["src/types/*"],
+        "@shared/*": ["src/shared/*"],
+        "@background/*": ["src/background/*"],
+        "@content/*": ["src/content/*"],
+        "@popup/*": ["src/popup/*"],
+        "@ui/*": ["src/ui/*"]
       },
-      "jsx": "react-jsx"
+      "types": ["chrome", "node"]
     },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "**/*.test.ts"]
+    "include": [
+      "src/**/*",
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "types/**/*"
+    ],
+    "exclude": [
+      "node_modules",
+      "dist",
+      "build"
+    ]
 }

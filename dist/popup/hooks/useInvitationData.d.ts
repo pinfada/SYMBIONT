@@ -4,3 +4,4 @@ export declare function useInvitationData(userId: string): {
     invitees: Invitation[];
     history: any[];
 };
+//# sourceMappingURL=useInvitationData.d.ts.map

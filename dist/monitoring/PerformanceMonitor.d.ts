@@ -11,3 +11,4 @@ export declare class PerformanceMonitor {
     isOverloaded(): boolean;
     getMetrics(): PerformanceMetrics;
 }
+//# sourceMappingURL=PerformanceMonitor.d.ts.map

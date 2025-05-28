@@ -38,3 +38,4 @@ export declare class SensoryNetwork {
      */
     toJSON(): Sensor[];
 }
+//# sourceMappingURL=SensoryNetwork.d.ts.map

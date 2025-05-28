@@ -44,3 +44,4 @@ export declare class NavigationCortex {
         detectors: number;
     };
 }
+//# sourceMappingURL=NavigationCortex.d.ts.map

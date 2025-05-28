@@ -8,3 +8,4 @@ export declare const MockInvitationService: {
         type: "envoy\u00E9e" | "re\u00E7ue";
     })[]>;
 };
+//# sourceMappingURL=MockInvitationService.d.ts.map

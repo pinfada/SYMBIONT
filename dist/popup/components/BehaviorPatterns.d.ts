@@ -11,3 +11,4 @@ interface BehaviorPatternsProps {
 }
 export declare const BehaviorPatterns: React.FC<BehaviorPatternsProps>;
 export {};
+//# sourceMappingURL=BehaviorPatterns.d.ts.map

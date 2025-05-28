@@ -11,3 +11,4 @@ export declare const useWebGL: () => {
     initWebGL: (canvas: HTMLCanvasElement, organism: OrganismState) => Promise<() => void>;
     engine: any;
 };
+//# sourceMappingURL=useOrganism.d.ts.map

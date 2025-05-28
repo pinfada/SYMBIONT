@@ -40,3 +40,4 @@ declare class BackgroundService {
     private triggerContextualInvitation;
 }
 export { BackgroundService };
+//# sourceMappingURL=index.d.ts.map

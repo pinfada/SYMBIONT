@@ -7,3 +7,4 @@ export declare class NavigationObserver {
     observe(handler: (change: NavigationChange) => void): void;
     disconnect(): void;
 }
+//# sourceMappingURL=NavigationObserver.d.ts.map

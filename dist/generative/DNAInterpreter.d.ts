@@ -25,3 +25,4 @@ export declare class DNAInterpreter {
      */
     private mutateDNA;
 }
+//# sourceMappingURL=DNAInterpreter.d.ts.map

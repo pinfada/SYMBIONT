@@ -67,3 +67,4 @@ export interface SeededRandom {
     next(): number;
 }
 export * from './organism';
+//# sourceMappingURL=index.d.ts.map

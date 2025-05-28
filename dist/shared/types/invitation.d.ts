@@ -15,3 +15,4 @@ export interface InvitationResult {
     status: InvitationStatus;
     invitation?: Invitation;
 }
+//# sourceMappingURL=invitation.d.ts.map

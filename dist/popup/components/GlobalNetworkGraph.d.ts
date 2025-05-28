@@ -15,3 +15,4 @@ interface GlobalNetworkGraphProps {
 }
 export declare const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps>;
 export {};
+//# sourceMappingURL=GlobalNetworkGraph.d.ts.map

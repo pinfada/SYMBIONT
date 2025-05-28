@@ -4,3 +4,4 @@ export interface Murmur {
     timestamp: number;
     pattern?: string;
 }
+//# sourceMappingURL=murmur.d.ts.map

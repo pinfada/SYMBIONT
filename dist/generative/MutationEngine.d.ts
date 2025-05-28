@@ -16,3 +16,4 @@ export declare class MutationEngine {
     getCurrentState(): MutationState;
     clearAll(): void;
 }
+//# sourceMappingURL=MutationEngine.d.ts.map

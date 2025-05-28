@@ -10,3 +10,4 @@ interface OrganismTimelineProps {
 }
 export declare const OrganismTimeline: React.FC<OrganismTimelineProps>;
 export {};
+//# sourceMappingURL=OrganismTimeline.d.ts.map

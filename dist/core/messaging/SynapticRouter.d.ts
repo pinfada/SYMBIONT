@@ -20,3 +20,4 @@ export declare class SynapticRouter extends EventEmitter {
     private learnFromRouting;
 }
 export {};
+//# sourceMappingURL=SynapticRouter.d.ts.map

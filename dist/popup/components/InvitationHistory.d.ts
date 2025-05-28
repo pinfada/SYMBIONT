@@ -8,3 +8,4 @@ interface InvitationHistoryProps {
 }
 export declare const InvitationHistory: React.FC<InvitationHistoryProps>;
 export {};
+//# sourceMappingURL=InvitationHistory.d.ts.map

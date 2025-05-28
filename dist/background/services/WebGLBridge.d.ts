@@ -16,3 +16,4 @@ export declare class WebGLBridge {
     isCurrentlyRendering(): boolean;
     dispose(): void;
 }
+//# sourceMappingURL=WebGLBridge.d.ts.map

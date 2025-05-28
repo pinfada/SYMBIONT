@@ -31,3 +31,4 @@ export declare class PatternDetector {
      */
     static detectTemporalPattern(events: SequenceEvent[], minPeriod?: number, tolerance?: number): DetectedPattern[];
 }
+//# sourceMappingURL=PatternDetector.d.ts.map

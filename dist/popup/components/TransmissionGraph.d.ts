@@ -7,3 +7,4 @@ interface TransmissionGraphProps {
 }
 export declare const TransmissionGraph: React.FC<TransmissionGraphProps>;
 export {};
+//# sourceMappingURL=TransmissionGraph.d.ts.map

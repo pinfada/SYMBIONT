@@ -13,3 +13,4 @@ export declare class PluginManager {
     static getPlugins(type?: PluginType): Plugin[];
     static getPluginById(id: string): Plugin | undefined;
 }
+//# sourceMappingURL=PluginManager.d.ts.map

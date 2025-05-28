@@ -12,3 +12,4 @@ interface ActivityTimelineProps {
 }
 export declare const ActivityTimeline: React.FC<ActivityTimelineProps>;
 export {};
+//# sourceMappingURL=ActivityTimeline.d.ts.map

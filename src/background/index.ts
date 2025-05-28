@@ -8,6 +8,21 @@ import { InvitationService } from './services/InvitationService';
 import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 
+// Utilitaires pour chrome.storage.local (asynchrone)
+async function getStorage(key: string): Promise<any> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([key], (result) => {
+      resolve(result[key]);
+    });
+  });
+}
+
+async function setStorage(key: string, value: any): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [key]: value }, () => resolve());
+  });
+}
+
 class BackgroundService {
   private messageBus: MessageBus;
   private storage: SymbiontStorage;
@@ -27,9 +42,10 @@ class BackgroundService {
     this.invitationService = new InvitationService(this.storage);
     this.murmureService = new MurmureService();
     // Récupère les seuils déjà atteints (persistance locale)
-    const saved = localStorage.getItem('symbiont_collective_thresholds');
-    this.reachedThresholds = saved ? JSON.parse(saved) : [];
-    this.initialize();
+    getStorage('symbiont_collective_thresholds').then((saved) => {
+      this.reachedThresholds = saved ? JSON.parse(saved) : [];
+      this.initialize();
+    });
   }
 
   private async initialize(): Promise<void> {
@@ -37,7 +53,7 @@ class BackgroundService {
       // Initialize storage
       await this.storage.initialize();
       // Vérifier l'état d'activation (stocké en localStorage ou IndexedDB si besoin)
-      this.activated = localStorage.getItem('symbiont_activated') === 'true';
+      this.activated = (await getStorage('symbiont_activated')) === 'true';
       // Load or create organism UNIQUEMENT si activé
       if (this.activated) {
         this.organism = await this.storage.getOrganism();
@@ -159,7 +175,7 @@ class BackgroundService {
       const invitation = await this.invitationService.consumeInvitation(code, receiverId);
       if (invitation) {
         this.activated = true;
-        localStorage.setItem('symbiont_activated', 'true');
+        await setStorage('symbiont_activated', 'true');
         // Créer l'organisme à l'activation
         if (!this.organism) {
           this.organism = this.createNewOrganism();
@@ -283,9 +299,9 @@ class BackgroundService {
     });
 
     // --- Transmission contextuelle ---
-    const triggerContextualInvitation = (context: string) => {
-      const userId = localStorage.getItem('symbiont_user_id') || 'unknown';
-      const invitation = this.invitationService.generateInvitation(userId);
+    const triggerContextualInvitation = async (context: string) => {
+      const userId = (await getStorage('symbiont_user_id')) || 'unknown';
+      const invitation = await this.invitationService.generateInvitation(userId);
       this.messageBus.send({
         type: MessageType.CONTEXTUAL_INVITATION,
         payload: { invitation, context }
@@ -307,7 +323,7 @@ class BackgroundService {
     this.updateOrganismTraits = async (url: string, title: string) => {
       await originalUpdateOrganismTraits(url, title);
       if (this.organism && this.organism.traits.curiosity > 90) {
-        triggerContextualInvitation('curiosity_threshold');
+        await triggerContextualInvitation('curiosity_threshold');
       }
     };
 
@@ -589,7 +605,7 @@ class BackgroundService {
     for (const threshold of this.collectiveThresholds) {
       if (total >= threshold && !this.reachedThresholds.includes(threshold)) {
         this.reachedThresholds.push(threshold);
-        localStorage.setItem('symbiont_collective_thresholds', JSON.stringify(this.reachedThresholds));
+        await setStorage('symbiont_collective_thresholds', JSON.stringify(this.reachedThresholds));
         this.triggerContextualInvitation('collective_threshold_' + threshold);
         break;
       }
@@ -600,7 +616,7 @@ class BackgroundService {
    * Déclenche une invitation contextuelle avancée
    */
   private async triggerContextualInvitation(context: string) {
-    const userId = localStorage.getItem('symbiont_user_id') || 'unknown';
+    const userId = (await getStorage('symbiont_user_id')) || 'unknown';
     const invitation = await this.invitationService.generateInvitation(userId);
     this.messageBus.send({
       type: MessageType.CONTEXTUAL_INVITATION,
@@ -609,8 +625,8 @@ class BackgroundService {
   }
 }
 
-// Initialize the background service
-const backgroundService = new BackgroundService();
+// Démarrage effectif du service worker
+new BackgroundService();
 
 // Export for testing
 export { BackgroundService };

@@ -16,3 +16,4 @@ interface TraitsRadarChartProps {
 }
 export declare const TraitsRadarChart: React.FC<TraitsRadarChartProps>;
 export {};
+//# sourceMappingURL=TraitsRadarChart.d.ts.map

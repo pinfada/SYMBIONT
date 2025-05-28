@@ -5,3 +5,4 @@ export declare const CollectiveWakeRitual: React.FC<{
 }>;
 declare const CollectiveWakeRitualPlugin: Plugin;
 export default CollectiveWakeRitualPlugin;
+//# sourceMappingURL=CollectiveWakeRitual.d.ts.map

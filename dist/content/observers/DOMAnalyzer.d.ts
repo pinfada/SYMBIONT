@@ -3,3 +3,4 @@ export declare class DOMAnalyzer {
     extractMainContent(): any;
     categorizeContent(): string;
 }
+//# sourceMappingURL=DOMAnalyzer.d.ts.map

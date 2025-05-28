@@ -69,3 +69,4 @@ export declare class NeuralMesh {
     getMemoryUsage(): Promise<number>;
 }
 export {};
+//# sourceMappingURL=NeuralMesh.d.ts.map

@@ -5,3 +5,4 @@ export declare class AttentionMonitor {
     stop(): void;
     getSessionSummary(): any;
 }
+//# sourceMappingURL=AttentionMonitor.d.ts.map

@@ -7,3 +7,4 @@ interface TooltipProps {
 }
 export declare const Tooltip: React.FC<TooltipProps>;
 export {};
+//# sourceMappingURL=Tooltip.d.ts.map

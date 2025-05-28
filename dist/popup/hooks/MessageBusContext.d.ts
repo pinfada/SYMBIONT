@@ -4,3 +4,4 @@ export declare const MessageBusProvider: ({ children }: {
     children: ReactNode;
 }) => import("react/jsx-runtime").JSX.Element;
 export declare const useMessageBus: () => MessageBus;
+//# sourceMappingURL=MessageBusContext.d.ts.map

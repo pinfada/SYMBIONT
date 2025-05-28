@@ -65,3 +65,4 @@ export declare class NeuralMesh {
     };
 }
 export {};
+//# sourceMappingURL=NeuralMesh.d.ts.map

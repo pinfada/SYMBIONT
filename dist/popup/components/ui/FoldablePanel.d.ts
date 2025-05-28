@@ -7,3 +7,4 @@ interface FoldablePanelProps {
 }
 export declare const FoldablePanel: React.FC<FoldablePanelProps>;
 export {};
+//# sourceMappingURL=FoldablePanel.d.ts.map

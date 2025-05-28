@@ -4,3 +4,4 @@ export declare class ScrollTracker {
     detectPattern(): ScrollPattern;
     stop(): void;
 }
+//# sourceMappingURL=ScrollTracker.d.ts.map

@@ -3,3 +3,4 @@ export declare class InteractionCollector {
     start(options?: any): void;
     stop(): void;
 }
+//# sourceMappingURL=InteractionCollector.d.ts.map

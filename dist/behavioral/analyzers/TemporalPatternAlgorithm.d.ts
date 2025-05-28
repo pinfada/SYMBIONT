@@ -1,0 +1,1 @@
+//# sourceMappingURL=TemporalPatternAlgorithm.d.ts.map

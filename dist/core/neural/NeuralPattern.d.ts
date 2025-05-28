@@ -1,0 +1,1 @@
+//# sourceMappingURL=NeuralPattern.d.ts.map

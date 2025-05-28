@@ -34,3 +34,4 @@ export declare class ProceduralGenerator {
     private interpretLSystem;
 }
 export {};
+//# sourceMappingURL=ProceduralGenerator.d.ts.map

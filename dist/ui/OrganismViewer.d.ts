@@ -17,3 +17,4 @@ interface OrganismViewerProps {
 }
 export declare const OrganismViewer: React.FC<OrganismViewerProps>;
 export {};
+//# sourceMappingURL=OrganismViewer.d.ts.map

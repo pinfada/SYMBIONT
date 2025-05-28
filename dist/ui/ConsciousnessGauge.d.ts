@@ -15,3 +15,4 @@ interface ConsciousnessGaugeProps {
 }
 export declare const ConsciousnessGauge: React.FC<ConsciousnessGaugeProps>;
 export {};
+//# sourceMappingURL=ConsciousnessGauge.d.ts.map

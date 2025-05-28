@@ -97,3 +97,4 @@ export declare class OrganismCore {
     hibernate(): Promise<void>;
 }
 export {};
+//# sourceMappingURL=OrganismCore.d.ts.map

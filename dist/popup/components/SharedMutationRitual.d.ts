@@ -6,3 +6,4 @@ export declare const SharedMutationRitual: React.FC<{
 }>;
 declare const SharedMutationRitualPlugin: Plugin;
 export default SharedMutationRitualPlugin;
+//# sourceMappingURL=SharedMutationRitual.d.ts.map

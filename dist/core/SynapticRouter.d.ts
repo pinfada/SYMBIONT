@@ -27,3 +27,4 @@ export declare class SynapticRouter {
     private handleMessage;
 }
 export {};
+//# sourceMappingURL=SynapticRouter.d.ts.map

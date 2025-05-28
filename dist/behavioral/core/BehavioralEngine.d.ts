@@ -11,3 +11,4 @@ export declare class BehavioralEngine {
     analyzeBehavior(event: NavigationEvent): Promise<BehaviorAnalysis>;
     analyzeNavigation(event: NavigationEvent): BehaviorAnalysis;
 }
+//# sourceMappingURL=BehavioralEngine.d.ts.map

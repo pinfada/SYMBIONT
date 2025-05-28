@@ -12,3 +12,4 @@ export declare class WebGLMessageAdapter {
      */
     private setupListeners;
 }
+//# sourceMappingURL=WebGLMessageAdapter.d.ts.map

@@ -7,3 +7,4 @@ interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 export declare const AnimatedButton: React.FC<AnimatedButtonProps>;
 export {};
+//# sourceMappingURL=AnimatedButton.d.ts.map

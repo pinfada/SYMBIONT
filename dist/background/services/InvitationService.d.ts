@@ -18,3 +18,4 @@ export declare class InvitationService {
     getAllInvitations(): Promise<Invitation[]>;
 }
 export {};
+//# sourceMappingURL=InvitationService.d.ts.map

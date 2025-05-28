@@ -33,3 +33,4 @@ export declare class PerceptionEngine {
         lastFeatures: Feature;
     };
 }
+//# sourceMappingURL=PerceptionEngine.d.ts.map

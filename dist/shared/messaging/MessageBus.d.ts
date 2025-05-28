@@ -47,3 +47,4 @@ export declare class MessageBus {
     subscribe(type: MessageType, handler: (message: any) => void): void;
 }
 export default MessageBus;
+//# sourceMappingURL=MessageBus.d.ts.map

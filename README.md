@@ -378,3 +378,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Astuce** : utilise le générateur d'icônes fourni pour créer des PNG cohérents à toutes les tailles.
 - Après chaque build, vérifie que les icônes sont bien présentes dans `dist/assets/icons/`.
+
+## ⚙️ Build multi-cible (Webpack et Manifest V3)
+
+- Le projet utilise **deux configurations Webpack** :
+  - Une dédiée au service worker (background) : génère un module ES (output.module: true, experiments.outputModule: true) pour être compatible avec Manifest V3.
+  - Une pour les autres bundles (content, popup) : configuration standard.
+- Cette séparation est **indispensable** car Chrome exige un vrai module ES pour le service worker en Manifest V3.
+- Si tu ajoutes une nouvelle entrée (ex : un autre worker), inspire-toi de la config du background.
+- Le build produit tous les fichiers dans `dist/` sans écraser les autres bundles.

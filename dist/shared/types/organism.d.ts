@@ -42,3 +42,4 @@ export interface MutationState {
     sizeMultiplier: number;
     opacity: number;
 }
+//# sourceMappingURL=organism.d.ts.map

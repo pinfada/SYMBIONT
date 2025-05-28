@@ -4,3 +4,4 @@ export declare const useMessaging: () => {
     unsubscribe: (type: MessageType, handler: (message: Message) => void) => void;
     send: (type: MessageType, payload: any) => void;
 };
+//# sourceMappingURL=useMessaging.d.ts.map

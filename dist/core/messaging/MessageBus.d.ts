@@ -24,3 +24,4 @@ export declare class MessageBus {
     emit(type: any, payload: any): void;
 }
 export default MessageBus;
+//# sourceMappingURL=MessageBus.d.ts.map

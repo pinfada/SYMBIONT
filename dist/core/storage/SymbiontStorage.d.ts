@@ -38,3 +38,4 @@ export declare class SymbiontStorage {
     getRecentActivity(periodMs?: number): Promise<any[]>;
 }
 export {};
+//# sourceMappingURL=SymbiontStorage.d.ts.map
