@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import MetricsPanel from './MetricsPanel';
 import SettingsPanel from './SettingsPanel';
 import OrganismDashboard from './OrganismDashboard';
+import Toast from './Toast';
+import Loader from './Loader';
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Organisme', icon: '🧬' },
@@ -11,31 +13,21 @@ const NAV_ITEMS = [
 
 const App: React.FC = () => {
   const [active, setActive] = useState('dashboard');
+  const [toast, setToast] = useState<{message: string, type?: 'success'|'error'|'info'}|null>(null);
+  const [loading, setLoading] = useState(false);
 
   return (
     <div style={{ display: 'flex', minHeight: 400, minWidth: 350, fontFamily: 'Segoe UI, Arial, sans-serif', background: '#181c22', color: '#f0f0f0' }}>
       {/* Navigation latérale */}
-      <nav style={{ width: 80, background: '#10101a', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', borderRight: '1px solid #222' }}>
-        <div style={{ marginBottom: 32 }}>
+      <nav className="navbar">
+        <div className="navbar-logo">
           <img src="../assets/icons/icon48.png" alt="SYMBIONT" width={40} height={40} style={{ borderRadius: 8 }} />
         </div>
         {NAV_ITEMS.map(item => (
           <button
             key={item.key}
             onClick={() => setActive(item.key)}
-            style={{
-              background: active === item.key ? '#00e0ff' : 'transparent',
-              color: active === item.key ? '#181c22' : '#f0f0f0',
-              border: 'none',
-              borderRadius: 8,
-              margin: '8px 0',
-              padding: 12,
-              width: 48,
-              height: 48,
-              fontSize: 24,
-              cursor: 'pointer',
-              transition: 'background 0.2s, color 0.2s',
-            }}
+            className={"icon-btn" + (active === item.key ? " active" : "")}
             aria-label={item.label}
             title={item.label}
           >
@@ -44,15 +36,15 @@ const App: React.FC = () => {
         ))}
       </nav>
       {/* Contenu principal */}
-      <main style={{ flex: 1, padding: 24, minHeight: 400 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: 0 }}>
         {active === 'dashboard' && (
-          <OrganismDashboard />
+          <div className="dashboard-panel panel"><OrganismDashboard /></div>
         )}
         {active === 'metrics' && (
-          <MetricsPanel />
+          <div className="metrics-panel panel"><MetricsPanel /></div>
         )}
         {active === 'settings' && (
-          <SettingsPanel />
+          <div className="settings-panel panel"><SettingsPanel /></div>
         )}
         {/* Placeholders pour d'autres panels */}
         {['onboarding', 'network'].includes(active) && (
@@ -61,6 +53,10 @@ const App: React.FC = () => {
             <p>Ce module sera bientôt disponible.</p>
           </div>
         )}
+        {/* Loader global */}
+        {loading && <Loader />}
+        {/* Toast global */}
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </main>
     </div>
   );

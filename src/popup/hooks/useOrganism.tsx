@@ -23,6 +23,9 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const load = async () => {
       try {
+        // Prévoir l'utilisation de SymbiontStorage si besoin
+        // const storage = new SymbiontStorage();
+        // await storage.initialize();
         const raw = localStorage.getItem('symbiont_organism');
         if (raw) {
           setOrganism(JSON.parse(raw));

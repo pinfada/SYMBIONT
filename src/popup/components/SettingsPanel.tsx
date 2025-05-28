@@ -28,6 +28,7 @@ export const SettingsPanel: React.FC = () => {
   
   const loadSettings = async () => {
     const storage = new SymbiontStorage();
+    await storage.initialize();
     const savedSettings = await storage.getSetting<Settings>('userPreferences', settings);
     if (savedSettings) {
       setSettings(savedSettings);
@@ -36,6 +37,7 @@ export const SettingsPanel: React.FC = () => {
   
   const saveSettings = async () => {
     const storage = new SymbiontStorage();
+    await storage.initialize();
     await storage.setSetting('userPreferences', settings);
   };
   
