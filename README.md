@@ -352,3 +352,29 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Issues**: [GitHub Issues](https://github.com/pinfada/SYMBIONT/issues)
 - **Discord**: [Join our community](https://discord.gg/symbiont)
 - **Email**: support@symbiont.dev
+
+## 🖼️ Gestion automatique des icônes
+
+- Place toutes les icônes source (PNG : 16, 32, 48, 128, etc.) dans le dossier : `public/assets/icons/`
+- Lors du build (`npm run build`), **toutes les icônes sont automatiquement copiées** dans `dist/assets/icons/`
+- Le `manifest.json` doit référencer les icônes ainsi :
+
+```json
+"icons": {
+  "16": "assets/icons/icon16.png",
+  "32": "assets/icons/icon32.png",
+  "48": "assets/icons/icon48.png",
+  "128": "assets/icons/icon128.png"
+},
+"action": {
+  "default_icon": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  }
+}
+```
+
+- **Astuce** : utilise le générateur d'icônes fourni pour créer des PNG cohérents à toutes les tailles.
+- Après chaque build, vérifie que les icônes sont bien présentes dans `dist/assets/icons/`.

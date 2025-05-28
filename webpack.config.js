@@ -52,7 +52,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
-        { from: 'public/assets', to: 'assets' }
+        { from: 'public/assets', to: 'assets', noErrorOnMissing: true }
       ]
     }),
     new HtmlPlugin({
