@@ -1,0 +1,226 @@
+/* Palette et base */
+body, html {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: #181c22;
+  color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+  min-width: 350px;
+  min-height: 400px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #232946;
+}
+::-webkit-scrollbar-thumb {
+  background: #00e0ff44;
+  border-radius: 8px;
+}
+
+/* Navigation latérale */
+.navbar {
+  width: 80px;
+  background: #10101a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+  border-right: 1px solid #222;
+  min-height: 100vh;
+}
+.navbar-logo {
+  margin-bottom: 32px;
+}
+.navbar .icon-btn {
+  background: none;
+  border: none;
+  border-radius: 8px;
+  margin: 8px 0;
+  padding: 12px;
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
+  color: #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.navbar .icon-btn.active,
+.navbar .icon-btn:focus,
+.navbar .icon-btn:hover {
+  background: #00e0ff;
+  color: #181c22;
+}
+
+/* Panels */
+.panel {
+  background: #232946;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #0008;
+  padding: 24px;
+  margin: 16px 0;
+  width: 100%;
+  max-width: 420px;
+}
+.metrics-panel, .settings-panel, .dashboard-panel {
+  background: #232946;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #0008;
+  padding: 24px;
+  margin: 16px 0;
+}
+
+.metrics-section, .settings-section {
+  margin-bottom: 24px;
+}
+.metrics-section h3, .settings-section h3 {
+  color: #00e0ff;
+  font-size: 1.15em;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+/* Statistiques */
+.evolution-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #20232a;
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 80px;
+}
+.stat-label {
+  color: #888;
+  font-size: 0.95em;
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: #00e0ff;
+}
+
+/* Boutons */
+.button, .animated-btn, .save-btn {
+  background: #00e0ff;
+  color: #181c22;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: 1em;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.button:disabled, .animated-btn:disabled {
+  background: #333;
+  color: #888;
+  cursor: not-allowed;
+}
+.button:hover, .animated-btn:hover, .save-btn:hover {
+  box-shadow: 0 4px 16px #00e0ff88;
+  transform: translateY(-2px) scale(1.03);
+  background: #00c0e0;
+}
+
+/* Inputs, selects, sliders */
+input, select, textarea {
+  background: #181c22;
+  color: #f0f0f0;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 1em;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border: 1.5px solid #00e0ff;
+  box-shadow: 0 0 0 2px #00e0ff44;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: #00e0ff;
+  margin-bottom: 0;
+}
+
+/* Switch/checkbox */
+input[type="checkbox"] {
+  accent-color: #00e0ff;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+/* Loader */
+.loader {
+  border: 4px solid #232946;
+  border-top: 4px solid #00e0ff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  animation: spin 1s linear infinite;
+  margin: 32px auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Toast/notification */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  background: #232946;
+  color: #00e0ff;
+  padding: 16px 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px #0008;
+  font-weight: 600;
+  z-index: 9999;
+  animation: fadeInUp 0.4s cubic-bezier(.4,0,.2,1);
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .panel, .metrics-panel, .settings-panel, .dashboard-panel {
+    padding: 12px;
+    margin: 8px 0;
+    max-width: 100vw;
+  }
+  .navbar {
+    width: 60px;
+    padding: 12px 0;
+  }
+  .navbar .icon-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 400px) {
+  body, html {
+    min-width: 240px;
+  }
+  .panel, .metrics-panel, .settings-panel, .dashboard-panel {
+    padding: 6px;
+    margin: 4px 0;
+  }
+} 
