@@ -41,6 +41,30 @@ cd SYMBIONT
 npm install
 ```
 
+## 🏗️ Build et vérification du manifest
+
+Après installation des dépendances, le build de l'extension se fait avec Webpack :
+
+```bash
+npm run build
+```
+
+Pour un build **avec vérification automatique** de la présence et de la conformité du `manifest.json` dans `dist/` :
+
+```bash
+npm run build:full
+```
+
+- Le manifest.json de la racine est automatiquement copié dans `dist/` lors du build.
+- Un script vérifie que le manifest n'est ni vide, ni corrompu, ni absent.
+- En cas de problème, le build échoue avec un message explicite.
+
+**Astuce** : Si tu rencontres une erreur du type `Module not found: Error: Can't resolve 'ts-loader'` ou `copy-webpack-plugin`, installe les dépendances manquantes avec :
+
+```bash
+npm install --save-dev ts-loader copy-webpack-plugin html-webpack-plugin clean-webpack-plugin webpack webpack-cli
+```
+
 ## Structure du Projet
 
 Le projet utilise une architecture "Neural Mesh" avec les composants suivants :
@@ -125,31 +149,25 @@ Content Script (Sensory Network)
 
 ## 🛠️ Development
 
-### Prerequisites
+### Prérequis
 - Node.js 18+
 - Chrome 100+
 - Git
 
-### Setup
+### Installation et build
 ```bash
-# Clone repository
+# Cloner le dépôt
 git clone https://github.com/yourusername/symbiont-extension.git
 cd symbiont-extension
 
-# Install dependencies
+# Installer les dépendances
 npm install
 
-# Development mode
-npm run dev
-
-# Build for production
+# Build de production (avec copie du manifest)
 npm run build
 
-# Run tests
-npm test
-
-# Package extension
-npm run package
+# Build + vérification automatique du manifest
+npm run build:full
 ```
 
 ### Architecture
@@ -218,23 +236,97 @@ SYMBIONT is optimized for minimal resource usage:
 - ⬜ AI model integration
 - ⬜ Collaborative evolution
 
-## 🤝 Contributing
+## 🤝 Contribution
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Les contributions sont les bienvenues ! Pour participer :
 
+### Workflow Git recommandé
+1. **Fork** le dépôt sur ton compte GitHub.
+2. **Clone** ton fork localement :
+   ```bash
+   git clone https://github.com/tonpseudo/symbiont-extension.git
+   cd symbiont-extension
+   ```
+3. **Crée une branche** dédiée à ta fonctionnalité ou correction :
+   ```bash
+   git checkout -b feat/nom-fonctionnalite
+   # ou
+   git checkout -b fix/bug-description
+   ```
+4. **Développe** en respectant les bonnes pratiques (voir ci-dessous).
+5. **Rebase** régulièrement sur la branche principale pour rester à jour :
+   ```bash
+   git fetch origin
+   git rebase origin/main
+   ```
+6. **Teste** localement (`npm run build:full` et `npm test`).
+7. **Commit** avec un message clair et conventionné :
+   - `feat: ...` pour une nouvelle fonctionnalité
+   - `fix: ...` pour une correction de bug
+   - `docs: ...` pour la documentation
+   - `refactor: ...` pour une amélioration technique
+8. **Pousse** ta branche sur ton fork :
+   ```bash
+   git push origin feat/nom-fonctionnalite
+   ```
+9. **Ouvre une Pull Request** sur le dépôt principal, en détaillant :
+   - Le contexte et l'objectif de la PR
+   - Les changements apportés
+   - Les impacts éventuels
+   - Des captures d'écran si pertinent
+
+### Bonnes pratiques de code
+- Utilise **TypeScript** strict (types explicites, pas de `any` non justifié)
+- Commente le code complexe ou non trivial
+- Respecte la structure des dossiers et l'architecture modulaire
+- Ajoute des **tests** pour toute nouvelle fonctionnalité ou correction
+- Vérifie que le build et les tests passent avant toute PR
+- Privilégie des PRs courtes et ciblées
+
+### Process de revue
+- Toute PR est relue par au moins un mainteneur
+- Les retours sont à adresser avant merge
+- Les discussions se font sur la PR ou sur Discord
+- Le merge est fait après validation et build vert
+
+### Canaux de contact
+- **Discord** : pour discuter d'une idée ou d'une contribution avant PR
+- **Issues GitHub** : pour signaler un bug, proposer une évolution ou demander de l'aide
+
+Merci de contribuer à l'évolution de SYMBIONT !
+
+## ❓ FAQ
+
+### Le build échoue avec une erreur de dépendance (ts-loader, copy-webpack-plugin...)
+Vérifie que tu as bien installé toutes les dépendances de développement :
 ```bash
-# Fork the repository
-# Create your feature branch
-git checkout -b feature/amazing-feature
-
-# Commit your changes
-git commit -m 'Add amazing feature'
-
-# Push to the branch
-git push origin feature/amazing-feature
-
-# Open a Pull Request
+npm install --save-dev ts-loader copy-webpack-plugin html-webpack-plugin clean-webpack-plugin webpack webpack-cli
 ```
+
+### Le manifest.json dans dist/ est vide ou absent
+- Utilise toujours `npm run build` ou `npm run build:full` pour builder (pas seulement `tsc`).
+- Le manifest est copié automatiquement par Webpack.
+- Le script `npm run build:full` vérifie la validité du manifest et échoue en cas de problème.
+
+### Comment ajouter d'autres fichiers statiques (icônes, assets...)
+Ajoute-les dans le dossier `public/assets` (ou adapte la config Webpack si besoin).
+
+### Où trouver la documentation technique et fonctionnelle ?
+- Voir le dossier `/docs` du projet.
+- Documentation en ligne : [docs.symbiont.dev](https://docs.symbiont.dev)
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Pour participer :
+
+1. Fork le dépôt et crée une branche dédiée à ta fonctionnalité ou correction.
+2. Respecte le style de code (TypeScript, conventions de nommage, typage strict, commentaires clairs).
+3. Ajoute des tests si tu ajoutes une fonctionnalité ou corriges un bug.
+4. Vérifie que le build (`npm run build:full`) passe sans erreur avant toute PR.
+5. Ouvre une Pull Request détaillée (description, contexte, screenshots si besoin).
+6. Pour toute question, contacte l'équipe via Discord ou ouvre une issue.
+
+Merci de contribuer à l'évolution de SYMBIONT !
 
 ## 📜 License
 
