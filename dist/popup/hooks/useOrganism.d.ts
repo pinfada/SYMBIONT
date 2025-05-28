@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { OrganismState } from '@shared/types/organism';
 export interface OrganismContextType {
     organism: OrganismState | null;
@@ -6,9 +6,7 @@ export interface OrganismContextType {
 }
 export declare const OrganismContext: React.Context<OrganismContextType | null>;
 export declare const useOrganism: () => OrganismContextType;
-export declare const useWebGL: () => {
-    isSupported: boolean | null;
-    initWebGL: (canvas: HTMLCanvasElement, organism: OrganismState) => Promise<() => void>;
-    engine: any;
-};
+export declare function OrganismProvider({ children }: {
+    children: ReactNode;
+}): import("react/jsx-runtime").JSX.Element;
 //# sourceMappingURL=useOrganism.d.ts.map
