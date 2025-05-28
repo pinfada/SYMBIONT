@@ -59,10 +59,10 @@ export const OrganismDashboard: React.FC = () => {
             <div className="vital-stat__bar">
               <div 
                 className="vital-stat__fill vital-stat__fill--health"
-                style={{ width: `${organism.health * 100}%` }}
+                style={{ width: `${organism.health ?? 0 * 100}%` }}
               />
             </div>
-            <span className="vital-stat__value">{Math.round(organism.health * 100)}%</span>
+            <span className="vital-stat__value">{Math.round(organism.health ?? 0 * 100)}%</span>
           </div>
           
           <div className="vital-stat">
@@ -70,10 +70,10 @@ export const OrganismDashboard: React.FC = () => {
             <div className="vital-stat__bar">
               <div 
                 className="vital-stat__fill vital-stat__fill--energy"
-                style={{ width: `${organism.energy * 100}%` }}
+                style={{ width: `${organism.energy ?? 0 * 100}%` }}
               />
             </div>
-            <span className="vital-stat__value">{Math.round(organism.energy * 100)}%</span>
+            <span className="vital-stat__value">{Math.round(organism.energy ?? 0 * 100)}%</span>
           </div>
         </div>
         

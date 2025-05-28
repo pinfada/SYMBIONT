@@ -95,7 +95,10 @@ class BackgroundService {
       lastMutation: Date.now(),
       mutations: [],
       createdAt: Date.now(),
-      dna: visualDNA
+      dna: visualDNA,
+      birthTime: Date.now(),
+      socialConnections: [],
+      memoryFragments: []
     };
   }
 
@@ -406,10 +409,12 @@ class BackgroundService {
     else if (await this.isExploration(url)) pattern = 'exploration';
     else if (await this.isRoutine(url)) pattern = 'routine';
     // Broadcast update
+    if (!this.organism) return;
+    const org = this.organism;
     this.messageBus.send({
       type: MessageType.ORGANISM_UPDATE,
       payload: {
-        state: this.organism,
+        state: org,
         mutations: await this.storage.getRecentMutations(5),
       },
     });
@@ -429,19 +434,15 @@ class BackgroundService {
 
   private async checkForMutations(): Promise<void> {
     if (!this.organism) return;
-    
+    const org = this.organism;
     const now = Date.now();
-    const timeSinceLastMutation = now - this.organism.lastMutation;
-    
+    const timeSinceLastMutation = now - (org.lastMutation ?? 0);
     // Mutation probability increases with time
     const mutationProbability = Math.min(0.5, timeSinceLastMutation / (1000 * 60 * 60)); // Max 50% after 1 hour
-    
     if (Math.random() < mutationProbability) {
       const mutation = this.generateMutation();
       await this.storage.addMutation(mutation);
-      
-      this.organism.lastMutation = now;
-      
+      org.lastMutation = now;
       // Apply mutation effects
       this.applyMutation(mutation);
     }
@@ -450,13 +451,12 @@ class BackgroundService {
   private generateMutation(): OrganismMutation {
     const types: Array<'visual' | 'behavioral' | 'cognitive'> = ['visual', 'behavioral', 'cognitive'];
     const type = types[Math.floor(Math.random() * types.length)];
-    
     return {
       type,
       trigger: this.getMutationTrigger(type),
       magnitude: Math.random() * 0.5 + 0.1, // 0.1 to 0.6
       timestamp: Date.now(),
-    };
+    } as OrganismMutation;
   }
 
   private getMutationTrigger(type: 'visual' | 'behavioral' | 'cognitive'): string {
@@ -472,28 +472,24 @@ class BackgroundService {
 
   private applyMutation(mutation: OrganismMutation): void {
     if (!this.organism) return;
-    
     switch (mutation.type) {
       case 'visual':
         // Modify visual DNA
-        this.organism.visualDNA = this.mutateVisualDNA(this.organism.visualDNA, mutation.magnitude);
+        this.organism.visualDNA = this.mutateVisualDNA(this.organism.visualDNA ?? '', mutation.magnitude);
         break;
-      
       case 'behavioral':
         // Adjust traits based on mutation
         const traitKeys = Object.keys(this.organism.traits) as Array<keyof typeof this.organism.traits>;
         const randomTrait = traitKeys[Math.floor(Math.random() * traitKeys.length)];
         this.organism.traits[randomTrait] += (Math.random() - 0.5) * mutation.magnitude * 20;
         break;
-      
       case 'cognitive':
         // Affect multiple traits slightly
         if (!this.organism) return;
         const traits = this.organism.traits;
         if (!traits) return;
         Object.keys(traits).forEach(trait => {
-          traits[trait as keyof typeof traits] += 
-            (Math.random() - 0.5) * mutation.magnitude * 5;
+          traits[trait as keyof typeof traits] += (Math.random() - 0.5) * mutation.magnitude * 5;
         });
         break;
     }
@@ -515,9 +511,9 @@ class BackgroundService {
   private startPeriodicTasks(): void {
     // Health decay - organism needs attention
     setInterval(() => {
-      if (this.organism && this.organism.health > 0) {
-        this.organism.health = Math.max(0, this.organism.health - 0.1);
-        this.organism.energy = Math.max(0, this.organism.energy - 0.05);
+      if (this.organism && (this.organism.health ?? 0) > 0) {
+        this.organism.health = Math.max(0, (this.organism.health ?? 0) - 0.1);
+        this.organism.energy = Math.max(0, (this.organism.energy ?? 0) - 0.05);
       }
     }, 1000 * 60); // Every minute
 
@@ -525,7 +521,6 @@ class BackgroundService {
     setInterval(async () => {
       if (this.organism) {
         await this.storage.saveOrganism(this.organism);
-        
         this.messageBus.send({
           type: MessageType.ORGANISM_UPDATE,
           payload: {

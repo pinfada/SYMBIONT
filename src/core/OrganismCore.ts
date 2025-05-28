@@ -202,6 +202,9 @@ export class OrganismCore {
       mutations: [],
       createdAt: Date.now(),
       dna: this.dna,
+      birthTime: Date.now(),
+      socialConnections: [],
+      memoryFragments: []
     };
   }
 

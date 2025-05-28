@@ -83,7 +83,10 @@ export class OrganismEngine {
       lastMutation: Date.now(),
       mutations: [],
       createdAt: Date.now(),
-      dna: dna
+      dna: dna,
+      birthTime: Date.now(),
+      socialConnections: [],
+      memoryFragments: []
     };
     
     // Génération de la géométrie initiale

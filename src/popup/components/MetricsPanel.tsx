@@ -59,7 +59,7 @@ export const MetricsPanel: React.FC = () => {
           <div className="stat-item">
             <span className="stat-label">Age</span>
             <span className="stat-value">
-              {Math.floor((Date.now() - organism.createdAt) / (1000 * 60 * 60))}h
+              {Math.floor((Date.now() - (organism.createdAt ?? 0)) / (1000 * 60 * 60))}h
             </span>
           </div>
         </div>
