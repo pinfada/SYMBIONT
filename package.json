@@ -4,10 +4,12 @@
   "description": "Système d'intégration neural pour la gestion des composants",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "webpack --mode production",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "check-manifest": "node scripts/check-manifest.js",
+    "build:full": "npm run build && npm run check-manifest"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
@@ -19,15 +21,21 @@
     "@types/react-dom": "^19.1.5",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^13.0.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "html-webpack-plugin": "^5.6.3",
     "jest": "^29.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.3.3"
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.3.3",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
   },
   "author": "",
   "license": "MIT",

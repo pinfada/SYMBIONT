@@ -1,8 +1,0 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TransmissionGraph = void 0;
-const jsx_runtime_1 = require("react/jsx-runtime");
-const TransmissionGraph = ({ inviter, invitees = [], userCode }) => {
-    return ((0, jsx_runtime_1.jsxs)("div", { className: "transmission-graph", children: [(0, jsx_runtime_1.jsx)("div", { className: "graph-node graph-parent", children: inviter ? ((0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("span", { children: "Invit\u00E9 par" }), (0, jsx_runtime_1.jsx)("div", { className: "code-badge", children: inviter.code })] })) : ((0, jsx_runtime_1.jsx)("div", { className: "code-badge code-badge-root", children: "Origine" })) }), (0, jsx_runtime_1.jsx)("div", { className: "graph-connector", children: "\u2193" }), (0, jsx_runtime_1.jsxs)("div", { className: "graph-node graph-user", children: [(0, jsx_runtime_1.jsx)("span", { children: "Vous" }), (0, jsx_runtime_1.jsx)("div", { className: "code-badge code-badge-user", children: userCode })] }), invitees.length > 0 && ((0, jsx_runtime_1.jsxs)(jsx_runtime_1.Fragment, { children: [(0, jsx_runtime_1.jsx)("div", { className: "graph-connector", children: "\u2193" }), (0, jsx_runtime_1.jsx)("div", { className: "graph-invitees", children: invitees.map((inv, idx) => ((0, jsx_runtime_1.jsxs)("div", { className: "graph-node graph-invitee", children: [(0, jsx_runtime_1.jsxs)("span", { children: ["Invit\u00E9 n\u00B0", idx + 1] }), (0, jsx_runtime_1.jsx)("div", { className: "code-badge", children: inv.code })] }, inv.code))) })] }))] }));
-};
-exports.TransmissionGraph = TransmissionGraph;

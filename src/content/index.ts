@@ -2,7 +2,7 @@
 // Point d'entrée Content Script
 // src/content/index.ts
 import { MessageBus } from '../core/messaging/MessageBus';
-import { NavigationObserver } from '@shared/observers/NavigationObserver';
+import { NavigationObserver } from '../shared/observers/NavigationObserver';
 import { InteractionCollector } from './collectors/InteractionCollector';
 import { DOMAnalyzer } from './observers/DOMAnalyzer';
 import { ScrollTracker } from './observers/ScrollTracker';

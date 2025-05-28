@@ -1,4 +1,4 @@
 export declare const useTheme: () => {
-    theme: "auto" | "light" | "dark";
-    setTheme: (newTheme: "auto" | "light" | "dark") => void;
+    theme: "light" | "dark" | "auto";
+    setTheme: (newTheme: "light" | "dark" | "auto") => void;
 };
