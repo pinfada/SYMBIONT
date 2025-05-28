@@ -1,11 +1,12 @@
 // src/background/index.ts
 // Point d'entrée Service Worker (Neural Core)
 import { MessageBus, MessageType } from '@shared/messaging/MessageBus';
-import { SymbiontStorage } from '@storage/SymbiontStorage';
+import { SymbiontStorage } from '../core/storage/SymbiontStorage';
 import { NavigationObserver } from '@shared/observers/NavigationObserver';
 import { OrganismState, OrganismMutation } from '@shared/types/organism';
 import { InvitationService } from './services/InvitationService';
 import { MurmureService } from './services/MurmureService';
+import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 
 class BackgroundService {
   private messageBus: MessageBus;
@@ -15,13 +16,19 @@ class BackgroundService {
   private invitationService: InvitationService;
   private murmureService: MurmureService;
   private activated: boolean = false;
+  private events: SequenceEvent[] = [];
+  private collectiveThresholds = [10, 50, 100, 250, 500];
+  private reachedThresholds: number[] = [];
 
   constructor() {
     this.messageBus = new MessageBus('background');
     this.storage = new SymbiontStorage();
     this.navigationObserver = new NavigationObserver(this.messageBus);
-    this.invitationService = new InvitationService();
+    this.invitationService = new InvitationService(this.storage);
     this.murmureService = new MurmureService();
+    // Récupère les seuils déjà atteints (persistance locale)
+    const saved = localStorage.getItem('symbiont_collective_thresholds');
+    this.reachedThresholds = saved ? JSON.parse(saved) : [];
     this.initialize();
   }
 
@@ -106,8 +113,12 @@ class BackgroundService {
       
       await this.storage.saveBehavior(behavior);
       
+      // Enregistre l'événement dans l'historique
+      this.events.push({ type: 'visit', timestamp: Date.now(), url });
+      
       // Update organism based on behavior
       this.updateOrganismTraits(url, title);
+      this.analyzeContextualPatterns();
     });
 
     // Handle scroll events
@@ -119,12 +130,23 @@ class BackgroundService {
         behavior.scrollDepth = Math.max(behavior.scrollDepth, scrollDepth);
         await this.storage.saveBehavior(behavior);
       }
+      
+      // Enregistre l'événement dans l'historique
+      this.events.push({ type: 'scroll', timestamp: Date.now(), url });
+      this.analyzeContextualPatterns();
+    });
+
+    // Handler pour interactions utilisateur (à brancher si non existant)
+    this.messageBus.on(MessageType.INTERACTION_DETECTED, (message: any) => {
+      const { type, timestamp, target, data } = message.payload;
+      this.events.push({ type, timestamp, target, ...data });
+      this.analyzeContextualPatterns();
     });
 
     // Invitation: génération
-    this.messageBus.on(MessageType.GENERATE_INVITATION, (message: any) => {
+    this.messageBus.on(MessageType.GENERATE_INVITATION, async (message: any) => {
       const { donorId } = message.payload;
-      const invitation = this.invitationService.generateInvitation(donorId);
+      const invitation = await this.invitationService.generateInvitation(donorId);
       this.messageBus.send({
         type: MessageType.INVITATION_GENERATED,
         payload: invitation
@@ -132,16 +154,16 @@ class BackgroundService {
     });
 
     // Invitation: validation/consommation
-    this.messageBus.on(MessageType.CONSUME_INVITATION, (message: any) => {
+    this.messageBus.on(MessageType.CONSUME_INVITATION, async (message: any) => {
       const { code, receiverId } = message.payload;
-      const invitation = this.invitationService.consumeInvitation(code, receiverId);
+      const invitation = await this.invitationService.consumeInvitation(code, receiverId);
       if (invitation) {
         this.activated = true;
         localStorage.setItem('symbiont_activated', 'true');
         // Créer l'organisme à l'activation
         if (!this.organism) {
           this.organism = this.createNewOrganism();
-          this.storage.saveOrganism(this.organism);
+          await this.storage.saveOrganism(this.organism);
         }
       }
       this.messageBus.send({
@@ -151,9 +173,9 @@ class BackgroundService {
     });
 
     // Invitation: vérification
-    this.messageBus.on(MessageType.CHECK_INVITATION, (message: any) => {
+    this.messageBus.on(MessageType.CHECK_INVITATION, async (message: any) => {
       const { code } = message.payload;
-      const valid = this.invitationService.isValid(code);
+      const valid = await this.invitationService.isValid(code);
       this.messageBus.send({
         type: MessageType.INVITATION_CHECKED,
         payload: { code, valid }
@@ -161,30 +183,32 @@ class BackgroundService {
     });
 
     // --- Handlers pour la lignée et l'historique d'invitation ---
-    this.messageBus.on(MessageType.GET_INVITER, (message: any) => {
+    this.messageBus.on(MessageType.GET_INVITER, async (message: any) => {
       const { userId } = message.payload;
       // Recherche de l'invitation où receiverId === userId
-      const inviter = this.invitationService.getAllInvitations().find(inv => inv.receiverId === userId);
+      const all = await this.invitationService.getAllInvitations();
+      const inviter = all.find(inv => inv.receiverId === userId);
       this.messageBus.send({
         type: MessageType.INVITER_RESULT,
         payload: inviter || null
       });
     });
 
-    this.messageBus.on(MessageType.GET_INVITEES, (message: any) => {
+    this.messageBus.on(MessageType.GET_INVITEES, async (message: any) => {
       const { userId } = message.payload;
       // Recherche des invitations où donorId === userId
-      const invitees = this.invitationService.getAllInvitations().filter(inv => inv.donorId === userId);
+      const all = await this.invitationService.getAllInvitations();
+      const invitees = all.filter(inv => inv.donorId === userId);
       this.messageBus.send({
         type: MessageType.INVITEES_RESULT,
         payload: invitees
       });
     });
 
-    this.messageBus.on(MessageType.GET_INVITATION_HISTORY, (message: any) => {
+    this.messageBus.on(MessageType.GET_INVITATION_HISTORY, async (message: any) => {
       const { userId } = message.payload;
       // Historique = invitations reçues ou envoyées
-      const all = this.invitationService.getAllInvitations();
+      const all = await this.invitationService.getAllInvitations();
       const history = [
         ...all.filter(inv => inv.receiverId === userId).map(inv => ({ ...inv, type: 'reçue' })),
         ...all.filter(inv => inv.donorId === userId).map(inv => ({ ...inv, type: 'envoyée' }))
@@ -501,7 +525,7 @@ class BackgroundService {
   private async isLoop(url: string): Promise<boolean> {
     // Si l'utilisateur visite la même URL plus de 3 fois en 10 minutes
     const behavior = await this.storage.getBehavior(url);
-    return behavior && behavior.visitCount >= 3;
+    return !!behavior && behavior.visitCount >= 3;
   }
   private async isIdle(): Promise<boolean> {
     // Si aucune interaction depuis plus de 10 minutes (exemple)
@@ -511,7 +535,7 @@ class BackgroundService {
   private async isExploration(url: string): Promise<boolean> {
     // Si le domaine est nouveau ou rarement visité
     const behavior = await this.storage.getBehavior(url);
-    return behavior && behavior.visitCount <= 1;
+    return !!behavior && behavior.visitCount <= 1;
   }
   private async isRoutine(url: string): Promise<boolean> {
     // Si le site est visité tous les jours (exemple naïf)
@@ -519,6 +543,69 @@ class BackgroundService {
     if (!behavior) return false;
     const now = Date.now();
     return (now - behavior.lastVisit) < 1000 * 60 * 60 * 24 * 2; // Visité il y a moins de 2 jours
+  }
+
+  /**
+   * Analyse les patterns contextuels dans l'historique d'événements et déclenche une invitation si nécessaire
+   */
+  private async analyzeContextualPatterns(): Promise<void> {
+    const now = Date.now();
+    // On ne garde que les événements des 30 dernières minutes
+    this.events = this.events.filter(e => now - e.timestamp < 1000 * 60 * 30);
+    // Détection de burst d'activité (ex: 5 actions en <10s)
+    const bursts = PatternDetector.detectBurst(this.events, 10000, 5);
+    if (bursts.length > 0) {
+      this.triggerContextualInvitation('burst_activity');
+      return;
+    }
+    // Détection de cycles temporels (ex: actions régulières)
+    const cycles = PatternDetector.detectTemporalPattern(this.events, 60000, 0.15);
+    if (cycles.length > 0) {
+      this.triggerContextualInvitation('temporal_cycle');
+      return;
+    }
+    // Détection d'alternance navigation/scroll
+    const alternances = PatternDetector.detectAlternance(this.events, 'visit', 'scroll', 6);
+    if (alternances.length > 0) {
+      this.triggerContextualInvitation('alternance_nav_scroll');
+      return;
+    }
+    // Détection de répétition d'un même type d'action
+    const repetitions = PatternDetector.detectRepetition(this.events, 7);
+    if (repetitions.length > 0) {
+      this.triggerContextualInvitation('repetition_action');
+      return;
+    }
+    // Déclenchement collectif : seuil global d'invitations
+    this.checkCollectiveThreshold();
+  }
+
+  /**
+   * Vérifie si un seuil collectif de propagation est atteint et déclenche une invitation spéciale si besoin
+   */
+  private async checkCollectiveThreshold() {
+    const allInvitations = await this.invitationService.getAllInvitations();
+    const total = allInvitations.length;
+    for (const threshold of this.collectiveThresholds) {
+      if (total >= threshold && !this.reachedThresholds.includes(threshold)) {
+        this.reachedThresholds.push(threshold);
+        localStorage.setItem('symbiont_collective_thresholds', JSON.stringify(this.reachedThresholds));
+        this.triggerContextualInvitation('collective_threshold_' + threshold);
+        break;
+      }
+    }
+  }
+
+  /**
+   * Déclenche une invitation contextuelle avancée
+   */
+  private async triggerContextualInvitation(context: string) {
+    const userId = localStorage.getItem('symbiont_user_id') || 'unknown';
+    const invitation = await this.invitationService.generateInvitation(userId);
+    this.messageBus.send({
+      type: MessageType.CONTEXTUAL_INVITATION,
+      payload: { invitation, context }
+    });
   }
 }
 

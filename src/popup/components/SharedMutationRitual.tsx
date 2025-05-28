@@ -1,62 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { useMessaging } from '../hooks/useMessaging';
-import { MessageType } from '../../shared/messaging/MessageBus';
-import { SharedMutationRequest, AcceptSharedMutation, SharedMutationResult } from '../../shared/types/rituals';
-import { Murmur } from '../../shared/types/murmur';
+import React, { useState } from 'react';
+import { addRitual, getRituals } from '../../shared/ritualsApi';
+import { PluginManager, Plugin } from '../../core/PluginManager';
 
 export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<string, number> }> = ({ userId, traits }) => {
-  const messaging = useMessaging();
   const [step, setStep] = useState<'init' | 'waiting' | 'enter' | 'result'>('init');
   const [code, setCode] = useState('');
   const [sharedCode, setSharedCode] = useState<string | null>(null);
-  const [result, setResult] = useState<SharedMutationResult | null>(null);
+  const [result, setResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Générer un code aléatoire pour la fusion
+  function generateCode() {
+    return Math.random().toString(36).substr(2, 6).toUpperCase();
+  }
+
   // Initiateur : demande un code
-  const handleInitiate = () => {
-    messaging.send(MessageType.REQUEST_SHARED_MUTATION, { initiatorId: userId, traits });
-    messaging.subscribe(MessageType.SHARED_MUTATION_CODE, (msg: any) => {
-      setSharedCode(msg.payload.code);
-      setStep('waiting');
-    });
-    messaging.subscribe(MessageType.SHARED_MUTATION_RESULT, (msg: any) => {
-      if (msg.payload.error) setError(msg.payload.error);
-      else setResult(msg.payload);
-      setStep('result');
-    });
+  const handleInitiate = async () => {
+    const fusionCode = generateCode();
+    setSharedCode(fusionCode);
+    setStep('waiting');
+    try {
+      await addRitual({ _id: fusionCode, type: 'fusion', initiatorId: userId, traits, status: 'waiting' });
+    } catch (e) {
+      setError('Erreur lors de la création du rituel.');
+      setStep('init');
+    }
   };
 
   // Receveur : saisit le code et fusionne
-  const handleAccept = () => {
-    messaging.send(MessageType.ACCEPT_SHARED_MUTATION, { code, receiverId: userId, traits });
-    messaging.subscribe(MessageType.SHARED_MUTATION_RESULT, (msg: any) => {
-      if (msg.payload.error) setError(msg.payload.error);
-      else setResult(msg.payload);
+  const handleAccept = async () => {
+    setStep('waiting');
+    try {
+      const rituals = await getRituals();
+      const ritual = rituals.find(r => r._id === code && r.type === 'fusion');
+      if (!ritual) {
+        setError('Code de fusion invalide.');
+        setStep('enter');
+        return;
+      }
+      // Fusionner les traits (exemple simple)
+      const mergedTraits = { ...ritual.traits };
+      Object.keys(traits).forEach(k => {
+        mergedTraits[k] = ((mergedTraits[k] || 0) + (traits[k] || 0)) / 2;
+      });
+      setResult({ initiatorId: ritual.initiatorId, receiverId: userId, mergedTraits, timestamp: Date.now() });
       setStep('result');
-    });
-  };
-
-  useEffect(() => {
-    if (result) {
-      // Murmure spécial après fusion
-      const murmure: Murmur = {
-        text: 'Deux organismes se sont liés. Une nouvelle harmonie émerge…',
-        timestamp: Date.now(),
-        context: 'shared-mutation',
-        pattern: 'fusion',
-      };
-      messaging.send(MessageType.MURMUR, murmure);
+    } catch (e) {
+      setError('Erreur lors de la validation du code.');
+      setStep('enter');
     }
-    // eslint-disable-next-line
-  }, [result]);
+  };
 
   return (
     <div className="shared-mutation-ritual">
       {step === 'init' && (
         <>
           <h3>Rituel de mutation partagée</h3>
-          <button onClick={handleInitiate}>Initier une fusion</button>
-          <button onClick={() => setStep('enter')}>J'ai reçu un code</button>
+          <button onClick={handleInitiate} aria-label="Initier une fusion">Initier une fusion</button>
+          <button onClick={() => setStep('enter')} aria-label="J'ai reçu un code">J'ai reçu un code</button>
         </>
       )}
       {step === 'waiting' && sharedCode && (
@@ -69,8 +70,8 @@ export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<str
       {step === 'enter' && (
         <form onSubmit={e => { e.preventDefault(); handleAccept(); }}>
           <label htmlFor="shared-code">Code de fusion</label>
-          <input id="shared-code" value={code} onChange={e => setCode(e.target.value.toUpperCase())} />
-          <button type="submit">Fusionner</button>
+          <input id="shared-code" value={code} onChange={e => setCode(e.target.value.toUpperCase())} style={{outline:'2px solid #00e0ff'}} aria-label="Code de fusion" />
+          <button type="submit" aria-label="Fusionner">Fusionner</button>
         </form>
       )}
       {step === 'result' && result && (
@@ -79,15 +80,25 @@ export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<str
           <p>Traits fusionnés :</p>
           <ul>
             {Object.entries(result.mergedTraits).map(([k, v]) => (
-              <li key={k}><b>{k}</b> : {v.toFixed(2)}</li>
+              <li key={k}><b>{k}</b> : {(v as number).toFixed(2)}</li>
             ))}
           </ul>
-          <div className="murmur-notification">Deux organismes se sont liés. Une nouvelle harmonie émerge…</div>
+          <div className="murmur-notification" role="status" aria-live="polite">Deux organismes se sont liés. Une nouvelle harmonie émerge…</div>
         </div>
       )}
       {step === 'result' && error && (
-        <div className="error-message">{error}</div>
+        <div className="error-message" role="alert">{error}</div>
       )}
     </div>
   );
-}; 
+};
+
+const SharedMutationRitualPlugin: Plugin = {
+  id: 'shared-mutation',
+  type: 'ritual',
+  name: 'Mutation partagée',
+  description: 'Fusionner les traits de deux organismes via un code.',
+  component: SharedMutationRitual
+};
+PluginManager.register(SharedMutationRitualPlugin);
+export default SharedMutationRitualPlugin; 

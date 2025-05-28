@@ -23,7 +23,7 @@ interface StorageSchema {
 export class SymbiontStorage {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'symbiont-db';
-  private readonly DB_VERSION = 1;
+  private readonly DB_VERSION = 2;
 
   async initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -60,6 +60,11 @@ export class SymbiontStorage {
         // Settings store
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
+        }
+        
+        // Invitations store
+        if (!db.objectStoreNames.contains('invitations')) {
+          db.createObjectStore('invitations', { keyPath: 'code' });
         }
       };
     });
@@ -180,6 +185,60 @@ export class SymbiontStorage {
       const request = store.put({ key, value });
       
       request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // --- INVITATIONS ---
+  async addInvitation(invitation: any): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['invitations'], 'readwrite');
+      const store = transaction.objectStore('invitations');
+      const request = store.add(invitation);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateInvitation(invitation: any): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['invitations'], 'readwrite');
+      const store = transaction.objectStore('invitations');
+      const request = store.put(invitation);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getInvitation(code: string): Promise<any | null> {
+    if (!this.db) throw new Error('Database not initialized');
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['invitations'], 'readonly');
+      const store = transaction.objectStore('invitations');
+      const request = store.get(code);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllInvitations(): Promise<any[]> {
+    if (!this.db) throw new Error('Database not initialized');
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['invitations'], 'readonly');
+      const store = transaction.objectStore('invitations');
+      const request = store.openCursor();
+      const results: any[] = [];
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          results.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(results);
+        }
+      };
       request.onerror = () => reject(request.error);
     });
   }

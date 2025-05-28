@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
 
 interface Invitation {
   code: string;
@@ -11,11 +11,15 @@ interface Invitation {
 }
 
 export class InvitationService {
-  private invitations: Map<string, Invitation> = new Map();
+  private storage: SymbiontStorage;
+
+  constructor(storage: SymbiontStorage) {
+    this.storage = storage;
+  }
 
   // Génère un code d'invitation unique et un motif/couleur symbolique
-  generateInvitation(donorId: string): Invitation {
-    const code = uuidv4().slice(0, 8).toUpperCase();
+  async generateInvitation(donorId: string): Promise<Invitation> {
+    const code = (await import('uuid')).v4().slice(0, 8).toUpperCase();
     const symbolicLink = this.generateSymbolicLink();
     const invitation: Invitation = {
       code,
@@ -24,24 +28,24 @@ export class InvitationService {
       used: false,
       createdAt: Date.now(),
     };
-    this.invitations.set(code, invitation);
+    await this.storage.addInvitation(invitation);
     return invitation;
   }
 
   // Valide et consomme un code d'invitation
-  consumeInvitation(code: string, receiverId: string): Invitation | null {
-    const invitation = this.invitations.get(code);
+  async consumeInvitation(code: string, receiverId: string): Promise<Invitation | null> {
+    const invitation = await this.storage.getInvitation(code);
     if (!invitation || invitation.used) return null;
     invitation.used = true;
     invitation.receiverId = receiverId;
     invitation.usedAt = Date.now();
-    this.invitations.set(code, invitation);
+    await this.storage.updateInvitation(invitation);
     return invitation;
   }
 
   // Vérifie la validité d'un code
-  isValid(code: string): boolean {
-    const invitation = this.invitations.get(code);
+  async isValid(code: string): Promise<boolean> {
+    const invitation = await this.storage.getInvitation(code);
     return !!invitation && !invitation.used;
   }
 
@@ -52,7 +56,7 @@ export class InvitationService {
   }
 
   // Pour tests ou export
-  getAllInvitations(): Invitation[] {
-    return Array.from(this.invitations.values());
+  async getAllInvitations(): Promise<Invitation[]> {
+    return await this.storage.getAllInvitations();
   }
 } 

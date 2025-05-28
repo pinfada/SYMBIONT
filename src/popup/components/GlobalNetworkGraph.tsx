@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { getRituals, Ritual } from '../../shared/ritualsApi';
+import { PluginManager, Plugin } from '../../core/PluginManager';
 
 interface NetworkNode {
   id: string;
@@ -462,8 +464,21 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
     window.location.reload();
   };
 
-  // Historique des rituels (mock)
-  const ritualHistory = JSON.parse(localStorage.getItem('symbiont_ritual_history') || '[{"type":"activation","date":' + activationDate + '}]');
+  // Historique des rituels (API)
+  const [ritualHistory, setRitualHistory] = useState<Ritual[]>([]);
+  useEffect(() => {
+    getRituals().then(setRitualHistory).catch(() => setRitualHistory([]));
+    // WebSocket notifications
+    const wsUrl = window.location.origin.replace(/^http/, 'ws') + '/';
+    const ws = new window.WebSocket(wsUrl);
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (['created','updated','deleted'].includes(msg.type)) getRituals().then(setRitualHistory);
+      } catch {}
+    };
+    return () => ws.close();
+  }, []);
   // Log d'accès local
   const accessLog = JSON.parse(localStorage.getItem('symbiont_access_log') || '[]');
   // Ajout de l'accès courant si pas déjà loggé aujourd'hui
@@ -742,6 +757,13 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
     return () => clearTimeout(timer);
   }, [treeParticles]);
 
+  // Visualisations dynamiques (plugins)
+  const visualizations = PluginManager.getPlugins('visualization');
+
+  const [activeVisualization, setActiveVisualization] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const vizListRef = useRef<HTMLUListElement>(null);
+
   return (
     <div className="global-network-graph" style={{ textAlign: 'center', margin: '32px 0', position: 'relative' }}>
       <h3 style={{ color: '#00e0ff', marginBottom: 12 }}>Réseau global de transmission</h3>
@@ -907,7 +929,7 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
             <div style={{ marginBottom: 18 }}>
               <b>Historique des rituels :</b>
               <ul style={{ margin: '8px 0 12px 18px', fontSize: 14 }}>
-                {ritualHistory.slice(-5).reverse().map((r: any, i: number) => <li key={i}>{r.type} – {new Date(r.date).toLocaleString()}</li>)}
+                {ritualHistory.slice(-5).reverse().map((r: any, i: number) => <li key={i}>{r.type} – {r._id} – {r.timestamp ? new Date(r.timestamp).toLocaleString() : ''}</li>)}
               </ul>
             </div>
             {/* Derniers événements */}
@@ -1307,6 +1329,44 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
           </div>
         ))}
       </div>
+      {visualizations.length > 0 && (
+        <div style={{margin:'18px 0'}}>
+          <b id="viz-list-label">Visualisations disponibles :</b>
+          <ul ref={vizListRef} role="listbox" aria-labelledby="viz-list-label" tabIndex={0} style={{outline:'none'}}>
+            {visualizations.map((v, idx) => (
+              <li key={v.id} role="option" aria-selected={activeVisualization===v.id}>
+                {v.name} {v.component && (
+                  <button
+                    onClick={()=>{
+                      setActiveVisualization(v.id);
+                      setToast(`Visualisation « ${v.name} » activée`);
+                      setTimeout(()=>setToast(null), 2500);
+                    }}
+                    aria-label={`Afficher la visualisation ${v.name}`}
+                    tabIndex={0}
+                    onKeyDown={e=>{
+                      if(e.key==='Enter'||e.key===' '){
+                        setActiveVisualization(v.id);
+                        setToast(`Visualisation « ${v.name} » activée`);
+                        setTimeout(()=>setToast(null), 2500);
+                      }
+                    }}
+                    style={{outline:activeVisualization===v.id?'2px solid #00e0ff':'none'}}
+                  >Voir</button>
+                )}
+              </li>
+            ))}
+          </ul>
+          {activeVisualization && visualizations.find(v=>v.id===activeVisualization)?.component && (
+            <div style={{marginTop:12}}>
+              {React.createElement(visualizations.find(v=>v.id===activeVisualization)!.component)}
+            </div>
+          )}
+          {toast && (
+            <div role="status" aria-live="polite" style={{position:'fixed',bottom:24,right:24,background:'#232946',color:'#fff',padding:'12px 24px',borderRadius:12,boxShadow:'0 2px 12px #00e0ff44',zIndex:1000}}>{toast}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }; 

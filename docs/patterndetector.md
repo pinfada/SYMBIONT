@@ -39,3 +39,33 @@ const temp = PatternDetector.detectTemporalPattern(events, 1, 0.5);
 - Utiliser les tests unitaires fournis (`PatternDetector.test.ts`)
 - Vérifier la robustesse sur des séquences longues ou bruitées
 - Visualiser les motifs détectés pour valider leur pertinence 
+
+## Intégration avancée : propagation contextuelle et triggers collectifs
+
+Depuis la version 2024, PatternDetector est branché dans le background de l'extension pour :
+- Analyser en temps réel les séquences d'événements utilisateur (navigation, scroll, interactions)
+- Déclencher dynamiquement des invitations contextuelles selon les patterns détectés (burst, cycle, alternance, répétition)
+- Détecter et signaler le franchissement de seuils collectifs (propagation virale à vague)
+
+### Exemple d'intégration dans le background
+
+```typescript
+// Ajout d'un événement utilisateur
+this.events.push({ type: 'visit', timestamp: Date.now(), url });
+// Analyse contextuelle
+this.analyzeContextualPatterns();
+
+// Analyse contextuelle (extrait)
+const bursts = PatternDetector.detectBurst(this.events, 10000, 5);
+if (bursts.length > 0) triggerContextualInvitation('burst_activity');
+const cycles = PatternDetector.detectTemporalPattern(this.events, 60000, 0.15);
+if (cycles.length > 0) triggerContextualInvitation('temporal_cycle');
+// ...
+```
+
+### Conseils
+- Adapter les seuils et types de patterns selon le contexte métier
+- Utiliser la notification UI pour différencier les triggers collectifs
+- Persister les seuils déjà atteints pour éviter les doublons
+
+Voir aussi la section technique sur la propagation virale et les triggers collectifs. 

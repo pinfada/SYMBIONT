@@ -51,4 +51,35 @@ const adapter = new WebGLMessageAdapter(engine, messageBus);
 
 - Si les shaders ne se chargent pas : vérifier la règle Webpack `asset/source`
 - Si le contexte WebGL est perdu : appeler `engine.cleanup()`
-- Si le bus de messages ne fonctionne pas : vérifier l'import et la configuration de `MessageBus` et `MessageType` 
+- Si le bus de messages ne fonctionne pas : vérifier l'import et la configuration de `MessageBus` et `MessageType`
+
+## 8. Propagation virale, triggers contextuels et transmission collective
+
+### Transmission virale par invitation
+- Génération, validation et activation d'invitations via le background (stockage persistant IndexedDB)
+- Suivi de la lignée réelle (inviteur, invités, historique)
+- Rituel d'activation : l'organisme n'est créé qu'après consommation d'un code valide
+- Visualisation de la lignée dans l'UI (graph, badges, historique)
+
+### Propagation contextuelle avancée
+- Module PatternDetector branché dans le background
+- À chaque événement utilisateur (navigation, scroll, interaction), l'événement est ajouté à un historique local
+- Analyse contextuelle automatique :
+  - Détection de bursts d'activité (ex : 5 actions en <10s)
+  - Cycles temporels (actions régulières)
+  - Alternances navigation/scroll
+  - Répétitions d'actions
+- Si un pattern rare est détecté, une invitation contextuelle est générée avec le contexte correspondant
+- Notification UI immersive et différenciée selon le contexte
+
+### Trigger collectif (propagation virale à seuil)
+- À chaque analyse contextuelle, le background vérifie le nombre total d'invitations générées
+- Seuils définis : 10, 50, 100, 250, 500 (modifiables)
+- Quand un seuil est franchi pour la première fois, une invitation contextuelle spéciale est générée (`collective_threshold_X`)
+- Persistance des seuils déjà atteints (localStorage)
+- Notification UI spéciale (halo, icône, message)
+
+### Bonnes pratiques
+- Adapter les seuils et patterns selon la viralité souhaitée
+- Utiliser PatternDetector pour enrichir la détection de comportements collectifs ou individuels
+- Documenter chaque évolution dans la doc technique et métier 

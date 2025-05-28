@@ -14,8 +14,10 @@ import { ContextualInvitationNotification } from './components/ContextualInvitat
 import { SecretRitualInput } from './components/SecretRitualInput';
 import { SecretRitualNotification } from './components/SecretRitualNotification';
 import { GlobalNetworkGraph } from './components/GlobalNetworkGraph';
+import { OnboardingWizard } from './components/OnboardingWizard';
+import { AdminRitualsPanel } from './components/AdminRitualsPanel';
 
-type TabType = 'organism' | 'metrics' | 'settings' | 'rituals' | 'network';
+type TabType = 'organism' | 'metrics' | 'settings' | 'rituals' | 'network' | 'admin';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('organism');
@@ -23,9 +25,16 @@ export const App: React.FC = () => {
   const [activated, setActivated] = useState<boolean>(() => {
     return localStorage.getItem('symbiont_activated') === 'true';
   });
+  const [adminKey, setAdminKey] = useState(() => localStorage.getItem('symbiont_admin_key') || '');
 
   // Callback à passer à InvitationLanding pour activer l'organisme après succès
   const handleActivation = () => {
+    localStorage.setItem('symbiont_activated', 'true');
+    setActivated(true);
+  };
+
+  // Callback à passer à OnboardingWizard pour activer l'organisme après onboarding
+  const handleOnboardingFinish = () => {
     localStorage.setItem('symbiont_activated', 'true');
     setActivated(true);
   };
@@ -50,7 +59,7 @@ export const App: React.FC = () => {
   return (
     <MessageBusProvider>
       {!activated ? (
-        <InvitationLanding onActivated={handleActivation} />
+        <OnboardingWizard onFinish={handleOnboardingFinish} />
       ) : (
         <div className="app-container" data-theme={theme}>
           <header className="app-header">
@@ -89,7 +98,15 @@ export const App: React.FC = () => {
             >
               Réseau
             </button>
+            {adminKey && <button onClick={()=>setActiveTab('admin')}>Admin</button>}
           </nav>
+          
+          {!adminKey && (
+            <div style={{margin:18}}>
+              <input type="password" placeholder="Clé admin…" value={adminKey} onChange={e=>setAdminKey(e.target.value)} />
+              <button onClick={()=>{localStorage.setItem('symbiont_admin_key',adminKey);window.location.reload();}}>Valider</button>
+            </div>
+          )}
           
           <main className="app-content">
             {activeTab === 'organism' && <OrganismDashboard />}
@@ -110,6 +127,7 @@ export const App: React.FC = () => {
                 <GlobalNetworkGraph />
               </section>
             )}
+            {activeTab === 'admin' && adminKey && <AdminRitualsPanel />}
           </main>
           <MurmureNotification />
           <ContextualInvitationNotification />

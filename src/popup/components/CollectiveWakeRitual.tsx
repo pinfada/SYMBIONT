@@ -1,44 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useMessaging } from '../hooks/useMessaging';
-import { MessageType } from '../../shared/messaging/MessageBus';
-import { CollectiveWakeResult } from '../../shared/types/rituals';
-import { Murmur } from '../../shared/types/murmur';
+import React, { useState, useRef } from 'react';
+import { addRitual, getRituals } from '../../shared/ritualsApi';
+import { PluginManager, Plugin } from '../../core/PluginManager';
 
 export const CollectiveWakeRitual: React.FC<{ userId: string }> = ({ userId }) => {
-  const messaging = useMessaging();
   const [status, setStatus] = useState<'idle' | 'waiting' | 'done'>('idle');
   const [participants, setParticipants] = useState<string[]>([]);
   const [triggeredAt, setTriggeredAt] = useState<number | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
 
-  const handleWake = () => {
+  const handleWake = async () => {
     setStatus('waiting');
-    messaging.send(MessageType.COLLECTIVE_WAKE_REQUEST, { userId });
-    messaging.subscribe(MessageType.COLLECTIVE_WAKE_RESULT, (msg: { payload: CollectiveWakeResult }) => {
-      setParticipants(msg.payload.participants);
-      setTriggeredAt(msg.payload.triggeredAt);
+    const wakeId = 'wake-' + Date.now();
+    try {
+      await addRitual({ _id: wakeId, type: 'collective-wake', userId, timestamp: Date.now() });
+      // Récupérer tous les participants du jour
+      const rituals = await getRituals();
+      const today = new Date().toISOString().slice(0, 10);
+      const wakes = rituals.filter(r => r.type === 'collective-wake' && new Date(r.timestamp).toISOString().slice(0, 10) === today);
+      setParticipants(wakes.map(w => w.userId));
+      setTriggeredAt(Date.now());
       setStatus('done');
-    });
-  };
-
-  useEffect(() => {
-    if (status === 'done') {
-      // Murmure spécial après réveil collectif
-      const murmure: Murmur = {
-        text: 'Un écho vibrant parcourt tous les symbionts. Réveil collectif accompli !',
-        timestamp: Date.now(),
-        context: 'collective-wake',
-        pattern: 'collective',
-      };
-      messaging.send(MessageType.MURMUR, murmure);
-      // Effet visuel (halo)
-      if (sectionRef.current) {
-        sectionRef.current.classList.add('halo-effect');
-        setTimeout(() => sectionRef.current && sectionRef.current.classList.remove('halo-effect'), 2000);
-      }
+    } catch {
+      setStatus('idle');
     }
-    // eslint-disable-next-line
-  }, [status]);
+  };
 
   return (
     <div className="collective-wake-ritual" ref={sectionRef}>
@@ -46,20 +31,20 @@ export const CollectiveWakeRitual: React.FC<{ userId: string }> = ({ userId }) =
         <>
           <h3>Rituel de réveil collectif</h3>
           <p>Participez à un réveil synchronisé avec d'autres symbionts.</p>
-          <button onClick={handleWake}>Participer</button>
+          <button onClick={handleWake} aria-label="Participer au réveil collectif">Participer</button>
         </>
       )}
       {status === 'waiting' && (
         <div>
           <p>En attente d'autres participants…</p>
-          <div className="murmur-notification">Un murmure circule dans la communauté…</div>
+          <div className="murmur-notification" role="status" aria-live="polite">Un murmure circule dans la communauté…</div>
         </div>
       )}
       {status === 'done' && (
         <div>
           <h4>Réveil collectif !</h4>
           <p>{participants.length} symbionts se sont éveillés ensemble.</p>
-          <div className="murmur-notification">Un écho vibrant parcourt tous les organismes…</div>
+          <div className="murmur-notification" role="status" aria-live="polite">Un écho vibrant parcourt tous les organismes…</div>
           <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
             {triggeredAt && new Date(triggeredAt).toLocaleTimeString()}
           </div>
@@ -67,4 +52,14 @@ export const CollectiveWakeRitual: React.FC<{ userId: string }> = ({ userId }) =
       )}
     </div>
   );
-}; 
+};
+
+const CollectiveWakeRitualPlugin: Plugin = {
+  id: 'collective-wake',
+  type: 'ritual',
+  name: 'Réveil collectif',
+  description: 'Synchronisation de plusieurs symbionts pour un rituel collectif.',
+  component: CollectiveWakeRitual
+};
+PluginManager.register(CollectiveWakeRitualPlugin);
+export default CollectiveWakeRitualPlugin; 
