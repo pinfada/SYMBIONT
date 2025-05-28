@@ -67,3 +67,5 @@ export const MetricsPanel: React.FC = () => {
     </div>
   );
 };
+
+export default MetricsPanel;

@@ -39,6 +39,8 @@ class ContentScript {
     }
   };
 
+  private latestLCP: number = 0;
+
   private constructor() {
     console.log('🔍 SYMBIONT Content Script initializing...');
     
@@ -130,6 +132,7 @@ class ContentScript {
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
         if (entry.entryType === 'largest-contentful-paint') {
+          this.latestLCP = entry.startTime;
           this.handleLCP(entry as PerformanceEntry);
         }
       }
@@ -238,6 +241,7 @@ class ContentScript {
     this.finalizePage();
     
     // Réinitialisation pour la nouvelle page
+    this.latestLCP = 0;
     this.pageData = {
       startTime: Date.now(),
       url: change.url,
@@ -311,6 +315,9 @@ class ContentScript {
       performance: this.collectPerformanceMetrics()
     };
     
+    // Réinitialise latestLCP pour la prochaine page
+    this.latestLCP = 0;
+    
     // Envoi au background
     this.messageBus.sendToBackground({
       type: 'PAGE_SESSION_COMPLETE',
@@ -327,7 +334,7 @@ class ContentScript {
       domContentLoaded: navigation ? navigation.domContentLoadedEventEnd - navigation.startTime : 0,
       firstPaint: this.getFirstPaint(),
       firstContentfulPaint: this.getFirstContentfulPaint(),
-      largestContentfulPaint: this.getLargestContentfulPaint(),
+      largestContentfulPaint: this.latestLCP,
       resourceCount: performance.getEntriesByType('resource').length
     };
   }
@@ -342,15 +349,6 @@ class ContentScript {
     const paintEntries = performance.getEntriesByType('paint');
     const fcp = paintEntries.find(entry => entry.name === 'first-contentful-paint');
     return fcp ? fcp.startTime : 0;
-  }
-
-  private getLargestContentfulPaint(): number {
-    const entries = performance.getEntriesByType('largest-contentful-paint');
-    if (entries.length > 0) {
-      const lcp = entries[entries.length - 1];
-      return lcp.startTime;
-    }
-    return 0;
   }
 
   private handleLCP(entry: PerformanceEntry): void {

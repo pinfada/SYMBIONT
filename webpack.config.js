@@ -26,7 +26,8 @@ module.exports = {
       '@generative': path.resolve(__dirname, 'src/generative'),
       '@behavioral': path.resolve(__dirname, 'src/behavioral'),
       '@types': path.resolve(__dirname, 'src/types'),
-      '@shaders': path.resolve(__dirname, 'src/shaders')
+      '@shaders': path.resolve(__dirname, 'src/shaders'),
+      '@shared': path.resolve(__dirname, 'src/shared')
     }
   },
   module: {

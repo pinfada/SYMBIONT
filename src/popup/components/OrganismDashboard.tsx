@@ -109,3 +109,5 @@ export const OrganismDashboard: React.FC = () => {
     </div>
   );
 };
+
+export default OrganismDashboard;
