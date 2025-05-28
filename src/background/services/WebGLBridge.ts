@@ -1,7 +1,8 @@
 // src/background/services/WebGLBridge.ts
 // Interface avec moteur WebGL
 import { MessageBus } from '../../core/messaging';
-import { Message, MessageType, OrganismMutation, OrganismState } from '../../types';
+import { Message, MessageType } from '../../shared/messaging/MessageBus';
+import { OrganismMutation, OrganismState } from '../../shared/types/organism';
 
 export class WebGLBridge {
   private messageBus: MessageBus;
@@ -17,11 +18,13 @@ export class WebGLBridge {
   
   private setupMessageHandlers(): void {
     // Écouter les réponses du moteur WebGL
-    this.unsubscribeHandler = this.messageBus.on(MessageType.ORGANISM_UPDATE, (message: Message) => {
+    const handler = (message: Message) => {
       if (message.payload?.state) {
         this.updateState(message.payload.state);
       }
-    });
+    };
+    this.messageBus.on(MessageType.ORGANISM_UPDATE, handler);
+    this.unsubscribeHandler = () => this.messageBus.off(MessageType.ORGANISM_UPDATE, handler);
   }
   
   public startRendering(dna: string): void {
@@ -42,7 +45,7 @@ export class WebGLBridge {
     this.renderInterval = window.setInterval(() => {
       if (this.currentState && this.isRendering) {
         this.messageBus.send({
-          type: MessageType.ORGANISM_RENDER,
+          type: MessageType.ORGANISM_STATE_CHANGE,
           payload: { state: this.currentState }
         });
       }

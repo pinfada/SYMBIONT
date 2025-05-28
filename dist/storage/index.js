@@ -15,4 +15,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 // Squelette minimal pour index de storage
-__exportStar(require("./SymbiontStorage"), exports);
+__exportStar(require("../core/storage/SymbiontStorage"), exports);

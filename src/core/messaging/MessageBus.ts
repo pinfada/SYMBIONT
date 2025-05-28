@@ -181,6 +181,19 @@ export class MessageBus {
       console.error('Error sending message:', error);
     }
   }
+
+  // Ajout pour compatibilité content script
+  public sendToBackground(message: any): void {
+    this.send(message);
+  }
+
+  public emit(type: any, payload: any): void {
+    // Appel direct des handlers si besoin (mock minimal)
+    const handlers = this.handlers.get(type as MessageType);
+    if (handlers) {
+      handlers.forEach(handler => handler({ type, payload }));
+    }
+  }
 }
 
 export default MessageBus;

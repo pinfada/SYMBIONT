@@ -4,30 +4,31 @@
 // Pour les services ou modules non-React, utilisez directement la classe MessageBus.
 import { useEffect, useRef } from 'react';
 import { useMessageBus } from './MessageBusContext';
+import { MessageType, Message } from '../../shared/messaging/MessageBus';
 
 export const useMessaging = () => {
   const messageBus = useMessageBus();
   const handlersRef = useRef<Map<string, Function>>(new Map());
   
-  const subscribe = (type: string, handler: Function) => {
+  const subscribe = (type: MessageType, handler: (message: Message) => void) => {
     messageBus.on(type, handler);
     handlersRef.current.set(type, handler);
   };
   
-  const unsubscribe = (type: string, handler: Function) => {
+  const unsubscribe = (type: MessageType, handler: (message: Message) => void) => {
     messageBus.off(type, handler);
     handlersRef.current.delete(type);
   };
   
-  const send = (type: string, payload: any) => {
-    messageBus.send(type, payload);
+  const send = (type: MessageType, payload: any) => {
+    messageBus.send({ type, payload });
   };
   
   // Cleanup all handlers on unmount
   useEffect(() => {
     return () => {
       handlersRef.current.forEach((handler, type) => {
-        messageBus.off(type, handler);
+        messageBus.off(type as MessageType, handler as (message: Message) => void);
       });
       handlersRef.current.clear();
     };

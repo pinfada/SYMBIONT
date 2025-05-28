@@ -2,7 +2,7 @@
 // Point d'entrée Content Script
 // src/content/index.ts
 import { MessageBus } from '../core/messaging/MessageBus';
-import { NavigationObserver } from './observers/NavigationObserver';
+import { NavigationObserver } from '@shared/observers/NavigationObserver';
 import { InteractionCollector } from './collectors/InteractionCollector';
 import { DOMAnalyzer } from './observers/DOMAnalyzer';
 import { ScrollTracker } from './observers/ScrollTracker';
@@ -42,7 +42,7 @@ class ContentScript {
   private constructor() {
     console.log('🔍 SYMBIONT Content Script initializing...');
     
-    this.messageBus = MessageBus.getInstance('content');
+    this.messageBus = new MessageBus('content');
     this.navigationObserver = new NavigationObserver();
     this.interactionCollector = new InteractionCollector();
     this.domAnalyzer = new DOMAnalyzer();
@@ -73,7 +73,7 @@ class ContentScript {
 
   private setupObservers(): void {
     // Observation de la navigation SPA
-    this.navigationObserver.observe((change) => {
+    (this.navigationObserver as any).observe((change: NavigationChange) => {
       this.handleNavigationChange(change);
     });
     
@@ -365,7 +365,7 @@ class ContentScript {
     this.finalizePage();
     
     // Nettoyage des observateurs
-    this.navigationObserver.disconnect();
+    (this.navigationObserver as any).disconnect();
     this.interactionCollector.stop();
     this.scrollTracker.stop();
     this.attentionMonitor.stop();
@@ -397,7 +397,7 @@ interface AttentionState {
   duration?: number;
 }
 
-interface NavigationChange {
+export interface NavigationChange {
   type: 'pushstate' | 'replacestate' | 'popstate' | 'hashchange';
   url: string;
   timestamp: number;
@@ -412,7 +412,7 @@ interface PerformanceMetrics {
   resourceCount: number;
 }
 
-type ScrollPattern = 'fast_scan' | 'deep_read' | 'search' | 'skim' | 'unknown';
+export type ScrollPattern = 'fast_scan' | 'deep_read' | 'search' | 'skim' | 'unknown';
 
 // Point d'entrée avec protection contre les injections multiples
 if (!window.__SYMBIONT_CONTENT_SCRIPT_LOADED__) {

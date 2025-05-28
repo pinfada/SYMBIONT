@@ -2,6 +2,25 @@ import { SynapticRouter } from './SynapticRouter';
 import { OrganismCore } from './OrganismCore';
 import { NavigationCortex } from './NavigationCortex';
 
+// Types minimaux pour lever les erreurs
+interface NeuralNode {
+  id: string;
+  type: 'input' | 'hidden' | 'output';
+  activation: number;
+  bias: number;
+}
+
+interface NeuralConnection {
+  from: string;
+  to: string;
+  weight: number;
+  active: boolean;
+}
+
+interface OrganismJSON {
+  mesh: any;
+}
+
 export class NeuralMesh {
   private nodes: Map<string, NeuralNode> = new Map();
   private connections: Map<string, NeuralConnection[]> = new Map();

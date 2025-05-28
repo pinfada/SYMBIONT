@@ -1,3 +1,6 @@
+interface OrganismJSON {
+    mesh: any;
+}
 export declare class NeuralMesh {
     private nodes;
     private connections;
@@ -65,3 +68,4 @@ export declare class NeuralMesh {
      */
     getMemoryUsage(): Promise<number>;
 }
+export {};

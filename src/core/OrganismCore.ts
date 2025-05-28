@@ -1,5 +1,31 @@
-import { OrganismState, OrganismTraits } from "@/shared/types";
+import { OrganismState, OrganismTraits } from '../shared/types/organism';
 import { NeuralMesh } from "./NeuralMesh";
+
+// Types manquants (à placer ici ou à importer si déjà définis ailleurs)
+type PerformanceMetrics = {
+  cpu: number;
+  memory: number;
+  neuralActivity: number;
+  connectionStrength: number;
+};
+
+type OrganismJSON = {
+  mesh: any;
+  traits: OrganismTraits;
+  energy: number;
+  health: number;
+  dna: string;
+  timestamp: number;
+};
+
+type ShaderParameters = {
+  energy: number;
+  health: number;
+  neuralActivity: number;
+  creativity: number;
+  focus: number;
+  time: number;
+};
 
 export class OrganismCore {
   private mesh: NeuralMesh;
@@ -152,7 +178,13 @@ export class OrganismCore {
    * Définit de nouveaux traits
    */
   public setTraits(traits: Partial<OrganismTraits>): void {
-    this.traits = { ...this.traits, ...traits };
+    // On fusionne en s'assurant que chaque champ est bien un nombre
+    Object.keys(traits).forEach(key => {
+      const value = traits[key as keyof OrganismTraits];
+      if (typeof value === 'number' && !isNaN(value)) {
+        this.traits[key as keyof OrganismTraits] = value;
+      }
+    });
   }
 
   /**
@@ -160,12 +192,16 @@ export class OrganismCore {
    */
   public getState(): OrganismState {
     return {
-      traits: this.getTraits(),
-      energy: this.energy,
+      id: 'core',
+      generation: 1,
       health: this.health,
-      lastMutation: this.lastMutation,
+      energy: this.energy,
+      traits: this.getTraits(),
       visualDNA: this.dna,
-      timeStamp: Date.now()
+      lastMutation: this.lastMutation,
+      mutations: [],
+      createdAt: Date.now(),
+      dna: this.dna,
     };
   }
 

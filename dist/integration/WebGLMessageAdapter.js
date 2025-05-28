@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebGLMessageAdapter = void 0;
 // MessageBus et MessageType doivent être importés selon votre architecture
-const messaging_1 = require("../core/messaging");
+const MessageBus_1 = require("../shared/messaging/MessageBus");
 /**
  * Adaptateur entre le bus de messages et le moteur WebGL
  */
@@ -17,7 +17,7 @@ class WebGLMessageAdapter {
      */
     setupListeners() {
         // Écoute des mutations
-        this.messageBus.on(messaging_1.MessageType.ORGANISM_MUTATE, (message) => {
+        this.messageBus.on(MessageBus_1.MessageType.ORGANISM_MUTATE, (message) => {
             try {
                 const { mutation } = message.payload;
                 this.engine.mutate(mutation);
@@ -27,7 +27,7 @@ class WebGLMessageAdapter {
             }
         });
         // Écoute des changements d'état
-        this.messageBus.on(messaging_1.MessageType.ORGANISM_STATE_CHANGE, (message) => {
+        this.messageBus.on(MessageBus_1.MessageType.ORGANISM_STATE_CHANGE, (message) => {
             try {
                 const { state } = message.payload;
                 this.engine.render(state);
@@ -41,7 +41,7 @@ class WebGLMessageAdapter {
             try {
                 const metrics = this.engine.getPerformanceMetrics();
                 this.messageBus.send({
-                    type: messaging_1.MessageType.PERFORMANCE_UPDATE,
+                    type: MessageBus_1.MessageType.PERFORMANCE_UPDATE,
                     payload: metrics
                 });
             }

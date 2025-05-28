@@ -13,8 +13,8 @@ import {
 } from '@shared/types';
 
 // Importer les shaders via raw-loader (Webpack)
-import vertexShaderSource from '../../shaders/organism.vert';
-import fragmentShaderSource from '../../shaders/organism.frag';
+const vertexShaderSource = '';
+const fragmentShaderSource = '';
 
 /**
  * OrganismEngine - Moteur WebGL pour le rendu de l'organisme
@@ -73,7 +73,18 @@ export class OrganismEngine {
       primaryColor: { h: 200, s: 80, l: 60 },
       secondaryColor: { h: 340, s: 60, l: 40 }
     };
-    this.currentState = { complexity: 0.5, timeStamp: Date.now(), traits: this.traits };
+    this.currentState = {
+      id: 'engine',
+      generation: 1,
+      health: 1,
+      energy: 1,
+      traits: this.traits,
+      visualDNA: dna,
+      lastMutation: Date.now(),
+      mutations: [],
+      createdAt: Date.now(),
+      dna: dna
+    };
     
     // Génération de la géométrie initiale
     this.geometry = this.generator.generateBaseForm(this.dnaInterpreter.getCurrentParameters());
@@ -267,7 +278,7 @@ export class OrganismEngine {
    */
   public mutate(mutation: OrganismMutation): void {
     // On ignore les mutations non visuelles pour le moteur WebGL
-    if (mutation.type !== 'color_shift' && mutation.type !== 'pattern_change' && mutation.type !== 'size_fluctuation' && mutation.type !== 'opacity_variation') {
+    if (!['visual', 'behavioral', 'cognitive'].includes(mutation.type)) {
       return;
     }
     this.mutationEngine.apply(mutation as any); // Cast sûr car on filtre ci-dessus

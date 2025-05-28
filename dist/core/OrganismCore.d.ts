@@ -1,4 +1,26 @@
-import { OrganismState, OrganismTraits } from "@/shared/types";
+import { OrganismState, OrganismTraits } from '../shared/types/organism';
+type PerformanceMetrics = {
+    cpu: number;
+    memory: number;
+    neuralActivity: number;
+    connectionStrength: number;
+};
+type OrganismJSON = {
+    mesh: any;
+    traits: OrganismTraits;
+    energy: number;
+    health: number;
+    dna: string;
+    timestamp: number;
+};
+type ShaderParameters = {
+    energy: number;
+    health: number;
+    neuralActivity: number;
+    creativity: number;
+    focus: number;
+    time: number;
+};
 export declare class OrganismCore {
     private mesh;
     private dna;
@@ -74,3 +96,4 @@ export declare class OrganismCore {
      */
     hibernate(): Promise<void>;
 }
+export {};

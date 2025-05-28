@@ -32,10 +32,11 @@ class PerformanceMonitor {
         const fps = this.samples.length > 0
             ? 1000 / (this.samples.reduce((a, b) => a + b, 0) / this.samples.length)
             : 0;
+        const memory = performance.memory;
         return {
             fps: Math.round(fps),
             gpuLoad: this.getCurrentLoad(),
-            memoryUsage: performance.memory ? performance.memory.usedJSHeapSize / 1048576 : 0,
+            memoryUsage: memory ? memory.usedJSHeapSize / 1048576 : 0,
             drawCalls: 1 // À implémenter avec compteur réel
         };
     }

@@ -1,5 +1,5 @@
 import { OrganismEngine } from '../generative/OrganismEngine';
-import { MessageBus } from '../core/messaging';
+import { MessageBus } from '../shared/messaging/MessageBus';
 /**
  * Adaptateur entre le bus de messages et le moteur WebGL
  */

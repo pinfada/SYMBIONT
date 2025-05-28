@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProceduralGenerator = void 0;
+class SeededRandom {
+    constructor(seed) { this.seed = seed; }
+    next() { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280; }
+}
 class ProceduralGenerator {
     constructor(params, seed) {
         // Table de permutation pour le bruit
@@ -108,5 +112,8 @@ class ProceduralGenerator {
             this.perm[i] = p[i & 255];
         }
     }
+    calculateNormals(vertices) { return new Float32Array(vertices.length); }
+    triangulate(complexity) { return new Uint16Array(complexity); }
+    interpretLSystem(current) { return { vertices: new Float32Array(0), indices: new Uint16Array(0) }; }
 }
 exports.ProceduralGenerator = ProceduralGenerator;

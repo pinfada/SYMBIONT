@@ -120,19 +120,29 @@ class OrganismCore {
      * Définit de nouveaux traits
      */
     setTraits(traits) {
-        this.traits = { ...this.traits, ...traits };
+        // On fusionne en s'assurant que chaque champ est bien un nombre
+        Object.keys(traits).forEach(key => {
+            const value = traits[key];
+            if (typeof value === 'number' && !isNaN(value)) {
+                this.traits[key] = value;
+            }
+        });
     }
     /**
      * Récupère l'état global de l'organisme
      */
     getState() {
         return {
-            traits: this.getTraits(),
-            energy: this.energy,
+            id: 'core',
+            generation: 1,
             health: this.health,
-            lastMutation: this.lastMutation,
+            energy: this.energy,
+            traits: this.getTraits(),
             visualDNA: this.dna,
-            timeStamp: Date.now()
+            lastMutation: this.lastMutation,
+            mutations: [],
+            createdAt: Date.now(),
+            dna: this.dna,
         };
     }
     /**

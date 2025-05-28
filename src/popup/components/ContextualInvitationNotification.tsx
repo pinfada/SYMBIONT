@@ -14,7 +14,7 @@ export const ContextualInvitationNotification: React.FC = () => {
   const [code, setCode] = useState<string>('');
 
   useEffect(() => {
-    messaging.subscribe(MessageType.CONTEXTUAL_INVITATION, (msg: { payload: ContextualInvitation }) => {
+    messaging.subscribe(MessageType.CONTEXTUAL_INVITATION, (msg: any) => {
       setCode(msg.payload.invitation.code);
       setContext(msg.payload.context);
       setVisible(true);

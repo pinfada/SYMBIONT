@@ -3,26 +3,45 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BackgroundService = void 0;
 // src/background/index.ts
 // Point d'entrée Service Worker (Neural Core)
-const MessageBus_1 = require("@shared/messaging/MessageBus");
-const SymbiontStorage_1 = require("@storage/SymbiontStorage");
+const MessageBus_1 = require("../shared/messaging/MessageBus");
+const SymbiontStorage_1 = require("../core/storage/SymbiontStorage");
 const NavigationObserver_1 = require("@shared/observers/NavigationObserver");
+const InvitationService_1 = require("./services/InvitationService");
+const MurmureService_1 = require("./services/MurmureService");
+const PatternDetector_1 = require("../core/PatternDetector");
 class BackgroundService {
     constructor() {
         this.organism = null;
+        this.activated = false;
+        this.events = [];
+        this.collectiveThresholds = [10, 50, 100, 250, 500];
+        this.reachedThresholds = [];
         this.messageBus = new MessageBus_1.MessageBus('background');
         this.storage = new SymbiontStorage_1.SymbiontStorage();
         this.navigationObserver = new NavigationObserver_1.NavigationObserver(this.messageBus);
+        this.invitationService = new InvitationService_1.InvitationService(this.storage);
+        this.murmureService = new MurmureService_1.MurmureService();
+        // Récupère les seuils déjà atteints (persistance locale)
+        const saved = localStorage.getItem('symbiont_collective_thresholds');
+        this.reachedThresholds = saved ? JSON.parse(saved) : [];
         this.initialize();
     }
     async initialize() {
         try {
             // Initialize storage
             await this.storage.initialize();
-            // Load or create organism
-            this.organism = await this.storage.getOrganism();
-            if (!this.organism) {
-                this.organism = this.createNewOrganism();
-                await this.storage.saveOrganism(this.organism);
+            // Vérifier l'état d'activation (stocké en localStorage ou IndexedDB si besoin)
+            this.activated = localStorage.getItem('symbiont_activated') === 'true';
+            // Load or create organism UNIQUEMENT si activé
+            if (this.activated) {
+                this.organism = await this.storage.getOrganism();
+                if (!this.organism) {
+                    this.organism = this.createNewOrganism();
+                    await this.storage.saveOrganism(this.organism);
+                }
+            }
+            else {
+                this.organism = null;
             }
             // Setup message handlers
             this.setupMessageHandlers();
@@ -80,8 +99,11 @@ class BackgroundService {
             behavior.visitCount++;
             behavior.lastVisit = Date.now();
             await this.storage.saveBehavior(behavior);
+            // Enregistre l'événement dans l'historique
+            this.events.push({ type: 'visit', timestamp: Date.now(), url });
             // Update organism based on behavior
             this.updateOrganismTraits(url, title);
+            this.analyzeContextualPatterns();
         });
         // Handle scroll events
         this.messageBus.on(MessageBus_1.MessageType.SCROLL_EVENT, async (message) => {
@@ -90,6 +112,191 @@ class BackgroundService {
             if (behavior) {
                 behavior.scrollDepth = Math.max(behavior.scrollDepth, scrollDepth);
                 await this.storage.saveBehavior(behavior);
+            }
+            // Enregistre l'événement dans l'historique
+            this.events.push({ type: 'scroll', timestamp: Date.now(), url });
+            this.analyzeContextualPatterns();
+        });
+        // Handler pour interactions utilisateur (à brancher si non existant)
+        this.messageBus.on(MessageBus_1.MessageType.INTERACTION_DETECTED, (message) => {
+            const { type, timestamp, target, data } = message.payload;
+            this.events.push({ type, timestamp, target, ...data });
+            this.analyzeContextualPatterns();
+        });
+        // Invitation: génération
+        this.messageBus.on(MessageBus_1.MessageType.GENERATE_INVITATION, async (message) => {
+            const { donorId } = message.payload;
+            const invitation = await this.invitationService.generateInvitation(donorId);
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.INVITATION_GENERATED,
+                payload: invitation
+            });
+        });
+        // Invitation: validation/consommation
+        this.messageBus.on(MessageBus_1.MessageType.CONSUME_INVITATION, async (message) => {
+            const { code, receiverId } = message.payload;
+            const invitation = await this.invitationService.consumeInvitation(code, receiverId);
+            if (invitation) {
+                this.activated = true;
+                localStorage.setItem('symbiont_activated', 'true');
+                // Créer l'organisme à l'activation
+                if (!this.organism) {
+                    this.organism = this.createNewOrganism();
+                    await this.storage.saveOrganism(this.organism);
+                }
+            }
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.INVITATION_CONSUMED,
+                payload: invitation
+            });
+        });
+        // Invitation: vérification
+        this.messageBus.on(MessageBus_1.MessageType.CHECK_INVITATION, async (message) => {
+            const { code } = message.payload;
+            const valid = await this.invitationService.isValid(code);
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.INVITATION_CHECKED,
+                payload: { code, valid }
+            });
+        });
+        // --- Handlers pour la lignée et l'historique d'invitation ---
+        this.messageBus.on(MessageBus_1.MessageType.GET_INVITER, async (message) => {
+            const { userId } = message.payload;
+            // Recherche de l'invitation où receiverId === userId
+            const all = await this.invitationService.getAllInvitations();
+            const inviter = all.find(inv => inv.receiverId === userId);
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.INVITER_RESULT,
+                payload: inviter || null
+            });
+        });
+        this.messageBus.on(MessageBus_1.MessageType.GET_INVITEES, async (message) => {
+            const { userId } = message.payload;
+            // Recherche des invitations où donorId === userId
+            const all = await this.invitationService.getAllInvitations();
+            const invitees = all.filter(inv => inv.donorId === userId);
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.INVITEES_RESULT,
+                payload: invitees
+            });
+        });
+        this.messageBus.on(MessageBus_1.MessageType.GET_INVITATION_HISTORY, async (message) => {
+            const { userId } = message.payload;
+            // Historique = invitations reçues ou envoyées
+            const all = await this.invitationService.getAllInvitations();
+            const history = [
+                ...all.filter(inv => inv.receiverId === userId).map(inv => ({ ...inv, type: 'reçue' })),
+                ...all.filter(inv => inv.donorId === userId).map(inv => ({ ...inv, type: 'envoyée' }))
+            ];
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.INVITATION_HISTORY_RESULT,
+                payload: history
+            });
+        });
+        // --- Rituel de mutation partagée ---
+        const sharedMutationSessions = new Map();
+        this.messageBus.on(MessageBus_1.MessageType.REQUEST_SHARED_MUTATION, (message) => {
+            const { initiatorId, traits } = message.payload;
+            const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+            const expiresAt = Date.now() + 1000 * 60 * 5; // 5 min
+            sharedMutationSessions.set(code, { initiatorId, traits, expiresAt });
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.SHARED_MUTATION_CODE,
+                payload: { code, initiatorId, expiresAt }
+            });
+        });
+        this.messageBus.on(MessageBus_1.MessageType.ACCEPT_SHARED_MUTATION, (message) => {
+            const { code, receiverId, traits } = message.payload;
+            const session = sharedMutationSessions.get(code);
+            if (!session || session.expiresAt < Date.now()) {
+                this.messageBus.send({
+                    type: MessageBus_1.MessageType.SHARED_MUTATION_RESULT,
+                    payload: { error: 'Code expiré ou invalide.' }
+                });
+                return;
+            }
+            // Fusionner les traits (moyenne)
+            const mergedTraits = { ...session.traits };
+            for (const key of Object.keys(traits)) {
+                mergedTraits[key] = (mergedTraits[key] ?? 0 + traits[key] ?? 0) / 2;
+            }
+            sharedMutationSessions.delete(code);
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.SHARED_MUTATION_RESULT,
+                payload: {
+                    initiatorId: session.initiatorId,
+                    receiverId,
+                    mergedTraits,
+                    timestamp: Date.now()
+                }
+            });
+        });
+        // --- Rituel de réveil collectif (simple, local) ---
+        let collectiveWakeParticipants = new Set();
+        let collectiveWakeTimeout = null;
+        this.messageBus.on(MessageBus_1.MessageType.COLLECTIVE_WAKE_REQUEST, (message) => {
+            const { userId } = message.payload;
+            collectiveWakeParticipants.add(userId);
+            if (!collectiveWakeTimeout) {
+                collectiveWakeTimeout = setTimeout(() => {
+                    this.messageBus.send({
+                        type: MessageBus_1.MessageType.COLLECTIVE_WAKE_RESULT,
+                        payload: {
+                            participants: Array.from(collectiveWakeParticipants),
+                            triggeredAt: Date.now()
+                        }
+                    });
+                    collectiveWakeParticipants.clear();
+                    collectiveWakeTimeout = null;
+                }, 10000); // 10 secondes pour simuler un réveil collectif
+            }
+        });
+        // --- Transmission contextuelle ---
+        const triggerContextualInvitation = (context) => {
+            const userId = localStorage.getItem('symbiont_user_id') || 'unknown';
+            const invitation = this.invitationService.generateInvitation(userId);
+            this.messageBus.send({
+                type: MessageBus_1.MessageType.CONTEXTUAL_INVITATION,
+                payload: { invitation, context }
+            });
+        };
+        // Détection mutation rare (ex : cognitive)
+        const originalGenerateMutation = this.generateMutation.bind(this);
+        this.generateMutation = () => {
+            const mutation = originalGenerateMutation();
+            if (mutation.type === 'cognitive') {
+                triggerContextualInvitation('mutation_cognitive');
+            }
+            return mutation;
+        };
+        // Détection seuil de traits (ex : curiosité > 90)
+        const originalUpdateOrganismTraits = this.updateOrganismTraits.bind(this);
+        this.updateOrganismTraits = async (url, title) => {
+            await originalUpdateOrganismTraits(url, title);
+            if (this.organism && this.organism.traits.curiosity > 90) {
+                triggerContextualInvitation('curiosity_threshold');
+            }
+        };
+        // Détection longue inactivité (ex : 30 min sans interaction)
+        let lastActivity = Date.now();
+        chrome.idle.onStateChanged.addListener((state) => {
+            if (state === 'idle') {
+                lastActivity = Date.now();
+            }
+            else if (state === 'active' && Date.now() - lastActivity > 1000 * 60 * 30) {
+                triggerContextualInvitation('long_inactivity');
+            }
+        });
+        // --- Rituels secrets ---
+        const SECRET_CODES = ['SYMBIOSE', 'AWAKEN', 'ECHO'];
+        this.messageBus.on(MessageBus_1.MessageType.SECRET_CODE_ENTERED, (message) => {
+            const { code } = message.payload;
+            if (SECRET_CODES.includes(code.toUpperCase())) {
+                // Déclencher un effet spécial (ex : mutation unique)
+                this.messageBus.send({
+                    type: MessageBus_1.MessageType.SECRET_RITUAL_TRIGGERED,
+                    payload: { code, effect: 'mutation_unique', timestamp: Date.now() }
+                });
             }
         });
     }
@@ -123,14 +330,28 @@ class BackgroundService {
         // Normalize traits (keep between 0-100)
         if (!this.organism)
             return;
-        Object.keys(this.organism.traits).forEach(trait => {
-            this.organism.traits[trait] =
-                Math.max(0, Math.min(100, this.organism.traits[trait]));
+        const traits = this.organism.traits;
+        if (!traits)
+            return;
+        Object.keys(traits).forEach(trait => {
+            traits[trait] =
+                Math.max(0, Math.min(100, traits[trait]));
         });
         // Check for mutations
         await this.checkForMutations();
         // Save updated organism
         await this.storage.saveOrganism(this.organism);
+        // Détection de pattern simple
+        let pattern = 'default';
+        // Exemples de détection naïve (à affiner)
+        if (await this.isLoop(url))
+            pattern = 'loop';
+        else if (await this.isIdle())
+            pattern = 'idle';
+        else if (await this.isExploration(url))
+            pattern = 'exploration';
+        else if (await this.isRoutine(url))
+            pattern = 'routine';
         // Broadcast update
         this.messageBus.send({
             type: MessageBus_1.MessageType.ORGANISM_UPDATE,
@@ -138,6 +359,12 @@ class BackgroundService {
                 state: this.organism,
                 mutations: await this.storage.getRecentMutations(5),
             },
+        });
+        // Générer et envoyer un murmure contextuel
+        const murmure = this.murmureService.generateMurmur(pattern);
+        this.messageBus.send({
+            type: MessageBus_1.MessageType.MURMUR,
+            payload: { text: murmure, pattern, timestamp: Date.now() }
         });
     }
     async hasVisitedDomain(domain) {
@@ -195,8 +422,13 @@ class BackgroundService {
                 break;
             case 'cognitive':
                 // Affect multiple traits slightly
-                Object.keys(this.organism.traits).forEach(trait => {
-                    this.organism.traits[trait] +=
+                if (!this.organism)
+                    return;
+                const traits = this.organism.traits;
+                if (!traits)
+                    return;
+                Object.keys(traits).forEach(trait => {
+                    traits[trait] +=
                         (Math.random() - 0.5) * mutation.magnitude * 5;
                 });
                 break;
@@ -233,6 +465,90 @@ class BackgroundService {
                 });
             }
         }, 1000 * 30); // Every 30 seconds
+    }
+    // Détection naïve de patterns (à améliorer)
+    async isLoop(url) {
+        // Si l'utilisateur visite la même URL plus de 3 fois en 10 minutes
+        const behavior = await this.storage.getBehavior(url);
+        return !!behavior && behavior.visitCount >= 3;
+    }
+    async isIdle() {
+        // Si aucune interaction depuis plus de 10 minutes (exemple)
+        // À implémenter selon la collecte d'activité réelle
+        return false;
+    }
+    async isExploration(url) {
+        // Si le domaine est nouveau ou rarement visité
+        const behavior = await this.storage.getBehavior(url);
+        return !!behavior && behavior.visitCount <= 1;
+    }
+    async isRoutine(url) {
+        // Si le site est visité tous les jours (exemple naïf)
+        const behavior = await this.storage.getBehavior(url);
+        if (!behavior)
+            return false;
+        const now = Date.now();
+        return (now - behavior.lastVisit) < 1000 * 60 * 60 * 24 * 2; // Visité il y a moins de 2 jours
+    }
+    /**
+     * Analyse les patterns contextuels dans l'historique d'événements et déclenche une invitation si nécessaire
+     */
+    async analyzeContextualPatterns() {
+        const now = Date.now();
+        // On ne garde que les événements des 30 dernières minutes
+        this.events = this.events.filter(e => now - e.timestamp < 1000 * 60 * 30);
+        // Détection de burst d'activité (ex: 5 actions en <10s)
+        const bursts = PatternDetector_1.PatternDetector.detectBurst(this.events, 10000, 5);
+        if (bursts.length > 0) {
+            this.triggerContextualInvitation('burst_activity');
+            return;
+        }
+        // Détection de cycles temporels (ex: actions régulières)
+        const cycles = PatternDetector_1.PatternDetector.detectTemporalPattern(this.events, 60000, 0.15);
+        if (cycles.length > 0) {
+            this.triggerContextualInvitation('temporal_cycle');
+            return;
+        }
+        // Détection d'alternance navigation/scroll
+        const alternances = PatternDetector_1.PatternDetector.detectAlternance(this.events, 'visit', 'scroll', 6);
+        if (alternances.length > 0) {
+            this.triggerContextualInvitation('alternance_nav_scroll');
+            return;
+        }
+        // Détection de répétition d'un même type d'action
+        const repetitions = PatternDetector_1.PatternDetector.detectRepetition(this.events, 7);
+        if (repetitions.length > 0) {
+            this.triggerContextualInvitation('repetition_action');
+            return;
+        }
+        // Déclenchement collectif : seuil global d'invitations
+        this.checkCollectiveThreshold();
+    }
+    /**
+     * Vérifie si un seuil collectif de propagation est atteint et déclenche une invitation spéciale si besoin
+     */
+    async checkCollectiveThreshold() {
+        const allInvitations = await this.invitationService.getAllInvitations();
+        const total = allInvitations.length;
+        for (const threshold of this.collectiveThresholds) {
+            if (total >= threshold && !this.reachedThresholds.includes(threshold)) {
+                this.reachedThresholds.push(threshold);
+                localStorage.setItem('symbiont_collective_thresholds', JSON.stringify(this.reachedThresholds));
+                this.triggerContextualInvitation('collective_threshold_' + threshold);
+                break;
+            }
+        }
+    }
+    /**
+     * Déclenche une invitation contextuelle avancée
+     */
+    async triggerContextualInvitation(context) {
+        const userId = localStorage.getItem('symbiont_user_id') || 'unknown';
+        const invitation = await this.invitationService.generateInvitation(userId);
+        this.messageBus.send({
+            type: MessageBus_1.MessageType.CONTEXTUAL_INVITATION,
+            payload: { invitation, context }
+        });
     }
 }
 exports.BackgroundService = BackgroundService;

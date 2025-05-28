@@ -5,7 +5,7 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 // src/popup/components/SettingsPanel.tsx
 const react_1 = require("react");
 const useTheme_1 = require("../hooks/useTheme");
-const SymbiontStorage_1 = require("@storage/SymbiontStorage");
+const SymbiontStorage_1 = require("../../core/storage/SymbiontStorage");
 const AnimatedButton_1 = require("./ui/AnimatedButton");
 const SettingsPanel = () => {
     const { theme, setTheme } = (0, useTheme_1.useTheme)();
@@ -20,14 +20,14 @@ const SettingsPanel = () => {
         loadSettings();
     }, []);
     const loadSettings = async () => {
-        const storage = SymbiontStorage_1.SymbiontStorage.getInstance();
-        const savedSettings = await storage.getSetting('userPreferences');
+        const storage = new SymbiontStorage_1.SymbiontStorage();
+        const savedSettings = await storage.getSetting('userPreferences', settings);
         if (savedSettings) {
             setSettings(savedSettings);
         }
     };
     const saveSettings = async () => {
-        const storage = SymbiontStorage_1.SymbiontStorage.getInstance();
+        const storage = new SymbiontStorage_1.SymbiontStorage();
         await storage.setSetting('userPreferences', settings);
     };
     const updateSetting = (key, value) => {

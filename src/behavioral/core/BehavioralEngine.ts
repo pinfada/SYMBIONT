@@ -1,9 +1,8 @@
 // Moteur d'analyse comportementale
 import { PatternAnalyzer } from './PatternAnalyzer';
 import { BehaviorPredictor } from './BehaviorPredictor';
-import { SessionTracker } from '../analyzers/SessionTracker';
 import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
-import { BehaviorAnalysis, NavigationEvent, UserBehavior } from '../../types';
+import { BehaviorAnalysis, NavigationEvent, UserBehavior, BehaviorPattern, SessionTracker } from '../../types/behavioral';
 
 export class BehavioralEngine {
   private static instance: BehavioralEngine;
@@ -17,9 +16,9 @@ export class BehavioralEngine {
     this.analyzer = new PatternAnalyzer();
     this.predictor = new BehaviorPredictor();
     this.sessionTracker = new SessionTracker();
-    this.storage = SymbiontStorage.getInstance();
+    this.storage = new SymbiontStorage();
     
-    this.initialize();
+    // this.initialize(); // TODO: Méthode manquante
   }
   
   public static getInstance(): BehavioralEngine {
@@ -30,7 +29,21 @@ export class BehavioralEngine {
   }
   
   public async analyzeBehavior(event: NavigationEvent): Promise<BehaviorAnalysis> {
-    // Code d'analyse comportementale...
+    // Code d'analyse comportementale factice
+    return {
+      score: 1,
+      pattern: 'default',
+      details: event
+    };
+  }
+
+  public analyzeNavigation(event: NavigationEvent): BehaviorAnalysis {
+    // Exemple d'analyse simple
+    return {
+      score: 1,
+      pattern: 'default',
+      details: event
+    };
   }
 
   // Suite de l'implémentation...

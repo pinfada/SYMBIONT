@@ -1,7 +1,7 @@
 // src/popup/components/SettingsPanel.tsx
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
-import { SymbiontStorage } from '@storage/SymbiontStorage';
+import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
 import { AnimatedButton } from './ui/AnimatedButton';
 
 interface Settings {
@@ -27,15 +27,15 @@ export const SettingsPanel: React.FC = () => {
   }, []);
   
   const loadSettings = async () => {
-    const storage = SymbiontStorage.getInstance();
-    const savedSettings = await storage.getSetting('userPreferences');
+    const storage = new SymbiontStorage();
+    const savedSettings = await storage.getSetting<Settings>('userPreferences', settings);
     if (savedSettings) {
       setSettings(savedSettings);
     }
   };
   
   const saveSettings = async () => {
-    const storage = SymbiontStorage.getInstance();
+    const storage = new SymbiontStorage();
     await storage.setSetting('userPreferences', settings);
   };
   

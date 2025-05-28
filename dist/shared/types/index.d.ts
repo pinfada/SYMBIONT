@@ -31,4 +31,39 @@ export interface WebGLState {
     error: string | null;
     metrics: any;
 }
+export interface ShaderParameters {
+    primaryColor: Float32Array;
+    secondaryColor: Float32Array;
+    complexity: number;
+    symmetry: number;
+    fluidity: number;
+    colorVariance: number;
+    patternDensity: number;
+    evolutionRate: number;
+}
+export interface MutationState {
+    colorShift: number;
+    patternIntensity: number;
+    sizeMultiplier: number;
+    opacity: number;
+}
+export interface PerformanceMetrics {
+    fps: number;
+    gpuLoad: number;
+    memoryUsage: number;
+    drawCalls: number;
+}
+export interface HSLColor {
+    h: number;
+    s: number;
+    l: number;
+}
+export interface Texture {
+    data: Uint8Array;
+    width: number;
+    height: number;
+}
+export interface SeededRandom {
+    next(): number;
+}
 export * from './organism';

@@ -12,13 +12,13 @@ export function useInvitationData(userId: string) {
   useEffect(() => {
     if (!userId) return;
     messaging.send(MessageType.GET_INVITER, { userId });
-    messaging.subscribe(MessageType.INVITER_RESULT, msg => setInviter(msg.payload));
+    messaging.subscribe(MessageType.INVITER_RESULT, (msg: any) => setInviter(msg.payload));
 
     messaging.send(MessageType.GET_INVITEES, { userId });
-    messaging.subscribe(MessageType.INVITEES_RESULT, msg => setInvitees(msg.payload));
+    messaging.subscribe(MessageType.INVITEES_RESULT, (msg: any) => setInvitees(msg.payload));
 
     messaging.send(MessageType.GET_INVITATION_HISTORY, { userId });
-    messaging.subscribe(MessageType.INVITATION_HISTORY_RESULT, msg => setHistory(msg.payload));
+    messaging.subscribe(MessageType.INVITATION_HISTORY_RESULT, (msg: any) => setHistory(msg.payload));
     // Nettoyage des subscriptions si besoin
     // eslint-disable-next-line
   }, [userId]);

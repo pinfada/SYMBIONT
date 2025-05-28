@@ -1,4 +1,4 @@
-import { BehaviorAnalysis, NavigationEvent } from '../../types';
+import { BehaviorAnalysis, NavigationEvent } from '../../types/behavioral';
 export declare class BehavioralEngine {
     private static instance;
     private patterns;
@@ -9,4 +9,5 @@ export declare class BehavioralEngine {
     private constructor();
     static getInstance(): BehavioralEngine;
     analyzeBehavior(event: NavigationEvent): Promise<BehaviorAnalysis>;
+    analyzeNavigation(event: NavigationEvent): BehaviorAnalysis;
 }

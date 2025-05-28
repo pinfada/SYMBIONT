@@ -15,4 +15,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 // Proxy pour réexporter les types depuis shared/types/messages
-__exportStar(require("../shared/types/messages"), exports);
+__exportStar(require("../shared/messaging/MessageBus"), exports);

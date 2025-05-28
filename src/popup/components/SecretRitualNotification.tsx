@@ -9,7 +9,7 @@ export const SecretRitualNotification: React.FC = () => {
   const [code, setCode] = useState<string>('');
 
   useEffect(() => {
-    messaging.subscribe(MessageType.SECRET_RITUAL_TRIGGERED, (msg: { payload: { code: string; effect: string } }) => {
+    messaging.subscribe(MessageType.SECRET_RITUAL_TRIGGERED, (msg: any) => {
       setCode(msg.payload.code);
       setEffect(msg.payload.effect);
       setVisible(true);

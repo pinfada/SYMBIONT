@@ -1,4 +1,4 @@
-import { OrganismMutation, MutationState } from '../types';
+import { OrganismMutation, MutationState } from '../shared/types/organism';
 export declare class MutationEngine {
     private activeMutations;
     private mutationId;

@@ -1,1 +1,1 @@
-export * from '../shared/types/messages';
+export * from '../shared/messaging/MessageBus';

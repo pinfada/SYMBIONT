@@ -1,1 +1,1 @@
-export * from './SymbiontStorage';
+export * from '../core/storage/SymbiontStorage';

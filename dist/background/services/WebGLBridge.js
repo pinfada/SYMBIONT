@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebGLBridge = void 0;
-const types_1 = require("../../types");
+const MessageBus_1 = require("../../shared/messaging/MessageBus");
 class WebGLBridge {
     constructor(messageBus) {
         this.renderInterval = null;
@@ -12,11 +12,13 @@ class WebGLBridge {
     }
     setupMessageHandlers() {
         // Écouter les réponses du moteur WebGL
-        this.unsubscribeHandler = this.messageBus.on(types_1.MessageType.ORGANISM_UPDATE, (message) => {
+        const handler = (message) => {
             if (message.payload?.state) {
                 this.updateState(message.payload.state);
             }
-        });
+        };
+        this.messageBus.on(MessageBus_1.MessageType.ORGANISM_UPDATE, handler);
+        this.unsubscribeHandler = () => this.messageBus.off(MessageBus_1.MessageType.ORGANISM_UPDATE, handler);
     }
     startRendering(dna) {
         if (this.isRendering) {
@@ -25,7 +27,7 @@ class WebGLBridge {
         }
         // Demande d'initialisation WebGL dans la popup
         this.messageBus.send({
-            type: types_1.MessageType.WEBGL_INIT,
+            type: MessageBus_1.MessageType.WEBGL_INIT,
             payload: { dna }
         });
         this.isRendering = true;
@@ -33,7 +35,7 @@ class WebGLBridge {
         this.renderInterval = window.setInterval(() => {
             if (this.currentState && this.isRendering) {
                 this.messageBus.send({
-                    type: types_1.MessageType.ORGANISM_RENDER,
+                    type: MessageBus_1.MessageType.ORGANISM_STATE_CHANGE,
                     payload: { state: this.currentState }
                 });
             }
@@ -53,7 +55,7 @@ class WebGLBridge {
             return;
         }
         this.messageBus.send({
-            type: types_1.MessageType.ORGANISM_MUTATE,
+            type: MessageBus_1.MessageType.ORGANISM_MUTATE,
             payload: { mutation }
         });
     }

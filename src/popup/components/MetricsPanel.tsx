@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { BehaviorPatterns } from './BehaviorPatterns';
 import { ActivityTimeline } from './ActivityTimeline';
 import { useOrganism } from '../hooks/useOrganism';
-import { SymbiontStorage } from '@storage/SymbiontStorage';
+import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
 
 export const MetricsPanel: React.FC = () => {
   const { organism } = useOrganism();
@@ -12,12 +12,17 @@ export const MetricsPanel: React.FC = () => {
   
   useEffect(() => {
     const loadData = async () => {
-      const storage = SymbiontStorage.getInstance();
-      const patterns = await storage.getBehaviorPatterns();
-      const activities = await storage.getRecentActivity(24 * 60 * 60 * 1000); // 24h
-      
-      setBehaviorData(patterns);
-      setActivityData(activities);
+      const storage = new SymbiontStorage();
+      await storage.initialize();
+      try {
+        const patterns = await storage.getBehaviorPatterns();
+        setBehaviorData(patterns);
+        const activity = await storage.getRecentActivity();
+        setActivityData(activity);
+      } catch (e) {
+        setBehaviorData([]);
+        setActivityData([]);
+      }
     };
     
     loadData();

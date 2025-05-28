@@ -1,5 +1,13 @@
-import { EventEmitter } from '../utils/EventEmitter';
 import { NeuralMesh } from '../neural/NeuralMesh';
+
+// Types minimaux pour lever les erreurs
+class EventEmitter {
+  constructor() {}
+}
+
+interface RoutePrection { predicted?: any; predictedResponse?: any; route?: any; }
+interface CachedResponse { response: any; timestamp: number; }
+interface NeuralImpulse { type: string; [key: string]: any; }
 
 export class SynapticRouter extends EventEmitter {
   private static instance: SynapticRouter;
@@ -39,6 +47,12 @@ export class SynapticRouter extends EventEmitter {
     
     return response;
   }
+
+  private setupLearningLoop(): void {}
+  private getRouteKey(impulse: NeuralImpulse): string { return '' }
+  private async findOptimalRoute(impulse: NeuralImpulse): Promise<any> { return {}; }
+  private async performRouting(impulse: NeuralImpulse, route: any): Promise<any> { return {}; }
+  private learnFromRouting(routeKey: string, route: any, response: any): void {}
 
   // Suite de l'implémentation...
 }

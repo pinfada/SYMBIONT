@@ -7,18 +7,25 @@ const react_1 = require("react");
 const BehaviorPatterns_1 = require("./BehaviorPatterns");
 const ActivityTimeline_1 = require("./ActivityTimeline");
 const useOrganism_1 = require("../hooks/useOrganism");
-const SymbiontStorage_1 = require("@storage/SymbiontStorage");
+const SymbiontStorage_1 = require("../../core/storage/SymbiontStorage");
 const MetricsPanel = () => {
     const { organism } = (0, useOrganism_1.useOrganism)();
     const [behaviorData, setBehaviorData] = (0, react_1.useState)([]);
     const [activityData, setActivityData] = (0, react_1.useState)([]);
     (0, react_1.useEffect)(() => {
         const loadData = async () => {
-            const storage = SymbiontStorage_1.SymbiontStorage.getInstance();
-            const patterns = await storage.getBehaviorPatterns();
-            const activities = await storage.getRecentActivity(24 * 60 * 60 * 1000); // 24h
-            setBehaviorData(patterns);
-            setActivityData(activities);
+            const storage = new SymbiontStorage_1.SymbiontStorage();
+            await storage.initialize();
+            try {
+                const patterns = await storage.getBehaviorPatterns();
+                setBehaviorData(patterns);
+                const activity = await storage.getRecentActivity();
+                setActivityData(activity);
+            }
+            catch (e) {
+                setBehaviorData([]);
+                setActivityData([]);
+            }
         };
         loadData();
         const interval = setInterval(loadData, 10000);

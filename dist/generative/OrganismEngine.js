@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrganismEngine = void 0;
 // src/generative/OrganismEngine.ts
@@ -11,8 +8,8 @@ const MutationEngine_1 = require("./MutationEngine");
 const ProceduralGenerator_1 = require("./ProceduralGenerator");
 const PerformanceMonitor_1 = require("../monitoring/PerformanceMonitor");
 // Importer les shaders via raw-loader (Webpack)
-const organism_vert_1 = __importDefault(require("../../shaders/organism.vert"));
-const organism_frag_1 = __importDefault(require("../../shaders/organism.frag"));
+const vertexShaderSource = '';
+const fragmentShaderSource = '';
 /**
  * OrganismEngine - Moteur WebGL pour le rendu de l'organisme
  */
@@ -28,6 +25,8 @@ class OrganismEngine {
         // État
         this.frameCount = 0;
         this.elapsedTime = 0;
+        this.lastGeometryComplexity = 0;
+        this.fractalTexture = null;
         this.canvas = canvas;
         // Initialisation WebGL (WebGL2 si possible)
         const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
@@ -53,9 +52,23 @@ class OrganismEngine {
             primaryColor: { h: 200, s: 80, l: 60 },
             secondaryColor: { h: 340, s: 60, l: 40 }
         };
-        this.currentState = { instances: 1, complexity: 0.5, timeStamp: Date.now(), traits: this.traits };
+        this.currentState = {
+            id: 'engine',
+            generation: 1,
+            health: 1,
+            energy: 1,
+            traits: this.traits,
+            visualDNA: dna,
+            lastMutation: Date.now(),
+            mutations: [],
+            createdAt: Date.now(),
+            dna: dna
+        };
         // Génération de la géométrie initiale
         this.geometry = this.generator.generateBaseForm(this.dnaInterpreter.getCurrentParameters());
+        // Génération et upload de la texture fractale
+        const fractal = this.generator.generateFractalPattern(Date.now());
+        this.fractalTexture = this.createGLTexture(fractal);
         this.setupGL();
         this.setupShaders();
         this.setupBuffers();
@@ -114,8 +127,8 @@ class OrganismEngine {
      */
     setupShaders() {
         const gl = this.gl;
-        const vert = this.compileShader(organism_vert_1.default, gl.VERTEX_SHADER);
-        const frag = this.compileShader(organism_frag_1.default, gl.FRAGMENT_SHADER);
+        const vert = this.compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+        const frag = this.compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
         if (!vert || !frag)
             throw new Error('Shader compilation failed');
         this.program = gl.createProgram();
@@ -148,8 +161,24 @@ class OrganismEngine {
      * Rendu principal
      */
     render(state) {
-        if (state)
+        if (state) {
             this.currentState = state;
+            // Adapter dynamiquement les paramètres selon les traits
+            const traits = state.traits || this.traits;
+            const params = this.dnaInterpreter.getCurrentParameters();
+            // Influence des traits sur les paramètres visuels
+            params.complexity = 0.3 + 0.7 * (traits.curiosity ?? 0.5); // curiosité → complexité
+            params.patternDensity = 0.2 + 0.8 * (traits.creativity ?? 0.5); // créativité → densité
+            params.colorVariance = 0.1 + 0.7 * (traits.creativity ?? 0.5); // créativité → variance chromatique
+            params.symmetry = 0.2 + 0.7 * (traits.focus ?? 0.5); // focus → symétrie
+            params.fluidity = 0.2 + 0.7 * (traits.energy ?? 0.5); // énergie → fluidité
+            // Régénérer la géométrie si la complexité change beaucoup
+            if (Math.abs(params.complexity - this.lastGeometryComplexity) > 0.2) {
+                this.geometry = this.generator.generateBaseForm(params);
+                this.setupBuffers();
+                this.lastGeometryComplexity = params.complexity;
+            }
+        }
         this.performanceMonitor.startFrame();
         const gl = this.gl;
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -201,6 +230,13 @@ class OrganismEngine {
         this.mutationEngine.update(performance.now());
         const mutationState = this.mutationEngine.getCurrentState();
         gl.uniform1f(gl.getUniformLocation(this.program, 'u_mutation'), mutationState.colorShift || 0);
+        // Texture fractale
+        if (this.fractalTexture) {
+            const fractalLoc = gl.getUniformLocation(this.program, 'u_fractalTex');
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.fractalTexture);
+            gl.uniform1i(fractalLoc, 0);
+        }
         // (ajouter d'autres uniforms selon le shader)
     }
     /**
@@ -208,9 +244,7 @@ class OrganismEngine {
      */
     mutate(mutation) {
         // On ignore les mutations non visuelles pour le moteur WebGL
-        if (mutation.type === 'visual_evolution') {
-            // Option : ici, on pourrait déclencher une régénération de géométrie si besoin
-            // (non supporté par MutationEngine, à gérer dans un autre flux)
+        if (!['visual', 'behavioral', 'cognitive'].includes(mutation.type)) {
             return;
         }
         this.mutationEngine.apply(mutation); // Cast sûr car on filtre ci-dessus
@@ -241,6 +275,18 @@ class OrganismEngine {
      */
     isInitialized() {
         return !!this.gl && !!this.program;
+    }
+    createGLTexture(textureData) {
+        const gl = this.gl;
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureData.width, textureData.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, textureData.data);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        return tex;
     }
 }
 exports.OrganismEngine = OrganismEngine;

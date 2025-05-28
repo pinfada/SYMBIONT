@@ -56,7 +56,7 @@ export const AdminRitualsPanel: React.FC = () => {
       setForm({});
       setError(null);
       refresh();
-    } catch (e) { setError('Erreur lors de l'ajout'); }
+    } catch (e) { setError('Erreur lors de l\'ajout'); }
   };
 
   return (
@@ -114,7 +114,7 @@ export const AdminRitualsPanel: React.FC = () => {
               <td><textarea value={JSON.stringify(form,null,2)} onChange={e=>{try{setForm(JSON.parse(e.target.value));}catch{}}} style={{width:220,outline:'2px solid #00e0ff'}} aria-label="Payload du rituel" /></td>
               <td>
                 <button onClick={handleAdd} aria-label="Ajouter le rituel">Ajouter</button>
-                <button onClick={()=>{setAdding(false);setForm({});}} aria-label="Annuler l'ajout">Annuler</button>
+                <button onClick={()=>{setAdding(false);setForm({});}} aria-label="Annuler l\'ajout">Annuler</button>
               </td>
             </tr>
           )}

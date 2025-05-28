@@ -1,4 +1,4 @@
-import type { Message } from '../../types';
+import { Message } from '../../shared/messaging/MessageBus';
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
 export declare class MessageBus {
@@ -20,5 +20,7 @@ export declare class MessageBus {
     offAny(handler: MessageHandler): void;
     addFilter(filter: MessageFilter): void;
     send(message: Omit<Message, 'source' | 'timestamp' | 'id'>): Promise<void>;
+    sendToBackground(message: any): void;
+    emit(type: any, payload: any): void;
 }
 export default MessageBus;

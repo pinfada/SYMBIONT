@@ -1,5 +1,5 @@
 import { MessageBus } from '../../core/messaging';
-import { OrganismMutation, OrganismState } from '../../types';
+import { OrganismMutation, OrganismState } from '../../shared/types/organism';
 export declare class WebGLBridge {
     private messageBus;
     private renderInterval;

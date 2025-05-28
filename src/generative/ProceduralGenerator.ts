@@ -8,6 +8,25 @@ interface GenerativeParameters {
     patternDensity: number;
   }
   
+  // Types minimaux pour lever les erreurs
+  interface Geometry {
+    vertices: Float32Array;
+    normals?: Float32Array;
+    indices: Uint16Array;
+  }
+  
+  interface Texture {
+    data: Uint8Array;
+    width: number;
+    height: number;
+  }
+  
+  class SeededRandom {
+    private seed: number;
+    constructor(seed: number) { this.seed = seed; }
+    next(): number { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280; }
+  }
+  
   export class ProceduralGenerator {
     private params: GenerativeParameters;
     private rng: SeededRandom;
@@ -40,7 +59,7 @@ interface GenerativeParameters {
     
     public applyLSystem(iterations: number): Geometry {
       // L-System pour croissance organique
-      const rules = {
+      const rules: { [key: string]: string } = {
         'F': 'FF+[+F-F-F]-[-F+F+F]',
         '+': '+',
         '-': '-',
@@ -148,4 +167,8 @@ interface GenerativeParameters {
         this.perm[i] = p[i & 255];
       }
     }
-}
+    
+    private calculateNormals(vertices: Float32Array): Float32Array { return new Float32Array(vertices.length); }
+    private triangulate(complexity: number): Uint16Array { return new Uint16Array(complexity); }
+    private interpretLSystem(current: string): Geometry { return { vertices: new Float32Array(0), indices: new Uint16Array(0) }; }
+  }

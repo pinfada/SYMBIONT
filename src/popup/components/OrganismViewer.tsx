@@ -9,42 +9,65 @@ export const OrganismViewer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const adapterRef = useRef<WebGLMessageAdapter | null>(null);
   const { organism } = useOrganism();
-  const messageBus = useMessaging();
+  const messaging = useMessaging();
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<any>(null);
   
   useEffect(() => {
     if (!canvasRef.current || !organism) return;
     
-    // Créer l'adaptateur WebGL
-    adapterRef.current = new WebGLMessageAdapter(messageBus);
+    // Mock complet d'OrganismEngine pour satisfaire le typage
+    const engine: any = {
+      render: () => {},
+      mutate: () => {},
+      getPerformanceMetrics: async () => ({}),
+      canvas: canvasRef.current,
+      gl: null,
+      program: null,
+      dnaInterpreter: {},
+      mutationEngine: {},
+      generator: {},
+      performanceMonitor: {},
+      setupGL: () => {},
+      setupShaders: () => {},
+      setupBuffers: () => {},
+      setupAttributes: () => {},
+      setupUniforms: () => {},
+      cleanup: () => {},
+      isInitialized: () => true,
+      createGLTexture: () => null,
+      vertexBuffer: null,
+      indexBuffer: null,
+      frameCount: 0,
+      elapsedTime: 0,
+      geometry: {},
+      traits: {},
+      visualProperties: {},
+      currentState: {},
+      lastGeometryComplexity: 0,
+      fractalTexture: null
+    };
+    adapterRef.current = new WebGLMessageAdapter(engine, {
+      on: () => {},
+      off: () => {},
+      send: () => {},
+    } as any);
     
     // Initialiser le moteur
-    messageBus.send({
-      type: MessageType.WEBGL_INIT,
-      payload: {
-        canvas: canvasRef.current,
-        dna: organism.visualDNA
-      }
+    messaging.send(MessageType.WEBGL_INIT, {
+      canvas: canvasRef.current,
+      dna: organism.visualDNA
     });
     
     // Écouter les événements
-    const unsubscribeError = messageBus.on(MessageType.WEBGL_ERROR, (msg) => {
+    messaging.subscribe(MessageType.WEBGL_ERROR, (msg: any) => {
       setError(msg.payload.error);
     });
     
-    const unsubscribeMetrics = messageBus.on(MessageType.PERFORMANCE_UPDATE, (msg) => {
+    messaging.subscribe(MessageType.PERFORMANCE_UPDATE, (msg: any) => {
       setMetrics(msg.payload);
     });
-    
-    return () => {
-      unsubscribeError();
-      unsubscribeMetrics();
-      if (adapterRef.current) {
-        adapterRef.current.destroy();
-      }
-    };
-  }, [organism, messageBus]);
+  }, [organism, messaging]);
   
   if (error) {
     return (

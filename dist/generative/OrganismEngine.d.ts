@@ -18,6 +18,8 @@ export declare class OrganismEngine {
     private traits;
     private visualProperties;
     private currentState;
+    private lastGeometryComplexity;
+    private fractalTexture;
     /**
      * Constructeur
      */
@@ -67,4 +69,5 @@ export declare class OrganismEngine {
      * Indique si le moteur est prêt
      */
     isInitialized(): boolean;
+    private createGLTexture;
 }

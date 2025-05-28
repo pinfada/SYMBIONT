@@ -1,5 +1,6 @@
+import { MessageType, Message } from '../../shared/messaging/MessageBus';
 export declare const useMessaging: () => {
-    subscribe: (type: string, handler: Function) => void;
-    unsubscribe: (type: string, handler: Function) => void;
-    send: (type: string, payload: any) => void;
+    subscribe: (type: MessageType, handler: (message: Message) => void) => void;
+    unsubscribe: (type: MessageType, handler: (message: Message) => void) => void;
+    send: (type: MessageType, payload: any) => void;
 };

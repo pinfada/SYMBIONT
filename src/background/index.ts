@@ -1,9 +1,9 @@
 // src/background/index.ts
 // Point d'entrée Service Worker (Neural Core)
-import { MessageBus, MessageType } from '@shared/messaging/MessageBus';
+import { MessageBus, MessageType } from '../shared/messaging/MessageBus';
 import { SymbiontStorage } from '../core/storage/SymbiontStorage';
 import { NavigationObserver } from '@shared/observers/NavigationObserver';
-import { OrganismState, OrganismMutation } from '@shared/types/organism';
+import { OrganismState, OrganismMutation } from '../shared/types/organism';
 import { InvitationService } from './services/InvitationService';
 import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';

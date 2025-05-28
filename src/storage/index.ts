@@ -1,2 +1,2 @@
 // Squelette minimal pour index de storage
-export * from './SymbiontStorage'; 
+export * from '../core/storage/SymbiontStorage'; 

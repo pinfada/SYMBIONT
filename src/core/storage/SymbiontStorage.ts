@@ -1,4 +1,4 @@
-import { OrganismState, OrganismMutation } from '@shared/types/organism';
+import { OrganismState, OrganismMutation } from '../../shared/types/organism';
 
 interface BehaviorData {
   url: string;
@@ -237,6 +237,65 @@ export class SymbiontStorage {
           cursor.continue();
         } else {
           resolve(results);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Retourne la liste des comportements triés par nombre de visites (visitCount) puis date de dernière visite (lastVisit)
+   */
+  async getBehaviorPatterns(): Promise<BehaviorData[]> {
+    if (!this.db) throw new Error('Database not initialized');
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['behaviors'], 'readonly');
+      const store = transaction.objectStore('behaviors');
+      const request = store.openCursor();
+      const results: BehaviorData[] = [];
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          results.push(cursor.value);
+          cursor.continue();
+        } else {
+          // Tri par visitCount décroissant puis lastVisit décroissant
+          results.sort((a, b) => {
+            if (b.visitCount !== a.visitCount) return b.visitCount - a.visitCount;
+            return b.lastVisit - a.lastVisit;
+          });
+          resolve(results);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Retourne les interactions récentes sur une période donnée (en ms, par défaut 24h)
+   */
+  async getRecentActivity(periodMs: number = 24 * 60 * 60 * 1000): Promise<any[]> {
+    if (!this.db) throw new Error('Database not initialized');
+    const since = Date.now() - periodMs;
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['behaviors'], 'readonly');
+      const store = transaction.objectStore('behaviors');
+      const request = store.openCursor();
+      const recent: any[] = [];
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          const behavior: BehaviorData = cursor.value;
+          // On prend toutes les interactions récentes de ce comportement
+          const filtered = (behavior.interactions || []).filter(i => i.timestamp >= since);
+          for (const i of filtered) {
+            recent.push({ ...i, url: behavior.url });
+          }
+          cursor.continue();
+        } else {
+          // Tri par timestamp décroissant
+          recent.sort((a, b) => b.timestamp - a.timestamp);
+          resolve(recent);
         }
       };
       request.onerror = () => reject(request.error);

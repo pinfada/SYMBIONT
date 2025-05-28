@@ -5,7 +5,7 @@ class SymbiontStorage {
     constructor() {
         this.db = null;
         this.DB_NAME = 'symbiont-db';
-        this.DB_VERSION = 1;
+        this.DB_VERSION = 2;
     }
     async initialize() {
         return new Promise((resolve, reject) => {
@@ -36,6 +36,10 @@ class SymbiontStorage {
                 // Settings store
                 if (!db.objectStoreNames.contains('settings')) {
                     db.createObjectStore('settings', { keyPath: 'key' });
+                }
+                // Invitations store
+                if (!db.objectStoreNames.contains('invitations')) {
+                    db.createObjectStore('invitations', { keyPath: 'code' });
                 }
             };
         });
@@ -139,6 +143,123 @@ class SymbiontStorage {
             const store = transaction.objectStore('settings');
             const request = store.put({ key, value });
             request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+    // --- INVITATIONS ---
+    async addInvitation(invitation) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['invitations'], 'readwrite');
+            const store = transaction.objectStore('invitations');
+            const request = store.add(invitation);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+    async updateInvitation(invitation) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['invitations'], 'readwrite');
+            const store = transaction.objectStore('invitations');
+            const request = store.put(invitation);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+    async getInvitation(code) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['invitations'], 'readonly');
+            const store = transaction.objectStore('invitations');
+            const request = store.get(code);
+            request.onsuccess = () => resolve(request.result || null);
+            request.onerror = () => reject(request.error);
+        });
+    }
+    async getAllInvitations() {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['invitations'], 'readonly');
+            const store = transaction.objectStore('invitations');
+            const request = store.openCursor();
+            const results = [];
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    results.push(cursor.value);
+                    cursor.continue();
+                }
+                else {
+                    resolve(results);
+                }
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+    /**
+     * Retourne la liste des comportements triés par nombre de visites (visitCount) puis date de dernière visite (lastVisit)
+     */
+    async getBehaviorPatterns() {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['behaviors'], 'readonly');
+            const store = transaction.objectStore('behaviors');
+            const request = store.openCursor();
+            const results = [];
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    results.push(cursor.value);
+                    cursor.continue();
+                }
+                else {
+                    // Tri par visitCount décroissant puis lastVisit décroissant
+                    results.sort((a, b) => {
+                        if (b.visitCount !== a.visitCount)
+                            return b.visitCount - a.visitCount;
+                        return b.lastVisit - a.lastVisit;
+                    });
+                    resolve(results);
+                }
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+    /**
+     * Retourne les interactions récentes sur une période donnée (en ms, par défaut 24h)
+     */
+    async getRecentActivity(periodMs = 24 * 60 * 60 * 1000) {
+        if (!this.db)
+            throw new Error('Database not initialized');
+        const since = Date.now() - periodMs;
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['behaviors'], 'readonly');
+            const store = transaction.objectStore('behaviors');
+            const request = store.openCursor();
+            const recent = [];
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    const behavior = cursor.value;
+                    // On prend toutes les interactions récentes de ce comportement
+                    const filtered = (behavior.interactions || []).filter(i => i.timestamp >= since);
+                    for (const i of filtered) {
+                        recent.push({ ...i, url: behavior.url });
+                    }
+                    cursor.continue();
+                }
+                else {
+                    // Tri par timestamp décroissant
+                    recent.sort((a, b) => b.timestamp - a.timestamp);
+                    resolve(recent);
+                }
+            };
             request.onerror = () => reject(request.error);
         });
     }

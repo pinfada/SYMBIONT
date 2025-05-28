@@ -1,9 +1,9 @@
 // src/integration/WebGLMessageAdapter.ts
 import { OrganismEngine } from '../generative/OrganismEngine';
-import { OrganismState, OrganismMutation } from '../types';
+import { OrganismState, OrganismMutation } from '../shared/types/organism';
 
 // MessageBus et MessageType doivent être importés selon votre architecture
-import { MessageBus, MessageType } from '../core/messaging';
+import { MessageBus, MessageType } from '../shared/messaging/MessageBus';
 
 /**
  * Adaptateur entre le bus de messages et le moteur WebGL

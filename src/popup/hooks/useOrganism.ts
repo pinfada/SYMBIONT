@@ -35,7 +35,7 @@ export const useWebGL = () => {
     // Lazy load le moteur WebGL
     const { OrganismEngine } = await import('../../generative/OrganismEngine');
     
-    engineRef.current = new OrganismEngine(canvas, organism);
+    engineRef.current = new OrganismEngine(canvas, organism.visualDNA);
     
     // Animation loop
     let animationId: number;

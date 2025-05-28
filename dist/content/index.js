@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Point d'entrée Content Script
 // src/content/index.ts
 const MessageBus_1 = require("../core/messaging/MessageBus");
-const NavigationObserver_1 = require("./observers/NavigationObserver");
+const NavigationObserver_1 = require("@shared/observers/NavigationObserver");
 const InteractionCollector_1 = require("./collectors/InteractionCollector");
 const DOMAnalyzer_1 = require("./observers/DOMAnalyzer");
 const ScrollTracker_1 = require("./observers/ScrollTracker");
@@ -32,7 +32,7 @@ class ContentScript {
             }
         };
         console.log('🔍 SYMBIONT Content Script initializing...');
-        this.messageBus = MessageBus_1.MessageBus.getInstance('content');
+        this.messageBus = new MessageBus_1.MessageBus('content');
         this.navigationObserver = new NavigationObserver_1.NavigationObserver();
         this.interactionCollector = new InteractionCollector_1.InteractionCollector();
         this.domAnalyzer = new DOMAnalyzer_1.DOMAnalyzer();

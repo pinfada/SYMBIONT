@@ -1,6 +1,6 @@
 // src/generative/MutationEngine.ts
 // Système de mutations harmonisé
-import { OrganismMutation, MutationState } from '../types';
+import { OrganismMutation, MutationState } from '../shared/types/organism';
 
 // Seuls les types visuels sont acceptés par le moteur WebGL
 // (visual_evolution est ignoré ici)

@@ -59,7 +59,7 @@ const useWebGL = () => {
     const initWebGL = async (canvas, organism) => {
         // Lazy load le moteur WebGL
         const { OrganismEngine } = await Promise.resolve().then(() => __importStar(require('../../generative/OrganismEngine')));
-        engineRef.current = new OrganismEngine(canvas, organism);
+        engineRef.current = new OrganismEngine(canvas, organism.visualDNA);
         // Animation loop
         let animationId;
         let lastTime = 0;

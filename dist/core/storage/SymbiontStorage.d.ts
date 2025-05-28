@@ -1,4 +1,4 @@
-import { OrganismState, OrganismMutation } from '@shared/types/organism';
+import { OrganismState, OrganismMutation } from '../../shared/types/organism';
 interface BehaviorData {
     url: string;
     visitCount: number;
@@ -24,5 +24,17 @@ export declare class SymbiontStorage {
     getRecentMutations(limit?: number): Promise<OrganismMutation[]>;
     getSetting<T>(key: string, defaultValue: T): Promise<T>;
     setSetting<T>(key: string, value: T): Promise<void>;
+    addInvitation(invitation: any): Promise<void>;
+    updateInvitation(invitation: any): Promise<void>;
+    getInvitation(code: string): Promise<any | null>;
+    getAllInvitations(): Promise<any[]>;
+    /**
+     * Retourne la liste des comportements triés par nombre de visites (visitCount) puis date de dernière visite (lastVisit)
+     */
+    getBehaviorPatterns(): Promise<BehaviorData[]>;
+    /**
+     * Retourne les interactions récentes sur une période donnée (en ms, par défaut 24h)
+     */
+    getRecentActivity(periodMs?: number): Promise<any[]>;
 }
 export {};
