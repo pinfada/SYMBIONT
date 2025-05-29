@@ -52,81 +52,38 @@ export const SettingsPanel: React.FC = () => {
   };
   
   return (
-    <div className="settings-panel">
-      <section className="settings-section">
-        <h3>Appearance</h3>
-        
-        <div className="setting-item">
-          <label>Theme</label>
-          <select
-            value={settings.theme}
-            onChange={(e) => {
-              const value = e.target.value as Settings['theme'];
-              updateSetting('theme', value);
-              setTheme(value);
-            }}
-          >
-            <option value="auto">Auto</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </div>
-        
-        <div className="setting-item">
-          <label>Visual Quality</label>
-          <select
-            value={settings.visualQuality}
-            onChange={(e) => updateSetting('visualQuality', e.target.value as Settings['visualQuality'])}
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-      </section>
-      
-      <section className="settings-section">
-        <h3>Behavior</h3>
-        
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={settings.notifications}
-              onChange={(e) => updateSetting('notifications', e.target.checked)}
-            />
-            Enable Notifications
+    <div className="settings-panel max-w-lg mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
+      <h2 className="text-2xl font-bold text-center text-[#00e0ff] mb-6">Paramètres</h2>
+      <section className="settings-section mb-6">
+        <h3 className="text-lg font-bold text-[#00e0ff] mb-2">Préférences utilisateur</h3>
+        <div className="flex flex-col gap-4">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={settings.notifications} onChange={e => updateSetting('notifications', e.target.checked)} /> Notifications
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={settings.autoMutate} onChange={e => updateSetting('autoMutate', e.target.checked)} /> Mutation automatique
+          </label>
+          <label className="flex items-center gap-2">
+            Qualité visuelle&nbsp;:
+            <select value={settings.visualQuality} onChange={e => updateSetting('visualQuality', e.target.value as any)} className="ml-2 rounded-md border px-2 py-1">
+              <option value="high">Haute</option>
+              <option value="medium">Moyenne</option>
+              <option value="low">Basse</option>
+            </select>
           </label>
         </div>
-        
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={settings.autoMutate}
-              onChange={(e) => updateSetting('autoMutate', e.target.checked)}
-            />
-            Auto-mutation
-          </label>
-        </div>
-        
-        <div className="setting-item">
-          <label>Mutation Speed</label>
-          <input
-            type="range"
-            min="0.1"
-            max="5"
-            step="0.1"
-            value={settings.mutationSpeed}
-            onChange={(e) => updateSetting('mutationSpeed', parseFloat(e.target.value))}
-          />
-          <span>{settings.mutationSpeed}x</span>
+      </section>
+      <section className="settings-section">
+        <h3 className="text-lg font-bold text-[#00e0ff] mb-2">Thème</h3>
+        <div className="flex gap-4">
+          <button onClick={() => setTheme('light')} className={`rounded-lg px-4 py-2 font-bold ${theme === 'light' ? 'bg-[#00e0ff] text-[#181c22]' : 'bg-[#eaf6fa] text-[#232946]'}`}>Clair</button>
+          <button onClick={() => setTheme('dark')} className={`rounded-lg px-4 py-2 font-bold ${theme === 'dark' ? 'bg-[#00e0ff] text-[#181c22]' : 'bg-[#232946] text-white'}`}>Sombre</button>
+          <button onClick={() => setTheme('auto')} className={`rounded-lg px-4 py-2 font-bold ${theme === 'auto' ? 'bg-[#00e0ff] text-[#181c22]' : 'bg-[#888] text-white'}`}>Auto</button>
         </div>
       </section>
-      
-      <AnimatedButton onClick={saveSettings}>
-        Save Changes
-      </AnimatedButton>
+      <div className="flex justify-end mt-6">
+        <button onClick={saveSettings} className="bg-[#00e0ff] text-[#181c22] rounded-lg px-5 py-2 font-bold cursor-pointer">Enregistrer</button>
+      </div>
     </div>
   );
 };

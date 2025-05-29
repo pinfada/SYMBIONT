@@ -7,6 +7,7 @@ import { OrganismState, OrganismMutation } from '../shared/types/organism';
 import { InvitationService } from './services/InvitationService';
 import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
+import { SecurityManager } from './SecurityManager';
 
 // Utilitaires pour chrome.storage.local (asynchrone)
 async function getStorage(key: string): Promise<any> {
@@ -34,6 +35,7 @@ class BackgroundService {
   private events: SequenceEvent[] = [];
   private collectiveThresholds = [10, 50, 100, 250, 500];
   private reachedThresholds: number[] = [];
+  private security: SecurityManager = new SecurityManager();
 
   constructor() {
     this.messageBus = new MessageBus('background');
@@ -165,16 +167,40 @@ class BackgroundService {
     // Invitation: génération
     this.messageBus.on(MessageType.GENERATE_INVITATION, async (message: any) => {
       const { donorId } = message.payload;
-      const invitation = await this.invitationService.generateInvitation(donorId);
+      const rawInvitation = await this.invitationService.generateInvitation(donorId);
+      // Adaptation à l'interface partagée
+      const invitation: import('../shared/types/invitation').Invitation = {
+        code: rawInvitation.code,
+        createdAt: rawInvitation.createdAt,
+        consumed: rawInvitation.used ?? false,
+        consumedAt: rawInvitation.usedAt,
+        inviter: rawInvitation.donorId,
+        invitee: rawInvitation.receiverId
+      };
+      let encryptedPayload: import('../shared/types/invitation').Invitation | string = invitation;
+      try {
+        encryptedPayload = await this.security.encryptSensitiveData(invitation);
+      } catch (e) {
+        // fallback : en clair si erreur
+        encryptedPayload = invitation;
+      }
       this.messageBus.send({
         type: MessageType.INVITATION_GENERATED,
-        payload: invitation
+        payload: encryptedPayload
       });
     });
 
     // Invitation: validation/consommation
     this.messageBus.on(MessageType.CONSUME_INVITATION, async (message: any) => {
-      const { code, receiverId } = message.payload;
+      const { code, receiverId, role } = message.payload;
+      // Contrôle d'accès : seul un utilisateur authentifié peut consommer une invitation
+      if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
+        this.messageBus.send({
+          type: MessageType.INVITATION_CONSUMED,
+          payload: { error: 'Accès refusé.' }
+        });
+        return;
+      }
       const invitation = await this.invitationService.consumeInvitation(code, receiverId);
       if (invitation) {
         this.activated = true;
@@ -252,8 +278,16 @@ class BackgroundService {
       });
     });
 
-    this.messageBus.on(MessageType.ACCEPT_SHARED_MUTATION, (message: any) => {
-      const { code, receiverId, traits } = message.payload;
+    this.messageBus.on(MessageType.ACCEPT_SHARED_MUTATION, async (message: any) => {
+      const { code, receiverId, traits, role } = message.payload;
+      // Contrôle d'accès : seul un utilisateur authentifié peut accepter une mutation partagée
+      if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
+        this.messageBus.send({
+          type: MessageType.SHARED_MUTATION_RESULT,
+          payload: { error: 'Accès refusé.' }
+        });
+        return;
+      }
       const session = sharedMutationSessions.get(code);
       if (!session || session.expiresAt < Date.now()) {
         this.messageBus.send({
@@ -268,14 +302,20 @@ class BackgroundService {
         mergedTraits[key] = (mergedTraits[key] ?? 0 + traits[key] ?? 0) / 2;
       }
       sharedMutationSessions.delete(code);
+      let resultPayload: import('../shared/types/rituals').SharedMutationResult | string = {
+        initiatorId: session.initiatorId,
+        receiverId,
+        mergedTraits,
+        timestamp: Date.now()
+      };
+      try {
+        resultPayload = await this.security.encryptSensitiveData(resultPayload);
+      } catch (e) {
+        // fallback : en clair si erreur
+      }
       this.messageBus.send({
         type: MessageType.SHARED_MUTATION_RESULT,
-        payload: {
-          initiatorId: session.initiatorId,
-          receiverId,
-          mergedTraits,
-          timestamp: Date.now()
-        }
+        payload: resultPayload
       });
     });
 

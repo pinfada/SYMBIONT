@@ -47,64 +47,28 @@ export const OrganismDashboard: React.FC = () => {
   const { inviter, invitees } = useInvitationData(userId);
 
   return (
-    <div className="organism-dashboard">
-      <section className="dashboard-section dashboard-section--viewer">
-        <OrganismViewer />
-      </section>
-      
-      <section className="dashboard-section dashboard-section--vitals">
-        <div className="vital-stats">
-          <div className="vital-stat">
-            <span className="vital-stat__label">Health</span>
-            <div className="vital-stat__bar">
-              <div 
-                className="vital-stat__fill vital-stat__fill--health"
-                style={{ width: `${organism.health ?? 0 * 100}%` }}
-              />
-            </div>
-            <span className="vital-stat__value">{Math.round(organism.health ?? 0 * 100)}%</span>
+    <div className="organism-dashboard max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
+      <h2 className="text-2xl font-bold text-center text-[#00e0ff] mb-6">Tableau de bord de l'organisme</h2>
+      <section className="dashboard-section dashboard-section--info mb-6 p-4 bg-[#eaf6fa] rounded-lg">
+        <div className="organism-info flex flex-wrap gap-6 justify-center">
+          <div className="info-item flex flex-col items-center">
+            <span className="info-label text-[#888] text-sm">Génération</span>
+            <span className="info-value text-lg font-bold">{organism.generation}</span>
           </div>
-          
-          <div className="vital-stat">
-            <span className="vital-stat__label">Energy</span>
-            <div className="vital-stat__bar">
-              <div 
-                className="vital-stat__fill vital-stat__fill--energy"
-                style={{ width: `${organism.energy ?? 0 * 100}%` }}
-              />
-            </div>
-            <span className="vital-stat__value">{Math.round(organism.energy ?? 0 * 100)}%</span>
-          </div>
-        </div>
-        
-        <ConsciousnessGauge value={organism.consciousness || 0.1} />
-      </section>
-      
-      <section className="dashboard-section dashboard-section--traits">
-        <h3>Personality Traits</h3>
-        <TraitsRadarChart traits={organism.traits} />
-      </section>
-      
-      <section className="dashboard-section dashboard-section--info">
-        <div className="organism-info">
-          <div className="info-item">
-            <span className="info-label">Generation</span>
-            <span className="info-value">{organism.generation}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">DNA Signature</span>
-            <span className="info-value" title={organism.dna}>
+          <div className="info-item flex flex-col items-center">
+            <span className="info-label text-[#888] text-sm">Signature ADN</span>
+            <span className="info-value text-lg font-mono" title={organism.dna}>
               {organism.dna.substring(0, 8)}...
             </span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Mutations</span>
-            <span className="info-value">{organism.mutations.length}</span>
+          <div className="info-item flex flex-col items-center">
+            <span className="info-label text-[#888] text-sm">Mutations</span>
+            <span className="info-value text-lg font-bold">{organism.mutations.length}</span>
           </div>
         </div>
       </section>
       <OrganismTimeline events={events} />
-      <h3 style={{ textAlign: 'center', color: '#ffb700', margin: '32px 0 12px 0' }}>Carte de transmission</h3>
+      <h3 className="text-center text-[#ffb700] text-xl font-semibold my-8">Carte de transmission</h3>
       <TransmissionGraph inviter={inviter} invitees={invitees} userCode={userId} />
     </div>
   );

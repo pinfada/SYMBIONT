@@ -46,9 +46,13 @@ function validatePayload(type: MessageType, payload: any): boolean {
     case MessageType.CHECK_INVITATION:
       return isInvitationPayload(payload);
     case MessageType.INVITATION_GENERATED:
+      return typeof payload === 'string' || isInvitationResult(payload);
     case MessageType.INVITATION_CONSUMED:
     case MessageType.INVITATION_CHECKED:
       return isInvitationResult(payload);
+    case MessageType.SHARED_MUTATION_RESULT:
+      // Accepte un string (chiffré) ou un objet (résultat de mutation)
+      return typeof payload === 'string' || (payload && typeof payload === 'object');
     // Ajouter d'autres cas selon les besoins
     default:
       return true; // Par défaut, on accepte (à affiner selon les besoins)

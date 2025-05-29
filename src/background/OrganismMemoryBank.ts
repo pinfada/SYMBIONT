@@ -13,7 +13,7 @@ export class OrganismMemoryBank {
   }
 
   async saveOrganismState(id: string, state: OrganismState): Promise<void> {
-    const encrypted = this.security.encryptSensitiveData(state)
+    const encrypted = await this.security.encryptSensitiveData(state)
     return new Promise((resolve, reject) => {
       chrome.storage.local.set({ [this.getKey(id)]: encrypted }, () => {
         if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
@@ -24,13 +24,13 @@ export class OrganismMemoryBank {
 
   async loadOrganismHistory(id: string): Promise<OrganismHistory> {
     return new Promise((resolve, reject) => {
-      chrome.storage.local.get([this.getKey(id)], (result) => {
+      chrome.storage.local.get([this.getKey(id)], async (result) => {
         if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
         else {
           const encrypted = result[this.getKey(id)] as string | undefined
           let state: OrganismState | undefined = undefined
           if (encrypted) {
-            state = this.security.decryptSensitiveData(encrypted)
+            state = await this.security.decryptSensitiveData(encrypted)
           }
           resolve({ states: state ? [state] : [], mutations: state?.mutations || [] })
         }

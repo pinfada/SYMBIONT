@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getRituals, Ritual } from '../../shared/ritualsApi';
 import { PluginManager, Plugin } from '../../core/PluginManager';
+import { SecurityManager } from '../../background/SecurityManager';
 
 interface NetworkNode {
   id: string;
@@ -458,6 +459,34 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  // Export chiffré des données utilisateur
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState<string|null>(null);
+  const exportUserDataEncrypted = async () => {
+    setExportLoading(true);
+    setExportError(null);
+    try {
+      const data: Record<string, any> = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k) data[k] = localStorage.getItem(k);
+      }
+      const sec = new SecurityManager();
+      const encrypted = await sec.encryptSensitiveData(data);
+      const blob = new Blob([encrypted], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'symbiont_donnees_chiffrees.txt';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setExportError("Erreur lors du chiffrement ou de l'export.");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   // Effacement des données utilisateur
   const eraseUserData = () => {
     localStorage.clear();
@@ -764,6 +793,23 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
   const [toast, setToast] = useState<string | null>(null);
   const vizListRef = useRef<HTMLUListElement>(null);
 
+  // Outil de déchiffrement utilisateur
+  const [showDecrypt, setShowDecrypt] = useState(false);
+  const [decryptInput, setDecryptInput] = useState('');
+  const [decryptResult, setDecryptResult] = useState<string | null>(null);
+  const [decryptError, setDecryptError] = useState<string | null>(null);
+  const handleDecrypt = async () => {
+    setDecryptError(null);
+    setDecryptResult(null);
+    try {
+      const sec = new SecurityManager();
+      const res = await sec.decryptSensitiveData(decryptInput);
+      setDecryptResult(typeof res === 'string' ? res : JSON.stringify(res, null, 2));
+    } catch (e) {
+      setDecryptError('Impossible de déchiffrer : clé incorrecte ou format invalide.');
+    }
+  };
+
   return (
     <div className="global-network-graph" style={{ textAlign: 'center', margin: '32px 0', position: 'relative' }}>
       <h3 style={{ color: '#00e0ff', marginBottom: 12 }}>Réseau global de transmission</h3>
@@ -892,12 +938,12 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
       )}
       {/* Modale RGPD */}
       {showRGPD && (
-        <div style={{ position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh', background: '#181c22cc', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 18, padding: 32, minWidth: 340, maxWidth: 520, boxShadow: '0 4px 32px #000a', color: '#232946', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ fontWeight: 'bold', fontSize: 22, marginBottom: 18, color: '#00e0ff' }}>Transparence & données</div>
-            <div style={{ fontSize: 15, marginBottom: 18, lineHeight: 1.6 }}>
+        <div className="fixed left-0 top-0 w-screen h-screen bg-[#181c22cc] z-[200] flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 min-w-[340px] max-w-[520px] shadow-2xl text-[#232946] relative max-h-[90vh] overflow-y-auto">
+            <div className="font-bold text-2xl mb-5 text-[#00e0ff]">Transparence & données</div>
+            <div className="text-[15px] mb-5 leading-relaxed">
               <b>Données collectées localement :</b>
-              <ul style={{ margin: '8px 0 12px 18px' }}>
+              <ul className="my-2 mb-3 ml-5 list-disc">
                 <li><b>ID utilisateur anonyme</b> (ex : USER-XXXXXX)</li>
                 <li><b>Traits comportementaux</b> (curiosité, énergie, etc.)</li>
                 <li><b>Historique de transmission</b> (liens anonymes)</li>
@@ -909,48 +955,62 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
               <b>Vos droits :</b> accès, export, effacement immédiat de vos données.<br />
             </div>
             {/* Consentement granulaire */}
-            <div style={{ marginBottom: 18, background: '#eaf6fa', borderRadius: 10, padding: 12 }}>
+            <div className="mb-5 bg-[#eaf6fa] rounded-xl p-3">
               <b>Consentement granulaire :</b>
-              <div style={{ display: 'flex', gap: 18, marginTop: 8 }}>
+              <div className="flex gap-5 mt-2">
                 <label><input type="checkbox" checked={consent.traits} onChange={e => updateConsent('traits', e.target.checked)} /> Collecte des traits</label>
                 <label><input type="checkbox" checked={consent.rituels} onChange={e => updateConsent('rituels', e.target.checked)} /> Historique des rituels</label>
                 <label><input type="checkbox" checked={consent.personnalisation} onChange={e => updateConsent('personnalisation', e.target.checked)} /> Personnalisation</label>
               </div>
-              <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>Désactivez pour empêcher la collecte future (démo, effet local uniquement).</div>
+              <div className="text-[13px] text-[#888] mt-1">Désactivez pour empêcher la collecte future (démo, effet local uniquement).</div>
             </div>
             {/* Log d'accès */}
-            <div style={{ marginBottom: 18 }}>
+            <div className="mb-5">
               <b>Historique d'accès local :</b>
-              <ul style={{ margin: '8px 0 12px 18px', fontSize: 14 }}>
+              <ul className="my-2 mb-3 ml-5 text-[14px] list-disc">
                 {accessLog.slice(-5).reverse().map((d: string, i: number) => <li key={i}>{d}</li>)}
               </ul>
             </div>
             {/* Historique des rituels */}
-            <div style={{ marginBottom: 18 }}>
+            <div className="mb-5">
               <b>Historique des rituels :</b>
-              <ul style={{ margin: '8px 0 12px 18px', fontSize: 14 }}>
+              <ul className="my-2 mb-3 ml-5 text-[14px] list-disc">
                 {ritualHistory.slice(-5).reverse().map((r: any, i: number) => <li key={i}>{r.type} – {r._id} – {r.timestamp ? new Date(r.timestamp).toLocaleString() : ''}</li>)}
               </ul>
             </div>
             {/* Derniers événements */}
-            <div style={{ marginBottom: 18 }}>
+            <div className="mb-5">
               <b>Derniers événements :</b>
-              <ul style={{ margin: '8px 0 12px 18px', fontSize: 14 }}>
+              <ul className="my-2 mb-3 ml-5 text-[14px] list-disc">
                 {lastEvents.map((e, i) => <li key={i}>{e.type} – {e.date}</li>)}
               </ul>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 18 }}>
-              <button onClick={exportUserData} style={{ background: '#00e0ff', color: '#181c22', border: 'none', borderRadius: 8, padding: '7px 18px', fontWeight: 'bold', cursor: 'pointer' }}>Exporter mes données</button>
-              <button onClick={() => setConfirmErase(true)} style={{ background: '#ff4b6e', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 18px', fontWeight: 'bold', cursor: 'pointer' }}>Effacer mes données</button>
-              <button onClick={() => setShowRGPD(false)} style={{ background: '#888', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 18px', fontWeight: 'bold', cursor: 'pointer' }}>Fermer</button>
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={exportUserData} className="bg-[#00e0ff] text-[#181c22] rounded-lg px-5 py-2 font-bold cursor-pointer">Exporter mes données</button>
+              <button onClick={exportUserDataEncrypted} className="bg-[#232946] text-white rounded-lg px-5 py-2 font-bold cursor-pointer relative" disabled={exportLoading}>
+                {exportLoading ? 'Chiffrement…' : 'Exporter mes données chiffrées'}
+              </button>
+              <button onClick={() => setShowDecrypt(v => !v)} className="bg-[#b388ff] text-white rounded-lg px-5 py-2 font-bold cursor-pointer">Déchiffrer des données</button>
+              <button onClick={() => setConfirmErase(true)} className="bg-[#ff4b6e] text-white rounded-lg px-5 py-2 font-bold cursor-pointer">Effacer mes données</button>
+              <button onClick={() => setShowRGPD(false)} className="bg-[#888] text-white rounded-lg px-5 py-2 font-bold cursor-pointer">Fermer</button>
             </div>
+            {exportError && <div className="text-[#ff4b6e] mt-2">{exportError}</div>}
+            {showDecrypt && (
+              <div className="mt-5 bg-[#eaf6fa] rounded-xl p-4">
+                <b>Déchiffrer des données exportées ou reçues</b>
+                <textarea value={decryptInput} onChange={e=>setDecryptInput(e.target.value)} rows={4} className="w-full mt-2 rounded-md p-2 text-[15px]" placeholder="Collez ici le texte chiffré..." />
+                <button onClick={handleDecrypt} className="mt-2 bg-[#00e0ff] text-[#181c22] rounded-lg px-5 py-2 font-bold cursor-pointer">Déchiffrer</button>
+                {decryptResult && <pre className="mt-3 bg-[#232946] text-white p-3 rounded-lg overflow-x-auto">{decryptResult}</pre>}
+                {decryptError && <div className="text-[#ff4b6e] mt-2">{decryptError}</div>}
+              </div>
+            )}
             {/* Confirmation effacement */}
             {confirmErase && (
-              <div style={{ marginTop: 22, background: '#ff4b6e22', borderRadius: 10, padding: 14, color: '#ff4b6e', fontWeight: 'bold', fontSize: 15 }}>
+              <div className="mt-6 bg-[#ff4b6e22] rounded-xl p-4 text-[#ff4b6e] font-bold text-[15px]">
                 Confirmer l'effacement de toutes vos données ?
-                <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                  <button onClick={eraseUserData} style={{ background: '#ff4b6e', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 18px', fontWeight: 'bold', cursor: 'pointer' }}>Oui, effacer</button>
-                  <button onClick={() => setConfirmErase(false)} style={{ background: '#888', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 18px', fontWeight: 'bold', cursor: 'pointer' }}>Annuler</button>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={eraseUserData} className="bg-[#ff4b6e] text-white rounded-lg px-5 py-2 font-bold cursor-pointer">Oui, effacer</button>
+                  <button onClick={() => setConfirmErase(false)} className="bg-[#888] text-white rounded-lg px-5 py-2 font-bold cursor-pointer">Annuler</button>
                 </div>
               </div>
             )}

@@ -60,15 +60,17 @@ export const AdminRitualsPanel: React.FC = () => {
   };
 
   return (
-    <div style={{padding:24}}>
-      <h2>Admin Rituels</h2>
-      <button onClick={refresh} aria-label="Rafraîchir la liste des rituels">Rafraîchir</button>
-      <button onClick={()=>{setAdding(true);setForm({});}} aria-label="Ajouter un rituel">Ajouter un rituel</button>
-      {error && <div style={{color:'#ff4b6e'}} role="alert">{error}</div>}
-      <div style={{margin:'18px 0',padding:'12px',background:'#eaf6fa',borderRadius:8}}>
+    <div className="admin-rituals-panel max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
+      <h2 className="text-2xl font-bold text-[#00e0ff] mb-6">Admin Rituels</h2>
+      <div className="flex gap-4 mb-4">
+        <button onClick={refresh} className="bg-[#00e0ff] text-[#181c22] rounded-lg px-5 py-2 font-bold cursor-pointer" aria-label="Rafraîchir la liste des rituels">Rafraîchir</button>
+        <button onClick={()=>{setAdding(true);setForm({});}} className="bg-[#b388ff] text-white rounded-lg px-5 py-2 font-bold cursor-pointer" aria-label="Ajouter un rituel">Ajouter un rituel</button>
+      </div>
+      {error && <div className="text-[#ff4b6e] mb-3" role="alert">{error}</div>}
+      <div className="my-6 p-4 bg-[#eaf6fa] rounded-lg">
         <b>Effacement RGPD (tous les rituels d'un utilisateur) :</b><br/>
-        <label htmlFor="rgpd-user-id">ID utilisateur</label>
-        <input id="rgpd-user-id" value={rgpdUserId} onChange={e=>setRgpdUserId(e.target.value)} placeholder="ID utilisateur…" style={{marginRight:8,outline:'2px solid #00e0ff'}} />
+        <label htmlFor="rgpd-user-id" className="font-semibold">ID utilisateur</label>
+        <input id="rgpd-user-id" value={rgpdUserId} onChange={e=>setRgpdUserId(e.target.value)} placeholder="ID utilisateur…" className="ml-2 outline-[#00e0ff] border border-[#eaf6fa] rounded-md px-3 py-1" />
         <button onClick={async()=>{
           if (!rgpdUserId) return;
           try {
@@ -76,8 +78,8 @@ export const AdminRitualsPanel: React.FC = () => {
             setRgpdResult(`Rituels supprimés : ${res.deleted}`);
             refresh();
           } catch { setRgpdResult('Erreur lors de la suppression RGPD'); }
-        }} aria-label="Effacer tous les rituels de cet utilisateur">Effacer</button>
-        {rgpdResult && <span style={{marginLeft:12,color:'#ff4b6e'}} role="status" aria-live="polite">{rgpdResult}</span>}
+        }} className="ml-2 bg-[#ff4b6e] text-white rounded-lg px-4 py-1 font-bold cursor-pointer" aria-label="Effacer tous les rituels de cet utilisateur">Effacer</button>
+        {rgpdResult && <span className="ml-3 text-[#ff4b6e]" role="status" aria-live="polite">{rgpdResult}</span>}
       </div>
       <table style={{marginTop:18, width:'100%', borderCollapse:'collapse'}} aria-label="Tableau des rituels">
         <thead>

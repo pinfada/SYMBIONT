@@ -9,6 +9,7 @@ declare class BackgroundService {
     private events;
     private collectiveThresholds;
     private reachedThresholds;
+    private security;
     constructor();
     private initialize;
     private createNewOrganism;
