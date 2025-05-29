@@ -16,9 +16,8 @@ export class HybridStorageManager {
   }
 
   async store(key: string, data: any, options: any = {}): Promise<void> {
-    // Niveau 1: Mémoire
+    console.log('[HybridStorageManager] store - Mémoire', key, data)
     this.memoryCache.set(key, data)
-    // Niveau 2: chrome.storage.local
     try {
       await new Promise((resolve, reject) => {
         this.persistentStorage.set({ [key]: data }, () => {
@@ -26,28 +25,31 @@ export class HybridStorageManager {
           else resolve(true)
         })
       })
+      console.log('[HybridStorageManager] store - chrome.storage.local OK', key)
     } catch (e) {
-      console.warn('chrome.storage.local failed, fallback IndexedDB')
+      console.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', key, e)
     }
-    // Niveau 3: IndexedDB
     try {
       if (this.indexedDB) {
         const tx = this.indexedDB.transaction(['symbiont'], 'readwrite')
         const store = tx.objectStore('symbiont')
         store.put(data, key)
+        console.log('[HybridStorageManager] store - IndexedDB OK', key)
       } else {
         throw new Error('IndexedDB not ready')
       }
     } catch (e) {
-      // Niveau 4: localStorage d'urgence
+      console.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', key, e)
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(data))
+      console.log('[HybridStorageManager] store - localStorage d\'urgence OK', key)
     }
   }
 
   async retrieve(key: string): Promise<any> {
-    // Mémoire
-    if (this.memoryCache.has(key)) return this.memoryCache.get(key)
-    // chrome.storage.local
+    if (this.memoryCache.has(key)) {
+      console.log('[HybridStorageManager] retrieve - Mémoire HIT', key)
+      return this.memoryCache.get(key)
+    }
     try {
       const result = await new Promise<any>((resolve, reject) => {
         this.persistentStorage.get([key], (res: any) => {
@@ -57,30 +59,39 @@ export class HybridStorageManager {
       })
       if (result !== undefined) {
         this.memoryCache.set(key, result)
+        console.log('[HybridStorageManager] retrieve - chrome.storage.local OK', key)
         return result
       }
     } catch (e) {
-      // ignore
+      console.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', key, e)
     }
-    // IndexedDB
     try {
       if (this.indexedDB) {
-        return await new Promise((resolve, reject) => {
+        const val = await new Promise((resolve, reject) => {
           const tx = this.indexedDB!.transaction(['symbiont'], 'readonly')
           const store = tx.objectStore('symbiont')
           const req = store.get(key)
           req.onsuccess = () => resolve(req.result)
           req.onerror = () => reject(req.error)
         })
+        if (val !== undefined) {
+          this.memoryCache.set(key, val)
+          console.log('[HybridStorageManager] retrieve - IndexedDB OK', key)
+          return val
+        }
       }
     } catch (e) {
-      // ignore
+      console.warn('[HybridStorageManager] retrieve - IndexedDB failed', key, e)
     }
-    // localStorage d'urgence
     try {
       const val = await this.emergencyLocalStorage.getItem(key)
-      if (val) return JSON.parse(val)
-    } catch (e) {}
+      if (val) {
+        console.log('[HybridStorageManager] retrieve - localStorage d\'urgence OK', key)
+        return JSON.parse(val)
+      }
+    } catch (e) {
+      console.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', key, e)
+    }
     return null
   }
 

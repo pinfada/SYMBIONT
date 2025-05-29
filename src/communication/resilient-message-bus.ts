@@ -46,18 +46,23 @@ class SimplePersistentQueue {
   private key = 'symbiont_messages'
   constructor() {}
   async enqueue(msg: Message) {
+    console.log('[ResilientMessageBus] enqueue', msg)
     const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
     arr.push(msg)
     await swLocalStorage.setItem(this.key, JSON.stringify(arr))
+    console.log('[ResilientMessageBus] enqueue OK', arr.length)
   }
   async dequeue(): Promise<Message | undefined> {
     const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
     const msg = arr.shift()
     await swLocalStorage.setItem(this.key, JSON.stringify(arr))
+    console.log('[ResilientMessageBus] dequeue', msg)
     return msg
   }
   async getAll(): Promise<Message[]> {
-    return JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
+    const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
+    console.log('[ResilientMessageBus] getAll', arr.length)
+    return arr
   }
 }
 
@@ -136,12 +141,15 @@ export class ResilientMessageBus {
 
   // Fallbacks simulés
   private async cacheOrganismState(msg: Message) {
+    console.log('[ResilientMessageBus] fallback cacheOrganismState', msg)
     await swLocalStorage.setItem('symbiont_organism_cache', JSON.stringify(msg))
   }
   private async queueForLaterSync(msg: Message) {
+    console.log('[ResilientMessageBus] fallback queueForLaterSync', msg)
     await this.messageQueue.enqueue(msg)
   }
   private async processLocally(msg: Message) {
+    console.log('[ResilientMessageBus] fallback processLocally', msg)
     await swLocalStorage.setItem('symbiont_local_processing', JSON.stringify(msg))
   }
 }
