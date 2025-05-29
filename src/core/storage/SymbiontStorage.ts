@@ -24,6 +24,7 @@ export class SymbiontStorage {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'symbiont-db';
   private readonly DB_VERSION = 2;
+  private _org: any = null;
 
   async initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -91,7 +92,10 @@ export class SymbiontStorage {
       const store = transaction.objectStore('organism');
       const request = store.put({ ...organism, id: 'current' });
       
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        this._org = organism;
+        resolve();
+      };
       request.onerror = () => reject(request.error);
     });
   }

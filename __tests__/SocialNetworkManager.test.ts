@@ -1,9 +1,11 @@
 import { SocialNetworkManager } from '../src/social/SocialNetworkManager'
 import { OrganismMemoryBank } from '../src/background/OrganismMemoryBank'
+import { SecurityManager } from '../src/background/SecurityManager'
 
 describe('SocialNetworkManager', () => {
-  const memory = new OrganismMemoryBank()
-  const social = new SocialNetworkManager(memory)
+  const security = new SecurityManager()
+  const memory = new OrganismMemoryBank(security)
+  const social = new SocialNetworkManager(memory, security)
 
   it('génère une invitation avec contexte anonymisé', async () => {
     const context = {

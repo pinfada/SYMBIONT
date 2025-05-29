@@ -1,7 +1,8 @@
 import { OrganismState, OrganismHistory, TimeSpan, ConsolidationResult } from '../shared/types/organism';
+import { SecurityManager } from './SecurityManager';
 export declare class OrganismMemoryBank {
     private security;
-    constructor();
+    constructor(security: SecurityManager);
     private getKey;
     saveOrganismState(id: string, state: OrganismState): Promise<void>;
     loadOrganismHistory(id: string): Promise<OrganismHistory>;

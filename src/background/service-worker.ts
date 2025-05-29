@@ -19,9 +19,10 @@ export class SymbiontBackgroundService {
 
   constructor() {
     // Initialisation des modules principaux
-    this.memoryBank = new OrganismMemoryBank()
+    const security = new SecurityManager()
+    this.memoryBank = new OrganismMemoryBank(security)
     this.neuralCore = new NeuralCoreEngine(this.memoryBank)
-    this.socialManager = new SocialNetworkManager(this.memoryBank, new SecurityManager())
+    this.socialManager = new SocialNetworkManager(this.memoryBank, security)
     this.ritualSystem = new SecretRitualSystem()
     this.webglOrchestrator = new WebGLOrchestrator(this.memoryBank)
     this.synapticRouter = new SynapticRouter({

@@ -4,8 +4,8 @@ import { SecurityManager } from './SecurityManager'
 export class OrganismMemoryBank {
   private security: SecurityManager
 
-  constructor() {
-    this.security = new SecurityManager()
+  constructor(security: SecurityManager) {
+    this.security = security
   }
 
   private getKey(id: string): string {

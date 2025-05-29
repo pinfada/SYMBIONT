@@ -15,6 +15,7 @@ export declare class SymbiontStorage {
     private db;
     private readonly DB_NAME;
     private readonly DB_VERSION;
+    private _org;
     initialize(): Promise<void>;
     getOrganism(): Promise<OrganismState | null>;
     saveOrganism(organism: OrganismState): Promise<void>;

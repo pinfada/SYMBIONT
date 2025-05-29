@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { key: 'dashboard', label: 'Organisme', icon: '🧬' },
   { key: 'metrics', label: 'Statistiques', icon: '📊' },
   { key: 'settings', label: 'Paramètres', icon: '⚙️' },
+  { key: 'network', label: 'Réseau', icon: '🌐' },
 ];
 
 const App: React.FC = () => {
@@ -45,6 +46,12 @@ const App: React.FC = () => {
         )}
         {active === 'settings' && (
           <div className="settings-panel panel"><SettingsPanel /></div>
+        )}
+        {active === 'network' && (
+          <div className="network-panel panel" data-testid="network-panel">
+            <h2>Carte du réseau</h2>
+            <p>Visualisation du réseau social distribué (prochainement).</p>
+          </div>
         )}
         {/* Placeholders pour d'autres panels */}
         {['onboarding', 'network'].includes(active) && (

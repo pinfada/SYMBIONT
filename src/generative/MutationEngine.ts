@@ -88,4 +88,6 @@ export class MutationEngine {
       opacity: 1
     };
   }
+
+  applyMutation(state: any, mutation: any) { state.lastMutation = mutation; return state; }
 }

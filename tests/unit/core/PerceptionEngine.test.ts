@@ -1,4 +1,4 @@
-import { PerceptionEngine, Feature, Filter } from '../../../../src/core/PerceptionEngine';
+import { PerceptionEngine, Feature, Filter } from '../../../src/core/PerceptionEngine';
 
 describe('PerceptionEngine', () => {
   let engine: PerceptionEngine;
@@ -8,14 +8,14 @@ describe('PerceptionEngine', () => {
   });
 
   it('traite des entrées sans filtre', () => {
-    const features = engine.process({ a: 1, b: 2 });
+    const features: Feature = engine.process({ a: 1, b: 2 });
     expect(features).toEqual({ a: 1, b: 2 });
     expect(engine.getFeatures()).toEqual({ a: 1, b: 2 });
   });
 
   it('ajoute et applique un filtre de moyenne', () => {
-    const meanFilter: Filter = (inputs) => {
-      const sum = Object.values(inputs).reduce((a, b) => a + b, 0);
+    const meanFilter: Filter = (inputs: Feature) => {
+      const sum = Object.values(inputs).reduce((a, b) => Number(a) + Number(b), 0 as number);
       const avg = sum / Object.keys(inputs).length;
       return Object.fromEntries(Object.keys(inputs).map(k => [k, avg]));
     };
@@ -26,8 +26,8 @@ describe('PerceptionEngine', () => {
   });
 
   it('ajoute et applique un filtre de seuillage', () => {
-    const thresholdFilter: Filter = (inputs) => {
-      return Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, v > 0.5 ? 1 : 0]));
+    const thresholdFilter: Filter = (inputs: Feature) => {
+      return Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, (v as number) > 0.5 ? 1 : 0]));
     };
     engine.addFilter(thresholdFilter);
     const features = engine.process({ a: 0.3, b: 0.7 });
@@ -36,10 +36,10 @@ describe('PerceptionEngine', () => {
   });
 
   it('chaîne plusieurs filtres', () => {
-    engine.addFilter((inputs) => ({ ...inputs, z: 1 }));
-    engine.addFilter((inputs) => {
+    engine.addFilter((inputs: Feature) => ({ ...inputs, z: 1 }));
+    engine.addFilter((inputs: Feature) => {
       const out = { ...inputs };
-      out.z = out.z * 2;
+      out.z = (out.z as number) * 2;
       return out;
     });
     const features = engine.process({ x: 0 });
@@ -59,7 +59,7 @@ describe('PerceptionEngine', () => {
     expect(json.lastFeatures).toBeDefined();
   });
 
-  it('gère le cas d’entrée vide', () => {
+  it('gère le cas d\'entrée vide', () => {
     const features = engine.process({});
     expect(features).toEqual({});
   });

@@ -53,6 +53,11 @@ module.exports = {
       filename: 'popup/index.html',
       chunks: ['popup']
     }),
+    new HtmlPlugin({
+      template: './src/popup/index.html',
+      filename: 'popup.html',
+      chunks: ['popup']
+    }),
     new CopyPlugin({
       patterns: [
         { from: 'src/popup/styles/popup.css', to: 'popup/styles/popup.css' }

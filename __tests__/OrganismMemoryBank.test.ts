@@ -1,5 +1,6 @@
 import { OrganismMemoryBank } from '../src/background/OrganismMemoryBank'
 import { OrganismState } from '../src/shared/types/organism'
+import { SecurityManager } from '../src/background/SecurityManager'
 
 // Mock chrome.storage.local
 const storage: Record<string, any> = {}
@@ -22,9 +23,10 @@ const chrome: any = {
 ;(global as any).chrome = chrome
 
 describe('OrganismMemoryBank', () => {
-  const memory = new OrganismMemoryBank()
+  const security = new SecurityManager()
+  const memory = new OrganismMemoryBank(security)
   const org: OrganismState = {
-    id: 'test', generation: 1, dna: 'abc', traits: { curiosity: 0.5 }, birthTime: 123, lastMutation: null, mutations: [], socialConnections: [], memoryFragments: []
+    id: 'test', generation: 1, dna: 'abc', traits: { curiosity: 0.5, focus: 0.7, rhythm: 0.6, empathy: 0.8, creativity: 0.9 }, birthTime: 123, lastMutation: null, mutations: [], socialConnections: [], memoryFragments: []
   }
 
   it('sauvegarde et charge un organisme (chiffré)', async () => {

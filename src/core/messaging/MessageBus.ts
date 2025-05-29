@@ -7,7 +7,12 @@ type MessageHandler<T extends Message = Message> = (message: T) => void | Promis
 type MessageFilter = (message: Message) => boolean;
 
 function isOrganismState(obj: any): obj is OrganismState {
-  return obj && typeof obj.id === 'string' && typeof obj.generation === 'number';
+  return obj &&
+    typeof obj.id === 'string' &&
+    typeof obj.generation === 'number' &&
+    typeof obj.health === 'number' &&
+    typeof obj.energy === 'number' &&
+    obj.traits && typeof obj.traits === 'object';
 }
 
 function isOrganismMutation(obj: any): obj is OrganismMutation {
@@ -86,11 +91,13 @@ export class MessageBus {
 
   private async enqueueMessage(message: Message): Promise<void> {
     this.messageQueue.push(message);
-    
     if (!this.processing) {
       this.processing = true;
-      await this.processQueue();
-      this.processing = false;
+      try {
+        await this.processQueue();
+      } finally {
+        this.processing = false;
+      }
     }
   }
 
@@ -170,14 +177,16 @@ export class MessageBus {
       } else {
         // Send to all tabs for content scripts
         const tabs = await chrome.tabs.query({});
-        for (const tab of tabs) {
+        // Routage intelligent : on ne cible que les tabs actifs ou pertinents
+        const isRelevantTab = (tab: any) => tab.active || (tab.url && tab.url.includes('symbiont'));
+        const activeTabs = tabs.filter(isRelevantTab);
+        for (const tab of activeTabs) {
           if (tab.id) {
             chrome.tabs.sendMessage(tab.id, fullMessage).catch(() => {
               // Ignore errors for inactive tabs
             });
           }
         }
-        
         // Also send to runtime for popup/background
         chrome.runtime.sendMessage(fullMessage).catch(() => {});
       }
@@ -201,3 +210,4 @@ export class MessageBus {
 }
 
 export default MessageBus;
+export { validatePayload };

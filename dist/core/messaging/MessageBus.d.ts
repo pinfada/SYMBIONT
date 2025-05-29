@@ -1,6 +1,7 @@
-import { Message } from '../../shared/messaging/MessageBus';
+import { Message, MessageType } from '../../shared/messaging/MessageBus';
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
+declare function validatePayload(type: MessageType, payload: any): boolean;
 export declare class MessageBus {
     private readonly source;
     private handlers;
@@ -24,4 +25,5 @@ export declare class MessageBus {
     emit(type: any, payload: any): void;
 }
 export default MessageBus;
+export { validatePayload };
 //# sourceMappingURL=MessageBus.d.ts.map

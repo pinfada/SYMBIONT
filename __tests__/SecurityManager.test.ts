@@ -3,11 +3,11 @@ import { SecurityManager } from '../src/background/SecurityManager'
 describe('SecurityManager', () => {
   const security = new SecurityManager()
 
-  it('chiffre et déchiffre correctement les données', () => {
+  it('chiffre et déchiffre correctement les données', async () => {
     const data = { foo: 'bar', n: 42 }
-    const encrypted = security.encryptSensitiveData(data)
+    const encrypted = await security.encryptSensitiveData(data)
     expect(typeof encrypted).toBe('string')
-    const decrypted = security.decryptSensitiveData(encrypted)
+    const decrypted = await security.decryptSensitiveData(encrypted)
     expect(decrypted).toEqual(data)
   })
 
