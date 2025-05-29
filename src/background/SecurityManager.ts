@@ -2,6 +2,7 @@
  * SecurityManager - Sécurité avancée (chiffrement, anonymisation, contrôle d'accès)
  */
 import { OrganismState, BehaviorPattern } from '../shared/types/organism'
+import { swCryptoAPI } from './service-worker-adapter'
 
 export class SecurityManager {
   private encryptionKey: string
@@ -15,17 +16,17 @@ export class SecurityManager {
    * Chiffre des données sensibles (AES ou base64 fallback)
    */
   async encryptSensitiveData(data: any): Promise<string> {
-    if (window.crypto && window.crypto.subtle) {
+    if (swCryptoAPI && swCryptoAPI.subtle) {
       // WebCrypto API (AES-GCM)
       const enc = new TextEncoder()
       const keyMaterial = enc.encode(this.encryptionKey.padEnd(32, '0').slice(0, 32))
-      const key = await window.crypto.subtle.importKey(
+      const key = await swCryptoAPI.subtle.importKey(
         'raw', keyMaterial as BufferSource,
         { name: 'AES-GCM' }, false, ['encrypt']
       )
-      const iv = window.crypto.getRandomValues(new Uint8Array(12))
+      const iv = swCryptoAPI.getRandomValues(new Uint8Array(12))
       const encoded = enc.encode(JSON.stringify(data))
-      const ciphertext = await window.crypto.subtle.encrypt(
+      const ciphertext = await swCryptoAPI.subtle.encrypt(
         { name: 'AES-GCM', iv }, key, encoded
       )
       // Concatène IV + ciphertext en base64
@@ -47,18 +48,18 @@ export class SecurityManager {
     if (typeof data !== 'string') {
       throw new Error('decryptSensitiveData attend une chaîne de caractères.');
     }
-    if (window.crypto && window.crypto.subtle) {
+    if (swCryptoAPI && swCryptoAPI.subtle) {
       try {
         const bin = Uint8Array.from(atob(String(data)), c => c.charCodeAt(0))
         const iv = bin.slice(0, 12)
         const ciphertext = bin.slice(12)
         const enc = new TextEncoder()
         const keyMaterial = enc.encode(this.encryptionKey.padEnd(32, '0').slice(0, 32))
-        const key = await window.crypto.subtle.importKey(
+        const key = await swCryptoAPI.subtle.importKey(
           'raw', keyMaterial as BufferSource,
           { name: 'AES-GCM' }, false, ['decrypt']
         )
-        const plain = await window.crypto.subtle.decrypt(
+        const plain = await swCryptoAPI.subtle.decrypt(
           { name: 'AES-GCM', iv }, key, ciphertext
         )
         return JSON.parse(new TextDecoder().decode(plain))
@@ -99,22 +100,11 @@ export class SecurityManager {
    * Hash simple (SHA-256 base64) pour anonymisation
    */
   hash(str: string): string {
-    if (window.crypto && window.crypto.subtle) {
-      // Hash asynchrone, mais pour simplifier ici on fait un hash sync basique
-      let hash = 0
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i)
-        hash |= 0
-      }
-      return btoa(hash.toString())
-    } else {
-      // Fallback
-      let hash = 0
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i)
-        hash |= 0
-      }
-      return btoa(hash.toString())
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i)
+      hash |= 0
     }
+    return btoa(hash.toString())
   }
 } 

@@ -7,6 +7,7 @@ import { SocialNetworkManager } from '../social/SocialNetworkManager'
 import { SecretRitualSystem } from '../mystical/SecretRitualSystem'
 import { SymbiontMessage, SymbiontResponse } from '../shared/types/messages'
 import { SecurityManager } from './SecurityManager'
+import { swLocalStorage, swBroadcastChannel, swCryptoAPI, swIndexedDB } from './service-worker-adapter'
 
 export class SymbiontBackgroundService {
   private neuralCore: NeuralCoreEngine

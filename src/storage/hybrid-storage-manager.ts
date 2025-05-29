@@ -1,11 +1,13 @@
 // storage/hybrid-storage-manager.ts
 // Système de stockage hybride multi-niveaux (Phase 1)
 
+import { swLocalStorage, swIndexedDB } from '../background/service-worker-adapter'
+
 export class HybridStorageManager {
   private memoryCache: Map<string, any> = new Map()
   private persistentStorage = chrome.storage?.local
   private indexedDB: IDBDatabase | null = null
-  private emergencyLocalStorage: Storage = window.localStorage
+  private emergencyLocalStorage = swLocalStorage
 
   constructor() {
     this.setupMultiLayerStorage()
@@ -38,7 +40,7 @@ export class HybridStorageManager {
       }
     } catch (e) {
       // Niveau 4: localStorage d'urgence
-      this.emergencyLocalStorage.setItem(key, JSON.stringify(data))
+      await this.emergencyLocalStorage.setItem(key, JSON.stringify(data))
     }
   }
 
@@ -76,7 +78,7 @@ export class HybridStorageManager {
     }
     // localStorage d'urgence
     try {
-      const val = this.emergencyLocalStorage.getItem(key)
+      const val = await this.emergencyLocalStorage.getItem(key)
       if (val) return JSON.parse(val)
     } catch (e) {}
     return null
@@ -84,7 +86,7 @@ export class HybridStorageManager {
 
   private setupMultiLayerStorage() {
     // Init IndexedDB
-    const req = window.indexedDB.open('symbiont-db', 1)
+    const req = swIndexedDB.open('symbiont-db', 1)
     req.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result
       if (!db.objectStoreNames.contains('symbiont')) {

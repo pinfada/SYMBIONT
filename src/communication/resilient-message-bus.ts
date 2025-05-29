@@ -1,6 +1,8 @@
 // communication/resilient-message-bus.ts
 // Message Bus résilient avec circuit breaker (Phase 1)
 
+import { swLocalStorage } from '../background/service-worker-adapter'
+
 type Message = { type: string; payload: any }
 type SendResult = { success: boolean; queued?: boolean; error?: any }
 
@@ -44,18 +46,18 @@ class SimplePersistentQueue {
   private key = 'symbiont_messages'
   constructor() {}
   async enqueue(msg: Message) {
-    const arr = JSON.parse(localStorage.getItem(this.key) || '[]')
+    const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
     arr.push(msg)
-    localStorage.setItem(this.key, JSON.stringify(arr))
+    await swLocalStorage.setItem(this.key, JSON.stringify(arr))
   }
   async dequeue(): Promise<Message | undefined> {
-    const arr = JSON.parse(localStorage.getItem(this.key) || '[]')
+    const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
     const msg = arr.shift()
-    localStorage.setItem(this.key, JSON.stringify(arr))
+    await swLocalStorage.setItem(this.key, JSON.stringify(arr))
     return msg
   }
   async getAll(): Promise<Message[]> {
-    return JSON.parse(localStorage.getItem(this.key) || '[]')
+    return JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
   }
 }
 
@@ -134,13 +136,13 @@ export class ResilientMessageBus {
 
   // Fallbacks simulés
   private async cacheOrganismState(msg: Message) {
-    localStorage.setItem('symbiont_organism_cache', JSON.stringify(msg))
+    await swLocalStorage.setItem('symbiont_organism_cache', JSON.stringify(msg))
   }
   private async queueForLaterSync(msg: Message) {
     await this.messageQueue.enqueue(msg)
   }
   private async processLocally(msg: Message) {
-    localStorage.setItem('symbiont_local_processing', JSON.stringify(msg))
+    await swLocalStorage.setItem('symbiont_local_processing', JSON.stringify(msg))
   }
 }
 

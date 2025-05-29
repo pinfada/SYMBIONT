@@ -1,6 +1,8 @@
 // background/persistent-service-worker.ts
 // Service Worker persistant et auto-réparant (Phase 1)
 
+import { swLocalStorage, swBroadcastChannel, swCryptoAPI, swIndexedDB } from './service-worker-adapter'
+
 class PersistentServiceWorker {
   private static instance: PersistentServiceWorker
   private isAlive = true
