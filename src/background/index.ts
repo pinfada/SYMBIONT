@@ -9,26 +9,61 @@ import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
 
+// --- Ajout des modules résilients ---
+import { persistentServiceWorker } from './persistent-service-worker';
+import { ResilientMessageBus } from '../communication/resilient-message-bus';
+import { HybridStorageManager } from '../storage/hybrid-storage-manager';
+import { BasicHealthMonitor } from '../monitoring/basic-health-monitor';
+
+// --- Instanciation des modules d'intelligence adaptative (Phase 2) ---
+import { ContextAwareOrganism } from '../intelligence/context-aware-organism';
+import { PredictiveHealthMonitor } from '../monitoring/predictive-health-monitor';
+
+// --- Instanciation des modules sociaux (Phase 3) ---
+import { DistributedOrganismNetwork } from '../social/distributed-organism-network';
+import { CollectiveIntelligence } from '../social/collective-intelligence';
+import { SocialResilience } from '../social/social-resilience';
+import { MysticalEvents } from '../social/mystical-events';
+
+// --- Instanciation des modules résilients ---
+export const hybridStorage = new HybridStorageManager();
+export const resilientBus = new ResilientMessageBus();
+export const healthMonitor = new BasicHealthMonitor(async (msg) => {
+  // Log des anomalies dans le stockage hybride
+  await hybridStorage.store('symbiont_health_alert_' + Date.now(), { msg, timestamp: Date.now() });
+});
+
+// --- Exemple d'utilisation du ResilientMessageBus ---
+(async () => {
+  const message = {
+    type: 'ORGANISM_UPDATE',
+    payload: { state: { id: 'demo', traits: { focus: 1 } }, timestamp: Date.now() }
+  };
+  const result = await resilientBus.send(message);
+  if (!result.success) {
+    console.warn('Message ORGANISM_UPDATE fallback, voir la queue persistante.');
+  }
+})();
+
 // Utilitaires pour chrome.storage.local (asynchrone)
 async function getStorage(key: string): Promise<any> {
-  return new Promise((resolve) => {
-    chrome.storage.local.get([key], (result) => {
-      resolve(result[key]);
-    });
-  });
+  // Utilise le stockage hybride pour la récupération
+  return await hybridStorage.retrieve(key);
 }
 
 async function setStorage(key: string, value: any): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ [key]: value }, () => resolve());
-  });
+  // Utilise le stockage hybride pour la persistance
+  await hybridStorage.store(key, value);
 }
+
+// --- Singleton pour accès global à BackgroundService ---
+let backgroundServiceInstance: BackgroundService | null = null;
 
 class BackgroundService {
   private messageBus: MessageBus;
   private storage: SymbiontStorage;
   private navigationObserver: NavigationObserver;
-  private organism: OrganismState | null = null;
+  public organism: OrganismState | null = null;
   private invitationService: InvitationService;
   private murmureService: MurmureService;
   private activated: boolean = false;
@@ -184,7 +219,7 @@ class BackgroundService {
         // fallback : en clair si erreur
         encryptedPayload = invitation;
       }
-      this.messageBus.send({
+      await resilientBus.send({
         type: MessageType.INVITATION_GENERATED,
         payload: encryptedPayload
       });
@@ -195,7 +230,7 @@ class BackgroundService {
       const { code, receiverId, role } = message.payload;
       // Contrôle d'accès : seul un utilisateur authentifié peut consommer une invitation
       if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
-        this.messageBus.send({
+        resilientBus.send({
           type: MessageType.INVITATION_CONSUMED,
           payload: { error: 'Accès refusé.' }
         });
@@ -211,7 +246,7 @@ class BackgroundService {
           await this.storage.saveOrganism(this.organism);
         }
       }
-      this.messageBus.send({
+      resilientBus.send({
         type: MessageType.INVITATION_CONSUMED,
         payload: invitation
       });
@@ -221,7 +256,7 @@ class BackgroundService {
     this.messageBus.on(MessageType.CHECK_INVITATION, async (message: any) => {
       const { code } = message.payload;
       const valid = await this.invitationService.isValid(code);
-      this.messageBus.send({
+      resilientBus.send({
         type: MessageType.INVITATION_CHECKED,
         payload: { code, valid }
       });
@@ -233,7 +268,7 @@ class BackgroundService {
       // Recherche de l'invitation où receiverId === userId
       const all = await this.invitationService.getAllInvitations();
       const inviter = all.find(inv => inv.receiverId === userId);
-      this.messageBus.send({
+      resilientBus.send({
         type: MessageType.INVITER_RESULT,
         payload: inviter || null
       });
@@ -244,7 +279,7 @@ class BackgroundService {
       // Recherche des invitations où donorId === userId
       const all = await this.invitationService.getAllInvitations();
       const invitees = all.filter(inv => inv.donorId === userId);
-      this.messageBus.send({
+      resilientBus.send({
         type: MessageType.INVITEES_RESULT,
         payload: invitees
       });
@@ -258,7 +293,7 @@ class BackgroundService {
         ...all.filter(inv => inv.receiverId === userId).map(inv => ({ ...inv, type: 'reçue' })),
         ...all.filter(inv => inv.donorId === userId).map(inv => ({ ...inv, type: 'envoyée' }))
       ];
-      this.messageBus.send({
+      resilientBus.send({
         type: MessageType.INVITATION_HISTORY_RESULT,
         payload: history
       });
@@ -272,7 +307,7 @@ class BackgroundService {
       const code = Math.random().toString(36).substr(2, 6).toUpperCase();
       const expiresAt = Date.now() + 1000 * 60 * 5; // 5 min
       sharedMutationSessions.set(code, { initiatorId, traits, expiresAt });
-      this.messageBus.send({
+      resilientBus.send({
         type: MessageType.SHARED_MUTATION_CODE,
         payload: { code, initiatorId, expiresAt }
       });
@@ -282,7 +317,7 @@ class BackgroundService {
       const { code, receiverId, traits, role } = message.payload;
       // Contrôle d'accès : seul un utilisateur authentifié peut accepter une mutation partagée
       if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
-        this.messageBus.send({
+        resilientBus.send({
           type: MessageType.SHARED_MUTATION_RESULT,
           payload: { error: 'Accès refusé.' }
         });
@@ -290,7 +325,7 @@ class BackgroundService {
       }
       const session = sharedMutationSessions.get(code);
       if (!session || session.expiresAt < Date.now()) {
-        this.messageBus.send({
+        resilientBus.send({
           type: MessageType.SHARED_MUTATION_RESULT,
           payload: { error: 'Code expiré ou invalide.' }
         });
@@ -313,7 +348,7 @@ class BackgroundService {
       } catch (e) {
         // fallback : en clair si erreur
       }
-      this.messageBus.send({
+      resilientBus.send({
         type: MessageType.SHARED_MUTATION_RESULT,
         payload: resultPayload
       });
@@ -328,7 +363,7 @@ class BackgroundService {
       collectiveWakeParticipants.add(userId);
       if (!collectiveWakeTimeout) {
         collectiveWakeTimeout = setTimeout(() => {
-          this.messageBus.send({
+          resilientBus.send({
             type: MessageType.COLLECTIVE_WAKE_RESULT,
             payload: {
               participants: Array.from(collectiveWakeParticipants),
@@ -345,7 +380,7 @@ class BackgroundService {
     const triggerContextualInvitation = async (context: string) => {
       const userId = (await getStorage('symbiont_user_id')) || 'unknown';
       const invitation = await this.invitationService.generateInvitation(userId);
-      this.messageBus.send({
+      await resilientBus.send({
         type: MessageType.CONTEXTUAL_INVITATION,
         payload: { invitation, context }
       });
@@ -386,7 +421,7 @@ class BackgroundService {
       const { code } = message.payload;
       if (SECRET_CODES.includes(code.toUpperCase())) {
         // Déclencher un effet spécial (ex : mutation unique)
-        this.messageBus.send({
+        resilientBus.send({
           type: MessageType.SECRET_RITUAL_TRIGGERED,
           payload: { code, effect: 'mutation_unique', timestamp: Date.now() }
         });
@@ -451,7 +486,7 @@ class BackgroundService {
     // Broadcast update
     if (!this.organism) return;
     const org = this.organism;
-    this.messageBus.send({
+    await resilientBus.send({
       type: MessageType.ORGANISM_UPDATE,
       payload: {
         state: org,
@@ -460,7 +495,7 @@ class BackgroundService {
     });
     // Générer et envoyer un murmure contextuel
     const murmure = this.murmureService.generateMurmur(pattern);
-    this.messageBus.send({
+    await resilientBus.send({
       type: MessageType.MURMUR,
       payload: { text: murmure, pattern, timestamp: Date.now() }
     });
@@ -561,7 +596,7 @@ class BackgroundService {
     setInterval(async () => {
       if (this.organism) {
         await this.storage.saveOrganism(this.organism);
-        this.messageBus.send({
+        await resilientBus.send({
           type: MessageType.ORGANISM_UPDATE,
           payload: {
             state: this.organism,
@@ -653,7 +688,7 @@ class BackgroundService {
   private async triggerContextualInvitation(context: string) {
     const userId = (await getStorage('symbiont_user_id')) || 'unknown';
     const invitation = await this.invitationService.generateInvitation(userId);
-    this.messageBus.send({
+    await resilientBus.send({
       type: MessageType.CONTEXTUAL_INVITATION,
       payload: { invitation, context }
     });
@@ -661,7 +696,33 @@ class BackgroundService {
 }
 
 // Démarrage effectif du service worker
-new BackgroundService();
+backgroundServiceInstance = new BackgroundService();
 
 // Export for testing
 export { BackgroundService };
+
+// --- Instanciation des modules sociaux (Phase 3) ---
+export const distributedNetwork = new DistributedOrganismNetwork();
+export const collectiveIntelligence = new CollectiveIntelligence();
+export const socialResilience = new SocialResilience();
+export const mysticalEvents = new MysticalEvents();
+
+// --- Hooks d'intégration (après instanciation des modules) ---
+// Synchronisation d'état avec le réseau
+function syncOrganismState(state: any) {
+  distributedNetwork.performCommunityBackup(state)
+}
+// Propagation d'une mutation à la communauté
+function propagateMutation(mutation: any) {
+  distributedNetwork.broadcastMutation(mutation)
+  collectiveIntelligence.proposeMutation(mutation, 'self')
+}
+// Déclenchement d'un événement mystique
+function triggerMystical(eventId: string, payload: any) {
+  mysticalEvents.triggerMysticalEvent(eventId, payload)
+  mysticalEvents.propagateToCommunity(eventId, payload)
+}
+// Backup communautaire en cas de panne
+function backupOnFailure(organismId: string) {
+  socialResilience.requestCommunityBackup(organismId)
+}

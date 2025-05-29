@@ -89,7 +89,7 @@ logAccess(ip, route, status); // status 200, 403, etc.
 - Le chiffrement est réalisé côté client via `SecurityManager.encryptSensitiveData`.
 - Le fichier exporté est inutilisable sans déchiffrement (protection en cas de fuite).
 
-**Exemple d'appel dans l'UI :**
+**Exemple d'appel dans l'UI :**
 ```ts
 const sec = new SecurityManager();
 const encrypted = await sec.encryptSensitiveData(data);

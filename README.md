@@ -65,6 +65,44 @@ Types de messages supportés : `CREATE_ORGANISM`, `EVOLVE_ORGANISM`, `PREDICT_
 - Les hooks d’optimisation et de monitoring sont prêts à être enrichis.
 - Les rituels et événements mystiques sont extensibles.
 
+## Phase 1 : Résilience (2024)
+
+SYMBIONT intègre une architecture auto-réparatrice et tolérante aux pannes :
+- **Service Worker persistant** : heartbeat, auto-réveil, sauvegarde d'état critique
+- **Resilient Message Bus** : file persistante, retry automatique, circuit breaker
+- **Hybrid Storage Manager** : stockage multi-niveaux, fallback automatique
+- **Basic Health Monitor** : surveillance CPU/mémoire/latence, log d'anomalies
+
+Grâce à ces modules, l'extension garantit la continuité de l'expérience utilisateur, même en cas de crash, de coupure réseau ou de suspension du service worker.
+
+## Phase 2 : Intelligence Adaptive & Monitoring Prédictif (2024)
+
+SYMBIONT évolue avec une intelligence contextuelle et un monitoring prédictif :
+- **ContextAwareOrganism** : adaptation dynamique à l'environnement web, social, technique et comportemental. Met à jour dynamiquement les traits de l'organisme principal à chaque changement de contexte détecté.
+- **PredictiveHealthMonitor** : détection avancée d'anomalies, prédiction de crash, actions préventives automatiques. Logue les alertes critiques dans le stockage hybride et peut déclencher des actions préventives.
+
+Ces modules sont instanciés et branchés dans le background principal pour une adaptation et une résilience en temps réel.
+
+## Phase 3 : Écosystème Social & Intelligence Collective (2024)
+
+SYMBIONT devient un véritable écosystème social distribué :
+- **DistributedOrganismNetwork** : réseau P2P, synchronisation d'état, propagation de mutations, backup communautaire.
+- **CollectiveIntelligence** : intelligence collective, votes, mutations partagées, décisions émergentes.
+- **SocialResilience** : backup communautaire, récupération d'état, gestion des pannes collectives, alertes communautaires.
+- **MysticalEvents** : événements mystiques distribués, rituels secrets, effets spéciaux collectifs.
+
+Grâce à ces modules, chaque organisme bénéficie de la force du réseau, peut se restaurer en cas de panne, et participe à l'émergence d'une intelligence collective et de rituels sociaux uniques.
+
+## Phase 4 : Optimisation Ultime & Machine Learning (2024)
+
+SYMBIONT atteint un niveau d'optimisation et d'intelligence inégalé :
+- **AdvancedCaching** : cache avancé, compression intelligente, invalidation automatique, optimisation mémoire.
+- **PerformanceAnalytics** : monitoring avancé (CPU, mémoire, latence, FPS), détection d'anomalies, export des métriques.
+- **BehavioralPredictor** : prédiction comportementale par apprentissage automatique, adaptation proactive, personnalisation.
+- **Compatibilité cross-browser** : fonctionnement garanti sur Chrome, Firefox, Edge, etc.
+
+Grâce à ces modules, SYMBIONT garantit des performances optimales, une adaptation proactive à chaque utilisateur et une robustesse sur tous les navigateurs modernes.
+
 ---
 
 **SYMBIONT** – Pour une navigation vivante, éthique et évolutive.

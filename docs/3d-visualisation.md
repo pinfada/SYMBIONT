@@ -1,5 +1,7 @@
 # Visualisation 3D et mutations visuelles SYMBIONT
 
+> **Note (2024 - Phase 1)** : L'architecture SYMBIONT intègre désormais une couche de résilience (Service Worker persistant, Message Bus tolérant aux pannes, stockage hybride). Les états et mutations visuelles sont sauvegardés et restaurés automatiquement, même en cas de crash ou de coupure réseau.
+
 ## Sommaire
 - Architecture du rendu 3D
 - Shaders personnalisés
