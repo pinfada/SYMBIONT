@@ -4,7 +4,7 @@
 class PersistentServiceWorker {
   private static instance: PersistentServiceWorker
   private isAlive = true
-  private heartbeatInterval: number = 0
+  private heartbeatInterval: ReturnType<typeof setInterval> | undefined = undefined
   private connectionHealth = new Map<string, any>()
   private lastHeartbeat: number = Date.now()
 
@@ -17,7 +17,7 @@ class PersistentServiceWorker {
   // Auto-réveil du Service Worker
   private setupSelfHealing(): void {
     // Heartbeat toutes les 25 secondes (Chrome limite = 30s)
-    this.heartbeatInterval = window.setInterval(() => {
+    this.heartbeatInterval = setInterval(() => {
       this.sendHeartbeat()
       this.checkConnectionHealth()
       this.performMaintenance()
