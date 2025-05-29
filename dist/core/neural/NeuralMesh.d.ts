@@ -63,6 +63,14 @@ export declare class NeuralMesh {
         nodes: Node[];
         connections: Connection[];
     };
+    /**
+     * Itère sur chaque connexion du réseau
+     */
+    forEachConnection(fn: (conn: Connection) => void): void;
+    /**
+     * Supprime les connexions qui vérifient un prédicat
+     */
+    removeConnections(predicate: (conn: Connection) => boolean): void;
 }
 export {};
 //# sourceMappingURL=NeuralMesh.d.ts.map

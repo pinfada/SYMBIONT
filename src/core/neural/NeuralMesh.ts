@@ -137,4 +137,20 @@ export class NeuralMesh {
       connections: this.connections
     };
   }
+
+  /**
+   * Itère sur chaque connexion du réseau
+   */
+  public forEachConnection(fn: (conn: Connection) => void): void {
+    for (const conn of this.connections) {
+      fn(conn);
+    }
+  }
+
+  /**
+   * Supprime les connexions qui vérifient un prédicat
+   */
+  public removeConnections(predicate: (conn: Connection) => boolean): void {
+    this.connections = this.connections.filter(conn => !predicate(conn));
+  }
 }
