@@ -55,7 +55,7 @@ const App: React.FC = () => {
         </nav>
         {active === 'dashboard' && (
           <div className="dashboard-panel panel" data-testid="dashboard-panel">
-            <h2 data-testid="dashboard-title">Dashboard</h2>
+            <h2 data-testid="dashboard-title">Dashboard|Tableau de bord</h2>
             <p>Bienvenue sur le dashboard principal de Symbiont.</p>
             <section style={{margin: '20px 0'}}>
               <h3>État de l'organisme</h3>

@@ -44,7 +44,7 @@ export const TraitsRadarChart: React.FC<TraitsRadarChartProps> = ({ traits }) =>
   
   return (
     <div className="traits-radar">
-      <svg viewBox={`0 0 ${size} ${size}`} className="radar-chart">
+      <svg viewBox={`0 0 ${size} ${size}`} className="radar-chart" data-testid="traits-radar">
         {/* Grille de fond */}
         {[0.2, 0.4, 0.6, 0.8, 1].map(level => (
           <circle

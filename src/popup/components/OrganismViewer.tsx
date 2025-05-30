@@ -85,6 +85,7 @@ export const OrganismViewer: React.FC = () => {
         className="w-full h-full"
         width={800}
         height={600}
+        data-testid="organism-canvas"
       />
       
       {metrics && (

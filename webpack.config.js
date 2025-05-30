@@ -44,6 +44,20 @@ module.exports = {
       {
         test: /\.(vert|frag|glsl)$/,
         type: 'asset/source'
+      },
+      {
+        test: /\.(png|jpg|jpeg|gif|svg|ico)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/images/[name][ext]'
+        }
+      },
+      {
+        test: /\.(woff2?|ttf|eot)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/fonts/[name][ext]'
+        }
       }
     ]
   },
@@ -56,11 +70,14 @@ module.exports = {
     new HtmlPlugin({
       template: './src/popup/index.html',
       filename: 'popup.html',
-      chunks: ['popup']
+      chunks: ['popup'],
+      inject: 'body'
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'src/popup/styles/popup.css', to: 'popup/styles/popup.css' }
+        { from: 'src/popup/styles/popup.css', to: 'popup/styles/popup.css' },
+        { from: 'manifest.json', to: 'manifest.json', noErrorOnMissing: true },
+        // { from: 'src/assets', to: 'assets', noErrorOnMissing: true },
       ]
     })
   ]
