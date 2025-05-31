@@ -25,7 +25,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type = 'info', duration =
   }, [duration, onClose]);
 
   return (
-    <div className="toast" style={{ color: getColor(type) }}>
+    <div className="ext-toast" style={{ color: getColor(type) }}>
       {message}
     </div>
   );

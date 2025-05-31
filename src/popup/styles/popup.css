@@ -19,7 +19,7 @@ body, html {
 }
 
 /* Navigation latérale */
-.navbar {
+.ext-navbar {
   width: 80px;
   background: #10101a;
   display: flex;
@@ -29,10 +29,10 @@ body, html {
   border-right: 1px solid #222;
   min-height: 100vh;
 }
-.navbar-logo {
+.ext-navbar-logo {
   margin-bottom: 32px;
 }
-.navbar .icon-btn {
+.ext-navbar .icon-btn {
   background: none;
   border: none;
   border-radius: 8px;
@@ -45,15 +45,15 @@ body, html {
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
-.navbar .icon-btn.active,
-.navbar .icon-btn:focus,
-.navbar .icon-btn:hover {
+.ext-navbar .icon-btn.active,
+.ext-navbar .icon-btn:focus,
+.ext-navbar .icon-btn:hover {
   background: #00e0ff;
   color: #181c22;
 }
 
 /* Panels */
-.panel {
+.ext-panel {
   background: #232946;
   border-radius: 12px;
   box-shadow: 0 2px 12px #0008;
@@ -62,7 +62,7 @@ body, html {
   width: 100%;
   max-width: 420px;
 }
-.metrics-panel, .settings-panel, .dashboard-panel {
+.ext-metrics-panel.ext-panel, .ext-settings-panel.ext-panel, .ext-dashboard-panel.ext-panel {
   background: #232946;
   border-radius: 12px;
   box-shadow: 0 2px 12px #0008;
@@ -70,10 +70,10 @@ body, html {
   margin: 16px 0;
 }
 
-.metrics-section, .settings-section {
+.ext-metrics-section, .ext-settings-section {
   margin-bottom: 24px;
 }
-.metrics-section h3, .settings-section h3 {
+.ext-metrics-section h3, .ext-settings-section h3 {
   color: #00e0ff;
   font-size: 1.15em;
   margin-bottom: 12px;
@@ -81,12 +81,12 @@ body, html {
 }
 
 /* Statistiques */
-.evolution-stats {
+.ext-evolution-stats {
   display: flex;
   gap: 24px;
   margin-top: 12px;
 }
-.stat-item {
+.ext-stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -95,19 +95,19 @@ body, html {
   padding: 12px 16px;
   min-width: 80px;
 }
-.stat-label {
+.ext-stat-label {
   color: #888;
   font-size: 0.95em;
   margin-bottom: 4px;
 }
-.stat-value {
+.ext-stat-value {
   font-size: 1.2em;
   font-weight: 700;
   color: #00e0ff;
 }
 
 /* Boutons */
-.button, .animated-btn, .save-btn {
+.ext-button, .ext-animated-btn, .ext-save-btn {
   background: #00e0ff;
   color: #181c22;
   border: none;
@@ -120,12 +120,12 @@ body, html {
   margin-top: 16px;
   margin-bottom: 8px;
 }
-.button:disabled, .animated-btn:disabled {
+.ext-button:disabled, .ext-animated-btn:disabled {
   background: #333;
   color: #888;
   cursor: not-allowed;
 }
-.button:hover, .animated-btn:hover, .save-btn:hover {
+.ext-button:hover, .ext-animated-btn:hover, .ext-save-btn:hover {
   box-shadow: 0 4px 16px #00e0ff88;
   transform: translateY(-2px) scale(1.03);
   background: #00c0e0;
@@ -162,7 +162,7 @@ input[type="checkbox"] {
 }
 
 /* Loader */
-.loader {
+.ext-loader {
   border: 4px solid #232946;
   border-top: 4px solid #00e0ff;
   border-radius: 50%;
@@ -177,7 +177,7 @@ input[type="checkbox"] {
 }
 
 /* Toast/notification */
-.toast {
+.ext-toast {
   position: fixed;
   left: 50%;
   bottom: 32px;
@@ -198,16 +198,16 @@ input[type="checkbox"] {
 
 /* Responsive */
 @media (max-width: 500px) {
-  .panel, .metrics-panel, .settings-panel, .dashboard-panel {
+  .ext-panel, .ext-metrics-panel.ext-panel, .ext-settings-panel.ext-panel, .ext-dashboard-panel.ext-panel {
     padding: 12px;
     margin: 8px 0;
     max-width: 100vw;
   }
-  .navbar {
+  .ext-navbar {
     width: 60px;
     padding: 12px 0;
   }
-  .navbar .icon-btn {
+  .ext-navbar .icon-btn {
     width: 36px;
     height: 36px;
     font-size: 20px;
@@ -219,7 +219,7 @@ input[type="checkbox"] {
   body, html {
     min-width: 240px;
   }
-  .panel, .metrics-panel, .settings-panel, .dashboard-panel {
+  .ext-panel, .ext-metrics-panel.ext-panel, .ext-settings-panel.ext-panel, .ext-dashboard-panel.ext-panel {
     padding: 6px;
     margin: 4px 0;
   }

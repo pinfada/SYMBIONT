@@ -75,7 +75,7 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'src/popup/styles/popup.css', to: 'popup/styles/popup.css' },
+        { from: 'src/popup/index.css', to: 'popup/index.css' },
         { from: 'manifest.json', to: 'manifest.json', noErrorOnMissing: true },
         // { from: 'src/assets', to: 'assets', noErrorOnMissing: true },
       ]

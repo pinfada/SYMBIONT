@@ -14,11 +14,38 @@ test.describe('Dashboard SYMBIONT', () => {
       await expect(page.getByTestId('dashboard-title')).toBeVisible({ timeout: 5000 });
       await expect(page.getByTestId('organism-dashboard-title')).toBeVisible({ timeout: 5000 });
       await expect(page.getByTestId('organism-canvas')).toBeVisible();
-      await expect(page.getByTestId('traits-radar')).toBeVisible();
+
+      await page.waitForFunction(() => {
+        const radar = document.querySelector('[data-testid="traits-radar"]');
+        if (!radar) return false;
+        
+        const computedStyle = window.getComputedStyle(radar);
+        return computedStyle.display !== 'none' && 
+               computedStyle.visibility !== 'hidden' && 
+               computedStyle.opacity !== '0';
+      }, { timeout: 10000 });
+
+      await expect(page.getByTestId('traits-radar')).toBeVisible({ timeout: 2000 });
       await expect(page.getByText(/Curiosity/i)).toBeVisible();
       await expect(page.getByText(/Empathy/i)).toBeVisible();
       console.log('✅ Visualisations et traits affichés');
     } catch (error) {
+      // Debug supplémentaire pour comprendre l'état CSS
+      const radarInfo = await page.evaluate(() => {
+        const radar = document.querySelector('[data-testid="traits-radar"]');
+        if (!radar) return { exists: false };
+        
+        const style = window.getComputedStyle(radar);
+        return {
+          exists: true,
+          display: style.display,
+          visibility: style.visibility,
+          opacity: style.opacity,
+          parentVisible: radar.parentElement ? window.getComputedStyle(radar.parentElement).display : 'unknown'
+        };
+      });
+      
+      console.log('❌ État du radar:', radarInfo);
       console.log('❌ Erreur visualisation/traits:', error);
       await debugPageState(page);
       throw error;

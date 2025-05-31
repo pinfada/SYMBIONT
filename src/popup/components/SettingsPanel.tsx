@@ -52,9 +52,9 @@ export const SettingsPanel: React.FC = () => {
   };
   
   return (
-    <div className="settings-panel max-w-lg mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
+    <div className="ext-settings-panel max-w-lg mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
       <h2 className="text-2xl font-bold text-center text-[#00e0ff] mb-6">Paramètres</h2>
-      <section className="settings-section mb-6">
+      <section className="ext-settings-section mb-6">
         <h3 className="text-lg font-bold text-[#00e0ff] mb-2">Préférences utilisateur</h3>
         <div className="flex flex-col gap-4">
           <label className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export const SettingsPanel: React.FC = () => {
           </label>
         </div>
       </section>
-      <section className="settings-section">
+      <section className="ext-settings-section">
         <h3 className="text-lg font-bold text-[#00e0ff] mb-2">Thème</h3>
         <div className="flex gap-4">
           <button onClick={() => setTheme('light')} className={`rounded-lg px-4 py-2 font-bold ${theme === 'light' ? 'bg-[#00e0ff] text-[#181c22]' : 'bg-[#eaf6fa] text-[#232946]'}`}>Clair</button>

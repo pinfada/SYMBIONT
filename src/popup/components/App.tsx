@@ -26,8 +26,8 @@ const App: React.FC = () => {
   return (
     <div style={{ display: 'flex', minHeight: 400, minWidth: 350, fontFamily: 'Segoe UI, Arial, sans-serif', background: '#181c22', color: '#f0f0f0' }}>
       {/* Navigation latérale */}
-      <nav className="navbar">
-        <div className="navbar-logo">
+      <nav className="ext-navbar">
+        <div className="ext-navbar-logo">
           <img src="../assets/icons/icon48.png" alt="SYMBIONT" width={40} height={40} style={{ borderRadius: 8 }} />
         </div>
         {NAV_ITEMS.map(item => (
@@ -54,7 +54,7 @@ const App: React.FC = () => {
           <button onClick={() => setActive('social')} data-testid="nav-social" aria-label="Inviter">Inviter</button>
         </nav>
         {active === 'dashboard' && (
-          <div className="dashboard-panel panel" data-testid="dashboard-panel">
+          <div className="ext-dashboard-panel ext-panel" data-testid="dashboard-panel">
             <h2 data-testid="dashboard-title">Dashboard|Tableau de bord</h2>
             <p>Bienvenue sur le dashboard principal de Symbiont.</p>
             <section style={{margin: '20px 0'}}>
@@ -84,10 +84,10 @@ const App: React.FC = () => {
           </div>
         )}
         {active === 'metrics' && (
-          <div className="metrics-panel panel"><MetricsPanel /></div>
+          <div className="ext-metrics-panel ext-panel"><MetricsPanel /></div>
         )}
         {active === 'settings' && (
-          <div className="settings-panel panel"><SettingsPanel /></div>
+          <div className="ext-settings-panel ext-panel"><SettingsPanel /></div>
         )}
         {active === 'network' && (
           <div className="network-panel panel" data-testid="network-panel">
