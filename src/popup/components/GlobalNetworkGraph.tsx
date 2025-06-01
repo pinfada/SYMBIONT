@@ -53,6 +53,7 @@ const EMOJI_LIST = ['🌱', '🦋', '🧬', '🌟', '🪐', '🦠', '🧿', '�
 const COLOR_LIST = ['#00e0ff', '#ff4b6e', '#ffb700', '#7cffb2', '#b388ff', '#ff8c42', '#ffb3c6', '#00ffb3', '#ffd700', '#a3a3ff'];
 
 export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => {
+  // TOUS LES HOOKS EN PREMIER
   const [network, setNetwork] = useState<{ nodes: NetworkNode[]; links: NetworkLink[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,9 +83,15 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
   const [wakeInProgress, setWakeInProgress] = useState(false);
   // Personnalisation
   const [showCustomize, setShowCustomize] = useState(false);
-  const [customColor, setCustomColor] = useState(localStorage.getItem('symbiont_color') || '#00e0ff');
-  const [customEmoji, setCustomEmoji] = useState(localStorage.getItem('symbiont_emoji') || '🌱');
-  const [customTraits, setCustomTraits] = useState<string[]>(JSON.parse(localStorage.getItem('symbiont_traits') || '[]'));
+  const [customColor, setCustomColor] = useState(() => {
+    try { return localStorage.getItem('symbiont_color') || '#00e0ff'; } catch { return '#00e0ff'; }
+  });
+  const [customEmoji, setCustomEmoji] = useState(() => {
+    try { return localStorage.getItem('symbiont_emoji') || '🌱'; } catch { return '🌱'; }
+  });
+  const [customTraits, setCustomTraits] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('symbiont_traits') || '[]'); } catch { return []; }
+  });
   // RGPD & transparence
   const [showRGPD, setShowRGPD] = useState(false);
   const [confirmErase, setConfirmErase] = useState(false);
@@ -92,9 +99,11 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
   const [showSecretInput, setShowSecretInput] = useState(false);
   const [secretCode, setSecretCode] = useState('');
   const [secretFeedback, setSecretFeedback] = useState<string | null>(null);
-  const [specialBadge, setSpecialBadge] = useState(localStorage.getItem('symbiont_special_badge') || '');
+  const [specialBadge, setSpecialBadge] = useState(() => {
+    try { return localStorage.getItem('symbiont_special_badge') || ''; } catch { return ''; }
+  });
   // Inactivité (mock)
-  const [lastActive, setLastActive] = useState(Date.now());
+  const [lastActive, setLastActive] = useState(() => Date.now());
   // --- Connexion backend réelle & synchro WebSocket ---
   const [apiNetwork, setApiNetwork] = useState<{ nodes: any[]; links: any[] } | null>(null);
   const [apiLoading, setApiLoading] = useState(true);
@@ -134,10 +143,8 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
       'La symbiose approche, continuez !'
     ]
   };
-
   // Récupérer l'userId courant
-  const userId = localStorage.getItem('symbiont_user_id') || '';
-
+  const userId = (() => { try { return localStorage.getItem('symbiont_user_id') || ''; } catch { return ''; } })();
   // Notifications en temps réel
   const [liveNotifications, setLiveNotifications] = useState<any[]>([]);
   const [timelineEventsState, setTimelineEventsState] = useState(timelineEvents);
