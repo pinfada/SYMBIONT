@@ -14,7 +14,8 @@
     "start": "node dist/index.js",
     "check-manifest": "node scripts/check-manifest.js",
     "build:full": "npm run build && npm run check-manifest",
-    "serve:dist": "npx serve -l 8080 dist"
+    "serve:dist": "npx serve -l 8080 dist",
+    "build:css": "postcss src/popup/index.css -o dist/popup/index.css"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

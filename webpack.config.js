@@ -38,8 +38,19 @@ module.exports = {
         exclude: /node_modules/
       },
       {
-        test: /\.css$/,
-        use: ['style-loader', 'css-loader', 'postcss-loader']
+        test: /popup\/index\.css$/,
+        use: [
+          'css-loader',
+          'postcss-loader'
+        ]
+      },
+      {
+        test: /(?<!popup\/index)\.css$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          'postcss-loader'
+        ]
       },
       {
         test: /\.(vert|frag|glsl)$/,

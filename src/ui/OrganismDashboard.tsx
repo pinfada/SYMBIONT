@@ -1,3 +1,5 @@
+// src/ui/OrganismDashboard.tsx
+
 import React, { useState } from 'react';
 import { OrganismViewer } from './OrganismViewer';
 import { ConsciousnessGauge } from './ConsciousnessGauge';
