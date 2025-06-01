@@ -8,9 +8,10 @@ export class HybridStorageManager {
   private persistentStorage = chrome.storage?.local
   private indexedDB: IDBDatabase | null = null
   private emergencyLocalStorage = swLocalStorage
+  private indexedDBReady: Promise<boolean>
 
   constructor() {
-    this.setupMultiLayerStorage()
+    this.indexedDBReady = this.setupMultiLayerStorage()
     this.setupDataReplication()
     this.setupIntegrityMonitoring()
   }
@@ -30,10 +31,15 @@ export class HybridStorageManager {
       console.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', key, e)
     }
     try {
+      await this.indexedDBReady
       if (this.indexedDB) {
-        const tx = this.indexedDB.transaction(['symbiont'], 'readwrite')
-        const store = tx.objectStore('symbiont')
-        store.put(data, key)
+        await new Promise((resolve, reject) => {
+          const tx = this.indexedDB!.transaction(['symbiont'], 'readwrite')
+          const store = tx.objectStore('symbiont')
+          const req = store.put(data, key)
+          req.onsuccess = () => resolve(true)
+          req.onerror = () => reject(req.error)
+        })
         console.log('[HybridStorageManager] store - IndexedDB OK', key)
       } else {
         throw new Error('IndexedDB not ready')
@@ -66,6 +72,7 @@ export class HybridStorageManager {
       console.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', key, e)
     }
     try {
+      await this.indexedDBReady
       if (this.indexedDB) {
         const val = await new Promise((resolve, reject) => {
           const tx = this.indexedDB!.transaction(['symbiont'], 'readonly')
@@ -95,22 +102,63 @@ export class HybridStorageManager {
     return null
   }
 
-  private setupMultiLayerStorage() {
-    // Init IndexedDB
-    const req = swIndexedDB.open('symbiont-db', 1)
-    req.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result
-      if (!db.objectStoreNames.contains('symbiont')) {
-        db.createObjectStore('symbiont')
+  private setupMultiLayerStorage(): Promise<boolean> {
+    return new Promise((resolve) => {
+      let settled = false;
+      const timeout = setTimeout(() => {
+        if (!settled) {
+          console.warn('[HybridStorageManager] IndexedDB init timeout (5s), fallback only');
+          this.indexedDB = null;
+          settled = true;
+          resolve(false);
+        }
+      }, 5000);
+      try {
+        const req = swIndexedDB.open('symbiont-db', 1);
+        req.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains('symbiont')) {
+            db.createObjectStore('symbiont');
+          }
+        };
+        req.onsuccess = () => {
+          this.indexedDB = req.result;
+          if (!settled) {
+            clearTimeout(timeout);
+            settled = true;
+            console.log('[HybridStorageManager] IndexedDB ready');
+            resolve(true);
+          }
+        };
+        req.onerror = () => {
+          this.indexedDB = null;
+          if (!settled) {
+            clearTimeout(timeout);
+            settled = true;
+            console.warn('[HybridStorageManager] IndexedDB failed to open');
+            resolve(false);
+          }
+        };
+      } catch (e) {
+        this.indexedDB = null;
+        if (!settled) {
+          clearTimeout(timeout);
+          settled = true;
+          console.warn('[HybridStorageManager] IndexedDB exception', e);
+          resolve(false);
+        }
       }
-    }
-    req.onsuccess = () => {
-      this.indexedDB = req.result
-    }
-    req.onerror = () => {
-      this.indexedDB = null
-    }
+    });
   }
+
+  public isIndexedDBReady(): boolean {
+    return !!this.indexedDB;
+  }
+
+  public async syncData() {
+    // TODO: synchroniser les données entre les couches si besoin
+  }
+
   private setupDataReplication() {}
   private setupIntegrityMonitoring() {}
 }
