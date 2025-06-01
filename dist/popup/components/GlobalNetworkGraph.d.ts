@@ -12,6 +12,7 @@ interface NetworkLink {
 interface GlobalNetworkGraphProps {
     nodes?: NetworkNode[];
     links?: NetworkLink[];
+    onNodeCountChange?: (count: number) => void;
 }
 export declare const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps>;
 export {};

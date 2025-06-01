@@ -17,6 +17,7 @@ interface NetworkLink {
 interface GlobalNetworkGraphProps {
   nodes?: NetworkNode[];
   links?: NetworkLink[];
+  onNodeCountChange?: (count: number) => void;
 }
 
 // Génère un réseau mocké (arbre de 3 générations, 1 racine, 3 enfants, 6 petits-enfants)
@@ -809,6 +810,12 @@ export const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps> = (props) => 
       setDecryptError('Impossible de déchiffrer : clé incorrecte ou format invalide.');
     }
   };
+
+  useEffect(() => {
+    if (props.onNodeCountChange) {
+      props.onNodeCountChange(network?.nodes?.length || 0);
+    }
+  }, [network]);
 
   return (
     <div className="global-network-graph" style={{ textAlign: 'center', margin: '32px 0', position: 'relative' }}>
