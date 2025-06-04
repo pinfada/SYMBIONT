@@ -84,4 +84,56 @@ Content Script <-> Background (bus de messages)
 2. Les messages sont envoyés au Background Script via le bus de messages.
 3. Le SynapticRouter distribue les messages aux modules concernés.
 4. Les modules IA, social, rituels, etc. traitent, stockent, ou renvoient des instructions.
-5. Les réponses sont transmises au Content Script ou à la popup pour affichage ou action. 
+5. Les réponses sont transmises au Content Script ou à la popup pour affichage ou action.
+
+## Schémas détaillés
+
+### Architecture globale SYMBIONT
+
+```
+[Content Script]
+    |
+    v
+[Resilient Message Bus] <-> [Background Service Worker]
+    |                          |
+    |                          +-- [Hybrid Storage Manager] <-> [chrome.storage / IndexedDB / localStorage]
+    |                          +-- [Basic Health Monitor / PredictiveHealthMonitor]
+    |                          +-- [ContextAwareOrganism]
+    |                          +-- [DistributedOrganismNetwork]
+    |                          +-- [CollectiveIntelligence]
+    |                          +-- [SocialResilience]
+    |                          +-- [MysticalEvents]
+    |                          +-- [AdvancedCaching / PerformanceAnalytics / BehavioralPredictor]
+    |                          +-- [SecurityManager]
+    |                          +-- [WebGLOrchestrator]
+    |                          +-- [OrganismMemoryBank]
+    |                          +-- [NeuralCoreEngine]
+    |
+[Popup/UI]
+```
+
+### Flux de données critiques
+
+```
+[Content Script] --(messages)--> [Resilient Message Bus] --(dispatch)--> [Modules principaux]
+[Modules principaux] --(état, logs, alertes)--> [Hybrid Storage Manager]
+[Hybrid Storage Manager] <-> [chrome.storage / IndexedDB / localStorage]
+[Health Monitors] --(alertes)--> [Hybrid Storage Manager]
+[DistributedOrganismNetwork] <-> [Pairs / Backup communautaire]
+[CollectiveIntelligence] <-> [Votes / Consensus / Mutations]
+[SecurityManager] --(contrôle accès, chiffrement)--> [Modules]
+```
+
+### Dépendances et points d'intégration
+
+- **Bus de messages** : tous les modules communiquent via le bus, assurant la résilience et la traçabilité.
+- **Stockage hybride** : chaque module persiste son état critique via le HybridStorageManager.
+- **Sécurité** : SecurityManager contrôle l'accès, chiffre/déchiffre les données, journalise les accès.
+- **Social** : DistributedOrganismNetwork et CollectiveIntelligence assurent la synchronisation, la résilience communautaire et la propagation des mutations.
+- **IA/Adaptation** : ContextAwareOrganism, BehavioralPredictor, NeuralCoreEngine adaptent dynamiquement les comportements.
+- **Monitoring** : HealthMonitor, PerformanceAnalytics surveillent la santé et la performance, déclenchent des alertes.
+
+---
+
+**Lien vers la checklist d'avancement** :
+- Voir [README.md](../README.md) ou la documentation interne pour le suivi en temps réel des actions. 

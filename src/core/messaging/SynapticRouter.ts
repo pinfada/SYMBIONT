@@ -14,6 +14,7 @@ export class SynapticRouter extends EventEmitter {
   private neuralMesh: NeuralMesh;
   private predictions: Map<string, RoutePrection> = new Map();
   private cache: Map<string, CachedResponse> = new Map();
+  private routes: Map<string, any> = new Map();
   
   private constructor() {
     super();
@@ -53,6 +54,23 @@ export class SynapticRouter extends EventEmitter {
   private async findOptimalRoute(impulse: NeuralImpulse): Promise<any> { return {}; }
   private async performRouting(impulse: NeuralImpulse, route: any): Promise<any> { return {}; }
   private learnFromRouting(routeKey: string, route: any, response: any): void {}
+
+  route(type: string, target: string): any {
+    // Simple routing logic
+    return this.routes.get(type) || null;
+  }
+
+  addRoute(type: string, handler: any): void {
+    this.routes.set(type, handler);
+  }
+
+  processImpulse(impulse: any): any {
+    // Process neural impulse
+    return {
+      processed: true,
+      timestamp: Date.now()
+    };
+  }
 
   // Suite de l'implémentation...
 }

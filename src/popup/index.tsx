@@ -1,15 +1,17 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './components/App';
+import App from './App';
 import { OrganismProvider } from './hooks/useOrganism';
 import { MessageBusProvider } from './hooks/MessageBusContext';
 import './index.css';
 
-const root = createRoot(document.getElementById('root')!);
-root.render(
-  <MessageBusProvider>
-    <OrganismProvider>
-      <App />
-    </OrganismProvider>
-  </MessageBusProvider>
-);
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <MessageBusProvider>
+      <OrganismProvider>
+        <App />
+      </OrganismProvider>
+    </MessageBusProvider>
+  );
+}

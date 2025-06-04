@@ -1,7 +1,7 @@
 /**
  * SecurityManager - Sécurité avancée (chiffrement, anonymisation, contrôle d'accès)
  */
-import { OrganismState, BehaviorPattern } from '../shared/types/organism'
+import { BehaviorPattern } from '../shared/types/organism'
 import { swCryptoAPI } from './service-worker-adapter'
 
 export class SecurityManager {

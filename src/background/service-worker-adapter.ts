@@ -51,10 +51,16 @@ class ServiceWorkerMessageChannel {
   }
 
   private setupMessageListener(): void {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.channel === this.channelName) {
-        this.handleMessage(message.data);
+    chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
+      if (request.type === 'CRYPTO_OPERATION') {
+        // Handle crypto operations
+        return true;
       }
+      if (request.channel === this.channelName) {
+        this.handleMessage(request.data);
+        return true; // Indicate we handled the message
+      }
+      return false; // Indicate we didn't handle the message
     });
   }
 

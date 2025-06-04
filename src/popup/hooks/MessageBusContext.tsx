@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { MessageBus } from '../../core/messaging/MessageBus';
 
 // Singleton du bus de messages pour le contexte popup

@@ -1,28 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMessaging } from '../hooks/useMessaging';
 import { MessageType } from '../../shared/messaging/MessageBus';
 
-interface ContextualInvitation {
-  invitation: { code: string };
-  context: string;
+interface ContextualInvitationProps {
+  context?: string;
+  onAccept?: () => void;
+  onDismiss?: () => void;
 }
 
-export const ContextualInvitationNotification: React.FC = () => {
+export const ContextualInvitationNotification: React.FC<ContextualInvitationProps> = ({
+  context,
+  onAccept,
+  onDismiss
+}) => {
   const messaging = useMessaging();
   const [visible, setVisible] = useState(false);
-  const [context, setContext] = useState<string>('');
   const [code, setCode] = useState<string>('');
 
   useEffect(() => {
     messaging.subscribe(MessageType.CONTEXTUAL_INVITATION, (msg: any) => {
       setCode(msg.payload.invitation.code);
-      setContext(msg.payload.context);
       setVisible(true);
       setTimeout(() => setVisible(false), 10000);
     });
     // eslint-disable-next-line
   }, []);
 
+  useEffect(() => {
+    // Show notification logic
+    if (context) {
+      setVisible(true);
+    }
+  }, [context]);
+
+  const handleJoin = () => {
+    if (!context) return;
+    
+    context.sendMessage({
+      type: 'JOIN_INVITATION',
+      payload: { invitationId: invitation.id }
+    });
+    
+    if (context.hideNotification) {
   if (!visible) return null;
 
   let contextText = '';
@@ -54,6 +73,10 @@ export const ContextualInvitationNotification: React.FC = () => {
       <div style={{ marginTop: 10, fontSize: 16, marginLeft: 18, alignSelf: 'center' }}>
         <span>Invitation : </span>
         <span className="code-badge" style={{ fontSize: 22 }}>{code}</span>
+      </div>
+      <div>
+        <button onClick={onAccept}>Accepter</button>
+        <button onClick={onDismiss}>Ignorer</button>
       </div>
     </div>
   );

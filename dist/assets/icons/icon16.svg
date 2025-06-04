@@ -1,0 +1,41 @@
+<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="grad16" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:#00e0ff;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#232946;stop-opacity:1" />
+      </radialGradient>
+      <filter id="glow16">
+        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+        <feMerge> 
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    
+    <!-- Corps principal de l'organisme -->
+    <circle cx="8" cy="8" r="4.8" 
+            fill="url(#grad16)" 
+            filter="url(#glow16)" 
+            stroke="#00e0ff" 
+            stroke-width="1"/>
+    
+    <!-- Connexions neuronales -->
+    <g stroke="#00e0ff" stroke-width="0.5" fill="none" opacity="0.7">
+      <path d="M5.6,6.5600000000000005 Q8,4.16 10.4,6.5600000000000005"/>
+      <path d="M6.5600000000000005,10.4 Q4.16,8 6.5600000000000005,5.6"/>
+      <path d="M9.44,10.4 Q11.84,8 9.44,5.6"/>
+    </g>
+    
+    <!-- Points de connexion -->
+    <g fill="#00e0ff" opacity="0.9">
+      <circle cx="6.08" cy="7.04" r="1"/>
+      <circle cx="9.92" cy="7.04" r="1"/>
+      <circle cx="8" cy="9.92" r="1"/>
+    </g>
+    
+    <!-- Centre pulsant -->
+    <circle cx="8" cy="8" r="0.96" 
+            fill="#fff" 
+            opacity="0.8"/>
+  </svg>

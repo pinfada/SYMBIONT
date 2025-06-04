@@ -1,48 +1,34 @@
-// Service Worker principal SYMBIONT
-import { NeuralCoreEngine } from '../neural/NeuralCoreEngine'
-import { SynapticRouter } from './SynapticRouter'
-import { OrganismMemoryBank } from './OrganismMemoryBank'
-import { WebGLOrchestrator } from './WebGLOrchestrator'
-import { SocialNetworkManager } from '../social/SocialNetworkManager'
-import { SecretRitualSystem } from '../mystical/SecretRitualSystem'
-import { SymbiontMessage, SymbiontResponse } from '../shared/types/messages'
-import { SecurityManager } from './SecurityManager'
-import { swLocalStorage, swBroadcastChannel, swCryptoAPI, swIndexedDB } from './service-worker-adapter'
+// Service Worker principal pour SYMBIONT
 
-export class SymbiontBackgroundService {
-  private neuralCore: NeuralCoreEngine
-  private synapticRouter: SynapticRouter
-  private memoryBank: OrganismMemoryBank
-  private webglOrchestrator: WebGLOrchestrator
-  private socialManager: SocialNetworkManager
-  private ritualSystem: SecretRitualSystem
+class ServiceWorkerManager {
+  private isInitialized = false;
 
-  constructor() {
-    // Initialisation des modules principaux
-    const security = new SecurityManager()
-    this.memoryBank = new OrganismMemoryBank(security)
-    this.neuralCore = new NeuralCoreEngine(this.memoryBank)
-    this.socialManager = new SocialNetworkManager(this.memoryBank, security)
-    this.ritualSystem = new SecretRitualSystem()
-    this.webglOrchestrator = new WebGLOrchestrator(this.memoryBank)
-    this.synapticRouter = new SynapticRouter({
-      neural: this.neuralCore,
-      social: this.socialManager,
-      rituals: this.ritualSystem,
-      webgl: this.webglOrchestrator
-    })
-    this.setupListeners()
+  async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+    
+    // Setup message handling
+    chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+      this.handleMessage(request, sendResponse);
+    });
+
+    this.isInitialized = true;
   }
 
-  private setupListeners() {
-    chrome.runtime.onMessage.addListener((message: SymbiontMessage, sender, sendResponse) => {
-      this.synapticRouter.routeMessage(message).then((response: SymbiontResponse) => {
-        sendResponse(response)
-      })
-      return true // Keep the message channel open for async response
-    })
+  private handleMessage(message: any, sendResponse: (response: any) => void): void {
+    // Handle different message types
+    switch (message.type) {
+      case 'HEALTH_CHECK':
+        sendResponse({ status: 'ok' });
+        break;
+      default:
+        sendResponse({ error: 'Unknown message type' });
+    }
+  }
+
+  dispose(): void {
+    this.isInitialized = false;
   }
 }
 
-// Initialisation globale
-new SymbiontBackgroundService() 
+const swManager = new ServiceWorkerManager();
+swManager.initialize(); 

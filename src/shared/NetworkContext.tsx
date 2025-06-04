@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState, PropsWithChildren } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 const API_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://symbiont-backend.onrender.com';
 const WS_URL = process.env.NODE_ENV === 'development' ? 'ws://localhost:8080' : 'wss://symbiont-backend.onrender.com';
@@ -31,13 +31,12 @@ interface NetworkContextType {
 
 const NetworkContext = createContext<NetworkContextType | null>(null);
 
-export function NetworkProvider({ children }: PropsWithChildren) {
+export function NetworkProvider({ children }: { children: ReactNode }) {
   const [network, setNetwork] = useState<Network>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [actionStatus, setActionStatus] = useState<'idle'|'loading'|'success'|'error'>('idle');
-  const wsRef = useRef<WebSocket | null>(null);
 
   // Fetch initial
   useEffect(() => {
@@ -50,22 +49,28 @@ export function NetworkProvider({ children }: PropsWithChildren) {
 
   // WebSocket
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let closed = false;
-    try {
-      ws = new window.WebSocket(WS_URL);
-      wsRef.current = ws;
-      ws.onopen = () => setWsConnected(true);
-      ws.onclose = () => setWsConnected(false);
-      ws.onerror = () => setWsConnected(false);
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === 'network_update') setNetwork({ nodes: msg.nodes, links: msg.links });
-        } catch {}
-      };
-    } catch {}
-    return () => { closed = true; if (ws) ws.close(); };
+    const ws = new WebSocket(WS_URL);
+    
+    ws.onopen = () => {
+      setWsConnected(true);
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setNetwork(data);
+      } catch (error) {
+        console.error('Failed to parse network data:', error);
+      }
+    };
+    
+    ws.onclose = () => {
+      setWsConnected(false);
+    };
+    
+    return () => {
+      ws.close();
+    };
   }, []);
 
   // Actions

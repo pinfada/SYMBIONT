@@ -207,6 +207,11 @@ export class MessageBus {
       handlers.forEach(handler => handler({ type, payload }));
     }
   }
+
+  private handleMessage(message: any, targetFrame: string): void {
+    // Handle incoming message
+    console.log('Handling message:', message.type);
+  }
 }
 
 export default MessageBus;

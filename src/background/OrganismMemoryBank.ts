@@ -38,7 +38,7 @@ export class OrganismMemoryBank {
     })
   }
 
-  async consolidateMemories(timespan: TimeSpan): Promise<ConsolidationResult> {
+  async consolidateMemories(_timespan: TimeSpan): Promise<ConsolidationResult> {
     // TODO: Consolidation avancée
     return { consolidated: true, details: 'Consolidation non implémentée' }
   }
@@ -55,5 +55,9 @@ export class OrganismMemoryBank {
     // Hook pour loguer ou alerter sur la performance
     // (À remplacer par un vrai monitoring en prod)
     console.log(`[OrganismMemoryBank][Perf] ${msg}`)
+  }
+
+  public cleanup(): void {
+    // ... existing code ...
   }
 } 

@@ -1,22 +1,28 @@
 // Moteur d'analyse comportementale
 import { PatternAnalyzer } from './PatternAnalyzer';
 import { BehaviorPredictor } from './BehaviorPredictor';
-import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
-import { BehaviorAnalysis, NavigationEvent, UserBehavior, BehaviorPattern, SessionTracker } from '../../types/behavioral';
+import { BehaviorAnalysis, NavigationEvent, UserBehavior, BehaviorPattern } from '../../types/behavioral';
+
+class SessionTracker {
+  track(data: any): void {
+    // Track session data
+  }
+}
 
 export class BehavioralEngine {
   private static instance: BehavioralEngine;
-  private patterns: Map<string, BehaviorPattern> = new Map();
+  private patterns: PatternAnalyzer;
   private analyzer: PatternAnalyzer;
   private predictor: BehaviorPredictor;
   private sessionTracker: SessionTracker;
-  private storage: SymbiontStorage;
+  private storage: Map<string, any>;
   
   private constructor() {
+    this.patterns = new PatternAnalyzer();
     this.analyzer = new PatternAnalyzer();
     this.predictor = new BehaviorPredictor();
     this.sessionTracker = new SessionTracker();
-    this.storage = new SymbiontStorage();
+    this.storage = new Map();
     
     // this.initialize(); // TODO: Méthode manquante
   }
@@ -43,6 +49,18 @@ export class BehavioralEngine {
       score: 1,
       pattern: 'default',
       details: event
+    };
+  }
+
+  processBehavior(data: any): any {
+    // Process behavior data
+    const pattern = this.analyzer.analyzeBehavior([data]);
+    const prediction = this.predictor.predict([data]);
+    
+    return {
+      pattern,
+      prediction,
+      timestamp: Date.now()
     };
   }
 

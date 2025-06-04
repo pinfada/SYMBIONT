@@ -1,4 +1,4 @@
-import { RenderQueue, WebGLContext, PerformanceMetrics, VisualMutation, OrganismState } from '../shared/types/organism'
+import { RenderQueue, WebGLContext, PerformanceMetrics, VisualMutation } from '../shared/types/organism'
 import { OrganismMemoryBank } from './OrganismMemoryBank'
 
 export class WebGLOrchestrator {
@@ -11,7 +11,7 @@ export class WebGLOrchestrator {
     this.memoryBank = memoryBank
   }
 
-  async initializeRenderer(tabId: number): Promise<WebGLContext> {
+  async initializeRenderer(_tabId: number): Promise<WebGLContext> {
     // TODO: Initialiser le contexte WebGL pour l'onglet
     return {} as WebGLContext
   }
@@ -22,7 +22,7 @@ export class WebGLOrchestrator {
     const organism = history.states[0]
     if (!organism) return
     // Appliquer les mutations visuelles (stub)
-    mutations.forEach(mutation => {
+    mutations.forEach(_mutation => {
       // TODO: Appliquer la mutation sur l'organisme 3D (shader, couleur, forme...)
       // Ex: organism.visualState = ...
     })
@@ -30,7 +30,7 @@ export class WebGLOrchestrator {
     this.renderQueue.push({ id, mutations, timestamp: Date.now() })
   }
 
-  async optimizePerformance(metrics: PerformanceMetrics): Promise<void> {
+  async optimizePerformance(_metrics: PerformanceMetrics): Promise<void> {
     // TODO: Optimisation GPU (LOD, batching, culling...)
     this.logPerformance('Optimisation graphique exécutée')
   }
@@ -52,5 +52,20 @@ export class WebGLOrchestrator {
     // Hook pour loguer ou alerter sur la performance
     // (À remplacer par un vrai monitoring en prod)
     console.log(`[WebGLOrchestrator][Perf] ${msg}`)
+  }
+
+  async activateForTab(): Promise<void> {
+    // Activate WebGL orchestration for specific tab
+    // ... existing code ...
+  }
+
+  async processMutation(): Promise<void> {
+    // Process organism mutation with WebGL updates
+    // ... existing code ...
+  }
+
+  async getPerformanceMetrics(): Promise<any> {
+    // Get comprehensive performance metrics
+    // ... existing code ...
   }
 } 

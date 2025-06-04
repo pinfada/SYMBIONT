@@ -1,5 +1,5 @@
 import { InvitationContext, InvitationCode, SharedMutationResult, CollectiveTrigger, WakeResult } from '../shared/types/social'
-import { OrganismState, BehaviorPattern } from '../shared/types/organism'
+import { BehaviorPattern } from '../shared/types/organism'
 import { OrganismMemoryBank } from '../background/OrganismMemoryBank'
 import { SecurityManager } from '../background/SecurityManager'
 
@@ -22,7 +22,7 @@ export class SocialNetworkManager {
   private invitations: Invitation[] = []
   private memoryBank: OrganismMemoryBank
   private security: SecurityManager
-  private collectiveSessions: Map<string, { participants: string[], traits: Record<string, number> }> = new Map()
+  private _collectiveSessions: Map<string, { participants: string[], traits: Record<string, number> }> = new Map()
 
   constructor(memoryBank: OrganismMemoryBank, security: SecurityManager) {
     this.memoryBank = memoryBank

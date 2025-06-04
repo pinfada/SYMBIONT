@@ -1,5 +1,5 @@
-import { Message, MessageType, RoutingResult, PerformanceMetrics } from '../shared/types/organism'
-import { SymbiontMessage, SymbiontMessageType, SymbiontResponse } from '../shared/types/messages'
+import { PerformanceMetrics } from '../shared/types/organism'
+import { SymbiontMessage, SymbiontResponse } from '../shared/types/messages'
 import { NeuralCoreEngine } from '../neural/NeuralCoreEngine'
 import { SocialNetworkManager } from '../social/SocialNetworkManager'
 import { SecretRitualSystem } from '../mystical/SecretRitualSystem'
@@ -69,7 +69,7 @@ export class SynapticRouter {
     }
   }
 
-  async optimizeRouting(performance: PerformanceMetrics): Promise<void> {
+  async optimizeRouting(_performance: PerformanceMetrics): Promise<void> {
     // TODO: Optimisation dynamique du routage
   }
 } 

@@ -10,6 +10,9 @@ export class WebGLBridge {
   private currentState: OrganismState | null = null;
   private isRendering: boolean = false;
   private unsubscribeHandler?: () => void;
+  private pendingFrames = new Set<number>();
+  private renderQueue: OrganismState[] = [];
+  private cleanup?: () => void;
   
   constructor(messageBus: MessageBus) {
     this.messageBus = messageBus;
@@ -92,13 +95,16 @@ export class WebGLBridge {
   
   // Nettoyage des ressources
   public dispose(): void {
-    this.stopRendering();
-    this.currentState = null;
+    // Clear pending frames
+    this.pendingFrames.clear();
     
-    // Désenregistrer le handler de messages
-    if (this.unsubscribeHandler) {
-      this.unsubscribeHandler();
-      this.unsubscribeHandler = undefined;
+    // Clear render queue
+    this.renderQueue.length = 0;
+    
+    // Run cleanup if it exists
+    if (this.cleanup) {
+      this.cleanup();
+      delete this.cleanup;
     }
   }
 }

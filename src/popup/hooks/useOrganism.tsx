@@ -1,4 +1,4 @@
-import React, { useContext, createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { OrganismState } from '@shared/types/organism';
 
 export interface OrganismContextType {

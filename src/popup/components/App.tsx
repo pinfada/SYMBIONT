@@ -123,7 +123,13 @@ const App: React.FC = () => {
         {/* Loader global */}
         {loading && <Loader />}
         {/* Toast global */}
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={(toast.type || 'info') as 'success' | 'error' | 'info'}
+            onClose={() => setToast(null)}
+          />
+        )}
       </main>
     </div>
   );

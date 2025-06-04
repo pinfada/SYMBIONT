@@ -1,23 +1,20 @@
 // src/background/index.ts
 // Point d'entrée Service Worker (Neural Core)
-import { MessageBus, MessageType } from '../shared/messaging/MessageBus';
+import { MessageBus } from '../core/messaging/MessageBus';
+import { MessageType } from '../shared/messaging/MessageBus';
 import { SymbiontStorage } from '../core/storage/SymbiontStorage';
-import { NavigationObserver } from '../shared/observers/NavigationObserver';
+import { NavigationObserver } from '../content/observers/NavigationObserver';
 import { OrganismState, OrganismMutation } from '../shared/types/organism';
 import { InvitationService } from './services/InvitationService';
 import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
+import { OrganismFactory } from '../core/factories/OrganismFactory';
 
 // --- Ajout des modules résilients ---
-import { persistentServiceWorker } from './persistent-service-worker';
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
 import { HybridStorageManager } from '../storage/hybrid-storage-manager';
 import { BasicHealthMonitor } from '../monitoring/basic-health-monitor';
-
-// --- Instanciation des modules d'intelligence adaptative (Phase 2) ---
-import { ContextAwareOrganism } from '../intelligence/context-aware-organism';
-import { PredictiveHealthMonitor } from '../monitoring/predictive-health-monitor';
 
 // --- Instanciation des modules sociaux (Phase 3) ---
 import { DistributedOrganismNetwork } from '../social/distributed-organism-network';
@@ -57,12 +54,14 @@ async function setStorage(key: string, value: any): Promise<void> {
 }
 
 // --- Singleton pour accès global à BackgroundService ---
-let backgroundServiceInstance: BackgroundService | null = null;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let _backgroundServiceInstance: BackgroundService | null = null;
 
 class BackgroundService {
   private messageBus: MessageBus;
   private storage: SymbiontStorage;
-  private navigationObserver: NavigationObserver;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _navigationObserver: NavigationObserver;
   public organism: OrganismState | null = null;
   private invitationService: InvitationService;
   private murmureService: MurmureService;
@@ -71,13 +70,16 @@ class BackgroundService {
   private collectiveThresholds = [10, 50, 100, 250, 500];
   private reachedThresholds: number[] = [];
   private security: SecurityManager = new SecurityManager();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _organismFactory: OrganismFactory;
 
   constructor() {
     this.messageBus = new MessageBus('background');
     this.storage = new SymbiontStorage();
-    this.navigationObserver = new NavigationObserver(this.messageBus);
+    this._navigationObserver = new NavigationObserver(this.messageBus);
     this.invitationService = new InvitationService(this.storage);
     this.murmureService = new MurmureService();
+    this._organismFactory = new OrganismFactory();
     // Récupère les seuils déjà atteints (persistance locale)
     getStorage('symbiont_collective_thresholds').then((saved) => {
       this.reachedThresholds = saved ? JSON.parse(saved) : [];
@@ -208,9 +210,9 @@ class BackgroundService {
         code: rawInvitation.code,
         createdAt: rawInvitation.createdAt,
         consumed: rawInvitation.used ?? false,
-        consumedAt: rawInvitation.usedAt,
         inviter: rawInvitation.donorId,
-        invitee: rawInvitation.receiverId
+        ...(rawInvitation.usedAt && { consumedAt: rawInvitation.usedAt }),
+        ...(rawInvitation.receiverId && { invitee: rawInvitation.receiverId })
       };
       let encryptedPayload: import('../shared/types/invitation').Invitation | string = invitation;
       try {
@@ -696,7 +698,7 @@ class BackgroundService {
 }
 
 // Démarrage effectif du service worker
-backgroundServiceInstance = new BackgroundService();
+_backgroundServiceInstance = new BackgroundService();
 
 // Export for testing
 export { BackgroundService };
@@ -709,20 +711,20 @@ export const mysticalEvents = new MysticalEvents();
 
 // --- Hooks d'intégration (après instanciation des modules) ---
 // Synchronisation d'état avec le réseau
-function syncOrganismState(state: any) {
+function _syncOrganismState(state: any) {
   distributedNetwork.performCommunityBackup(state)
 }
 // Propagation d'une mutation à la communauté
-function propagateMutation(mutation: any) {
+function _propagateMutation(mutation: any) {
   distributedNetwork.broadcastMutation(mutation)
   collectiveIntelligence.proposeMutation(mutation, 'self')
 }
 // Déclenchement d'un événement mystique
-function triggerMystical(eventId: string, payload: any) {
+function _triggerMystical(eventId: string, payload: any) {
   mysticalEvents.triggerMysticalEvent(eventId, payload)
   mysticalEvents.propagateToCommunity(eventId, payload)
 }
 // Backup communautaire en cas de panne
-function backupOnFailure(organismId: string) {
+function _backupOnFailure(organismId: string) {
   socialResilience.requestCommunityBackup(organismId)
 }

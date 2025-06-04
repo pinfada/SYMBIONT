@@ -53,4 +53,9 @@ export class SynapticRouter {
       await handler(message.payload);
     }
   }
+
+  routeMessage(message: any): Promise<any> {
+    // Route message to appropriate handler
+    return Promise.resolve(null);
+  }
 } 

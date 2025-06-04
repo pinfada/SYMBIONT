@@ -1,29 +1,8 @@
-import { SynapticRouter } from './SynapticRouter';
-import { OrganismCore } from './OrganismCore';
-import { NavigationCortex } from './NavigationCortex';
+import { INeuralMesh } from './interfaces/INeuralMesh';
 
-// Types minimaux pour lever les erreurs
-interface NeuralNode {
-  id: string;
-  type: 'input' | 'hidden' | 'output';
-  activation: number;
-  bias: number;
-}
-
-interface NeuralConnection {
-  from: string;
-  to: string;
-  weight: number;
-  active: boolean;
-}
-
-interface OrganismJSON {
-  mesh: any;
-}
-
-export class NeuralMesh {
-  private nodes: Map<string, NeuralNode> = new Map();
-  private connections: Map<string, NeuralConnection[]> = new Map();
+export class NeuralMesh implements INeuralMesh {
+  private nodes: Map<string, { type: string; activation: number; bias: number }> = new Map();
+  private connections: Map<string, Map<string, number>> = new Map();
   private activations: Map<string, number> = new Map();
   private learningRate: number = 0.01;
 
@@ -35,12 +14,12 @@ export class NeuralMesh {
    * Ajoute un nœud au réseau
    */
   addNode(id: string, type: 'input' | 'hidden' | 'output', bias: number = 0): void {
-    const node: NeuralNode = {
-      id,
+    const node: { type: string; activation: number; bias: number } = {
       type,
       activation: 0,
       bias
     };
+
     this.nodes.set(id, node);
     this.activations.set(id, 0);
   }
@@ -53,17 +32,10 @@ export class NeuralMesh {
       throw new Error(`Cannot connect non-existent nodes: ${fromId} -> ${toId}`);
     }
 
-    const connection: NeuralConnection = {
-      from: fromId,
-      to: toId,
-      weight,
-      active: true
-    };
-
     if (!this.connections.has(fromId)) {
-      this.connections.set(fromId, []);
+      this.connections.set(fromId, new Map());
     }
-    this.connections.get(fromId)!.push(connection);
+    this.connections.get(fromId)!.set(toId, weight);
   }
 
   /**
@@ -93,12 +65,10 @@ export class NeuralMesh {
     for (const [fromId, connections] of this.connections) {
       const fromActivation = this.activations.get(fromId) || 0;
       
-      for (const connection of connections) {
-        if (!connection.active) continue;
-        
-        const currentActivation = this.activations.get(connection.to) || 0;
-        const newActivation = currentActivation + (fromActivation * connection.weight);
-        this.activations.set(connection.to, this.sigmoid(newActivation));
+      for (const [toId, weight] of connections) {
+        const currentActivation = this.activations.get(toId) || 0;
+        const newActivation = currentActivation + (fromActivation * weight);
+        this.activations.set(toId, this.sigmoid(newActivation));
       }
     }
   }
@@ -123,10 +93,10 @@ export class NeuralMesh {
   mutate(rate: number = 0.05): void {
     // Mutate connection weights
     for (const connections of this.connections.values()) {
-      for (const connection of connections) {
+      for (const [toId, weight] of connections) {
         if (Math.random() < rate) {
-          connection.weight += (Math.random() - 0.5) * 0.2;
-          connection.weight = Math.max(-2, Math.min(2, connection.weight));
+          connections.set(toId, weight + (Math.random() - 0.5) * 0.2);
+          connections.set(toId, Math.max(-2, Math.min(2, connections.get(toId) || 0)));
         }
       }
     }
@@ -163,11 +133,9 @@ export class NeuralMesh {
     let connectionCount = 0;
 
     for (const connections of this.connections.values()) {
-      for (const connection of connections) {
-        if (connection.active) {
-          totalWeight += Math.abs(connection.weight);
-          connectionCount++;
-        }
+      for (const weight of connections.values()) {
+        totalWeight += Math.abs(weight);
+        connectionCount++;
       }
     }
 
@@ -177,10 +145,10 @@ export class NeuralMesh {
   /**
    * Export JSON pour debug/sauvegarde
    */
-  toJSON(): OrganismJSON['mesh'] {
+  toJSON(): any {
     return {
       nodes: Array.from(this.nodes.values()),
-      connections: Array.from(this.connections.values()).flat(),
+      connections: Array.from(this.connections.values()).map(connections => Array.from(connections.entries())),
       activations: Object.fromEntries(this.activations)
     };
   }
@@ -199,53 +167,53 @@ export class NeuralMesh {
   }
 
   /**
-   * Configure un réseau par défaut
+   * Configure un réseau par défaut pour les tests
    */
   private setupDefaultNetwork(): void {
-    // Input layer
+    // Add input nodes
     this.addNode('sensory_input', 'input');
     this.addNode('memory_input', 'input');
     
-    // Hidden layer
-    this.addNode('processing', 'hidden', 0.1);
-    this.addNode('integration', 'hidden', -0.1);
+    // Add hidden nodes
+    this.addNode('processing_1', 'hidden', 0.1);
+    this.addNode('processing_2', 'hidden', -0.1);
     
-    // Output layer
-    this.addNode('action_output', 'output');
-    this.addNode('state_output', 'output');
-
-    // Connections
-    this.addConnection('sensory_input', 'processing', 0.8);
-    this.addConnection('memory_input', 'integration', 0.6);
-    this.addConnection('processing', 'action_output', 1.0);
-    this.addConnection('integration', 'state_output', 0.9);
-    this.addConnection('processing', 'integration', 0.4);
+    // Add output nodes
+    this.addNode('motor_output', 'output');
+    this.addNode('emotion_output', 'output');
+    
+    // Connect the network
+    this.addConnection('sensory_input', 'processing_1', 0.8);
+    this.addConnection('memory_input', 'processing_2', 0.6);
+    this.addConnection('processing_1', 'motor_output', 0.9);
+    this.addConnection('processing_2', 'emotion_output', 0.7);
+    this.addConnection('processing_1', 'processing_2', 0.3);
   }
 
   /**
-   * Gère la suspension du système
+   * Suspend neural processing
    */
   async suspend(): Promise<void> {
-    // Save current state or perform cleanup
-    console.log('Neural mesh suspending...');
+    // Clear activations but keep structure
+    this.activations.clear();
+    console.log('Neural mesh suspended');
   }
 
   /**
-   * Simule l'usage CPU (basé sur l'activité neurale)
+   * Get CPU usage estimation
    */
   async getCPUUsage(): Promise<number> {
-    const activity = this.getNeuralActivity();
-    return Math.min(1.0, activity * 0.5 + 0.1);
+    // Mock implementation - in real scenario, measure actual computation time
+    const complexity = this.nodes.size * this.connections.size;
+    return Math.min(1, complexity / 1000);
   }
 
   /**
-   * Simule l'usage mémoire (basé sur la taille du réseau)
+   * Get memory usage estimation
    */
   async getMemoryUsage(): Promise<number> {
-    const nodeCount = this.nodes.size;
-    const connectionCount = Array.from(this.connections.values())
-      .reduce((sum, conns) => sum + conns.length, 0);
-    
-    return Math.min(1.0, (nodeCount + connectionCount) / 1000);
+    // Mock implementation - in real scenario, measure actual memory footprint
+    const memorySize = (this.nodes.size + this.connections.size) * 64; // bytes approximation
+    return Math.min(1, memorySize / (1024 * 1024)); // Convert to MB ratio
   }
 }

@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
-import { AnimatedButton } from './ui/AnimatedButton';
 
 interface Settings {
   theme: 'light' | 'dark' | 'auto';

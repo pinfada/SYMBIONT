@@ -23,64 +23,77 @@ interface StorageSchema {
 export class SymbiontStorage {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'symbiont-db';
-  private readonly DB_VERSION = 2;
-  private _org: any = null;
+  private readonly DB_VERSION = 3;
 
   async initialize(): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-
+      
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
       };
-
+      
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
-        // Organism state store
-        if (!db.objectStoreNames.contains('organism')) {
-          db.createObjectStore('organism', { keyPath: 'id' });
+        // Store pour les organismes
+        if (!db.objectStoreNames.contains('organisms')) {
+          const organismStore = db.createObjectStore('organisms', { keyPath: 'id' });
+          organismStore.createIndex('generation', 'generation', { unique: false });
+          organismStore.createIndex('createdAt', 'createdAt', { unique: false });
         }
         
-        // Behavior patterns store
+        // Store pour les comportements
         if (!db.objectStoreNames.contains('behaviors')) {
           const behaviorStore = db.createObjectStore('behaviors', { keyPath: 'url' });
-          behaviorStore.createIndex('visitCount', 'visitCount', { unique: false });
           behaviorStore.createIndex('lastVisit', 'lastVisit', { unique: false });
+          behaviorStore.createIndex('visitCount', 'visitCount', { unique: false });
         }
         
-        // Mutations history store
+        // Store pour les mutations
         if (!db.objectStoreNames.contains('mutations')) {
-          const mutationStore = db.createObjectStore('mutations', { autoIncrement: true });
+          const mutationStore = db.createObjectStore('mutations', { keyPath: 'id', autoIncrement: true });
           mutationStore.createIndex('timestamp', 'timestamp', { unique: false });
           mutationStore.createIndex('type', 'type', { unique: false });
         }
         
-        // Settings store
+        // Store pour les paramètres
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
         }
         
-        // Invitations store
+        // Store pour les invitations
         if (!db.objectStoreNames.contains('invitations')) {
-          db.createObjectStore('invitations', { keyPath: 'code' });
+          const invitationStore = db.createObjectStore('invitations', { keyPath: 'code' });
+          invitationStore.createIndex('createdAt', 'createdAt', { unique: false });
+          invitationStore.createIndex('status', 'status', { unique: false });
         }
       };
     });
   }
 
-  async getOrganism(): Promise<OrganismState | null> {
+  async getOrganism(id?: string): Promise<OrganismState | null> {
     if (!this.db) throw new Error('Database not initialized');
     
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['organism'], 'readonly');
-      const store = transaction.objectStore('organism');
-      const request = store.get('current');
+      const transaction = this.db!.transaction(['organisms'], 'readonly');
+      const store = transaction.objectStore('organisms');
       
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
+      if (id) {
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      } else {
+        // Récupérer le premier organisme trouvé
+        const request = store.openCursor();
+        request.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest).result;
+          resolve(cursor ? cursor.value : null);
+        };
+        request.onerror = () => reject(request.error);
+      }
     });
   }
 
@@ -88,14 +101,11 @@ export class SymbiontStorage {
     if (!this.db) throw new Error('Database not initialized');
     
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['organism'], 'readwrite');
-      const store = transaction.objectStore('organism');
-      const request = store.put({ ...organism, id: 'current' });
+      const transaction = this.db!.transaction(['organisms'], 'readwrite');
+      const store = transaction.objectStore('organisms');
+      const request = store.put(organism);
       
-      request.onsuccess = () => {
-        this._org = organism;
-        resolve();
-      };
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }
@@ -126,13 +136,18 @@ export class SymbiontStorage {
     });
   }
 
-  async addMutation(mutation: OrganismMutation): Promise<void> {
+  async addMutation(mutation: OrganismMutation & { timestamp?: number }): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
+    
+    const mutationWithTimestamp = {
+      ...mutation,
+      timestamp: mutation.timestamp || Date.now()
+    };
     
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['mutations'], 'readwrite');
       const store = transaction.objectStore('mutations');
-      const request = store.add(mutation);
+      const request = store.add(mutationWithTimestamp);
       
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
@@ -199,7 +214,10 @@ export class SymbiontStorage {
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['invitations'], 'readwrite');
       const store = transaction.objectStore('invitations');
-      const request = store.add(invitation);
+      const request = store.add({
+        ...invitation,
+        createdAt: invitation.createdAt || Date.now()
+      });
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
@@ -304,5 +322,45 @@ export class SymbiontStorage {
       };
       request.onerror = () => reject(request.error);
     });
+  }
+
+  /**
+   * Nettoie les anciennes données pour optimiser l'espace
+   */
+  async cleanup(retentionDays: number = 30): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    
+    const cutoffDate = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+    
+    // Nettoyer les anciennes mutations
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['mutations'], 'readwrite');
+      const store = transaction.objectStore('mutations');
+      const index = store.index('timestamp');
+      const range = IDBKeyRange.upperBound(cutoffDate);
+      const request = index.openCursor(range);
+      
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Ferme la connexion à la base de données
+   */
+  close(): void {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
   }
 }

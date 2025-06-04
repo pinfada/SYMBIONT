@@ -45,11 +45,11 @@ class ContentScript {
     console.log('🔍 SYMBIONT Content Script initializing...');
     
     this.messageBus = new MessageBus('content');
-    this.navigationObserver = new NavigationObserver();
-    this.interactionCollector = new InteractionCollector();
+    this.navigationObserver = new NavigationObserver(this.messageBus);
+    this.interactionCollector = new InteractionCollector(this.messageBus);
     this.domAnalyzer = new DOMAnalyzer();
-    this.scrollTracker = new ScrollTracker();
-    this.attentionMonitor = new AttentionMonitor();
+    this.scrollTracker = new ScrollTracker(this.messageBus);
+    this.attentionMonitor = new AttentionMonitor(this.messageBus);
     
     this.initialize();
   }

@@ -10,6 +10,23 @@
 - [7. Export chiffré des données utilisateur (UI)](#7-export-chiffré-des-données-utilisateur-ui)
 - [8. Outil de déchiffrement utilisateur (UI)](#8-outil-de-déchiffrement-utilisateur-ui)
 
+## Permissions Chrome utilisées
+
+| Permission      | Usage dans SYMBIONT                                                                 | Recommandation sécurité                        |
+|----------------|-------------------------------------------------------------------------------------|------------------------------------------------|
+| storage        | Stockage des états, logs, données critiques (via HybridStorageManager)              | Nécessaire, usage documenté                    |
+| tabs           | Analyse du contexte de navigation, adaptation comportementale, rituels contextuels  | Restreindre l'accès, ne jamais logger d'URL    |
+| webNavigation  | Détection des changements de page, adaptation dynamique de l'organisme              | Utiliser uniquement pour adaptation, anonymiser |
+| alarms         | Planification des tâches périodiques (heartbeat, maintenance, monitoring)           | Usage limité, pas de données sensibles         |
+| idle           | Détection d'inactivité pour adaptation ou maintenance                               | Usage limité, pas de tracking utilisateur      |
+| <all_urls>     | Nécessaire pour l'injection de scripts et la collecte contextuelle                  | Restreindre au maximum, anonymiser les données |
+
+**Bonnes pratiques** :
+- Toujours documenter l'usage de chaque permission dans le code et la doc.
+- Ne jamais collecter ni stocker d'informations personnelles ou d'URL complètes.
+- Limiter l'accès aux permissions au strict nécessaire (principe du moindre privilège).
+- Auditer régulièrement le manifest et retirer toute permission non utilisée.
+
 ---
 
 ## 1. Chiffrement des données

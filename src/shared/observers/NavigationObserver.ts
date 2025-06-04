@@ -1,17 +1,18 @@
 import type { NavigationChange } from '../../content/index';
 
 export class NavigationObserver {
-  private handler: ((change: NavigationChange) => void) | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _handler: ((change: NavigationChange) => void) | null = null;
 
-  constructor(messageBus?: any) {}
+  constructor(_messageBus?: any) {}
 
   observe(handler: (change: NavigationChange) => void): void {
-    this.handler = handler;
+    this._handler = handler;
     // Ici, on pourrait brancher sur l'historique ou les events SPA si besoin
   }
 
   disconnect(): void {
-    this.handler = null;
+    this._handler = null;
     // Ici, on pourrait retirer les listeners si besoin
   }
 }

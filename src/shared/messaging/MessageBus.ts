@@ -45,11 +45,11 @@ export interface Message {
 }
 
 export class MessageBus {
-    constructor(channel?: string) {}
-    on(type: MessageType, handler: (message: any) => void): void {}
-    send(message: any): void {}
-    subscribe(type: MessageType, handler: (message: any) => void): void {
-      this.on(type, handler);
+    constructor(_channel?: string) {}
+    on(_type: MessageType, _handler: (message: any) => void): void {}
+    send(_message: any): void {}
+    subscribe(_type: MessageType, _handler: (message: any) => void): void {
+      this.on(_type, _handler);
     }
 }
 
