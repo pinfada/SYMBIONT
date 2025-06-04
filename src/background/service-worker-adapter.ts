@@ -51,27 +51,66 @@ class ServiceWorkerMessageChannel {
   }
 
   private setupMessageListener(): void {
-    chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
-      if (request.type === 'CRYPTO_OPERATION') {
-        // Handle crypto operations
+    // Écouter les messages du runtime (depuis content scripts)
+    // @ts-expect-error Paramètres sender et sendResponse réservés pour usage futur
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.type === 'CRYPTO_OPERATION') {
+        // Traitement spécial pour les opérations crypto
         return true;
       }
-      if (request.channel === this.channelName) {
-        this.handleMessage(request.data);
-        return true; // Indicate we handled the message
+      
+      if (message.channel === this.channelName) {
+        this.handleMessage(message.data);
+        return true;
       }
-      return false; // Indicate we didn't handle the message
+      
+      return false; // Ajout du return pour tous les chemins
     });
   }
 
+  // Fonction pour nettoyer les messages avant sérialisation
+  private serializeMessageData(data: any): any {
+    try {
+      return JSON.parse(JSON.stringify(data));
+    } catch (error) {
+      console.warn('Message serialization issue, cleaning object:', error);
+      return this.cleanObjectForSerialization(data);
+    }
+  }
+
+  private cleanObjectForSerialization(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'function') return '[Function]';
+    if (obj instanceof Date) return obj.toISOString();
+    if (obj instanceof Error) return { name: obj.name, message: obj.message, stack: obj.stack };
+    if (typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(item => this.cleanObjectForSerialization(item));
+    
+    const cleaned: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        try {
+          cleaned[key] = this.cleanObjectForSerialization(obj[key]);
+        } catch (error) {
+          console.warn(`Failed to serialize property ${key}:`, error);
+          cleaned[key] = '[Non-serializable]';
+        }
+      }
+    }
+    return cleaned;
+  }
+
   postMessage(data: any): void {
+    // Nettoyer les données avant envoi
+    const cleanData = this.serializeMessageData(data);
+    
     // Envoyer à tous les onglets
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach(tab => {
         if (tab.id) {
           chrome.tabs.sendMessage(tab.id, {
             channel: this.channelName,
-            data: data
+            data: cleanData
           }).catch(() => {
             // Ignorer les erreurs pour les onglets non accessibles
           });
@@ -80,7 +119,7 @@ class ServiceWorkerMessageChannel {
     });
 
     // Envoyer aux autres service workers via storage
-    this.broadcastViaStorage(data);
+    this.broadcastViaStorage(cleanData);
   }
 
   private async broadcastViaStorage(data: any): Promise<void> {

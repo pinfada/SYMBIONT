@@ -10,6 +10,8 @@ declare class ServiceWorkerMessageChannel {
     private channelName;
     constructor(channelName: string);
     private setupMessageListener;
+    private serializeMessageData;
+    private cleanObjectForSerialization;
     postMessage(data: any): void;
     private broadcastViaStorage;
     private handleMessage;

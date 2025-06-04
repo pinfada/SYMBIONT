@@ -64,6 +64,72 @@ function validatePayload(type: MessageType, payload: any): boolean {
   }
 }
 
+// Fonction pour nettoyer les messages avant sérialisation
+function serializeMessage(message: any): any {
+  try {
+    // Test de sérialisation avec JSON.parse/stringify
+    return JSON.parse(JSON.stringify(message));
+  } catch (error) {
+    console.warn('Message serialization issue, cleaning object:', error);
+    
+    // Nettoyage manuel pour les cas problématiques
+    const cleanMessage = cleanObjectForSerialization(message);
+    return cleanMessage;
+  }
+}
+
+function cleanObjectForSerialization(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (typeof obj === 'function') {
+    return '[Function]'; // Remplace les fonctions par une string
+  }
+  
+  if (obj instanceof Date) {
+    return obj.toISOString(); // Convertit les dates en ISO string
+  }
+  
+  if (obj instanceof Error) {
+    return {
+      name: obj.name,
+      message: obj.message,
+      stack: obj.stack
+    };
+  }
+  
+  if (typeof obj !== 'object') {
+    return obj; // Primitives sont OK
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(cleanObjectForSerialization);
+  }
+  
+  // Pour les objets, on nettoie récursivement
+  const cleaned: any = {};
+  const seen = new WeakSet(); // Évite les références circulaires
+  
+  if (seen.has(obj)) {
+    return '[Circular Reference]';
+  }
+  seen.add(obj);
+  
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      try {
+        cleaned[key] = cleanObjectForSerialization(obj[key]);
+      } catch (error) {
+        console.warn(`Failed to serialize property ${key}:`, error);
+        cleaned[key] = '[Non-serializable]';
+      }
+    }
+  }
+  
+  return cleaned;
+}
+
 export class MessageBus {
   private handlers: Map<MessageType, Set<MessageHandler>> = new Map();
   private globalHandlers: Set<MessageHandler> = new Set();
@@ -173,8 +239,11 @@ export class MessageBus {
     } as Message;
 
     try {
+      // Nettoyer le message avant envoi pour éviter les erreurs de sérialisation
+      const cleanMessage = serializeMessage(fullMessage);
+      
       if (this.source === 'content') {
-        await chrome.runtime.sendMessage(fullMessage);
+        await chrome.runtime.sendMessage(cleanMessage);
       } else {
         // Send to all tabs for content scripts
         const tabs = await chrome.tabs.query({});
@@ -183,13 +252,13 @@ export class MessageBus {
         const activeTabs = tabs.filter(isRelevantTab);
         for (const tab of activeTabs) {
           if (tab.id) {
-            chrome.tabs.sendMessage(tab.id, fullMessage).catch(() => {
+            chrome.tabs.sendMessage(tab.id, cleanMessage).catch(() => {
               // Ignore errors for inactive tabs
             });
           }
         }
         // Also send to runtime for popup/background
-        chrome.runtime.sendMessage(fullMessage).catch(() => {});
+        chrome.runtime.sendMessage(cleanMessage).catch(() => {});
       }
     } catch (error) {
       console.error('Error sending message:', error);
