@@ -6,8 +6,9 @@ export declare class OrganismMemoryBank {
     private getKey;
     saveOrganismState(id: string, state: OrganismState): Promise<void>;
     loadOrganismHistory(id: string): Promise<OrganismHistory>;
-    consolidateMemories(timespan: TimeSpan): Promise<ConsolidationResult>;
+    consolidateMemories(_timespan: TimeSpan): Promise<ConsolidationResult>;
     optimizeStorage(): Promise<void>;
     logPerformance(msg: string): void;
+    cleanup(): void;
 }
 //# sourceMappingURL=OrganismMemoryBank.d.ts.map

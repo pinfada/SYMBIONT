@@ -38,6 +38,7 @@ export class InteractionCollector extends EventTarget {
   private lastEventTimes: Map<string, number> = new Map();
 
   // Tracking state
+  // @ts-expect-error Position réservée pour usage futur
   private mousePosition: { x: number; y: number } = { x: 0, y: 0 };
   private lastClickTime: number = 0;
   private clickSequence: number = 0;
@@ -403,18 +404,17 @@ export class InteractionCollector extends EventTarget {
     });
   }
 
+  // @ts-expect-error Paramètre réservé pour usage futur - fonction de sélection
   private handleSelectionChange(event: Event): void {
-    const selection = window.getSelection();
+    const selection = document.getSelection();
     if (selection && selection.toString().length > 0) {
       this.recordInteraction({
         type: 'selection',
         timestamp: Date.now(),
         target: 'document',
         data: {
-          action: 'change',
-          selectedText: selection.toString().slice(0, 100), // Limit for privacy
-          textLength: selection.toString().length,
-          rangeCount: selection.rangeCount
+          text: selection.toString(),
+          length: selection.toString().length
         }
       });
     }

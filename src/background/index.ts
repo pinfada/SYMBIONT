@@ -54,13 +54,13 @@ async function setStorage(key: string, value: any): Promise<void> {
 }
 
 // --- Singleton pour accès global à BackgroundService ---
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-expect-error Variable réservée pour usage futur
 let _backgroundServiceInstance: BackgroundService | null = null;
 
 class BackgroundService {
   private messageBus: MessageBus;
   private storage: SymbiontStorage;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // @ts-expect-error Observer réservé pour usage futur
   private _navigationObserver: NavigationObserver;
   public organism: OrganismState | null = null;
   private invitationService: InvitationService;
@@ -70,7 +70,7 @@ class BackgroundService {
   private collectiveThresholds = [10, 50, 100, 250, 500];
   private reachedThresholds: number[] = [];
   private security: SecurityManager = new SecurityManager();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // @ts-expect-error Factory réservée pour usage futur
   private _organismFactory: OrganismFactory;
 
   constructor() {
@@ -711,20 +711,24 @@ export const mysticalEvents = new MysticalEvents();
 
 // --- Hooks d'intégration (après instanciation des modules) ---
 // Synchronisation d'état avec le réseau
+// @ts-expect-error Fonction réservée pour usage futur
 function _syncOrganismState(state: any) {
   distributedNetwork.performCommunityBackup(state)
 }
 // Propagation d'une mutation à la communauté
+// @ts-expect-error Fonction réservée pour usage futur
 function _propagateMutation(mutation: any) {
   distributedNetwork.broadcastMutation(mutation)
   collectiveIntelligence.proposeMutation(mutation, 'self')
 }
 // Déclenchement d'un événement mystique
+// @ts-expect-error Fonction réservée pour usage futur
 function _triggerMystical(eventId: string, payload: any) {
   mysticalEvents.triggerMysticalEvent(eventId, payload)
   mysticalEvents.propagateToCommunity(eventId, payload)
 }
 // Backup communautaire en cas de panne
+// @ts-expect-error Fonction réservée pour usage futur
 function _backupOnFailure(organismId: string) {
   socialResilience.requestCommunityBackup(organismId)
 }

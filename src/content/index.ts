@@ -146,7 +146,7 @@ class ContentScript {
     const domAnalysis = await this.domAnalyzer.analyze();
     
     // Extraction du contenu principal
-    const mainContent = this.domAnalyzer.extractMainContent();
+    this.analyzeMainContent();
     
     // Catégorisation de la page
     const pageCategory = this.domAnalyzer.categorizeContent();
@@ -171,6 +171,10 @@ class ContentScript {
         }
       }
     });
+  }
+
+  private analyzeMainContent(): void {
+    this.domAnalyzer.extractMainContent();
   }
 
   private handleInteraction(interaction: InteractionEvent): void {
@@ -214,7 +218,7 @@ class ContentScript {
     this.pageData.scrollData.totalDistance += Math.abs(data.delta);
     
     // Détection du pattern de scroll
-    this.pageData.scrollData.pattern = this.scrollTracker.detectPattern();
+    this.pageData.scrollData.pattern = this.scrollTracker.getScrollPattern();
   }
 
   private handleAttentionChange(state: AttentionState): void {
@@ -276,9 +280,9 @@ class ContentScript {
     
     // Pause/Resume du monitoring d'attention
     if (isVisible) {
-      this.attentionMonitor.resume();
+      this.attentionMonitor.start();
     } else {
-      this.attentionMonitor.pause();
+      this.attentionMonitor.stop();
     }
   }
 
@@ -310,7 +314,7 @@ class ContentScript {
       attention: {
         totalActiveTime: this.pageData.attention.totalActiveTime,
         distractionCount: this.pageData.attention.distractions,
-        focusPeriods: this.attentionMonitor.getSessionSummary().focusPeriods
+        focusPeriods: this.attentionMonitor.getStats().focusPeriods || []
       },
       performance: this.collectPerformanceMetrics()
     };

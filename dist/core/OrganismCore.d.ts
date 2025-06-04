@@ -1,27 +1,7 @@
 import { OrganismState, OrganismTraits } from '../shared/types/organism';
-type PerformanceMetrics = {
-    cpu: number;
-    memory: number;
-    neuralActivity: number;
-    connectionStrength: number;
-};
-type OrganismJSON = {
-    mesh: any;
-    traits: OrganismTraits;
-    energy: number;
-    health: number;
-    dna: string;
-    timestamp: number;
-};
-type ShaderParameters = {
-    energy: number;
-    health: number;
-    neuralActivity: number;
-    creativity: number;
-    focus: number;
-    time: number;
-};
-export declare class OrganismCore {
+import { INeuralMesh, PerformanceMetrics } from './interfaces/INeuralMesh';
+import { IOrganismCore, OrganismJSON, ShaderParameters } from './interfaces/IOrganismCore';
+export declare class OrganismCore implements IOrganismCore {
     private mesh;
     private dna;
     private interpreter;
@@ -30,9 +10,18 @@ export declare class OrganismCore {
     private health;
     private lastMutation;
     private metabolismRate;
-    constructor(dna: string, traits?: Partial<OrganismTraits>);
+    private mutationBatcher;
+    private logger?;
+    private id;
+    private neuralMesh?;
+    private isBooted;
+    constructor(dna: string, traits?: Partial<OrganismTraits>, createMesh?: () => INeuralMesh);
     /**
-     * Initialise le réseau neuronal avec les traits de l'organisme
+     * Valide les paramètres d'entrée avec ErrorHandler
+     */
+    private validateInput;
+    /**
+     * Initialise le réseau neuronal avec gestion d'erreurs robuste
      */
     private initializeNeuralNetwork;
     /**
@@ -56,9 +45,17 @@ export declare class OrganismCore {
      */
     stimulate(inputId: string, value: number): void;
     /**
-     * Applique une mutation (neural et potentiellement ADN)
+     * Traite une mutation batchée
+     */
+    private processBatchedMutation;
+    /**
+     * Applique une mutation (neural et potentiellement ADN) - Version optimisée avec batching
      */
     mutate(rate?: number): void;
+    /**
+     * Force l'application immédiate de toutes les mutations en attente
+     */
+    flushMutations(): Promise<void>;
     /**
      * Nourrit l'organisme pour restaurer l'énergie
      */
@@ -76,9 +73,13 @@ export declare class OrganismCore {
      */
     getState(): OrganismState;
     /**
-     * Récupère les métriques de performance
+     * Récupère les métriques de performance - Version étendue avec mutations
      */
-    getPerformanceMetrics(): Promise<PerformanceMetrics>;
+    getPerformanceMetrics(): Promise<PerformanceMetrics & {
+        neuralActivity: number;
+        connectionStrength: number;
+        mutationStats: any;
+    }>;
     /**
      * Export JSON typé pour debug/visualisation
      */
@@ -92,9 +93,21 @@ export declare class OrganismCore {
      */
     boot(): Promise<void>;
     /**
-     * Met l'organisme en hibernation
+     * Met l'organisme en hibernation - Version étendue avec nettoyage du batcher
      */
     hibernate(): Promise<void>;
+    /**
+     * Mesure les performances de base
+     */
+    private measurePerformance;
+    /**
+     * Calcule l'activité neurale
+     */
+    private calculateNeuralActivity;
+    /**
+     * Calcule la force de connexion
+     */
+    private calculateConnectionStrength;
+    private handleBootError;
 }
-export {};
 //# sourceMappingURL=OrganismCore.d.ts.map

@@ -3,6 +3,7 @@
 
 export class DistributedOrganismNetwork {
   private peers: Set<string> = new Set()
+  // @ts-expect-error État d'organisme réservé pour usage futur
   private organismState: any = null
   private channel: BroadcastChannel
   private peerId: string

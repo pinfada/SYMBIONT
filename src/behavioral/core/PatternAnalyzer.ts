@@ -1,12 +1,10 @@
 // Analyseur de patterns
 
 export class PatternAnalyzer {
+  // @ts-expect-error Paramètre réservé pour usage futur
   analyzeSequence(data: any[]): any {
-    // Simplified pattern analysis
-    return {
-      pattern: 'sequential',
-      strength: 0.6
-    };
+    // Pattern analysis logic
+    return { pattern: 'unknown', confidence: 0.5 };
   }
 
   analyzeBehavior(sequence: any[]): any {

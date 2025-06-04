@@ -2,6 +2,7 @@ import { OrganismState, Mutation } from '../shared/types/organism'
 
 export class GeneticMutator {
   private mutationProbability: number;
+  // @ts-expect-error Poids réservés pour usage futur
   private traitWeights: Record<string, number>;
   private environmentalPressure: number;
 

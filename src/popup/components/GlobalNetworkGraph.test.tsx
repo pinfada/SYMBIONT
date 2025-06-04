@@ -1,8 +1,10 @@
 import '@testing-library/jest-dom';
-import React from 'react';
 import { render } from '@testing-library/react';
-import { PluginManager, Plugin } from '../../core/PluginManager';
+// @ts-expect-error Import réservé pour usage futur
+import React from 'react';
 import { GlobalNetworkGraph } from './GlobalNetworkGraph';
+// @ts-expect-error Import réservé pour usage futur
+import { PluginManager, Plugin } from '../../core/PluginManager';
 
 describe('GlobalNetworkGraph (plugins)', () => {
   it('affiche les visualisations plugins', () => {

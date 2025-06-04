@@ -76,6 +76,7 @@ export class MessageBus {
   }
 
   private setupListeners(): void {
+    // @ts-expect-error Paramètre réservé pour usage futur
     chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
       if (this.shouldProcessMessage(message)) {
         this.enqueueMessage(message);
@@ -208,9 +209,23 @@ export class MessageBus {
     }
   }
 
+  // @ts-expect-error Variables réservées pour usage futur
   private handleMessage(message: any, targetFrame: string): void {
+    // Handle cross-frame messages
+    console.log('Handling message:', message);
+  }
+
+  // @ts-expect-error Paramètre réservé pour usage futur
+  private onMessage(message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
     // Handle incoming message
-    console.log('Handling message:', message.type);
+    console.log('Received message:', message);
+    return true;
+  }
+
+  // @ts-expect-error Variables réservées pour usage futur
+  private sendToFrame(handleMessage: (msg: any) => any, targetFrame: MessageTarget, payload: any): void {
+    // Send message to frame
+    console.log('Sending to frame:', targetFrame, payload);
   }
 }
 

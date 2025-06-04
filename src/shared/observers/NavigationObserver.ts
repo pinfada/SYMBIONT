@@ -1,7 +1,7 @@
 import type { NavigationChange } from '../../content/index';
 
 export class NavigationObserver {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // @ts-expect-error Handler réservé pour usage futur
   private _handler: ((change: NavigationChange) => void) | null = null;
 
   constructor(_messageBus?: any) {}

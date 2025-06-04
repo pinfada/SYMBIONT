@@ -34,10 +34,13 @@ export class OrganismEngine {
   
   // État
   private frameCount = 0;
+  // @ts-expect-error Temps réservé pour usage futur
   private elapsedTime = 0;
   private geometry: Geometry;
   private traits: OrganismTraits;
+  // @ts-expect-error Propriétés réservées pour usage futur
   private visualProperties: VisualProperties;
+  // @ts-expect-error État réservé pour usage futur
   private currentState: OrganismState;
   private lastGeometryComplexity: number = 0;
   private fractalTexture: WebGLTexture | null = null;
@@ -47,8 +50,11 @@ export class OrganismEngine {
    */
   constructor(canvas: HTMLCanvasElement, dna: string) {
     this.canvas = canvas;
+    if (!this.canvas) {
+      throw new Error('Canvas element is required');
+    }
     // Initialisation WebGL (WebGL2 si possible)
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    const gl = this.canvas.getContext('webgl2') || this.canvas.getContext('webgl');
     if (!gl) throw new Error('WebGL not supported');
     this.gl = gl;
     

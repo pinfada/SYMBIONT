@@ -1,7 +1,5 @@
-interface OrganismJSON {
-    mesh: any;
-}
-export declare class NeuralMesh {
+import { INeuralMesh } from './interfaces/INeuralMesh';
+export declare class NeuralMesh implements INeuralMesh {
     private nodes;
     private connections;
     private activations;
@@ -46,27 +44,26 @@ export declare class NeuralMesh {
     /**
      * Export JSON pour debug/sauvegarde
      */
-    toJSON(): OrganismJSON['mesh'];
+    toJSON(): any;
     /**
      * Initialise le réseau neuronal
      */
     initialize(): Promise<void>;
     /**
-     * Configure un réseau par défaut
+     * Configure un réseau par défaut pour les tests
      */
     private setupDefaultNetwork;
     /**
-     * Gère la suspension du système
+     * Suspend neural processing
      */
     suspend(): Promise<void>;
     /**
-     * Simule l'usage CPU (basé sur l'activité neurale)
+     * Get CPU usage estimation
      */
     getCPUUsage(): Promise<number>;
     /**
-     * Simule l'usage mémoire (basé sur la taille du réseau)
+     * Get memory usage estimation
      */
     getMemoryUsage(): Promise<number>;
 }
-export {};
 //# sourceMappingURL=NeuralMesh.d.ts.map

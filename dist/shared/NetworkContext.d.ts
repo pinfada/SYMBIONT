@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react';
+import { ReactNode } from 'react';
 interface Network {
     nodes: any[];
     links: any[];
@@ -23,7 +23,9 @@ interface NetworkContextType {
     invite: (params: InviteParams) => Promise<void>;
     fusion: (params: FusionParams) => Promise<void>;
 }
-export declare function NetworkProvider({ children }: PropsWithChildren): import("react/jsx-runtime").JSX.Element;
+export declare function NetworkProvider({ children }: {
+    children: ReactNode;
+}): import("react/jsx-runtime").JSX.Element;
 export declare function useNetwork(): NetworkContextType;
 export {};
 //# sourceMappingURL=NetworkContext.d.ts.map

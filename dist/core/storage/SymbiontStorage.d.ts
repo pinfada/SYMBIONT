@@ -15,13 +15,14 @@ export declare class SymbiontStorage {
     private db;
     private readonly DB_NAME;
     private readonly DB_VERSION;
-    private _org;
     initialize(): Promise<void>;
-    getOrganism(): Promise<OrganismState | null>;
+    getOrganism(id?: string): Promise<OrganismState | null>;
     saveOrganism(organism: OrganismState): Promise<void>;
     getBehavior(url: string): Promise<BehaviorData | null>;
     saveBehavior(behavior: BehaviorData): Promise<void>;
-    addMutation(mutation: OrganismMutation): Promise<void>;
+    addMutation(mutation: OrganismMutation & {
+        timestamp?: number;
+    }): Promise<void>;
     getRecentMutations(limit?: number): Promise<OrganismMutation[]>;
     getSetting<T>(key: string, defaultValue: T): Promise<T>;
     setSetting<T>(key: string, value: T): Promise<void>;
@@ -37,6 +38,14 @@ export declare class SymbiontStorage {
      * Retourne les interactions récentes sur une période donnée (en ms, par défaut 24h)
      */
     getRecentActivity(periodMs?: number): Promise<any[]>;
+    /**
+     * Nettoie les anciennes données pour optimiser l'espace
+     */
+    cleanup(retentionDays?: number): Promise<void>;
+    /**
+     * Ferme la connexion à la base de données
+     */
+    close(): void;
 }
 export {};
 //# sourceMappingURL=SymbiontStorage.d.ts.map

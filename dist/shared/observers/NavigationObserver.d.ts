@@ -1,7 +1,7 @@
 import type { NavigationChange } from '../../content/index';
 export declare class NavigationObserver {
-    private handler;
-    constructor(messageBus?: any);
+    private _handler;
+    constructor(_messageBus?: any);
     observe(handler: (change: NavigationChange) => void): void;
     disconnect(): void;
 }

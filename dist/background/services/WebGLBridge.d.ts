@@ -6,6 +6,9 @@ export declare class WebGLBridge {
     private currentState;
     private isRendering;
     private unsubscribeHandler?;
+    private pendingFrames;
+    private renderQueue;
+    private cleanup?;
     constructor(messageBus: MessageBus);
     private setupMessageHandlers;
     startRendering(dna: string): void;

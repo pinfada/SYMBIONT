@@ -25,6 +25,7 @@ export declare class SynapticRouter {
      * @returns {Promise<void>}
      */
     private handleMessage;
+    route(message: Message, sender?: MessagePort): Promise<any>;
 }
 export {};
 //# sourceMappingURL=SynapticRouter.d.ts.map

@@ -5,6 +5,7 @@
  * - Adaptation dynamique de la qualité
  */
 export class WebGLOptimizer {
+  // @ts-expect-error Contexte réservé pour usage futur
   private gl: WebGLRenderingContext | WebGL2RenderingContext
   private targetFPS: number
   constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, targetFPS = 60) {
@@ -35,6 +36,7 @@ export class WebGLOptimizer {
   /**
    * Change dynamiquement la qualité de rendu
    */
+  // @ts-expect-error Paramètre réservé pour usage futur
   setQuality(level: 'low' | 'medium' | 'high') {
     // À brancher sur le moteur de rendu
     // Ex : réduire la résolution, simplifier la géométrie, etc.

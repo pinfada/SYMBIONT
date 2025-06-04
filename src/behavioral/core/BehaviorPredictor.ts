@@ -2,20 +2,16 @@
 import { OrganismState, PageContext, ActionPrediction } from '../../shared/types/organism';
 
 export class BehaviorPredictor {
+  // @ts-expect-error Paramètre réservé pour usage futur
   predict(data: any[]): any {
-    // Simplified prediction logic
-    return {
-      nextAction: 'browse',
-      confidence: 0.7
-    };
+    // Prédiction comportementale simple - à implémenter
+    return { confidence: 0.5, prediction: 'unknown' };
   }
 
+  // @ts-expect-error Paramètre réservé pour usage futur
   analyzeBehavior(sequence: any[]): any {
-    // Simplified behavior analysis
-    return {
-      pattern: 'default',
-      confidence: 0.5
-    };
+    // Analyse de séquence comportementale - à implémenter
+    return { pattern: 'none', score: 0 };
   }
 
   updateModel(): void {

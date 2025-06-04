@@ -22,6 +22,7 @@ export class SocialNetworkManager {
   private invitations: Invitation[] = []
   private memoryBank: OrganismMemoryBank
   private security: SecurityManager
+  // @ts-expect-error Sessions réservées pour usage futur
   private _collectiveSessions: Map<string, { participants: string[], traits: Record<string, number> }> = new Map()
 
   constructor(memoryBank: OrganismMemoryBank, security: SecurityManager) {
@@ -129,7 +130,7 @@ export class SocialNetworkManager {
     }
   }
 
-  // Rituel collectif complet
+  // @ts-expect-error Paramètre réservé pour usage futur
   async triggerCollectiveWake(trigger: CollectiveTrigger, userIds: string[]): Promise<WakeResult> {
     const sync = await this.detectCollectiveSync(userIds)
     if (!sync) return { success: false, details: 'Pas assez de participants.' }

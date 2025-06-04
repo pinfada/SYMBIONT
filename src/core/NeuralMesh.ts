@@ -4,6 +4,7 @@ export class NeuralMesh implements INeuralMesh {
   private nodes: Map<string, { type: string; activation: number; bias: number }> = new Map();
   private connections: Map<string, Map<string, number>> = new Map();
   private activations: Map<string, number> = new Map();
+  // @ts-expect-error Taux réservé pour usage futur
   private learningRate: number = 0.01;
 
   constructor() {

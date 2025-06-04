@@ -1,4 +1,6 @@
 export declare class PatternAnalyzer {
-    analyze(sequence: any[]): any;
+    analyzeSequence(data: any[]): any;
+    analyzeBehavior(sequence: any[]): any;
+    detectPatterns(events: any[]): any[];
 }
 //# sourceMappingURL=PatternAnalyzer.d.ts.map

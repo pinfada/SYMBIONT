@@ -1,3 +1,9 @@
 import React from 'react';
-export declare const ContextualInvitationNotification: React.FC;
+interface ContextualInvitationProps {
+    context?: string;
+    onAccept?: () => void;
+    onDismiss?: () => void;
+}
+export declare const ContextualInvitationNotification: React.FC<ContextualInvitationProps>;
+export {};
 //# sourceMappingURL=ContextualInvitationNotification.d.ts.map

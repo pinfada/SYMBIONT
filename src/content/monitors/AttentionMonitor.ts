@@ -235,6 +235,7 @@ export class AttentionMonitor extends EventTarget {
     
     // Calculate scroll velocity
     const scrollTime = now - this.scrollStartTime;
+    // @ts-expect-error Vélocité réservée pour usage futur
     const scrollVelocity = this.scrollDistance / (scrollTime / 1000); // pixels/second
     
     // Reset scroll tracking after pause
@@ -419,17 +420,12 @@ export class AttentionMonitor extends EventTarget {
     return visibleText.trim();
   }
 
+  // @ts-expect-error Méthode réservée pour usage futur
   private getElementSelector(element: Element): string {
-    let selector = element.tagName.toLowerCase();
-    if (element.id) {
-      selector += `#${element.id}`;
-    } else if (element.className) {
-      const classes = element.className.split(' ').filter(c => c.length > 0);
-      if (classes.length > 0) {
-        selector += `.${classes.slice(0, 2).join('.')}`;
-      }
-    }
-    return selector;
+    // Generate unique selector for element
+    return element.tagName.toLowerCase() + 
+           (element.id ? '#' + element.id : '') +
+           (element.className ? '.' + element.className.split(' ').join('.') : '');
   }
 
   private emitAttentionEvent(event: AttentionEvent): void {

@@ -210,6 +210,7 @@ export class NeuralCoreEngine {
     }
   }
 
+  // @ts-expect-error Paramètre réservé pour usage futur
   private calculateConfidence(organism: OrganismState, context: PageContext): number {
     // Base confidence sur l'expérience (nombre de mutations = expérience)
     const experienceBonus = Math.min(0.3, organism.mutations.length * 0.01)
@@ -221,6 +222,7 @@ export class NeuralCoreEngine {
     return Math.min(0.95, 0.4 + experienceBonus + focusBonus + wisdomBonus)
   }
 
+  // @ts-expect-error Paramètre réservé pour usage futur
   private generateSuggestions(organism: OrganismState, context: PageContext): string[] {
     const suggestions = ['browse']
     

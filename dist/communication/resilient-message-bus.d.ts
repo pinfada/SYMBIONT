@@ -12,6 +12,9 @@ export declare class ResilientMessageBus {
     private messageQueue;
     private failureStrategies;
     private circuitBreaker;
+    private failureQueue;
+    private isConnected;
+    private connectionAttempts;
     constructor();
     private setupFailureStrategies;
     send(message: Message): Promise<SendResult>;
@@ -21,6 +24,8 @@ export declare class ResilientMessageBus {
     private cacheOrganismState;
     private queueForLaterSync;
     private processLocally;
+    private _attemptConnection;
+    private _processMessage;
 }
 export {};
 //# sourceMappingURL=resilient-message-bus.d.ts.map

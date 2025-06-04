@@ -41,10 +41,10 @@ export interface Message {
     id?: string;
 }
 export declare class MessageBus {
-    constructor(channel?: string);
-    on(type: MessageType, handler: (message: any) => void): void;
-    send(message: any): void;
-    subscribe(type: MessageType, handler: (message: any) => void): void;
+    constructor(_channel?: string);
+    on(_type: MessageType, _handler: (message: any) => void): void;
+    send(_message: any): void;
+    subscribe(_type: MessageType, _handler: (message: any) => void): void;
 }
 export default MessageBus;
 //# sourceMappingURL=MessageBus.d.ts.map

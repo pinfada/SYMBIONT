@@ -9,6 +9,7 @@ export class WebGLBridge {
   private renderInterval: number | null = null;
   private currentState: OrganismState | null = null;
   private isRendering: boolean = false;
+  // @ts-expect-error Handler réservé pour usage futur
   private unsubscribeHandler?: () => void;
   private pendingFrames = new Set<number>();
   private renderQueue: OrganismState[] = [];

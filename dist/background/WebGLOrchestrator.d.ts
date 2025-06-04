@@ -4,11 +4,14 @@ export declare class WebGLOrchestrator {
     private renderQueue;
     private memoryBank;
     constructor(memoryBank: OrganismMemoryBank);
-    initializeRenderer(tabId: number): Promise<WebGLContext>;
+    initializeRenderer(_tabId: number): Promise<WebGLContext>;
     updateOrganismVisuals(id: string, mutations: VisualMutation[]): Promise<void>;
-    optimizePerformance(metrics: PerformanceMetrics): Promise<void>;
+    optimizePerformance(_metrics: PerformanceMetrics): Promise<void>;
     optimizeRendering(): Promise<void>;
     receiveVisualMutation(id: string, mutation: VisualMutation): Promise<void>;
     logPerformance(msg: string): void;
+    activateForTab(): Promise<void>;
+    processMutation(): Promise<void>;
+    getPerformanceMetrics(): Promise<any>;
 }
 //# sourceMappingURL=WebGLOrchestrator.d.ts.map

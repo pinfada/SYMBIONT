@@ -1,8 +1,8 @@
-declare class PersistentServiceWorker {
-    private static instance;
+export declare class PersistentServiceWorker {
+    private static _instance;
     private isAlive;
-    private heartbeatInterval;
-    private connectionHealth;
+    private _heartbeatInterval;
+    private _connectionHealth;
     private lastHeartbeat;
     constructor();
     private setupSelfHealing;
@@ -13,7 +13,7 @@ declare class PersistentServiceWorker {
     private performMaintenance;
     private setupPeriodicMaintenance;
     private setupEmergencyProtocols;
+    private _keepAlive;
 }
 export declare const persistentServiceWorker: PersistentServiceWorker;
-export {};
 //# sourceMappingURL=persistent-service-worker.d.ts.map

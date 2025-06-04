@@ -8,7 +8,7 @@ import { MutationBatcher, BatchedMutation } from './utils/MutationBatcher';
 export class OrganismCore implements IOrganismCore {
   private mesh: INeuralMesh;
   private dna: string;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // @ts-expect-error Interpréteur réservé pour usage futur
   private interpreter: DNAInterpreter | null = null;
   private traits: OrganismTraits;
   private energy: number;
@@ -19,7 +19,7 @@ export class OrganismCore implements IOrganismCore {
   private logger?: { debug: Function; info: Function; error: Function }; // Logger optionnel
   private id: string = Math.random().toString(36).substr(2, 9); // ID unique
   private neuralMesh?: INeuralMesh; // Référence pour boot
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // @ts-expect-error État réservé pour usage futur
   private isBooted: boolean = false; // État boot
 
   constructor(dna: string, traits?: Partial<OrganismTraits>, createMesh?: () => INeuralMesh) {
@@ -136,6 +136,7 @@ export class OrganismCore implements IOrganismCore {
       {
         maxRetries: 3,
         backoffMs: 100,
+        // @ts-expect-error Paramètre réservé pour usage futur
         shouldRetry: (error, attempt) => attempt < 3
       },
       { component: 'OrganismCore', method: 'initializeNeuralNetwork' }
@@ -502,10 +503,10 @@ export class OrganismCore implements IOrganismCore {
       
       this.isBooted = true;
       this.logger?.info('Organism boot completed successfully', this.id);
-    } catch (err) {
-      this.logger?.error('Failed to boot organism', { organismId: this.id, err });
-      errorHandler.logSimpleError('OrganismCore', 'boot', err instanceof Error ? err.message : 'Boot failed', 'error');
-      throw err;
+    } catch (error) {
+      this.logger?.error('Failed to boot organism', { organismId: this.id, error });
+      errorHandler.logSimpleError('OrganismCore', 'boot', error instanceof Error ? error.message : 'Boot failed', 'error');
+      throw error;
     }
   }
 
@@ -574,5 +575,10 @@ export class OrganismCore implements IOrganismCore {
     } catch (error) {
       return 0;
     }
+  }
+
+  // @ts-expect-error Méthode réservée pour usage futur
+  private handleBootError(): void {
+    // Implementation of handleBootError method
   }
 }

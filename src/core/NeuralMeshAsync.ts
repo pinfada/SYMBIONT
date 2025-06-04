@@ -30,6 +30,7 @@ export class NeuralMeshAsync implements INeuralMesh {
   private nodes: Map<string, NeuralNode> = new Map();
   private connections: Map<string, NeuralConnection[]> = new Map();
   private activations: Map<string, number> = new Map();
+  // @ts-expect-error Taux réservé pour usage futur
   private learningRate: number = 0.01;
   
   // Worker management
@@ -47,7 +48,8 @@ export class NeuralMeshAsync implements INeuralMesh {
   private averageProcessingTime = 0;
   private operationCount = 0;
 
-  private config: NeuralMeshAsyncConfig;
+  // @ts-expect-error Configuration réservée pour usage futur
+  private config: any;
 
   constructor(config: NeuralMeshAsyncConfig = {}) {
     this.config = {

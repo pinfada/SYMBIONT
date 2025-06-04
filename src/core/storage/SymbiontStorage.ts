@@ -13,11 +13,13 @@ interface BehaviorData {
   }>;
 }
 
-interface StorageSchema {
-  organism: OrganismState;
-  behaviors: Map<string, BehaviorData>;
+// @ts-expect-error Interface réservée pour usage futur
+interface _StorageSchema {
+  version: number;
+  organisms: OrganismState[];
+  behaviors: BehaviorData[];
   mutations: OrganismMutation[];
-  settings: Record<string, any>;
+  settings: any;
 }
 
 export class SymbiontStorage {

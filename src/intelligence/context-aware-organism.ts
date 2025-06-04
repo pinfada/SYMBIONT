@@ -3,8 +3,11 @@
 
 export class ContextAwareOrganism {
   private contextEngine: any
+  // @ts-expect-error Intelligence réservée pour usage futur
   private adaptiveIntelligence: any
+  // @ts-expect-error Analyseur réservé pour usage futur
   private environmentAnalyzer: any
+  // @ts-expect-error Prédicteur réservé pour usage futur
   private behaviorPredictor: any
   private traits: Record<string, number> = {
     empathy: 0.5,

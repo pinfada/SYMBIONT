@@ -12,7 +12,7 @@ export declare const healthMonitor: BasicHealthMonitor;
 declare class BackgroundService {
     private messageBus;
     private storage;
-    private navigationObserver;
+    private _navigationObserver;
     organism: OrganismState | null;
     private invitationService;
     private murmureService;
@@ -21,6 +21,7 @@ declare class BackgroundService {
     private collectiveThresholds;
     private reachedThresholds;
     private security;
+    private _organismFactory;
     constructor();
     private initialize;
     private createNewOrganism;

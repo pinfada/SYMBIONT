@@ -5,7 +5,7 @@ export declare class SocialNetworkManager {
     private invitations;
     private memoryBank;
     private security;
-    private collectiveSessions;
+    private _collectiveSessions;
     constructor(memoryBank: OrganismMemoryBank, security: SecurityManager);
     generateInvitation(inviterId: string, context: InvitationContext): Promise<InvitationCode>;
     facilitateSharedMutation(source: string, target: string): Promise<SharedMutationResult>;

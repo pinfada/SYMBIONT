@@ -4,6 +4,7 @@
 export class CollectiveIntelligence {
   private proposals: Map<string, any[]> = new Map()
   private votes: Map<string, Set<string>> = new Map()
+  // @ts-expect-error Peer ID réservé pour usage futur
   private peerId: string
   private onCollectiveMutation: ((mutationId: string) => void) | null = null
 

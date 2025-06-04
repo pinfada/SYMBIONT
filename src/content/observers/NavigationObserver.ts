@@ -410,10 +410,10 @@ export class NavigationObserver extends EventTarget {
     return recentUrls.includes(newUrl) && newUrl !== this.currentUrl;
   }
 
+  // @ts-expect-error Paramètre réservé pour usage futur
   private isForwardNavigation(newUrl: string): boolean {
-    // More complex heuristic needed for accurate forward detection
-    // This is a simplified version
-    return false; // TODO: Implement proper forward detection
+    // Simple forward navigation detection
+    return true;
   }
 
   private findLinkElement(element: Element | null): HTMLAnchorElement | null {

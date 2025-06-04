@@ -23,6 +23,9 @@ export declare class MessageBus {
     send(message: Omit<Message, 'source' | 'timestamp' | 'id'>): Promise<void>;
     sendToBackground(message: any): void;
     emit(type: any, payload: any): void;
+    private handleMessage;
+    private onMessage;
+    private sendToFrame;
 }
 export default MessageBus;
 export { validatePayload };
