@@ -3,6 +3,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const HtmlPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { merge } = require('webpack-merge');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
   mode: process.env.NODE_ENV || 'production',
@@ -40,6 +41,7 @@ module.exports = {
       {
         test: /popup\/index\.css$/,
         use: [
+          MiniCssExtractPlugin.loader,
           'css-loader',
           'postcss-loader'
         ]
@@ -73,6 +75,9 @@ module.exports = {
     ]
   },
   plugins: [
+    new MiniCssExtractPlugin({
+      filename: '[name]/index.css'
+    }),
     new HtmlPlugin({
       template: './src/popup/index.html',
       filename: 'popup/index.html',
@@ -86,7 +91,6 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'src/popup/index.css', to: 'popup/index.css' },
         { from: 'manifest.json', to: 'manifest.json', noErrorOnMissing: true },
         // { from: 'src/assets', to: 'assets', noErrorOnMissing: true },
       ]
