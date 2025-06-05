@@ -3,6 +3,7 @@ import { OrganismState, OrganismMutation } from '../../shared/types/organism';
 import { InvitationPayload, InvitationResult } from '../../shared/types/invitation';
 import { Murmur } from '../../shared/types/murmur';
 import { generateUUID } from '../../shared/utils/uuid';
+import { sanitizeMessage } from '../../shared/utils/serialization';
 
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
@@ -79,7 +80,7 @@ function serializeMessage(message: any): any {
   }
 }
 
-function cleanObjectForSerialization(obj: any): any {
+function cleanObjectForSerialization(obj: any, seen = new WeakSet()): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -99,30 +100,44 @@ function cleanObjectForSerialization(obj: any): any {
       stack: obj.stack
     };
   }
+
+  // Objets WebGL, DOM, React non-sérialisables
+  if (obj instanceof WebGLRenderingContext || 
+      obj instanceof WebGL2RenderingContext ||
+      obj instanceof HTMLElement ||
+      obj instanceof WebGLProgram ||
+      obj instanceof WebGLBuffer ||
+      obj instanceof WebGLTexture ||
+      (obj && obj.$$typeof) || // React elements
+      (obj && obj.__reactFiber) || // React fiber
+      (obj && obj._owner) // React internal
+  ) {
+    return '[Non-serializable Object]';
+  }
   
   if (typeof obj !== 'object') {
     return obj; // Primitives sont OK
   }
   
-  if (Array.isArray(obj)) {
-    return obj.map(cleanObjectForSerialization);
-  }
-  
-  // Pour les objets, on nettoie récursivement
-  const cleaned: any = {};
-  const seen = new WeakSet(); // Évite les références circulaires
-  
+  // Vérification des références circulaires AVANT la récursion
   if (seen.has(obj)) {
     return '[Circular Reference]';
   }
   seen.add(obj);
   
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanObjectForSerialization(item, seen));
+  }
+  
+  // Pour les objets, on nettoie récursivement
+  const cleaned: any = {};
+  
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       try {
-        cleaned[key] = cleanObjectForSerialization(obj[key]);
+        cleaned[key] = cleanObjectForSerialization(obj[key], seen);
       } catch (error) {
-        console.warn(`Failed to serialize property ${key}:`, error);
+        // Supprime les logs verbeux pour éviter le spam
         cleaned[key] = '[Non-serializable]';
       }
     }
@@ -240,8 +255,10 @@ export class MessageBus {
     } as Message;
 
     try {
+      // Sanitize le message d'abord pour éviter les objets problématiques
+      const sanitizedMessage = sanitizeMessage(fullMessage);
       // Nettoyer le message avant envoi pour éviter les erreurs de sérialisation
-      const cleanMessage = serializeMessage(fullMessage);
+      const cleanMessage = serializeMessage(sanitizedMessage);
       
       if (this.source === 'content') {
         await chrome.runtime.sendMessage(cleanMessage);

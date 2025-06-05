@@ -78,21 +78,43 @@ class ServiceWorkerMessageChannel {
     }
   }
 
-  private cleanObjectForSerialization(obj: any): any {
+  private cleanObjectForSerialization(obj: any, seen = new WeakSet()): any {
     if (obj === null || obj === undefined) return obj;
     if (typeof obj === 'function') return '[Function]';
     if (obj instanceof Date) return obj.toISOString();
     if (obj instanceof Error) return { name: obj.name, message: obj.message, stack: obj.stack };
+    
+    // Objets WebGL, DOM, React non-sérialisables
+    if (obj instanceof WebGLRenderingContext || 
+        obj instanceof WebGL2RenderingContext ||
+        obj instanceof HTMLElement ||
+        obj instanceof WebGLProgram ||
+        obj instanceof WebGLBuffer ||
+        obj instanceof WebGLTexture ||
+        (obj && obj.$$typeof) || // React elements
+        (obj && obj.__reactFiber) || // React fiber
+        (obj && obj._owner) // React internal
+    ) {
+      return '[Non-serializable Object]';
+    }
+    
     if (typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) return obj.map(item => this.cleanObjectForSerialization(item));
+    
+    // Vérification des références circulaires
+    if (seen.has(obj)) {
+      return '[Circular Reference]';
+    }
+    seen.add(obj);
+    
+    if (Array.isArray(obj)) return obj.map(item => this.cleanObjectForSerialization(item, seen));
     
     const cleaned: any = {};
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         try {
-          cleaned[key] = this.cleanObjectForSerialization(obj[key]);
+          cleaned[key] = this.cleanObjectForSerialization(obj[key], seen);
         } catch (error) {
-          console.warn(`Failed to serialize property ${key}:`, error);
+          // Supprime les logs verbeux
           cleaned[key] = '[Non-serializable]';
         }
       }
