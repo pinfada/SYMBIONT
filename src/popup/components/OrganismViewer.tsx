@@ -53,10 +53,14 @@ export const OrganismViewer: React.FC = () => {
       send: () => {},
     } as any);
     
-    // Initialiser le moteur
+    // Initialiser le moteur - Passer seulement les propriétés sérialisables
     messaging.send(MessageType.WEBGL_INIT, {
-      canvas: canvasRef.current,
-      dna: organism.visualDNA
+      dna: organism.visualDNA,
+      canvasInfo: {
+        width: canvasRef.current.width,
+        height: canvasRef.current.height,
+        className: canvasRef.current.className
+      }
     });
     
     // Écouter les événements

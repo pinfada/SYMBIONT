@@ -121,20 +121,84 @@ export function sanitizeMessage(message: any): any {
     return message;
   }
   
-  // Copie superficielle pour éviter la mutation
-  const sanitized = { ...message };
+  // Copie profonde pour éviter les mutations et nettoyer récursivement
+  return deepCleanForSerialization(message);
+}
+
+function deepCleanForSerialization(obj: any, seen = new WeakSet()): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
   
-  // Sanitize le payload spécifiquement
-  if (sanitized.payload) {
-    if (sanitized.payload.state) {
-      sanitized.payload.state = sanitizeOrganismState(sanitized.payload.state);
+  if (typeof obj === 'function') {
+    return '[Function]';
+  }
+  
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+  
+  if (obj instanceof Error) {
+    return {
+      name: obj.name,
+      message: obj.message,
+      stack: obj.stack
+    };
+  }
+
+  // Objets WebGL, DOM, React non-sérialisables
+  if (obj instanceof WebGLRenderingContext || 
+      obj instanceof WebGL2RenderingContext ||
+      obj instanceof HTMLElement ||
+      obj instanceof HTMLCanvasElement ||
+      obj instanceof CanvasRenderingContext2D ||
+      obj instanceof WebGLProgram ||
+      obj instanceof WebGLBuffer ||
+      obj instanceof WebGLTexture ||
+      (obj && obj.$$typeof) || // React elements
+      (obj && obj.__reactFiber) || // React fiber
+      (obj && obj._owner) || // React internal
+      (obj && typeof obj === 'object' && obj.constructor && obj.constructor.name && obj.constructor.name.includes('Fiber')) // React Fiber variants
+  ) {
+    // Pour les canvas, on extrait juste les propriétés utiles
+    if (obj instanceof HTMLCanvasElement) {
+      return {
+        tagName: 'CANVAS',
+        width: obj.width,
+        height: obj.height,
+        className: obj.className,
+        id: obj.id
+      };
     }
-    
-    // Nettoie les mutations si présentes
-    if (sanitized.payload.mutations) {
-      sanitized.payload.mutations = sanitizeMutations(sanitized.payload.mutations);
+    return '[Non-serializable Object]';
+  }
+  
+  if (typeof obj !== 'object') {
+    return obj; // Primitives sont OK
+  }
+  
+  // Vérification des références circulaires AVANT la récursion
+  if (seen.has(obj)) {
+    return '[Circular Reference]';
+  }
+  seen.add(obj);
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepCleanForSerialization(item, seen));
+  }
+  
+  // Pour les objets, on nettoie récursivement
+  const cleaned: any = {};
+  
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      try {
+        cleaned[key] = deepCleanForSerialization(obj[key], seen);
+      } catch (error) {
+        cleaned[key] = '[Non-serializable]';
+      }
     }
   }
   
-  return sanitized;
+  return cleaned;
 } 
