@@ -2,6 +2,7 @@ import { Message, MessageType } from '../../shared/messaging/MessageBus';
 import { OrganismState, OrganismMutation } from '../../shared/types/organism';
 import { InvitationPayload, InvitationResult } from '../../shared/types/invitation';
 import { Murmur } from '../../shared/types/murmur';
+import { generateUUID } from '../../shared/utils/uuid';
 
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
@@ -235,7 +236,7 @@ export class MessageBus {
       ...message,
       source: this.source,
       timestamp: Date.now(),
-      id: crypto.randomUUID(),
+      id: generateUUID(),
     } as Message;
 
     try {

@@ -10,6 +10,7 @@ import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
 import { OrganismFactory } from '../core/factories/OrganismFactory';
+import { generateUUID } from '../shared/utils/uuid';
 
 // --- Ajout des modules résilients ---
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
@@ -119,7 +120,7 @@ class BackgroundService {
   private createNewOrganism(): OrganismState {
     const visualDNA = this.generateVisualDNA();
     return {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       generation: 1,
       health: 100,
       energy: 100,

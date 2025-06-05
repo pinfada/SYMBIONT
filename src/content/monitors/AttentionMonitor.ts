@@ -391,7 +391,7 @@ export class AttentionMonitor extends EventTarget {
     
     const activeElement = document.activeElement;
     if (activeElement) {
-      info.elementInFocus = activeElement.tagName.toLowerCase();
+      info.elementInFocus = (activeElement.tagName || 'unknown').toLowerCase();
       if (activeElement.id) {
         info.elementInFocus += `#${activeElement.id}`;
       } else if (activeElement.className) {
@@ -423,7 +423,7 @@ export class AttentionMonitor extends EventTarget {
   // @ts-expect-error Méthode réservée pour usage futur
   private getElementSelector(element: Element): string {
     // Generate unique selector for element
-    return element.tagName.toLowerCase() + 
+    return (element.tagName || 'unknown').toLowerCase() + 
            (element.id ? '#' + element.id : '') +
            (element.className ? '.' + element.className.split(' ').join('.') : '');
   }

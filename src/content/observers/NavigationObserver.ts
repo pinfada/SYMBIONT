@@ -297,7 +297,7 @@ export class NavigationObserver extends EventTarget {
     this.formNavigationCount++;
     
     const action = form.action || this.currentUrl;
-    const method = form.method.toLowerCase();
+    const method = (form.method || 'get').toLowerCase();
     
     this.recordPageDuration();
     

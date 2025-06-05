@@ -279,7 +279,7 @@ export class InteractionCollector extends EventTarget {
         timestamp: Date.now(),
         target: this.getElementSelector(element),
         data: {
-          fieldType: (element as HTMLInputElement).type || element.tagName.toLowerCase(),
+          fieldType: (element as HTMLInputElement).type || (element.tagName || 'unknown').toLowerCase(),
           fieldName: (element as HTMLInputElement).name || (element as HTMLInputElement).id,
           formSelector
         },
@@ -310,7 +310,7 @@ export class InteractionCollector extends EventTarget {
         target: this.getElementSelector(element),
         data: {
           action: 'change',
-          fieldType: (element as HTMLInputElement).type || element.tagName.toLowerCase(),
+          fieldType: (element as HTMLInputElement).type || (element.tagName || 'unknown').toLowerCase(),
           hasValue: !!(element as HTMLInputElement).value
         },
         element: this.extractElementInfo(element)
@@ -335,7 +335,7 @@ export class InteractionCollector extends EventTarget {
           target: selector,
           data: {
             action: 'input',
-            fieldType: (element as HTMLInputElement).type || element.tagName.toLowerCase(),
+            fieldType: (element as HTMLInputElement).type || (element.tagName || 'unknown').toLowerCase(),
             valueLength: (element as HTMLInputElement).value?.length || 0
           },
           element: this.extractElementInfo(element)
@@ -351,7 +351,7 @@ export class InteractionCollector extends EventTarget {
       timestamp: Date.now(),
       target: this.getElementSelector(media),
       data: {
-        mediaType: media.tagName.toLowerCase(),
+        mediaType: (media.tagName || 'unknown').toLowerCase(),
         duration: media.duration,
         currentTime: media.currentTime,
         src: media.src
@@ -367,7 +367,7 @@ export class InteractionCollector extends EventTarget {
       timestamp: Date.now(),
       target: this.getElementSelector(media),
       data: {
-        mediaType: media.tagName.toLowerCase(),
+        mediaType: (media.tagName || 'unknown').toLowerCase(),
         duration: media.duration,
         currentTime: media.currentTime,
         watchedPercentage: media.duration > 0 ? (media.currentTime / media.duration) * 100 : 0
@@ -384,7 +384,7 @@ export class InteractionCollector extends EventTarget {
       target: this.getElementSelector(media),
       data: {
         action: 'ended',
-        mediaType: media.tagName.toLowerCase(),
+        mediaType: (media.tagName || 'unknown').toLowerCase(),
         duration: media.duration,
         completed: true
       },
@@ -486,7 +486,7 @@ export class InteractionCollector extends EventTarget {
   private getElementSelector(element: Element): string {
     if (!element) return 'unknown';
     
-    let selector = element.tagName.toLowerCase();
+    let selector = (element.tagName || 'unknown').toLowerCase();
     
     if (element.id) {
       selector += `#${element.id}`;
@@ -504,7 +504,7 @@ export class InteractionCollector extends EventTarget {
     if (!element) return undefined;
     
     const info: InteractionEvent['element'] = {
-      tag: element.tagName.toLowerCase()
+      tag: (element.tagName || 'unknown').toLowerCase()
     };
     
     if (element.id) info.id = element.id;
@@ -537,7 +537,7 @@ export class InteractionCollector extends EventTarget {
   private isInteractiveElement(element: Element): boolean {
     const interactiveTags = ['button', 'input', 'select', 'textarea', 'a'];
     return (
-      interactiveTags.includes(element.tagName.toLowerCase()) ||
+      interactiveTags.includes((element.tagName || '').toLowerCase()) ||
       element.hasAttribute('tabindex') ||
       element.getAttribute('role') === 'button' ||
       element.hasAttribute('onclick')
@@ -546,7 +546,7 @@ export class InteractionCollector extends EventTarget {
 
   private isFormField(element: Element): boolean {
     const fieldTags = ['input', 'textarea', 'select'];
-    return fieldTags.includes(element.tagName.toLowerCase());
+    return fieldTags.includes((element.tagName || '').toLowerCase());
   }
 
   private getFormSelector(element: Element): string {

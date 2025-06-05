@@ -79,15 +79,16 @@ module.exports = {
       filename: '[name]/index.css'
     }),
     new HtmlPlugin({
-      template: './src/popup/index.html',
+      template: './src/popup/popup-sub.html',
       filename: 'popup/index.html',
-      chunks: ['popup']
+      chunks: [],
+      inject: false
     }),
     new HtmlPlugin({
-      template: './src/popup/index.html',
+      template: './src/popup/popup-root.html',
       filename: 'popup.html',
-      chunks: ['popup'],
-      inject: 'body'
+      chunks: [],
+      inject: false
     }),
     new CopyPlugin({
       patterns: [
