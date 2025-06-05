@@ -3,7 +3,7 @@
 import { MessageBus } from '../core/messaging/MessageBus';
 import { MessageType } from '../shared/messaging/MessageBus';
 import { SymbiontStorage } from '../core/storage/SymbiontStorage';
-import { NavigationObserver } from '../content/observers/NavigationObserver';
+// import { NavigationObserver } from '../content/observers/NavigationObserver'; // Déplacé vers content script
 import { OrganismState, OrganismMutation } from '../shared/types/organism';
 import { InvitationService } from './services/InvitationService';
 import { MurmureService } from './services/MurmureService';
@@ -61,8 +61,8 @@ let _backgroundServiceInstance: BackgroundService | null = null;
 class BackgroundService {
   private messageBus: MessageBus;
   private storage: SymbiontStorage;
-  // @ts-expect-error Observer réservé pour usage futur
-  private _navigationObserver: NavigationObserver;
+  // NavigationObserver déplacé vers content script
+  // private _navigationObserver: NavigationObserver;
   public organism: OrganismState | null = null;
   private invitationService: InvitationService;
   private murmureService: MurmureService;
@@ -77,7 +77,7 @@ class BackgroundService {
   constructor() {
     this.messageBus = new MessageBus('background');
     this.storage = new SymbiontStorage();
-    this._navigationObserver = new NavigationObserver(this.messageBus);
+    // NavigationObserver supprimé du service worker
     this.invitationService = new InvitationService(this.storage);
     this.murmureService = new MurmureService();
     this._organismFactory = new OrganismFactory();
