@@ -1,6 +1,8 @@
 export declare class BasicHealthMonitor {
     private metrics;
     private alertCallback;
+    private lastAlerts;
+    private alertCooldown;
     constructor(alertCallback?: (msg: string) => void);
     private setupMonitoring;
     private collectMetrics;

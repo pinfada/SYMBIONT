@@ -105,12 +105,15 @@ function cleanObjectForSerialization(obj: any, seen = new WeakSet()): any {
   if (obj instanceof WebGLRenderingContext || 
       obj instanceof WebGL2RenderingContext ||
       obj instanceof HTMLElement ||
+      obj instanceof HTMLCanvasElement ||
+      obj instanceof CanvasRenderingContext2D ||
       obj instanceof WebGLProgram ||
       obj instanceof WebGLBuffer ||
       obj instanceof WebGLTexture ||
       (obj && obj.$$typeof) || // React elements
       (obj && obj.__reactFiber) || // React fiber
-      (obj && obj._owner) // React internal
+      (obj && obj._owner) || // React internal
+      (obj && typeof obj === 'object' && obj.constructor && obj.constructor.name && obj.constructor.name.includes('Fiber')) // React Fiber variants
   ) {
     return '[Non-serializable Object]';
   }

@@ -27,13 +27,34 @@ export class HybridStorageManager {
   }
 
   async store(key: string, data: any, _options: any = {}): Promise<void> {
+    // Évite de stocker les alertes de santé qui saturent le stockage
+    if (key.includes('symbiont_health_alert_')) {
+      console.log('[HybridStorageManager] Skipping health alert storage to prevent quota issues');
+      return;
+    }
+    
     console.log('[HybridStorageManager] store - Mémoire', key, data)
     this.memoryCache.set(key, data)
     try {
       await new Promise((resolve, reject) => {
         this.persistentStorage.set({ [key]: data }, () => {
-          if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
-          else resolve(true)
+          if (chrome.runtime.lastError) {
+            // Gestion spéciale du quota dépassé
+            if (chrome.runtime.lastError.message?.includes('quota')) {
+              console.warn('[HybridStorageManager] Chrome storage quota exceeded, cleaning old data');
+              this.cleanOldStorageData().then(() => {
+                // Retry après nettoyage
+                this.persistentStorage.set({ [key]: data }, () => {
+                  if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
+                  else resolve(true)
+                })
+              }).catch(reject);
+            } else {
+              reject(chrome.runtime.lastError)
+            }
+          } else {
+            resolve(true)
+          }
         })
       })
       console.log('[HybridStorageManager] store - chrome.storage.local OK', key)
@@ -159,6 +180,36 @@ export class HybridStorageManager {
         }
       }
     });
+  }
+
+  private async cleanOldStorageData(): Promise<void> {
+    try {
+      // Nettoie les anciennes alertes de santé et autres données temporaires
+      const allKeys = await new Promise<string[]>((resolve, reject) => {
+        this.persistentStorage.get(null, (items) => {
+          if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
+          else resolve(Object.keys(items))
+        })
+      });
+      
+      const keysToRemove = allKeys.filter(key => 
+        key.includes('symbiont_health_alert_') ||
+        key.includes('broadcast_') ||
+        key.includes('_temp_')
+      );
+      
+      if (keysToRemove.length > 0) {
+        await new Promise<void>((resolve, reject) => {
+          this.persistentStorage.remove(keysToRemove, () => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
+            else resolve()
+          })
+        });
+        console.log(`[HybridStorageManager] Cleaned ${keysToRemove.length} old storage items`);
+      }
+    } catch (error) {
+      console.error('[HybridStorageManager] Failed to clean old storage data:', error);
+    }
   }
 
   public isIndexedDBReady(): boolean {

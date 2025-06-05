@@ -9,6 +9,8 @@ export class BasicHealthMonitor {
     errors: 0
   }
   private alertCallback: ((msg: string) => void) | null = null
+  private lastAlerts: Map<string, number> = new Map()
+  private alertCooldown = 30000 // 30 secondes de cooldown entre alertes similaires
 
   constructor(alertCallback?: (msg: string) => void) {
     if (alertCallback) this.alertCallback = alertCallback
@@ -19,7 +21,7 @@ export class BasicHealthMonitor {
     setInterval(() => {
       this.collectMetrics()
       this.checkHealth()
-    }, 5000) // Toutes les 5 secondes
+    }, 30000) // Toutes les 30 secondes au lieu de 5
   }
 
   private collectMetrics(): void {
@@ -40,10 +42,12 @@ export class BasicHealthMonitor {
     const cpuAvg = avg(this.metrics.cpu)
     const memAvg = avg(this.metrics.memory)
     const latAvg = avg(this.metrics.latency)
-    if (cpuAvg > 0.18) this.alert('CPU élevé : ' + cpuAvg.toFixed(3))
-    if (memAvg > 18) this.alert('Mémoire élevée : ' + memAvg.toFixed(2) + 'MB')
-    if (latAvg > 4) this.alert('Latence élevée : ' + latAvg.toFixed(2) + 'ms')
-    if (this.metrics.errors > 0) this.alert('Erreurs détectées : ' + this.metrics.errors)
+    
+    // Seuils plus élevés pour éviter les fausses alertes
+    if (cpuAvg > 0.5) this.alert('CPU élevé : ' + cpuAvg.toFixed(3))
+    if (memAvg > 50) this.alert('Mémoire élevée : ' + memAvg.toFixed(2) + 'MB')
+    if (latAvg > 10) this.alert('Latence élevée : ' + latAvg.toFixed(2) + 'ms')
+    if (this.metrics.errors > 5) this.alert('Erreurs détectées : ' + this.metrics.errors)
   }
 
   public logError() {
@@ -51,8 +55,16 @@ export class BasicHealthMonitor {
   }
 
   private alert(msg: string) {
-    console.warn('🛑 [HealthMonitor]', msg)
-    if (this.alertCallback) this.alertCallback(msg)
+    const alertKey = msg.split(':')[0]; // Utilise le type d'alerte comme clé
+    const now = Date.now();
+    const lastAlert = this.lastAlerts.get(alertKey);
+    
+    // Vérifie le cooldown
+    if (!lastAlert || now - lastAlert > this.alertCooldown) {
+      console.warn('🛑 [HealthMonitor]', msg)
+      this.lastAlerts.set(alertKey, now);
+      if (this.alertCallback) this.alertCallback(msg)
+    }
   }
 }
 

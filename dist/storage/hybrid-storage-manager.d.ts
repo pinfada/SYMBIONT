@@ -18,6 +18,7 @@ export declare class HybridStorageManager {
     store(key: string, data: any, _options?: any): Promise<void>;
     retrieve(key: string): Promise<any>;
     private setupMultiLayerStorage;
+    private cleanOldStorageData;
     isIndexedDBReady(): boolean;
     syncData(): Promise<void>;
     /**
