@@ -6,7 +6,7 @@ import { OrganismMutation, OrganismState } from '../../shared/types/organism';
 
 export class WebGLBridge {
   private messageBus: MessageBus;
-  private renderInterval: number | null = null;
+  private renderInterval: NodeJS.Timeout | null = null;
   private currentState: OrganismState | null = null;
   private isRendering: boolean = false;
   // @ts-expect-error Handler réservé pour usage futur
@@ -46,7 +46,7 @@ export class WebGLBridge {
     this.isRendering = true;
     
     // Boucle de rendu à 60fps (16ms ≈ 60fps)
-    this.renderInterval = window.setInterval(() => {
+    this.renderInterval = setInterval(() => {
       if (this.currentState && this.isRendering) {
         this.messageBus.send({
           type: MessageType.ORGANISM_STATE_CHANGE,
