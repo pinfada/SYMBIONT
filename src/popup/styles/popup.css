@@ -1884,4 +1884,532 @@ input[type="checkbox"] {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(100, 100, 100, 0.3);
   color: #666;
+}
+
+/* === RESPONSIVE DESIGN & ACCESSIBILITÉ === */
+
+/* Variables CSS pour la responsivité */
+:root {
+  --app-min-width: 380px;
+  --app-max-width: 1200px;
+  --header-height: 60px;
+  --nav-height: 50px;
+  --content-padding: 16px;
+  --font-size-base: 14px;
+  --font-size-small: 12px;
+  --font-size-large: 16px;
+  --border-radius: 8px;
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Reset et base responsive */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Container principal responsive */
+.symbiont-app {
+  min-width: var(--app-min-width);
+  max-width: var(--app-max-width);
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  color: white;
+  position: relative;
+}
+
+/* Header responsive amélioré */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px var(--content-padding);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 224, 255, 0.1);
+  height: var(--header-height);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0; /* Permet la compression */
+}
+
+.app-title {
+  font-weight: 700;
+  font-size: 1.2em;
+  background: linear-gradient(135deg, #00e0ff, #7c7cff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85em;
+  color: #7cffb2;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #7cffb2;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.expand-button {
+  background: rgba(0, 224, 255, 0.1);
+  border: 1px solid rgba(0, 224, 255, 0.3);
+  border-radius: 6px;
+  color: #00e0ff;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+}
+
+.expand-button:hover {
+  background: rgba(0, 224, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Navigation responsive */
+.tab-navigation {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  height: var(--nav-height);
+  flex-shrink: 0;
+}
+
+.tab-navigation::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tab {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8em;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.nav-tab:hover {
+  background: rgba(0, 224, 255, 0.1);
+  color: #00e0ff;
+}
+
+.nav-tab.active {
+  color: #00e0ff;
+  background: rgba(0, 224, 255, 0.15);
+  border-bottom-color: #00e0ff;
+}
+
+.tab-icon {
+  font-size: 1.2em;
+  flex-shrink: 0;
+}
+
+.tab-label {
+  font-weight: 500;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Contenu principal responsive */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--content-padding);
+  min-height: 0; /* Important pour le flex */
+}
+
+.content-panel {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-height) - var(--nav-height) - calc(var(--content-padding) * 2));
+}
+
+.panel-header {
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.panel-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.5em;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00e0ff, #7c7cff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.panel-header p {
+  margin: 0;
+  color: #ccc;
+  font-size: 0.95em;
+}
+
+/* === MEDIA QUERIES RESPONSIVES === */
+
+/* Petits écrans / Mobile */
+@media (max-width: 480px) {
+  :root {
+    --content-padding: 12px;
+    --font-size-base: 13px;
+    --header-height: 55px;
+    --nav-height: 45px;
+  }
+  
+  .app-header {
+    padding: 8px var(--content-padding);
+  }
+  
+  .app-title {
+    font-size: 1.1em;
+  }
+  
+  .header-controls {
+    gap: 8px;
+  }
+  
+  .connection-status {
+    display: none; /* Masquer sur très petits écrans */
+  }
+  
+  .nav-tab {
+    min-width: 70px;
+    padding: 6px 2px;
+    font-size: 0.75em;
+  }
+  
+  .tab-icon {
+    font-size: 1.1em;
+  }
+  
+  .panel-header {
+    padding: 16px 20px;
+  }
+  
+  .panel-header h2 {
+    font-size: 1.3em;
+  }
+  
+  /* Grilles responsive */
+  .rituals-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .social-nav {
+    flex-wrap: wrap;
+  }
+  
+  .social-nav-btn {
+    min-width: 60px;
+    font-size: 0.7em;
+  }
+}
+
+/* Tablettes / Écrans moyens */
+@media (min-width: 481px) and (max-width: 768px) {
+  :root {
+    --content-padding: 16px;
+    --font-size-base: 14px;
+  }
+  
+  .rituals-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+  
+  .contacts-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+}
+
+/* Desktop / Grands écrans */
+@media (min-width: 769px) {
+  :root {
+    --content-padding: 20px;
+    --font-size-base: 15px;
+  }
+  
+  .symbiont-app {
+    min-height: 600px;
+    max-height: 90vh;
+  }
+  
+  .app-header {
+    padding: 16px var(--content-padding);
+  }
+  
+  .nav-tab {
+    min-width: 100px;
+    padding: 12px 8px;
+  }
+  
+  .panel-header {
+    padding: 24px 32px;
+  }
+  
+  .main-content {
+    padding: 24px;
+  }
+  
+  /* Layout en colonnes pour grands écrans */
+  .dashboard-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+}
+
+/* Très grands écrans */
+@media (min-width: 1024px) {
+  :root {
+    --content-padding: 24px;
+    --font-size-base: 16px;
+  }
+  
+  .rituals-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+  }
+  
+  .main-content {
+    padding: 32px;
+  }
+  
+  /* Layout avancé pour très grands écrans */
+  .network-graph-wrapper svg {
+    height: 400px;
+  }
+}
+
+/* === ACCESSIBILITÉ === */
+
+/* Préférences de mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .pulse, .wave, .ritualPulse, .progressGlow {
+    animation: none !important;
+  }
+}
+
+/* Contraste élevé */
+@media (prefers-contrast: high) {
+  .symbiont-app {
+    background: #000;
+  }
+  
+  .nav-tab, .ritual-card, .social-nav-btn {
+    border: 2px solid #fff;
+  }
+  
+  .nav-tab.active {
+    background: #fff;
+    color: #000;
+  }
+}
+
+/* Mode sombre forcé */
+@media (prefers-color-scheme: dark) {
+  /* Déjà optimisé pour le sombre par défaut */
+}
+
+/* Mode clair sur demande */
+@media (prefers-color-scheme: light) {
+  .symbiont-app {
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%);
+    color: #333;
+  }
+  
+  .app-header, .panel-header {
+    background: rgba(255, 255, 255, 0.8);
+    color: #333;
+  }
+  
+  .nav-tab {
+    color: #666;
+  }
+  
+  .nav-tab:hover, .nav-tab.active {
+    color: #007acc;
+  }
+}
+
+/* Focus pour navigation clavier */
+.nav-tab:focus,
+.expand-button:focus,
+.ritual-button:focus,
+.btn-primary:focus,
+.btn-secondary:focus {
+  outline: 2px solid #00e0ff;
+  outline-offset: 2px;
+}
+
+/* Texte sélectionnable avec bon contraste */
+::selection {
+  background: rgba(0, 224, 255, 0.3);
+  color: white;
+}
+
+/* Scrollbars personnalisées responsives */
+.main-content::-webkit-scrollbar,
+.mystical-content::-webkit-scrollbar,
+.social-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track,
+.mystical-content::-webkit-scrollbar-track,
+.social-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb,
+.mystical-content::-webkit-scrollbar-thumb,
+.social-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 224, 255, 0.3);
+  border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover,
+.mystical-content::-webkit-scrollbar-thumb:hover,
+.social-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 224, 255, 0.5);
+}
+
+/* Containers flex responsive */
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.flex-responsive > * {
+  flex: 1;
+  min-width: 280px;
+}
+
+@media (max-width: 768px) {
+  .flex-responsive > * {
+    min-width: 100%;
+  }
+}
+
+/* Grilles auto-responsive */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .auto-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Utilitaires responsive */
+.hidden-mobile {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.hidden-desktop {
+  @media (min-width: 769px) {
+    display: none !important;
+  }
+}
+
+.text-responsive {
+  font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+  line-height: 1.4;
+}
+
+/* Animation pulse responsive */
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
 } 

@@ -21,6 +21,34 @@ const App: React.FC = () => {
   const [active, setActive] = useState('dashboard');
   const [toast, setToast] = useState<{message: string, type?: 'success'|'error'|'info'}|null>(null);
 
+  // Ouvrir en fenêtre redimensionnable
+  const openInWindow = () => {
+    if (typeof chrome !== 'undefined' && chrome.windows) {
+      try {
+        chrome.windows.create({
+          url: chrome.runtime.getURL('popup.html'),
+          type: 'popup',
+          width: 800,
+          height: 700,
+          focused: true
+        });
+        // Fermer le popup actuel
+        window.close();
+      } catch (error) {
+        console.warn('Impossible d\'ouvrir en fenêtre:', error);
+        setToast({ 
+          message: 'Ouverture en fenêtre non disponible dans ce contexte', 
+          type: 'info' 
+        });
+      }
+    } else {
+      setToast({ 
+        message: 'Fonctionnalité disponible uniquement dans l\'extension Chrome', 
+        type: 'info' 
+      });
+    }
+  };
+
   const renderContent = () => {
     switch (active) {
       case 'dashboard':
@@ -103,9 +131,18 @@ const App: React.FC = () => {
           <img src="../assets/icons/icon48.png" alt="SYMBIONT" width={24} height={24} />
           <span className="app-title">SYMBIONT</span>
         </div>
-        <div className="connection-status">
-          <span className="status-dot"></span>
-          <span className="status-text">Connecté</span>
+        <div className="header-controls">
+          <div className="connection-status">
+            <span className="status-dot"></span>
+            <span className="status-text">Connecté</span>
+          </div>
+          <button 
+            onClick={openInWindow}
+            className="expand-button"
+            title="Ouvrir en fenêtre redimensionnable (accessibilité)"
+          >
+            🔍
+          </button>
         </div>
       </header>
 
