@@ -9,6 +9,7 @@
     "build:main": "webpack --config webpack.config.js",
     "build:background": "webpack --config webpack.background.js",
     "build:full": "npm run build && npm run check-manifest",
+    "build:all": "npm run build:full && cd backend && npm run build",
     "build:production": "NODE_ENV=production npm run build:full",
     "test": "jest",
     "test:ci": "jest --coverage",

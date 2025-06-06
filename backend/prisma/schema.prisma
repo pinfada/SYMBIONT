@@ -1,0 +1,292 @@
+// SYMBIONT Database Schema - Production Ready
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// === UTILISATEURS & AUTHENTIFICATION ===
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Profil utilisateur
+  profile   UserProfile?
+  
+  // Organismes possédés
+  organisms Organism[]
+  
+  // Invitations envoyées et reçues
+  sentInvitations     Invitation[] @relation("InviterRelation")
+  receivedInvitations Invitation[] @relation("InviteeRelation")
+  
+  // Connexions sociales
+  connectionsFrom SocialConnection[] @relation("ConnectionFrom")
+  connectionsTo   SocialConnection[] @relation("ConnectionTo")
+  
+  // Sessions actives
+  sessions UserSession[]
+  
+  // Analytics comportementales
+  behaviorData BehaviorData[]
+  
+  @@map("users")
+}
+
+model UserProfile {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  firstName String?
+  lastName  String?
+  bio       String?
+  avatar    String?
+  timezone  String?
+  language  String @default("fr")
+  
+  // Préférences
+  preferences Json @default("{}")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("user_profiles")
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  // Métadonnées session
+  userAgent String?
+  ipAddress String?
+  
+  @@map("user_sessions")
+}
+
+// === ORGANISMES DIGITAUX ===
+
+model Organism {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Identité organisme
+  name        String?
+  generation  Int      @default(1)
+  
+  // Génétique
+  dna         String
+  visualDNA   String
+  traits      Json     // {curiosity: 0.5, focus: 0.8, ...}
+  
+  // État vital
+  health       Float @default(1.0)
+  energy       Float @default(0.8)
+  consciousness Float @default(0.5)
+  
+  // Temporalité
+  birthTime    DateTime @default(now())
+  lastMutation DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  mutations         Mutation[]
+  socialConnections SocialConnection[] @relation("OrganismConnections")
+  memoryFragments   MemoryFragment[]
+  ritualSessions    RitualSession[]
+  
+  // Parent/Enfant relationships pour lignée
+  parentId String?
+  parent   Organism? @relation("OrganismLineage", fields: [parentId], references: [id])
+  children Organism[] @relation("OrganismLineage")
+  
+  @@map("organisms")
+}
+
+// === MUTATIONS & ÉVOLUTION ===
+
+model Mutation {
+  id         String   @id @default(cuid())
+  organismId String
+  organism   Organism @relation(fields: [organismId], references: [id], onDelete: Cascade)
+  
+  type       String   // 'behavioral', 'visual', 'cognitive', 'social'
+  trigger    String   // 'navigation_pattern', 'social_interaction', 'ritual'
+  magnitude  Float
+  
+  // Données spécifiques
+  data       Json
+  
+  timestamp  DateTime @default(now())
+  
+  @@map("mutations")
+}
+
+model MemoryFragment {
+  id         String   @id @default(cuid())
+  organismId String
+  organism   Organism @relation(fields: [organismId], references: [id], onDelete: Cascade)
+  
+  content    String
+  type       String   // 'navigation', 'interaction', 'emotion', 'learning'
+  strength   Float    @default(1.0)
+  
+  // Métadonnées
+  context    Json?
+  
+  createdAt  DateTime @default(now())
+  
+  @@map("memory_fragments")
+}
+
+// === SYSTÈME D'INVITATIONS ===
+
+model Invitation {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  
+  inviterId   String?
+  inviter     User?    @relation("InviterRelation", fields: [inviterId], references: [id])
+  
+  inviteeId   String?
+  invitee     User?    @relation("InviteeRelation", fields: [inviteeId], references: [id])
+  
+  isConsumed  Boolean  @default(false)
+  consumedAt  DateTime?
+  
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  
+  // Métadonnées invitation
+  metadata    Json?
+  
+  @@map("invitations")
+}
+
+// === RÉSEAU SOCIAL ===
+
+model SocialConnection {
+  id           String   @id @default(cuid())
+  
+  fromUserId   String
+  fromUser     User     @relation("ConnectionFrom", fields: [fromUserId], references: [id])
+  
+  toUserId     String
+  toUser       User     @relation("ConnectionTo", fields: [toUserId], references: [id])
+  
+  // Organismes connectés
+  organismId   String?
+  organism     Organism? @relation("OrganismConnections", fields: [organismId], references: [id])
+  
+  type         String   // 'invitation', 'mutual', 'following'
+  strength     Float    @default(0.5)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([fromUserId, toUserId])
+  @@map("social_connections")
+}
+
+// === DONNÉES COMPORTEMENTALES ===
+
+model BehaviorData {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  domain      String
+  url         String?
+  
+  visitCount  Int      @default(1)
+  totalTime   Int      @default(0) // en secondes
+  scrollDepth Float    @default(0.0)
+  
+  interactions Json    @default("[]")
+  
+  category    String   @default("other")
+  
+  lastVisit   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  
+  @@map("behavior_data")
+}
+
+// === RITUELS & FONCTIONS MYSTIQUES ===
+
+model RitualSession {
+  id          String   @id @default(cuid())
+  organismId  String
+  organism    Organism @relation(fields: [organismId], references: [id], onDelete: Cascade)
+  
+  ritualType  String   // 'meditation', 'synchronization', 'revelation'
+  duration    Int      // en secondes
+  intensity   Float
+  
+  effects     Json     // Effets sur l'organisme
+  
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  
+  @@map("ritual_sessions")
+}
+
+// === ANALYTICS & MÉTRIQUES ===
+
+model SystemMetrics {
+  id        String   @id @default(cuid())
+  
+  userId    String?
+  
+  cpu       Float
+  memory    Float
+  latency   Float
+  
+  // Contexte
+  userAgent String?
+  platform  String?
+  
+  timestamp DateTime @default(now())
+  
+  @@map("system_metrics")
+}
+
+model NetworkEvents {
+  id        String   @id @default(cuid())
+  
+  type      String   // 'connection', 'mutation', 'ritual', 'threshold'
+  data      Json
+  
+  timestamp DateTime @default(now())
+  
+  @@map("network_events")
+}
+
+// === CONFIGURATION SYSTÈME ===
+
+model Configuration {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("configurations")
+} 
