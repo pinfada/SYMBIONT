@@ -6,7 +6,7 @@ test.describe('Résilience et monitoring SYMBIONT', () => {
   const popupPath = path.resolve(__dirname, '../../dist/popup.html');
 
   test('Affichage des logs de résilience', async ({ page }) => {
-    await page.goto('http://localhost:8080/popup.html');
+    await page.goto('/popup');
     await waitForReactToLoad(page, '.resilience-panel');
     await debugPageState(page);
     try {
@@ -23,7 +23,7 @@ test.describe('Résilience et monitoring SYMBIONT', () => {
   });
 
   test('Backup communautaire en cas de panne', async ({ page }) => {
-    await page.goto('http://localhost:8080/popup.html');
+    await page.goto('/popup');
     await waitForReactToLoad(page, '.resilience-panel');
     await debugPageState(page);
     try {

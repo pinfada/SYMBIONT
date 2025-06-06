@@ -2,11 +2,11 @@ import { test, expect } from './test-setup';
 import path from 'path';
 import { waitForReactToLoad, debugPageState } from './utils';
 
-test.describe('Fonctionnalités sociales SYMBIONT', () => {
+test.describe('Fonctionnalites sociales SYMBIONT', () => {
   const popupPath = path.resolve(__dirname, '../../dist/popup.html');
 
-  test('Génération et partage d’une invitation', async ({ page }) => {
-    await page.goto('http://localhost:8080/popup.html');
+  test('Generation et partage d\'une invitation', async ({ page }) => {
+    await page.goto('/popup');
     await waitForReactToLoad(page, '.social-panel');
     await debugPageState(page);
     try {
@@ -15,7 +15,7 @@ test.describe('Fonctionnalités sociales SYMBIONT', () => {
       await page.click('[data-testid="generate-btn"]');
       const code = await page.getByTestId('generated-code').inputValue();
       expect(code).toMatch(/[a-z0-9-]{8,}/i);
-      console.log('✅ Invitation générée et partagée');
+      console.log('✅ Invitation generee et partagee');
     } catch (error) {
       console.log('❌ Erreur invitation:', error);
       await debugPageState(page);
@@ -23,8 +23,8 @@ test.describe('Fonctionnalités sociales SYMBIONT', () => {
     }
   });
 
-  test('Acceptation d’une invitation', async ({ page }) => {
-    await page.goto('http://localhost:8080/popup.html');
+  test('Acceptation d\'une invitation', async ({ page }) => {
+    await page.goto('/popup');
     await waitForReactToLoad(page, '.social-panel');
     await debugPageState(page);
     try {
@@ -33,7 +33,7 @@ test.describe('Fonctionnalités sociales SYMBIONT', () => {
       await page.fill('[data-testid="invitation-code-input"]', 'TESTCODE123');
       await page.click('[data-testid="accept-btn"]');
       await expect(page.getByTestId('invitation-accepted')).toBeVisible();
-      console.log('✅ Invitation acceptée');
+      console.log('✅ Invitation acceptee');
     } catch (error) {
       console.log('❌ Erreur acceptation invitation:', error);
       await debugPageState(page);

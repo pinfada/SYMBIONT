@@ -20,40 +20,89 @@
 - **Configuration Webpack** :
   - Les shaders `.vert`, `.frag`, `.glsl` sont importés comme chaînes de caractères via `asset/source`
 
-## 3. Bonnes pratiques de maintenance
+## 3. Système de Sérialisation Robuste (Janvier 2025) ⭐️
+
+### Problème résolu
+Élimination des erreurs `"Converting circular structure to JSON"` causées par les éléments HTMLCanvasElement avec React Fiber.
+
+### Solution technique
+- **Fonction `deepCleanForSerialization()`** : Nettoyage récursif des objets avant sérialisation
+- **Détection automatique** : HTMLCanvasElement, WebGLContext, React Fiber, références circulaires
+- **Double protection** : Au niveau message et au niveau composant
+- **Performance optimisée** : Utilisation de WeakSet pour éviter les boucles infinies
+
+```typescript
+// Gestion spéciale HTMLCanvasElement
+if (obj instanceof HTMLCanvasElement) {
+  return {
+    tagName: 'CANVAS',
+    width: obj.width,
+    height: obj.height,
+    className: obj.className,
+    id: obj.id
+  };
+}
+```
+
+### Objets traités automatiquement
+- `HTMLCanvasElement` → Extraction propriétés utiles
+- `WebGLRenderingContext` → `[Non-serializable Object]`
+- React Fiber (`__reactFiber`) → `[Non-serializable Object]`
+- Références circulaires → `[Circular Reference]`
+- Fonctions → `[Function]`
+- Dates → ISO string
+
+## 4. Bonnes pratiques de maintenance
 
 - Toujours utiliser les types unifiés de `src/types/index.d.ts`
 - Nettoyer les ressources WebGL (`cleanup()`) lors de la destruction du composant ou du contexte perdu
 - Gérer les erreurs de rendu et de mutation via try/catch dans l'adaptateur
+- **NOUVEAU** : Éviter de passer des objets DOM complets dans les payloads de messages
+- **NOUVEAU** : Utiliser `sanitizeMessage()` pour tout objet complexe avant sérialisation
 - Tester chaque module indépendamment (TDD recommandé)
 
-## 4. Extension et personnalisation
+## 5. Extension et personnalisation
 
 - **Nouveaux types de mutations** : ajouter dans `MutationEngine` et les types
 - **Shaders personnalisés** : ajouter les fichiers dans `src/shaders/` et adapter le chargement dans le moteur
 - **Algorithmes génératifs** : étendre `ProceduralGenerator` pour de nouvelles formes ou textures
+- **NOUVEAU** : Pour les nouveaux objets non-sérialisables, les ajouter dans `deepCleanForSerialization()`
 
-## 5. Tests et monitoring
+## 6. Tests et monitoring
 
 - Utiliser Jest pour les tests unitaires (mock du contexte WebGL recommandé)
 - Vérifier la stabilité à 60fps et la gestion de 1000 mutations/minute
 - Surveiller la charge GPU via `PerformanceMonitor` et les messages de métriques
+- **NOUVEAU** : Tester la sérialisation des nouveaux types d'objets complexes
+- **NOUVEAU** : Surveiller les logs pour détecter les objets non-sérialisables
 
-## 6. Exemple d'initialisation
+## 7. Exemple d'initialisation
 
 ```typescript
 const canvas = document.createElement('canvas');
 const engine = new OrganismEngine(canvas, 'DNA_STRING');
 const adapter = new WebGLMessageAdapter(engine, messageBus);
+
+// NOUVEAU : Utilisation sécurisée pour les messages
+messaging.send(MessageType.WEBGL_INIT, {
+  dna: organism.visualDNA,
+  canvasInfo: {  // ✅ Propriétés sérialisables uniquement
+    width: canvas.width,
+    height: canvas.height,
+    className: canvas.className
+  }
+});
 ```
 
-## 7. Dépannage
+## 8. Dépannage
 
 - Si les shaders ne se chargent pas : vérifier la règle Webpack `asset/source`
 - Si le contexte WebGL est perdu : appeler `engine.cleanup()`
 - Si le bus de messages ne fonctionne pas : vérifier l'import et la configuration de `MessageBus` et `MessageType`
+- **NOUVEAU** : Si erreur de sérialisation circulaire : vérifier que l'objet passe par `sanitizeMessage()`
+- **NOUVEAU** : Si performance dégradée : vérifier les logs de nettoyage d'objets complexes
 
-## 8. Propagation virale, triggers contextuels et transmission collective
+## 9. Propagation virale, triggers contextuels et transmission collective
 
 ### Transmission virale par invitation
 - Génération, validation et activation d'invitations via le background (stockage persistant IndexedDB)

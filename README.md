@@ -1,18 +1,18 @@
 # SYMBIONT – Organisme Numérique Évolutif
 
 ## 🌱 Vision
-SYMBIONT transforme votre navigateur en un écosystème d’organismes numériques évolutifs, sociaux et immersifs. Chaque utilisateur héberge un organisme qui apprend, mute, interagit et participe à des rituels collectifs, tout en garantissant sécurité, anonymat et performance.
+SYMBIONT transforme votre navigateur en un écosystème d'organismes numériques évolutifs, sociaux et immersifs. Chaque utilisateur héberge un organisme qui apprend, mute, interagit et participe à des rituels collectifs, tout en garantissant sécurité, anonymat et performance.
 
 ## 🏗️ Architecture
 - **Content Script** : collecte, validation et envoi des données comportementales.
-- **Background Script** : cœur de l’IA, gestion mémoire, social, rituels, rendu 3D, sécurité.
+- **Background Script** : cœur de l'IA, gestion mémoire, social, rituels, rendu 3D, sécurité.
 - **Modules principaux** :
   - `NeuralCoreEngine` : IA comportementale, apprentissage, mutation, prédiction.
   - `OrganismMemoryBank` : stockage persistant, consolidation, chiffrement.
   - `SocialNetworkManager` : invitations, mutations partagées, intelligence collective.
   - `SecretRitualSystem` : détection de rituels, codes secrets, événements mystiques.
   - `WebGLOrchestrator` : rendu 3D, mutations visuelles, optimisation GPU.
-  - `SecurityManager` : chiffrement, anonymisation, contrôle d’accès.
+  - `SecurityManager` : chiffrement, anonymisation, contrôle d'accès.
 
 ```
 Content Script <-> Background (bus de messages)
@@ -38,8 +38,8 @@ Content Script <-> Background (bus de messages)
   ```
 - Les tests couvrent la mémoire, la sécurité, le social, etc.
 
-## 🛠️ Utilisation de l’API de messages
-Envoyer un message depuis le Content Script :
+## 🛠️ Utilisation de l'API de messages
+Envoyer un message depuis le Content Script :
 ```ts
 chrome.runtime.sendMessage({
   type: 'EVOLVE_ORGANISM',
@@ -48,26 +48,51 @@ chrome.runtime.sendMessage({
   console.log('Réponse SYMBIONT :', response)
 })
 ```
-Types de messages supportés : `CREATE_ORGANISM`, `EVOLVE_ORGANISM`, `PREDICT_ACTION`, `GENERATE_INVITATION`, `SHARED_MUTATION`, `TRIGGER_RITUAL`, `APPLY_VISUAL_MUTATION`, etc.
+Types de messages supportés : `CREATE_ORGANISM`, `EVOLVE_ORGANISM`, `PREDICT_ACTION`, `GENERATE_INVITATION`, `SHARED_MUTATION`, `TRIGGER_RITUAL`, `APPLY_VISUAL_MUTATION`, etc.
 
 ## 🔒 Sécurité & RGPD
 - Toutes les données sont chiffrées côté client.
-- Aucune donnée personnelle n’est transmise à l’extérieur sans consentement.
+- Aucune donnée personnelle n'est transmise à l'extérieur sans consentement.
 - Anonymisation systématique des échanges sociaux.
 
 ## 🧬 Contribution
 - Code TypeScript strict, modulaire, commenté.
 - Tests unitaires obligatoires pour toute nouvelle fonctionnalité.
-- Respecter l’architecture et la philosophie du projet.
+- Respecter l'architecture et la philosophie du projet.
 
 ## 📚 Pour aller plus loin
-- Voir le dossier `src/` pour l’architecture détaillée.
-- Les hooks d’optimisation et de monitoring sont prêts à être enrichis.
+- Voir le dossier `src/` pour l'architecture détaillée.
+- Les hooks d'optimisation et de monitoring sont prêts à être enrichis.
 - Les rituels et événements mystiques sont extensibles.
+
+## 🛡️ Stabilité & Corrections Récentes
+
+### Corrections de Sérialisation (Janvier 2025) ⭐️
+SYMBIONT intègre maintenant un système de sérialisation robuste qui élimine les erreurs de références circulaires :
+
+- **✅ Bug HTMLCanvasElement résolu** : Plus d'erreurs `"Converting circular structure to JSON"` avec React Fiber
+- **✅ Sérialisation intelligente** : Détection automatique des objets non-sérialisables (Canvas, WebGL, React)
+- **✅ Nettoyage préventif** : Fonction `deepCleanForSerialization()` qui traite récursivement tous les objets
+- **✅ Double protection** : Sanitisation au niveau message ET au niveau composant
+
+```typescript
+// Exemple de gestion automatique des objets problématiques
+if (obj instanceof HTMLCanvasElement) {
+  return {
+    tagName: 'CANVAS',
+    width: obj.width,
+    height: obj.height,
+    className: obj.className,
+    id: obj.id
+  };
+}
+```
+
+Voir `CORRECTIONS_SERIALISATION.md` pour les détails techniques complets.
 
 ## Phase 1 : Résilience (2024)
 
-SYMBIONT intègre une architecture auto-réparatrice et tolérante aux pannes :
+SYMBIONT intègre une architecture auto-réparatrice et tolérante aux pannes :
 - **Service Worker persistant** : heartbeat, auto-réveil, sauvegarde d'état critique
 - **Resilient Message Bus** : file persistante, retry automatique, circuit breaker
 - **Hybrid Storage Manager** : stockage multi-niveaux, fallback automatique
@@ -77,7 +102,7 @@ Grâce à ces modules, l'extension garantit la continuité de l'expérience util
 
 ## Phase 2 : Intelligence Adaptive & Monitoring Prédictif (2024)
 
-SYMBIONT évolue avec une intelligence contextuelle et un monitoring prédictif :
+SYMBIONT évolue avec une intelligence contextuelle et un monitoring prédictif :
 - **ContextAwareOrganism** : adaptation dynamique à l'environnement web, social, technique et comportemental. Met à jour dynamiquement les traits de l'organisme principal à chaque changement de contexte détecté.
 - **PredictiveHealthMonitor** : détection avancée d'anomalies, prédiction de crash, actions préventives automatiques. Logue les alertes critiques dans le stockage hybride et peut déclencher des actions préventives.
 
@@ -85,7 +110,7 @@ Ces modules sont instanciés et branchés dans le background principal pour une 
 
 ## Phase 3 : Écosystème Social & Intelligence Collective (2024)
 
-SYMBIONT devient un véritable écosystème social distribué :
+SYMBIONT devient un véritable écosystème social distribué :
 - **DistributedOrganismNetwork** : réseau P2P, synchronisation d'état, propagation de mutations, backup communautaire.
 - **CollectiveIntelligence** : intelligence collective, votes, mutations partagées, décisions émergentes.
 - **SocialResilience** : backup communautaire, récupération d'état, gestion des pannes collectives, alertes communautaires.
@@ -95,10 +120,10 @@ Grâce à ces modules, chaque organisme bénéficie de la force du réseau, peut
 
 ## Phase 4 : Optimisation Ultime & Machine Learning (2024)
 
-SYMBIONT atteint un niveau d'optimisation et d'intelligence inégalé :
+SYMBIONT atteint un niveau d'optimisation et d'intelligence inégalé :
 - **AdvancedCaching** : cache avancé, compression intelligente, invalidation automatique, optimisation mémoire.
 - **PerformanceAnalytics** : monitoring avancé (CPU, mémoire, latence, FPS), détection d'anomalies, export des métriques.
-- **BehavioralPredictor** : prédiction comportementale par apprentissage automatique, adaptation proactive, personnalisation.
+- **BehavioralPredictor** : prédiction comportementale par apprentage automatique, adaptation proactive, personnalisation.
 - **Compatibilité cross-browser** : fonctionnement garanti sur Chrome, Firefox, Edge, etc.
 
 Grâce à ces modules, SYMBIONT garantit des performances optimales, une adaptation proactive à chaque utilisateur et une robustesse sur tous les navigateurs modernes.
