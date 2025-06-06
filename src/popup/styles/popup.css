@@ -223,4 +223,68 @@ input[type="checkbox"] {
     padding: 6px;
     margin: 4px 0;
   }
+}
+
+/* Loading Spinner Styles */
+.loading-spinner {
+  border: 3px solid #232946;
+  border-top: 3px solid #00e0ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 16px auto;
+  display: inline-block;
+}
+
+.loading-spinner--small {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.loading-spinner--medium {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.loading-spinner--large {
+  width: 48px;
+  height: 48px;
+  border-width: 4px;
+}
+
+/* Dashboard loading state */
+.organism-dashboard--loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.organism-dashboard--loading p {
+  color: #888;
+  margin-top: 16px;
+  font-size: 0.9em;
+}
+
+/* Dashboard empty state */
+.organism-dashboard--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.organism-dashboard--empty h2 {
+  color: #00e0ff;
+  margin-bottom: 12px;
+}
+
+.organism-dashboard--empty p {
+  color: #888;
+  font-size: 0.9em;
 } 

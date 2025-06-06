@@ -30,16 +30,36 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
         if (raw) {
           setOrganism(JSON.parse(raw));
         } else {
-          setOrganism({
-            health: 1,
-            energy: 1,
-            consciousness: 0.5,
-            traits: { curiosity: 0.5, focus: 0.5, rhythm: 0.5, empathy: 0.5, creativity: 0.5 },
+          // Créer un organisme par défaut plus complet
+          const now = Date.now();
+          const defaultOrganism = {
+            // Propriétés requises par OrganismState
+            id: 'default-organism',
             generation: 1,
-            dna: 'MOCKDNA',
+            dna: 'MOCKDNA123456789ABCDEF',
+            traits: { 
+              curiosity: 0.5, 
+              focus: 0.5, 
+              rhythm: 0.5, 
+              empathy: 0.5, 
+              creativity: 0.5 
+            },
+            birthTime: now,
+            lastMutation: null,
             mutations: [],
-            createdAt: Date.now()
-          } as any);
+            socialConnections: [],
+            memoryFragments: [],
+            // Propriétés optionnelles
+            health: 1,
+            energy: 0.8,
+            consciousness: 0.5,
+            createdAt: now,
+            visualDNA: 'MOCKDNA123456789ABCDEF'
+          };
+          
+          // Sauvegarder l'organisme par défaut
+          localStorage.setItem('symbiont_organism', JSON.stringify(defaultOrganism));
+          setOrganism(defaultOrganism);
         }
       } catch {
         setOrganism(null);
