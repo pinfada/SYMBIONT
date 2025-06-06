@@ -3,8 +3,6 @@ import MetricsPanel from './MetricsPanel';
 import SettingsPanel from './SettingsPanel';
 import OrganismDashboard from './OrganismDashboard';
 import Toast from './Toast';
-// @ts-expect-error Import réservé pour usage futur
-import Loader from './Loader';
 import MysticalPanel from './MysticalPanel';
 import ResiliencePanel from './ResiliencePanel';
 import SocialPanel from './SocialPanel';

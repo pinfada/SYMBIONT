@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import App from './App';
+import App from './components/App';
 import { OrganismProvider } from './hooks/useOrganism';
 import { MessageBusProvider } from './hooks/MessageBusContext';
 import './index.css';
