@@ -2,6 +2,7 @@
 
 // Observer de navigation avancé pour SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
+import { safeAverage, safeRatio } from '../../shared/utils/safeOperations';
 
 export interface NavigationEvent {
   type: 'page_load' | 'page_unload' | 'navigation_start' | 'navigation_end' | 'hash_change' | 'state_change' | 'back_forward' | 'link_click' | 'form_navigation';
@@ -468,14 +469,12 @@ export class NavigationObserver extends EventTarget {
 
   private calculateMetrics(): NavigationMetrics {
     const sessionDuration = Date.now() - this.sessionStart;
-    const avgPageDuration = this.pageDurations.length > 0 
-      ? this.pageDurations.reduce((a, b) => a + b, 0) / this.pageDurations.length 
-      : 0;
+    const avgPageDuration = safeAverage(this.pageDurations);
     
     const navigationVelocity = this.pageDurations.length / Math.max(1, sessionDuration / 60000); // pages per minute
     
     const bouncePages = this.pageDurations.filter(d => d < this.bounceThreshold).length;
-    const bounceRate = this.pageDurations.length > 0 ? bouncePages / this.pageDurations.length : 0;
+    const bounceRate = safeRatio(bouncePages, this.pageDurations.length);
     
     const deepEngagementPages = this.pageDurations.filter(d => d > this.deepEngagementThreshold).length;
     
@@ -498,8 +497,9 @@ export class NavigationObserver extends EventTarget {
   private determineNavigationPattern(): NavigationMetrics['navigationPattern'] {
     if (this.pageDurations.length < 3) return 'exploring';
     
-    const avgDuration = this.pageDurations.reduce((a, b) => a + b, 0) / this.pageDurations.length;
-    const bounceRate = this.pageDurations.filter(d => d < this.bounceThreshold).length / this.pageDurations.length;
+    const avgDuration = safeAverage(this.pageDurations);
+    const bouncePages = this.pageDurations.filter(d => d < this.bounceThreshold).length;
+    const bounceRate = safeRatio(bouncePages, this.pageDurations.length);
     
     if (bounceRate > 0.7) return 'bouncing';
     if (avgDuration > this.deepEngagementThreshold) return 'focused';
@@ -550,9 +550,12 @@ export class NavigationObserver extends EventTarget {
         domains: Array.from(this.domainHistory)
       },
       patterns: {
-        averagePageDuration: this.pageDurations.reduce((a, b) => a + b, 0) / this.pageDurations.length,
+        averagePageDuration: safeAverage(this.pageDurations),
         navigationVelocity: this.pageDurations.length / Math.max(1, (Date.now() - this.sessionStart) / 60000),
-        bounceRate: this.pageDurations.filter(d => d < this.bounceThreshold).length / this.pageDurations.length
+        bounceRate: safeRatio(
+          this.pageDurations.filter(d => d < this.bounceThreshold).length,
+          this.pageDurations.length
+        )
       }
     };
   }

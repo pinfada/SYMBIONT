@@ -1,5 +1,6 @@
 // Tracking avancé du scroll pour l'analyse comportementale SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
+import { safeAverage } from '../../shared/utils/safeOperations';
 
 export interface ScrollMetrics {
   totalDistance: number; // pixels totaux scrollés
@@ -343,9 +344,7 @@ export class ScrollTracker extends EventTarget {
   }
 
   private calculateMetrics(): ScrollMetrics {
-    const averageVelocity = this.velocityHistory.length > 0 
-      ? this.velocityHistory.reduce((a, b) => a + b, 0) / this.velocityHistory.length 
-      : 0;
+    const averageVelocity = safeAverage(this.velocityHistory);
     
     const totalReadingTime = this.readingSegments.reduce((sum, segment) => sum + segment.duration, 0);
     
@@ -379,19 +378,28 @@ export class ScrollTracker extends EventTarget {
     
     // Negative factors
     if (this.backtrackCount > 5) score -= 0.1; // Too much backtracking
-    const avgVelocity = this.velocityHistory.reduce((a, b) => a + b, 0) / this.velocityHistory.length;
+    
+    // Vérifier que velocityHistory n'est pas vide avant de calculer la moyenne
+    const avgVelocity = safeAverage(this.velocityHistory);
     if (avgVelocity > 2000) score -= 0.15; // Too fast scrolling
     
     // Reading time bonus
     const totalTime = Date.now() - this.startTime;
-    const readingRatio = this.readingSegments.reduce((sum, s) => sum + s.duration, 0) / totalTime;
-    score += readingRatio * 0.2;
+    if (totalTime > 0) {
+      const readingRatio = this.readingSegments.reduce((sum, s) => sum + s.duration, 0) / totalTime;
+      score += readingRatio * 0.2;
+    }
     
     return Math.max(0, Math.min(1, score));
   }
 
   private determineScrollPattern(): ScrollMetrics['scrollPattern'] {
-    const avgVelocity = this.velocityHistory.reduce((a, b) => a + b, 0) / this.velocityHistory.length;
+    // Vérifier que velocityHistory n'est pas vide
+    if (this.velocityHistory.length === 0) {
+      return 'linear'; // Valeur par défaut si pas assez de données
+    }
+    
+    const avgVelocity = safeAverage(this.velocityHistory);
     
     if (this.readingSegments.length > 2 && avgVelocity < 500) {
       return 'reading';
@@ -416,7 +424,7 @@ export class ScrollTracker extends EventTarget {
   }
 
   private isLinearProgression(positions: number[]): boolean {
-    if (positions.length < 3) return false;
+    if (!positions || positions.length < 3) return false;
     
     let increasingCount = 0;
     for (let i = 1; i < positions.length; i++) {

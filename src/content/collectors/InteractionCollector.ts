@@ -1,5 +1,6 @@
 // Collecteur d'interactions avancé pour SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
+import { safeGetClasses } from '../../shared/utils/safeOperations';
 
 export interface InteractionEvent {
   type: 'click' | 'keypress' | 'scroll' | 'hover' | 'form_submit' | 'form_focus' | 'media_play' | 'media_pause' | 'selection' | 'contextmenu';
@@ -490,8 +491,8 @@ export class InteractionCollector extends EventTarget {
     
     if (element.id) {
       selector += `#${element.id}`;
-    } else if (element.className) {
-      const classes = element.className.split(' ').filter(c => c.length > 0);
+    } else {
+      const classes = safeGetClasses(element);
       if (classes.length > 0) {
         selector += `.${classes.slice(0, 3).join('.')}`;
       }
@@ -509,10 +510,8 @@ export class InteractionCollector extends EventTarget {
     
     if (element.id) info.id = element.id;
     
-    if (element.className) {
-      const classes = element.className.split(' ').filter(c => c.length > 0);
-      if (classes.length > 0) info.classes = classes;
-    }
+    const classes = safeGetClasses(element);
+    if (classes.length > 0) info.classes = classes;
     
     if (element.textContent) {
       const text = element.textContent.slice(0, 50);

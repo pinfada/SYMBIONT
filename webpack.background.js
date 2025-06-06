@@ -8,12 +8,9 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'background/index.js',
-    module: true,
     clean: false
   },
-  experiments: {
-    outputModule: true
-  },
+  target: 'webworker',
   resolve: {
     extensions: ['.ts', '.js']
   },

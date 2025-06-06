@@ -26,23 +26,16 @@ export const SettingsPanel: React.FC = () => {
     USE_REAL_BEHAVIOR: boolean;
     USE_REAL_NETWORK: boolean;
     USE_BACKEND_API: boolean;
-  }>(() => {
-    // Import dynamique pour éviter les erreurs si le service n'existe pas
-    try {
-      const { RealDataService } = require('../services/RealDataService');
-      return RealDataService.getFeatureStatus();
-    } catch {
-      return {
-        USE_REAL_DNA: false,
-        USE_REAL_BEHAVIOR: false,
-        USE_REAL_NETWORK: false,
-        USE_BACKEND_API: false
-      };
-    }
+  }>({
+    USE_REAL_DNA: false,
+    USE_REAL_BEHAVIOR: false,
+    USE_REAL_NETWORK: false,
+    USE_BACKEND_API: false
   });
   
   useEffect(() => {
     loadSettings();
+    loadFeatureFlags();
   }, []);
   
   const loadSettings = async () => {
@@ -51,6 +44,17 @@ export const SettingsPanel: React.FC = () => {
     const savedSettings = await storage.getSetting<Settings>('userPreferences', settings);
     if (savedSettings) {
       setSettings(savedSettings);
+    }
+  };
+  
+  const loadFeatureFlags = async () => {
+    try {
+      const { RealDataService } = await import('../services/RealDataService');
+      const flags = RealDataService.getFeatureStatus();
+      setFeatureFlags(flags);
+    } catch (error) {
+      console.warn('Impossible de charger les feature flags:', error);
+      // Garder les valeurs par défaut
     }
   };
   
@@ -70,9 +74,9 @@ export const SettingsPanel: React.FC = () => {
     }));
   };
   
-  const toggleFeatureFlag = (feature: string) => {
+  const toggleFeatureFlag = async (feature: string) => {
     try {
-      const { RealDataService } = require('../services/RealDataService');
+      const { RealDataService } = await import('../services/RealDataService');
       const currentValue = featureFlags[feature as keyof typeof featureFlags];
       
       if (currentValue) {
@@ -159,7 +163,7 @@ export const SettingsPanel: React.FC = () => {
               <input
                 type="checkbox"
                 checked={featureFlags.USE_REAL_DNA}
-                onChange={() => toggleFeatureFlag('USE_REAL_DNA')}
+                onChange={() => toggleFeatureFlag('USE_REAL_DNA').catch(console.error)}
               />
               <span className="toggle-slider"></span>
             </label>
@@ -173,7 +177,7 @@ export const SettingsPanel: React.FC = () => {
               <input
                 type="checkbox"
                 checked={featureFlags.USE_REAL_BEHAVIOR}
-                onChange={() => toggleFeatureFlag('USE_REAL_BEHAVIOR')}
+                onChange={() => toggleFeatureFlag('USE_REAL_BEHAVIOR').catch(console.error)}
               />
               <span className="toggle-slider"></span>
             </label>
@@ -187,7 +191,7 @@ export const SettingsPanel: React.FC = () => {
               <input
                 type="checkbox"
                 checked={featureFlags.USE_REAL_NETWORK}
-                onChange={() => toggleFeatureFlag('USE_REAL_NETWORK')}
+                onChange={() => toggleFeatureFlag('USE_REAL_NETWORK').catch(console.error)}
               />
               <span className="toggle-slider"></span>
             </label>
@@ -201,7 +205,7 @@ export const SettingsPanel: React.FC = () => {
               <input
                 type="checkbox"
                 checked={featureFlags.USE_BACKEND_API}
-                onChange={() => toggleFeatureFlag('USE_BACKEND_API')}
+                onChange={() => toggleFeatureFlag('USE_BACKEND_API').catch(console.error)}
               />
               <span className="toggle-slider"></span>
             </label>

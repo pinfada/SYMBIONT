@@ -1,5 +1,6 @@
 // Monitoring avancé de l'attention utilisateur pour SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
+import { safeGetClasses } from '../../shared/utils/safeOperations';
 
 export interface AttentionMetrics {
   focusLevel: number; // 0-1
@@ -394,8 +395,8 @@ export class AttentionMonitor extends EventTarget {
       info.elementInFocus = (activeElement.tagName || 'unknown').toLowerCase();
       if (activeElement.id) {
         info.elementInFocus += `#${activeElement.id}`;
-      } else if (activeElement.className) {
-        const classes = activeElement.className.split(' ').filter(c => c.length > 0);
+      } else {
+        const classes = safeGetClasses(activeElement);
         if (classes.length > 0) {
           info.elementInFocus += `.${classes.slice(0, 2).join('.')}`;
         }
@@ -423,9 +424,10 @@ export class AttentionMonitor extends EventTarget {
   // @ts-expect-error Méthode réservée pour usage futur
   private getElementSelector(element: Element): string {
     // Generate unique selector for element
+    const classes = safeGetClasses(element);
     return (element.tagName || 'unknown').toLowerCase() + 
            (element.id ? '#' + element.id : '') +
-           (element.className ? '.' + element.className.split(' ').join('.') : '');
+           (classes.length > 0 ? '.' + classes.join('.') : '');
   }
 
   private emitAttentionEvent(event: AttentionEvent): void {
