@@ -15,5 +15,5 @@ interface GlobalNetworkGraphProps {
     onNodeCountChange?: (count: number) => void;
 }
 export declare const GlobalNetworkGraph: React.FC<GlobalNetworkGraphProps>;
-export {};
+export default GlobalNetworkGraph;
 //# sourceMappingURL=GlobalNetworkGraph.d.ts.map
