@@ -1228,4 +1228,660 @@ input[type="checkbox"] {
   background: rgba(255, 255, 255, 0.05);
   color: #666;
   cursor: not-allowed;
+}
+
+/* Styles pour le MysticalPanel refait */
+.mystical-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.mystical-panel.loading {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Notifications */
+.notifications {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.notification {
+  background: rgba(0, 224, 255, 0.9);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.9em;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 224, 255, 0.3);
+  animation: slideInNotification 0.3s ease-out;
+  max-width: 250px;
+}
+
+@keyframes slideInNotification {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Modal code secret */
+.secret-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeInModal 0.3s ease-out;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  border: 1px solid rgba(0, 224, 255, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal-content h3 {
+  color: #00e0ff;
+  margin: 0 0 16px 0;
+  font-size: 1.2em;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Navigation mystique */
+.mystical-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.mystical-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8em;
+}
+
+.mystical-nav-btn:hover {
+  background: rgba(138, 43, 226, 0.1);
+  color: #8a2be2;
+}
+
+.mystical-nav-btn.active {
+  background: rgba(138, 43, 226, 0.2);
+  color: #8a2be2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.3);
+}
+
+.nav-icon {
+  font-size: 1.2em;
+}
+
+.nav-label {
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Contenu mystique */
+.mystical-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Grille des rituels */
+.rituals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ritual-card {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.1), rgba(75, 0, 130, 0.1));
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ritual-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #8a2be2, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.ritual-card:hover::before {
+  opacity: 1;
+}
+
+.ritual-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(138, 43, 226, 0.2);
+  border-color: rgba(138, 43, 226, 0.5);
+}
+
+.ritual-card.disabled {
+  opacity: 0.5;
+  background: rgba(100, 100, 100, 0.1);
+  border-color: rgba(100, 100, 100, 0.3);
+}
+
+.ritual-card.individual {
+  border-left: 4px solid #00e0ff;
+}
+
+.ritual-card.collective {
+  border-left: 4px solid #ffb700;
+}
+
+.ritual-card.secret {
+  border-left: 4px solid #8a2be2;
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.15), rgba(75, 0, 130, 0.15));
+}
+
+.ritual-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ritual-icon {
+  font-size: 1.5em;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.ritual-name {
+  color: #fff;
+  margin: 0;
+  font-size: 1.1em;
+  flex: 1;
+}
+
+.ritual-type {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #888;
+}
+
+.ritual-description {
+  color: #ccc;
+  font-size: 0.9em;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.ritual-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.ritual-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ritual-stats .label {
+  color: #888;
+  font-size: 0.8em;
+}
+
+.ritual-stats .value {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.ritual-effects {
+  margin-bottom: 16px;
+}
+
+.ritual-effects h5 {
+  color: #8a2be2;
+  margin: 0 0 8px 0;
+  font-size: 0.9em;
+}
+
+.ritual-effects ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ritual-effects li {
+  background: rgba(138, 43, 226, 0.2);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.cooldown-display {
+  background: rgba(255, 183, 0, 0.2);
+  border: 1px solid rgba(255, 183, 0, 0.4);
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+  color: #ffb700;
+  font-size: 0.85em;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.requirement-warning {
+  background: rgba(255, 75, 110, 0.2);
+  border: 1px solid rgba(255, 75, 110, 0.4);
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+  color: #ff4b6e;
+  font-size: 0.85em;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.ritual-button {
+  width: 100%;
+  background: linear-gradient(135deg, #8a2be2, #4b0082);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9em;
+}
+
+.ritual-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9932cc, #663399);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.4);
+}
+
+.ritual-button:disabled {
+  background: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Session active */
+.active-session {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px;
+}
+
+.session-display {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.session-display h3 {
+  color: #8a2be2;
+  margin-bottom: 24px;
+  font-size: 1.3em;
+}
+
+.ritual-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.ritual-info .ritual-icon {
+  font-size: 2.5em;
+  animation: ritualPulse 2s ease-in-out infinite;
+}
+
+.ritual-info h4 {
+  color: #fff;
+  margin: 0;
+  font-size: 1.2em;
+}
+
+@keyframes ritualPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 16px currentColor); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 24px currentColor); }
+}
+
+.progress-container {
+  margin-bottom: 32px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8a2be2, #00e0ff);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  animation: progressGlow 2s ease-in-out infinite;
+}
+
+@keyframes progressGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(138, 43, 226, 0.5); }
+  50% { box-shadow: 0 0 16px rgba(138, 43, 226, 0.8); }
+}
+
+.progress-text {
+  color: #8a2be2;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+.session-effects {
+  background: rgba(138, 43, 226, 0.1);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.session-effects p {
+  color: #ccc;
+  font-style: italic;
+  margin-bottom: 16px;
+}
+
+.energy-waves {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.wave {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #8a2be2;
+  animation: waveAnimation 1.5s ease-in-out infinite;
+}
+
+.wave:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.wave:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes waveAnimation {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% { 
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
+.no-session {
+  text-align: center;
+  color: #888;
+}
+
+.no-session h3 {
+  margin-bottom: 16px;
+}
+
+.no-session p {
+  margin-bottom: 24px;
+}
+
+/* Historique */
+.ritual-history {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.ritual-history h3 {
+  color: #8a2be2;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-entry {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(138, 43, 226, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.entry-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.entry-header .ritual-icon {
+  font-size: 1.2em;
+}
+
+.entry-header h4 {
+  color: #fff;
+  margin: 0;
+  flex: 1;
+  font-size: 1em;
+}
+
+.completion-date {
+  color: #888;
+  font-size: 0.85em;
+}
+
+.entry-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.effect-tag {
+  background: rgba(138, 43, 226, 0.2);
+  color: #8a2be2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+/* Section secrets */
+.secrets-section {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.secrets-section h3 {
+  color: #8a2be2;
+  margin-bottom: 16px;
+}
+
+.secrets-section p {
+  color: #ccc;
+  margin-bottom: 32px;
+  font-style: italic;
+}
+
+.secret-input-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  justify-content: center;
+}
+
+.secret-input {
+  flex: 1;
+  max-width: 250px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(138, 43, 226, 0.5);
+  border-radius: 6px;
+  color: white;
+  font-family: monospace;
+  font-size: 1.1em;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.secret-input:focus {
+  outline: none;
+  border-color: #8a2be2;
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.3);
+}
+
+.btn-secret {
+  background: linear-gradient(135deg, #8a2be2, #4b0082);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secret:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9932cc, #663399);
+  transform: translateY(-1px);
+}
+
+.btn-secret:disabled {
+  background: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.hints-section {
+  margin-bottom: 32px;
+}
+
+.hints-section h4 {
+  color: #ffb700;
+  margin-bottom: 16px;
+}
+
+.hint-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hint-list li {
+  color: #ccc;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+.discovered-secrets h4 {
+  color: #7cffb2;
+  margin-bottom: 16px;
+}
+
+.secret-ritual {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.secret-ritual.discovered {
+  background: rgba(124, 255, 178, 0.1);
+  border: 1px solid rgba(124, 255, 178, 0.3);
+  color: #7cffb2;
+}
+
+.secret-ritual.hidden {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(100, 100, 100, 0.3);
+  color: #666;
 } 
