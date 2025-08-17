@@ -12,19 +12,26 @@ export class LoggerService {
   }
   
   info(message: string, meta?: any): void {
-    console.log(`[INFO] ${new Date().toISOString()} - ${message}`, meta || '');
+    if (process.env.NODE_ENV !== 'production') {
+      // Utilisation de console.error pour éviter les fuites de données en production
+      console.error(`[INFO] ${new Date().toISOString()} - ${message}`, meta || '');
+    }
   }
   
   error(message: string, error?: any): void {
-    console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, error || '');
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, error || '');
+    }
   }
   
   warn(message: string, meta?: any): void {
-    console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, meta || '');
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, meta || '');
+    }
   }
   
   debug(message: string, meta?: any): void {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV !== 'production') {
       console.debug(`[DEBUG] ${new Date().toISOString()} - ${message}`, meta || '');
     }
   }

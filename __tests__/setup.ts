@@ -105,6 +105,7 @@ const cryptoSubtle = {
 };
 
 const cryptoGetRandomValues = jest.fn((arr) => {
+  // Mock crypto-secure values for tests (not cryptographically secure in test env)
   for (let i = 0; i < arr.length; i++) {
     arr[i] = Math.floor(Math.random() * 256);
   }

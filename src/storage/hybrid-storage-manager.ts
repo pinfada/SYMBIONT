@@ -60,7 +60,7 @@ export class HybridStorageManager {
       })
       logger.info('[HybridStorageManager] store - chrome.storage.local OK', key)
     } catch (e) {
-      logger.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', key, e)
+      logger.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', { key, error: String(e) })
     }
     try {
       await this.indexedDBReady
@@ -77,7 +77,7 @@ export class HybridStorageManager {
         throw new Error('IndexedDB not ready')
       }
     } catch (e) {
-      logger.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', key, e)
+      logger.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', { key, error: String(e) })
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(data))
       logger.info('[HybridStorageManager] store - localStorage d\'urgence OK', key)
     }
@@ -101,7 +101,7 @@ export class HybridStorageManager {
         return result
       }
     } catch (e) {
-      logger.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', key, e)
+      logger.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', { key, error: String(e) })
     }
     try {
       await this.indexedDBReady
@@ -120,7 +120,7 @@ export class HybridStorageManager {
         }
       }
     } catch (e) {
-      logger.warn('[HybridStorageManager] retrieve - IndexedDB failed', key, e)
+      logger.warn('[HybridStorageManager] retrieve - IndexedDB failed', { key, error: String(e) })
     }
     try {
       const val = await this.emergencyLocalStorage.getItem(key)
@@ -129,7 +129,7 @@ export class HybridStorageManager {
         return JSON.parse(val)
       }
     } catch (e) {
-      logger.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', key, e)
+      logger.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', { key, error: String(e) })
     }
     return null
   }
@@ -314,7 +314,7 @@ export class HybridStorageManager {
             logger.info('[HybridStorageManager] IntegrityMonitoring - Auto-réparation appliquée pour', key)
           }
         } catch (e) {
-          logger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', key, e)
+          logger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', { key, error: String(e) })
         }
       }
     }, 60000) // toutes les 60 secondes

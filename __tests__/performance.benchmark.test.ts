@@ -78,7 +78,10 @@ describe('Performance Benchmark Tests', () => {
       const endTime = performance.now();
 
       const processingTime = endTime - startTime;
-      console.log(`Processed 1000 mutations in ${processingTime.toFixed(2)}ms`);
+      // Test de performance - utilisation conditionnelle pour debug uniquement
+      if (process.env.SHOW_PERFORMANCE_LOGS === 'true') {
+        console.error(`Processed 1000 mutations in ${processingTime.toFixed(2)}ms`);
+      }
       
       // Performance targets
       expect(processingTime).toBeLessThan(1000); // Should complete in under 1 second

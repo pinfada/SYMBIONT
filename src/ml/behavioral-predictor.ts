@@ -18,7 +18,7 @@ export class BehavioralPredictor {
     // Simulation : retourne la prédiction la plus fréquente pour des features similaires
     const key = JSON.stringify(features)
     const pred = this.model[key] || null
-    logger.info('[ML] Prédiction pour', features, '=>', pred)
+    logger.info('[ML] Prédiction pour', { features, prediction: pred })
     return pred
   }
 

@@ -24,7 +24,7 @@ export class DatabaseService {
       this.isConnected = true;
       this.logger.info('Database connected (Mock)');
     } catch (error) {
-      console.error('❌ Database connection failed:', error);
+      this.logger.error('Database connection failed:', error);
       throw error;
     }
   }
@@ -34,7 +34,7 @@ export class DatabaseService {
       this.isConnected = false;
       this.logger.info('Database disconnected (Mock)');
     } catch (error) {
-      console.error('❌ Database disconnection failed:', error);
+      this.logger.error('Database disconnection failed:', error);
       throw error;
     }
   }

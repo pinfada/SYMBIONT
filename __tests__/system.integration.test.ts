@@ -3,11 +3,12 @@ import { OrganismFactory } from '../src/core/factories/OrganismFactory';
 import { NeuralMesh } from '../src/core/NeuralMesh';
 import { WebGLBatcher } from '../src/core/utils/WebGLBatcher';
 import { errorHandler } from '../src/core/utils/ErrorHandler';
+import { SecureRandom } from '../src/shared/utils/secureRandom';
 
 // Helper function to create mock DNA
 const createMockDNA = (length: number = 16): string => {
   const bases = ['A', 'T', 'C', 'G'];
-  return Array.from({ length }, () => bases[Math.floor(Math.random() * bases.length)]).join('');
+  return Array.from({ length }, () => bases[Math.floor(SecureRandom.random() * bases.length)]).join('');
 };
 
 describe('SYMBIONT System Integration Tests', () => {
@@ -73,14 +74,14 @@ describe('SYMBIONT System Integration Tests', () => {
       // Simulate complex interaction cycle
       for (let cycle = 0; cycle < 5; cycle++) {
         // Sensory stimulation
-        organism.stimulate('sensory_input', Math.random());
-        organism.stimulate('memory_input', Math.random());
+        organism.stimulate('sensory_input', SecureRandom.random());
+        organism.stimulate('memory_input', SecureRandom.random());
         
         // Update organism state
         organism.update(1.0);
         
         // Apply mutations (uses batching)
-        organism.mutate(0.05 + Math.random() * 0.1);
+        organism.mutate(0.05 + SecureRandom.random() * 0.1);
         
         // Get shader parameters for rendering
         const shaderParams = organism.getShaderParameters();
@@ -207,7 +208,7 @@ describe('SYMBIONT System Integration Tests', () => {
         organism.update(0.5);
         
         if (i % 10 === 0) {
-          organism.stimulate('sensory_input', Math.random());
+          organism.stimulate('sensory_input', SecureRandom.random());
         }
       }
 
@@ -229,10 +230,10 @@ describe('SYMBIONT System Integration Tests', () => {
       for (let i = 0; i < 100; i++) {
         webglBatcher.addDrawCall({
           type: i % 3 === 0 ? 'triangle' : i % 3 === 1 ? 'line' : 'point',
-          vertices: new Float32Array(Array.from({ length: 24 }, () => Math.random())),
+          vertices: new Float32Array(Array.from({ length: 24 }, () => SecureRandom.random())),
           uniforms: {
             u_time: i,
-            u_intensity: Math.random()
+            u_intensity: SecureRandom.random()
           },
           priority: i % 10 === 0 ? 'high' : 'normal'
         });
@@ -348,7 +349,7 @@ describe('SYMBIONT System Integration Tests', () => {
           await organism.boot();
           
           // Quick lifecycle
-          organism.stimulate('sensory_input', Math.random());
+          organism.stimulate('sensory_input', SecureRandom.random());
           organism.update(1.0);
           organism.mutate(0.05);
         }

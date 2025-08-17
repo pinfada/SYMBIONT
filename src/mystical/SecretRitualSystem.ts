@@ -4,7 +4,7 @@ import { SecureRandom } from '@shared/utils/secureRandom';
 // @ts-expect-error Fonction réservée pour usage futur
 function randomUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = SecureRandom.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    const r = SecureRandom.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 }

@@ -195,8 +195,13 @@ export class SecurityManager {
       anonymized.id = await this.hash(anonymized.id)
     }
     
-    // Suppression d'autres données personnelles potentielles
-    const sensitiveFields = ['email', 'name', 'address', 'phone', 'ip']
+    // Suppression d'autres données personnelles potentielles (RGPD)
+    const sensitiveFields = [
+      'email', 'name', 'address', 'phone', 'ip', 
+      'ssn', 'creditCard', 'passport', 'nationalId',
+      'birthDate', 'age', 'location', 'coordinates',
+      'biometric', 'medical', 'financial', 'salary'
+    ]
     sensitiveFields.forEach(field => {
       if (field in anonymized) {
         delete (anonymized as any)[field]
