@@ -1,0 +1,63 @@
+f2ac3c4afc871af1cb995c82f523d2ea
+{
+    "manifest_version": 3,
+    "name": "SYMBIONT - Digital Organism",
+    "version": "1.0.0",
+    "description": "A living digital organism that evolves with your browsing patterns",
+    "permissions": [
+      "storage",
+      "alarms",
+      "idle",
+      "activeTab",
+      "scripting"
+    ],
+    "optional_permissions": [
+      "tabs",
+      "webNavigation",
+      "windows"
+    ],
+    "host_permissions": [
+      "https://*/"
+    ],
+    "optional_host_permissions": [
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    },
+    "background": {
+      "service_worker": "background/index.js",
+      "type": "module"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://*/*"],
+        "js": ["content/index.js"],
+        "run_at": "document_idle",
+        "all_frames": false
+      }
+    ],
+    "action": {
+      "default_popup": "popup/index.html",
+      "default_icon": {
+        "16": "assets/icons/icon16.png",
+        "32": "assets/icons/icon32.png",
+        "48": "assets/icons/icon48.png",
+        "128": "assets/icons/icon128.png"
+      }
+    },
+    "icons": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png",
+      "512": "assets/icons/icon512.png"
+    },
+    "web_accessible_resources": [
+      {
+        "resources": ["assets/*"],
+        "matches": ["https://*/*"]
+      }
+    ]
+}

@@ -3,87 +3,222 @@
  */
 import { BehaviorPattern } from '../shared/types/organism'
 import { swCryptoAPI } from './service-worker-adapter'
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export class SecurityManager {
-  private encryptionKey: string
+  private encryptionKey: CryptoKey | null = null
+  private keyPromise: Promise<CryptoKey> | null = null
 
-  constructor() {
-    // Clé de chiffrement simple (à remplacer par WebCrypto en prod)
-    this.encryptionKey = 'symbiont-key-demo'
+  constructor(skipAutoInit: boolean = false) {
+    // Initialisation sécurisée avec génération de clé WebCrypto
+    if (!skipAutoInit) {
+      this.initializeSecureKey()
+    }
   }
 
   /**
-   * Chiffre des données sensibles (AES ou base64 fallback)
+   * Initialise une clé de chiffrement sécurisée avec WebCrypto
+   */
+  private async initializeSecureKey(): Promise<void> {
+    if (this.keyPromise) return
+    
+    this.keyPromise = this.generateSecureKey()
+    this.encryptionKey = await this.keyPromise
+  }
+
+  /**
+   * Génère une clé AES-GCM 256 bits sécurisée
+   */
+  private async generateSecureKey(): Promise<CryptoKey> {
+    if (!swCryptoAPI?.subtle) {
+      throw new Error('WebCrypto API non disponible - environnement non sécurisé')
+    }
+
+    // Tentative de récupération d'une clé stockée ou génération nouvelle
+    const storedKeyData = await this.getStoredKey()
+    
+    if (storedKeyData) {
+      return await swCryptoAPI.subtle.importKey(
+        'raw',
+        storedKeyData,
+        { name: 'AES-GCM' },
+        false,
+        ['encrypt', 'decrypt']
+      )
+    }
+
+    // Génération d'une nouvelle clé sécurisée
+    const key = await swCryptoAPI.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      true, // Extractible pour stockage
+      ['encrypt', 'decrypt']
+    )
+
+    // Stockage sécurisé de la clé
+    await this.storeKey(key)
+    
+    return key
+  }
+
+  /**
+   * Récupère la clé stockée de manière sécurisée
+   */
+  private async getStoredKey(): Promise<ArrayBuffer | null> {
+    try {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(['symbiont_key_v2'], (result) => {
+          if (result.symbiont_key_v2) {
+            const keyData = new Uint8Array(result.symbiont_key_v2)
+            resolve(keyData.buffer)
+          } else {
+            resolve(null)
+          }
+        })
+      })
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Stocke la clé de manière sécurisée
+   */
+  private async storeKey(key: CryptoKey): Promise<void> {
+    try {
+      const keyData = await swCryptoAPI!.subtle.exportKey('raw', key)
+      const keyArray = Array.from(new Uint8Array(keyData))
+      
+      chrome.storage.local.set({ 
+        symbiont_key_v2: keyArray,
+        symbiont_key_created: Date.now()
+      })
+    } catch (error) {
+      SecureLogger.error('Erreur lors du stockage de la clé:', error)
+    }
+  }
+
+  /**
+   * Garantit que la clé est initialisée avant utilisation
+   */
+  private async ensureKeyReady(): Promise<CryptoKey> {
+    if (!this.encryptionKey) {
+      await this.initializeSecureKey()
+    }
+    
+    if (!this.encryptionKey) {
+      throw new Error('Impossible d\'initialiser la clé de chiffrement')
+    }
+    
+    return this.encryptionKey
+  }
+
+  /**
+   * Chiffre des données sensibles avec AES-GCM sécurisé
    */
   async encryptSensitiveData(data: any): Promise<string> {
-    if (swCryptoAPI && swCryptoAPI.subtle) {
-      // WebCrypto API (AES-GCM)
+    if (!swCryptoAPI?.subtle) {
+      throw new Error('WebCrypto API non disponible - chiffrement non sécurisé refusé')
+    }
+
+    try {
+      const key = await this.ensureKeyReady()
       const enc = new TextEncoder()
-      const keyMaterial = enc.encode(this.encryptionKey.padEnd(32, '0').slice(0, 32))
-      const key = await swCryptoAPI.subtle.importKey(
-        'raw', keyMaterial as BufferSource,
-        { name: 'AES-GCM' }, false, ['encrypt']
-      )
       const iv = swCryptoAPI.getRandomValues(new Uint8Array(12))
       const encoded = enc.encode(JSON.stringify(data))
+      
       const ciphertext = await swCryptoAPI.subtle.encrypt(
-        { name: 'AES-GCM', iv }, key, encoded
+        { name: 'AES-GCM', iv },
+        key,
+        encoded
       )
+      
       // Concatène IV + ciphertext en base64
       const buf = new Uint8Array(iv.length + ciphertext.byteLength)
       buf.set(iv, 0)
       buf.set(new Uint8Array(ciphertext), iv.length)
       return btoa(String.fromCharCode(...buf))
-    } else {
-      // Fallback base64
-      const json = JSON.stringify(data)
-      return btoa(unescape(encodeURIComponent(json)))
+    } catch (error) {
+      SecureLogger.error('Erreur de chiffrement:', error)
+      throw new Error('Échec du chiffrement des données sensibles')
     }
   }
 
   /**
-   * Déchiffre des données sensibles (AES ou base64 fallback)
+   * Déchiffre des données sensibles avec AES-GCM sécurisé
    */
   async decryptSensitiveData(data: unknown): Promise<any> {
     if (typeof data !== 'string') {
-      throw new Error('decryptSensitiveData attend une chaîne de caractères.');
+      throw new Error('decryptSensitiveData attend une chaîne de caractères.')
     }
-    if (swCryptoAPI && swCryptoAPI.subtle) {
-      try {
-        const bin = Uint8Array.from(atob(String(data)), c => c.charCodeAt(0))
-        const iv = bin.slice(0, 12)
-        const ciphertext = bin.slice(12)
-        const enc = new TextEncoder()
-        const keyMaterial = enc.encode(this.encryptionKey.padEnd(32, '0').slice(0, 32))
-        const key = await swCryptoAPI.subtle.importKey(
-          'raw', keyMaterial as BufferSource,
-          { name: 'AES-GCM' }, false, ['decrypt']
-        )
-        const plain = await swCryptoAPI.subtle.decrypt(
-          { name: 'AES-GCM', iv }, key, ciphertext
-        )
-        return JSON.parse(new TextDecoder().decode(plain))
-      } catch {
-        // Fallback base64
-        const json = decodeURIComponent(escape(atob(String(data))))
-        return JSON.parse(json)
-      }
-    } else {
-      // Fallback base64
-      const json = decodeURIComponent(escape(atob(String(data))))
-      return JSON.parse(json)
+
+    if (!swCryptoAPI?.subtle) {
+      throw new Error('WebCrypto API non disponible - déchiffrement non sécurisé refusé')
+    }
+
+    try {
+      const key = await this.ensureKeyReady()
+      const bin = Uint8Array.from(atob(String(data)), c => c.charCodeAt(0))
+      const iv = bin.slice(0, 12)
+      const ciphertext = bin.slice(12)
+      
+      const plainBuffer = await swCryptoAPI.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        ciphertext
+      )
+      
+      const plainText = new TextDecoder().decode(plainBuffer)
+      return JSON.parse(plainText)
+    } catch (error) {
+      SecureLogger.error('Erreur de déchiffrement:', error)
+      throw new Error('Échec du déchiffrement des données - données corrompues ou clé invalide')
     }
   }
 
   /**
-   * Anonymise un pattern comportemental (suppression PII, hashage)
+   * Anonymise un pattern comportemental (suppression PII, hashage sécurisé)
    */
-  anonymizeForSharing(data: BehaviorPattern): any {
+  async anonymizeForSharing(data: BehaviorPattern): Promise<any> {
+    const anonymized = { ...data }
+    
+    // Suppression des URLs sensibles
+    if ('url' in anonymized) {
+      anonymized.url = 'anonymized'
+    }
+    
+    // Hashage sécurisé des identifiants
+    if ('userId' in anonymized && typeof anonymized.userId === 'string') {
+      anonymized.userId = await this.hash(anonymized.userId)
+    }
+    
+    if ('id' in anonymized && typeof anonymized.id === 'string') {
+      anonymized.id = await this.hash(anonymized.id)
+    }
+    
+    // Suppression d'autres données personnelles potentielles
+    const sensitiveFields = ['email', 'name', 'address', 'phone', 'ip']
+    sensitiveFields.forEach(field => {
+      if (field in anonymized) {
+        delete (anonymized as any)[field]
+      }
+    })
+    
+    // Généralisation des timestamps (précision à l'heure)
+    if ('timestamp' in anonymized && typeof anonymized.timestamp === 'number') {
+      anonymized.timestamp = Math.floor(anonymized.timestamp / (60 * 60 * 1000)) * (60 * 60 * 1000)
+    }
+    
+    return anonymized
+  }
+
+  /**
+   * Version synchrone pour compatibilité (utilise hashSync)
+   */
+  anonymizeForSharingSync(data: BehaviorPattern): any {
     const anonymized = { ...data }
     if ('url' in anonymized) anonymized.url = 'anonymized'
-    if ('userId' in anonymized && typeof anonymized.userId === 'string') anonymized.userId = this.hash(anonymized.userId)
-    if ('id' in anonymized && typeof anonymized.id === 'string') anonymized.id = this.hash(anonymized.id)
-    // Supprime d'autres PII si besoin
+    if ('userId' in anonymized && typeof anonymized.userId === 'string') anonymized.userId = this.hashSync(anonymized.userId)
+    if ('id' in anonymized && typeof anonymized.id === 'string') anonymized.id = this.hashSync(anonymized.id)
     return anonymized
   }
 
@@ -97,9 +232,37 @@ export class SecurityManager {
   }
 
   /**
-   * Hash simple (SHA-256 base64) pour anonymisation
+   * Hash cryptographique SHA-256 pour anonymisation sécurisée
    */
-  hash(str: string): string {
+  async hash(str: string): Promise<string> {
+    if (!swCryptoAPI?.subtle) {
+      // Fallback simple en cas d'indisponibilité de WebCrypto
+      let hash = 0
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i)
+        hash |= 0
+      }
+      return btoa(hash.toString())
+    }
+
+    try {
+      const encoder = new TextEncoder()
+      const data = encoder.encode(str)
+      const hashBuffer = await swCryptoAPI.subtle.digest('SHA-256', data)
+      const hashArray = new Uint8Array(hashBuffer)
+      
+      // Conversion en base64 pour un hash compact
+      return btoa(String.fromCharCode(...hashArray))
+    } catch (error) {
+      SecureLogger.error('Erreur de hashage:', error)
+      throw new Error('Échec du hashage sécurisé')
+    }
+  }
+
+  /**
+   * Version synchrone du hash pour compatibilité (non recommandée pour nouveau code)
+   */
+  hashSync(str: string): string {
     let hash = 0
     for (let i = 0; i < str.length; i++) {
       hash = ((hash << 5) - hash) + str.charCodeAt(i)

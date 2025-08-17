@@ -1,6 +1,7 @@
 // src/generative/DNAInterpreter.ts
 // Interpréteur DNA → paramètres visuels harmonisé
 import { ShaderParameters } from '../types';
+import { SecureRandom } from '@shared/utils/secureRandom';
 
 export class DNAInterpreter {
   private dna: string;
@@ -92,9 +93,9 @@ export class DNAInterpreter {
   private mutateDNA(): void {
     // Mutation aléatoire mais contrôlée
     const chars = this.dna.split('');
-    const mutationIndex = Math.floor(Math.random() * chars.length);
+    const mutationIndex = Math.floor(SecureRandom.random() * chars.length);
     const mutationChar = String.fromCharCode(
-      33 + Math.floor(Math.random() * 94) // ASCII printable
+      33 + Math.floor(SecureRandom.random() * 94) // ASCII printable
     );
     chars[mutationIndex] = mutationChar;
     this.dna = chars.join('');

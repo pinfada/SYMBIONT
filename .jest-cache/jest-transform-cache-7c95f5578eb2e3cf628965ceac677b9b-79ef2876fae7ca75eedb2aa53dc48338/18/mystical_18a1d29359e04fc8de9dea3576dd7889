@@ -1,0 +1,60 @@
+98fbd1fca6b3129b76c80ad1a5d06e5a
+"use strict";
+
+/* istanbul ignore next */
+function cov_d0ngba18k() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/mystical.ts";
+  var hash = "752619ee886cc441423ba067ee30d6969b2c34b2";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/mystical.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 2,
+          column: 0
+        },
+        end: {
+          line: 2,
+          column: 62
+        }
+      }
+    },
+    fnMap: {},
+    branchMap: {},
+    s: {
+      "0": 0
+    },
+    f: {},
+    b: {},
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/mystical.ts",
+      mappings: "",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/mystical.ts"],
+      sourcesContent: ["export interface RitualCondition {\r\n  trigger: (interactions: any[]) => boolean\r\n  effect: () => Promise<any>\r\n  rarity: number\r\n}\r\n\r\nexport type SecretFunction = (context: ExecutionContext) => Promise<SecretResult>\r\n\r\nexport interface MysticalEvent {\r\n  name: string\r\n  description: string\r\n  effects: any\r\n  rarity: string\r\n}\r\n\r\nexport interface RitualTrigger {\r\n  name: string\r\n  effect: any\r\n  timestamp: number\r\n  rarity: number\r\n}\r\n\r\nexport interface ExecutionContext {\r\n  [key: string]: any\r\n}\r\n\r\nexport interface SecretResult {\r\n  name: string\r\n  description: string\r\n  effects: any\r\n  duration: number | 'Infinity'\r\n  unlockMessage?: string\r\n} "],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "752619ee886cc441423ba067ee30d6969b2c34b2"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_d0ngba18k = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_d0ngba18k();
+cov_d0ngba18k().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiL21udC9jL1VzZXJzL21fb2xpL1Byb2pldHMvU1lNQklPTlQvc3JjL3NoYXJlZC90eXBlcy9teXN0aWNhbC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgaW50ZXJmYWNlIFJpdHVhbENvbmRpdGlvbiB7XHJcbiAgdHJpZ2dlcjogKGludGVyYWN0aW9uczogYW55W10pID0+IGJvb2xlYW5cclxuICBlZmZlY3Q6ICgpID0+IFByb21pc2U8YW55PlxyXG4gIHJhcml0eTogbnVtYmVyXHJcbn1cclxuXHJcbmV4cG9ydCB0eXBlIFNlY3JldEZ1bmN0aW9uID0gKGNvbnRleHQ6IEV4ZWN1dGlvbkNvbnRleHQpID0+IFByb21pc2U8U2VjcmV0UmVzdWx0PlxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBNeXN0aWNhbEV2ZW50IHtcclxuICBuYW1lOiBzdHJpbmdcclxuICBkZXNjcmlwdGlvbjogc3RyaW5nXHJcbiAgZWZmZWN0czogYW55XHJcbiAgcmFyaXR5OiBzdHJpbmdcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBSaXR1YWxUcmlnZ2VyIHtcclxuICBuYW1lOiBzdHJpbmdcclxuICBlZmZlY3Q6IGFueVxyXG4gIHRpbWVzdGFtcDogbnVtYmVyXHJcbiAgcmFyaXR5OiBudW1iZXJcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBFeGVjdXRpb25Db250ZXh0IHtcclxuICBba2V5OiBzdHJpbmddOiBhbnlcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBTZWNyZXRSZXN1bHQge1xyXG4gIG5hbWU6IHN0cmluZ1xyXG4gIGRlc2NyaXB0aW9uOiBzdHJpbmdcclxuICBlZmZlY3RzOiBhbnlcclxuICBkdXJhdGlvbjogbnVtYmVyIHwgJ0luZmluaXR5J1xyXG4gIHVubG9ja01lc3NhZ2U/OiBzdHJpbmdcclxufSAiXSwibWFwcGluZ3MiOiIiLCJpZ25vcmVMaXN0IjpbXX0=

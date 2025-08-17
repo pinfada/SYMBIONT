@@ -1,3 +1,5 @@
+import { SecureRandom } from '@shared/utils/secureRandom';
+import { SecureLogger } from '@shared/utils/secureLogger';
 // monitoring/basic-health-monitor.ts
 // Monitoring basique de la santé du système (Phase 1)
 
@@ -26,9 +28,9 @@ export class BasicHealthMonitor {
 
   private collectMetrics(): void {
     // Simule la collecte CPU/mémoire/latence
-    const cpu = Math.random() * 0.2
-    const memory = Math.random() * 20
-    const latency = Math.random() * 5
+    const cpu = SecureRandom.random() * 0.2
+    const memory = SecureRandom.random() * 20
+    const latency = SecureRandom.random() * 5
     this.metrics.cpu.push(cpu)
     this.metrics.memory.push(memory)
     this.metrics.latency.push(latency)
@@ -61,7 +63,7 @@ export class BasicHealthMonitor {
     
     // Vérifie le cooldown
     if (!lastAlert || now - lastAlert > this.alertCooldown) {
-      console.warn('🛑 [HealthMonitor]', msg)
+      SecureLogger.warn('🛑 [HealthMonitor]', msg)
       this.lastAlerts.set(alertKey, now);
       if (this.alertCallback) this.alertCallback(msg)
     }

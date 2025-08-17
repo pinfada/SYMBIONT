@@ -1,3 +1,4 @@
+import { SecureRandom } from '../../shared/utils/secureRandom';
 const MURMUR_TEMPLATES = [
   "Tu reviens souvent ici quand tu doutes.",
   "Pourquoi cette boucle ?",
@@ -78,21 +79,21 @@ export class MurmureService {
     // Personnalisation temporelle
     if (isWeekend()) {
       const templates = MURMUR_TEMPLATES_BY_TIME['weekend'];
-      if (Math.random() < 0.5) {
-        return templates[Math.floor(Math.random() * templates.length)];
+      if (SecureRandom.random() < 0.5) {
+        return templates[Math.floor(SecureRandom.random() * templates.length)];
       }
     } else {
       const timeOfDay = getTimeOfDay();
-      if (MURMUR_TEMPLATES_BY_TIME[timeOfDay] && Math.random() < 0.4) {
+      if (MURMUR_TEMPLATES_BY_TIME[timeOfDay] && SecureRandom.random() < 0.4) {
         const templates = MURMUR_TEMPLATES_BY_TIME[timeOfDay];
-        return templates[Math.floor(Math.random() * templates.length)];
+        return templates[Math.floor(SecureRandom.random() * templates.length)];
       }
     }
     // Personnalisation par pattern comportemental
     const templates = pattern && MURMUR_TEMPLATES_BY_PATTERN[pattern]
       ? MURMUR_TEMPLATES_BY_PATTERN[pattern]
       : MURMUR_TEMPLATES_BY_PATTERN['default'];
-    const idx = Math.floor(Math.random() * templates.length);
+    const idx = Math.floor(SecureRandom.random() * templates.length);
     return templates[idx];
   }
 } 

@@ -1,0 +1,61 @@
+14f9ac74e2568614a3a87e36360985c8
+"use strict";
+
+// Types pour les rituels collaboratifs SYMBIONT
+/* istanbul ignore next */
+function cov_2cs2zcjw8i() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/rituals.ts";
+  var hash = "7f95320282cbcdf18652a762def80bfcc1eab71a";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/rituals.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 62
+        }
+      }
+    },
+    fnMap: {},
+    branchMap: {},
+    s: {
+      "0": 0
+    },
+    f: {},
+    b: {},
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/rituals.ts",
+      mappings: ";AAAA,gDAAgD",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/rituals.ts"],
+      sourcesContent: ["// Types pour les rituels collaboratifs SYMBIONT\r\n\r\nexport interface SharedMutationRequest {\r\n  initiatorId: string;\r\n  traits: Record<string, number>;\r\n}\r\n\r\nexport interface SharedMutationCode {\r\n  code: string;\r\n  initiatorId: string;\r\n  expiresAt: number;\r\n}\r\n\r\nexport interface AcceptSharedMutation {\r\n  code: string;\r\n  receiverId: string;\r\n  traits: Record<string, number>;\r\n}\r\n\r\nexport interface SharedMutationResult {\r\n  initiatorId: string;\r\n  receiverId: string;\r\n  mergedTraits: Record<string, number>;\r\n  timestamp: number;\r\n}\r\n\r\nexport interface CollectiveWakeRequest {\r\n  userId: string;\r\n}\r\n\r\nexport interface CollectiveWakeResult {\r\n  participants: string[];\r\n  triggeredAt: number;\r\n} "],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "7f95320282cbcdf18652a762def80bfcc1eab71a"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_2cs2zcjw8i = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_2cs2zcjw8i();
+cov_2cs2zcjw8i().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJjb3ZfMmNzMnpjanc4aSIsInBhdGgiLCJoYXNoIiwiZ2xvYmFsIiwiRnVuY3Rpb24iLCJnY3YiLCJjb3ZlcmFnZURhdGEiLCJzdGF0ZW1lbnRNYXAiLCJzdGFydCIsImxpbmUiLCJjb2x1bW4iLCJlbmQiLCJmbk1hcCIsImJyYW5jaE1hcCIsInMiLCJmIiwiYiIsImlucHV0U291cmNlTWFwIiwiZmlsZSIsIm1hcHBpbmdzIiwibmFtZXMiLCJzb3VyY2VzIiwic291cmNlc0NvbnRlbnQiLCJ2ZXJzaW9uIiwiX2NvdmVyYWdlU2NoZW1hIiwiY292ZXJhZ2UiLCJhY3R1YWxDb3ZlcmFnZSJdLCJzb3VyY2VzIjpbIi9tbnQvYy9Vc2Vycy9tX29saS9Qcm9qZXRzL1NZTUJJT05UL3NyYy9zaGFyZWQvdHlwZXMvcml0dWFscy50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBUeXBlcyBwb3VyIGxlcyByaXR1ZWxzIGNvbGxhYm9yYXRpZnMgU1lNQklPTlRcclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgU2hhcmVkTXV0YXRpb25SZXF1ZXN0IHtcclxuICBpbml0aWF0b3JJZDogc3RyaW5nO1xyXG4gIHRyYWl0czogUmVjb3JkPHN0cmluZywgbnVtYmVyPjtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBTaGFyZWRNdXRhdGlvbkNvZGUge1xyXG4gIGNvZGU6IHN0cmluZztcclxuICBpbml0aWF0b3JJZDogc3RyaW5nO1xyXG4gIGV4cGlyZXNBdDogbnVtYmVyO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIEFjY2VwdFNoYXJlZE11dGF0aW9uIHtcclxuICBjb2RlOiBzdHJpbmc7XHJcbiAgcmVjZWl2ZXJJZDogc3RyaW5nO1xyXG4gIHRyYWl0czogUmVjb3JkPHN0cmluZywgbnVtYmVyPjtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBTaGFyZWRNdXRhdGlvblJlc3VsdCB7XHJcbiAgaW5pdGlhdG9ySWQ6IHN0cmluZztcclxuICByZWNlaXZlcklkOiBzdHJpbmc7XHJcbiAgbWVyZ2VkVHJhaXRzOiBSZWNvcmQ8c3RyaW5nLCBudW1iZXI+O1xyXG4gIHRpbWVzdGFtcDogbnVtYmVyO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIENvbGxlY3RpdmVXYWtlUmVxdWVzdCB7XHJcbiAgdXNlcklkOiBzdHJpbmc7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgQ29sbGVjdGl2ZVdha2VSZXN1bHQge1xyXG4gIHBhcnRpY2lwYW50czogc3RyaW5nW107XHJcbiAgdHJpZ2dlcmVkQXQ6IG51bWJlcjtcclxufSAiXSwibWFwcGluZ3MiOiI7O0FBQUE7QUFBQTtBQUFBLFNBQUFBLGVBQUE7RUFBQSxJQUFBQyxJQUFBO0VBQUEsSUFBQUMsSUFBQTtFQUFBLElBQUFDLE1BQUEsT0FBQUMsUUFBQTtFQUFBLElBQUFDLEdBQUE7RUFBQSxJQUFBQyxZQUFBO0lBQUFMLElBQUE7SUFBQU0sWUFBQTtNQUFBO1FBQUFDLEtBQUE7VUFBQUMsSUFBQTtVQUFBQyxNQUFBO1FBQUE7UUFBQUMsR0FBQTtVQUFBRixJQUFBO1VBQUFDLE1BQUE7UUFBQTtNQUFBO0lBQUE7SUFBQUUsS0FBQTtJQUFBQyxTQUFBO0lBQUFDLENBQUE7TUFBQTtJQUFBO0lBQUFDLENBQUE7SUFBQUMsQ0FBQTtJQUFBQyxjQUFBO01BQUFDLElBQUE7TUFBQUMsUUFBQTtNQUFBQyxLQUFBO01BQUFDLE9BQUE7TUFBQUMsY0FBQTtNQUFBQyxPQUFBO0lBQUE7SUFBQUMsZUFBQTtJQUFBdEIsSUFBQTtFQUFBO0VBQUEsSUFBQXVCLFFBQUEsR0FBQXRCLE1BQUEsQ0FBQUUsR0FBQSxNQUFBRixNQUFBLENBQUFFLEdBQUE7RUFBQSxLQUFBb0IsUUFBQSxDQUFBeEIsSUFBQSxLQUFBd0IsUUFBQSxDQUFBeEIsSUFBQSxFQUFBQyxJQUFBLEtBQUFBLElBQUE7SUFBQXVCLFFBQUEsQ0FBQXhCLElBQUEsSUFBQUssWUFBQTtFQUFBO0VBQUEsSUFBQW9CLGNBQUEsR0FBQUQsUUFBQSxDQUFBeEIsSUFBQTtFQUFBIiwiaWdub3JlTGlzdCI6W119

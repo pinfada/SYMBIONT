@@ -124,6 +124,29 @@ export declare class NeuralMeshAsync implements INeuralMesh {
         operationCount: number;
         workerReady: boolean;
     };
+    /**
+     * Save current state for persistence
+     */
+    saveState(): any;
+    /**
+     * Load state from saved data
+     */
+    loadState(state: any): void;
+    /**
+     * Reset neural mesh to initial state
+     */
+    reset(): void;
+    /**
+     * Health check for neural mesh
+     */
+    healthCheck(): {
+        healthy: boolean;
+        issues: string[];
+    };
+    /**
+     * Cleanup resources
+     */
+    cleanup(): void;
 }
 export {};
 //# sourceMappingURL=NeuralMeshAsync.d.ts.map

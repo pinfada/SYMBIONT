@@ -42,7 +42,11 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
               focus: 0.5, 
               rhythm: 0.5, 
               empathy: 0.5, 
-              creativity: 0.5 
+              creativity: 0.5,
+              resilience: 0.5,
+              adaptability: 0.5,
+              memory: 0.5,
+              intuition: 0.5
             },
             birthTime: now,
             lastMutation: null,

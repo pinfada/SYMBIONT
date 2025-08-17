@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">19.35% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/31</span>
+                <span class='fraction'>0/31</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/10</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">24% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/25</span>
+                <span class='fraction'>0/25</span>
             </div>
         
             
@@ -126,7 +126,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -135,23 +135,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -161,7 +151,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -170,7 +170,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -183,7 +183,7 @@
   [key: string]: any;
 }
 &nbsp;
-const API_URL = process.env.NODE_ENV === 'development' ? <span class="branch-0 cbranch-no" title="branch not covered" >'http://localhost:8090' </span>: '';
+const API_URL = <span class="cstat-no" title="statement not covered" >process.env.NODE_ENV === 'development' ? 'http://localhost:8090' : '';</span>
 &nbsp;
 function <span class="fstat-no" title="function not covered" >getAdminHeaders(</span>) {
   const key = <span class="cstat-no" title="statement not covered" >typeof window !== 'undefined' ? localStorage.getItem('symbiont_admin_key') : null;</span>
@@ -192,13 +192,13 @@ function <span class="fstat-no" title="function not covered" >getAdminHeaders(</
 <span class="cstat-no" title="statement not covered" >  return headers;</span>
 }
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >getRituals(</span>): Promise&lt;Ritual[]&gt; {
+<span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >getRituals(</span>): Promise&lt;Ritual[]&gt; {
   const res = <span class="cstat-no" title="statement not covered" >await fetch(API_URL + '/api/admin/rituals', { headers: getAdminHeaders() });</span>
 <span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!res.ok) <span class="cstat-no" title="statement not covered" >throw new Error('Erreur réseau');</span></span>
 <span class="cstat-no" title="statement not covered" >  return res.json();</span>
 }
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >addRitual(</span>ritual: Ritual) {
+<span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >addRitual(</span>ritual: Ritual) {
   const res = <span class="cstat-no" title="statement not covered" >await fetch(API_URL + '/api/admin/rituals', {</span>
     method: 'POST',
     headers: getAdminHeaders(),
@@ -208,7 +208,7 @@ export async function <span class="fstat-no" title="function not covered" >addRi
 <span class="cstat-no" title="statement not covered" >  return res.json();</span>
 }
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >updateRitual(</span>id: string, ritual: Partial&lt;Ritual&gt;) {
+<span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >updateRitual(</span>id: string, ritual: Partial&lt;Ritual&gt;) {
   const res = <span class="cstat-no" title="statement not covered" >await fetch(API_URL + '/api/admin/rituals/' + id, {</span>
     method: 'PUT',
     headers: getAdminHeaders(),
@@ -218,7 +218,7 @@ export async function <span class="fstat-no" title="function not covered" >updat
 <span class="cstat-no" title="statement not covered" >  return res.json();</span>
 }
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >deleteRitual(</span>id: string) {
+<span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >deleteRitual(</span>id: string) {
   const res = <span class="cstat-no" title="statement not covered" >await fetch(API_URL + '/api/admin/rituals/' + id, {</span>
     method: 'DELETE',
     headers: getAdminHeaders()
@@ -227,7 +227,7 @@ export async function <span class="fstat-no" title="function not covered" >delet
 <span class="cstat-no" title="statement not covered" >  return res.json();</span>
 }
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >deleteUserRituals(</span>userId: string) {
+<span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >deleteUserRituals(</span>userId: string) {
   const res = <span class="cstat-no" title="statement not covered" >await fetch(API_URL + '/api/admin/rgpd/' + encodeURIComponent(userId), {</span>
     method: 'DELETE',
     headers: getAdminHeaders()
@@ -241,7 +241,7 @@ export async function <span class="fstat-no" title="function not covered" >delet
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-04T20:14:35.536Z
+                at 2025-08-17T15:28:12.434Z
             </div>
         <script src="../prettify.js"></script>
         <script>

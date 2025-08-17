@@ -4,6 +4,7 @@ import { InvitationPayload, InvitationResult } from '../../shared/types/invitati
 import { Murmur } from '../../shared/types/murmur';
 import { generateUUID } from '../../shared/utils/uuid';
 import { sanitizeMessage } from '../../shared/utils/serialization';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
@@ -72,7 +73,7 @@ function serializeMessage(message: any): any {
     // Test de sérialisation avec JSON.parse/stringify
     return JSON.parse(JSON.stringify(message));
   } catch (error) {
-    console.warn('Message serialization issue, cleaning object:', error);
+    SecureLogger.warn('Message serialization issue, cleaning object:', error);
     
     // Nettoyage manuel pour les cas problématiques
     const cleanMessage = cleanObjectForSerialization(message);
@@ -197,7 +198,7 @@ export class MessageBus {
   private async processMessage(message: Message): Promise<void> {
     // --- Validation stricte du payload ---
     if (!validatePayload(message.type, message.payload)) {
-      console.warn(`[MessageBus] Payload non valide pour le type ${message.type}`, message.payload);
+      SecureLogger.warn(`[MessageBus] Payload non valide pour le type ${message.type}`, message.payload);
       return;
     }
 
@@ -206,7 +207,7 @@ export class MessageBus {
       try {
         await handler(message);
       } catch (error) {
-        console.error(`Error in global handler:`, error);
+        SecureLogger.error(`Error in global handler:`, error);
       }
     }
 
@@ -217,7 +218,7 @@ export class MessageBus {
         try {
           await handler(message);
         } catch (error) {
-          console.error(`Error in handler for ${message.type}:`, error);
+          SecureLogger.error(`Error in handler for ${message.type}:`, error);
         }
       }
     }
@@ -282,7 +283,7 @@ export class MessageBus {
         chrome.runtime.sendMessage(cleanMessage).catch(() => {});
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      SecureLogger.error('Error sending message:', error);
     }
   }
 
@@ -302,20 +303,20 @@ export class MessageBus {
   // @ts-expect-error Variables réservées pour usage futur
   private handleMessage(message: any, targetFrame: string): void {
     // Handle cross-frame messages
-    console.log('Handling message:', message);
+    SecureLogger.info('Handling message:', message);
   }
 
   // @ts-expect-error Paramètre réservé pour usage futur
   private onMessage(message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
     // Handle incoming message
-    console.log('Received message:', message);
+    SecureLogger.info('Received message:', message);
     return true;
   }
 
   // @ts-expect-error Variables réservées pour usage futur
   private sendToFrame(handleMessage: (msg: any) => any, targetFrame: MessageTarget, payload: any): void {
     // Send message to frame
-    console.log('Sending to frame:', targetFrame, payload);
+    SecureLogger.info('Sending to frame:', targetFrame, payload);
   }
 }
 

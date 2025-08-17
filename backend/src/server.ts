@@ -1,365 +1,260 @@
-// SYMBIONT Backend Server - Simplified Implementation
-import * as http from 'http';
-import * as url from 'url';
-import * as querystring from 'querystring';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import dotenv from 'dotenv';
 
-// Mock Express-like implementation
-interface Request {
-  method: string;
-  url: string;
-  headers: any;
-  body?: any;
-  params?: any;
-  query?: any;
-  user?: any;
-}
-
-interface Response {
-  statusCode: number;
-  status: (code: number) => Response;
-  json: (data: any) => void;
-  send: (data: any) => void;
-  setHeader: (name: string, value: string) => void;
-  end: (data?: string) => void;
-}
+// Load environment variables
+dotenv.config();
 
 // Services
 import { DatabaseService } from './services/DatabaseService';
 import { AuthService } from './services/AuthService';
 import { LoggerService } from './services/LoggerService';
 import { CacheService } from './services/CacheService';
+import { WebSocketService } from './services/WebSocketService';
+import { organismRoutes } from './routes/organisms';
+import { authMiddleware } from './middleware/auth';
 
 class SymbiontServer {
-  private server: http.Server;
-  private routes: Map<string, Function> = new Map();
+  private app: Express;
+  private server: any;
+  private io: SocketIOServer;
   private logger = LoggerService.getInstance();
   private db = DatabaseService.getInstance();
   private cache = CacheService.getInstance();
   private auth = AuthService.getInstance();
+  private wsService: WebSocketService;
 
   constructor() {
-    this.server = http.createServer(this.handleRequest.bind(this));
-    this.setupRoutes();
-  }
-
-  private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    if (req.method === 'OPTIONS') {
-      res.statusCode = 200;
-      res.end();
-      return;
-    }
-
-    try {
-      const requestObj: Request = await this.parseRequest(req);
-      const responseObj: Response = this.createResponse(res);
-
-      const routeKey = `${req.method} ${this.getRoutePath(req.url || '')}`;
-      const handler = this.routes.get(routeKey);
-
-      if (handler) {
-        await handler(requestObj, responseObj);
-      } else {
-        responseObj.status(404).json({ error: 'Route not found' });
+    this.app = express();
+    this.server = createServer(this.app);
+    this.io = new SocketIOServer(this.server, {
+      cors: {
+        origin: process.env.FRONTEND_URL || (process.env.NODE_ENV === 'development' ? "chrome-extension://*" : "https://app.symbiont.com"),
+        methods: ["GET", "POST"]
       }
-    } catch (error) {
-      this.logger.error('Request error:', error);
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Internal server error' }));
-    }
-  }
-
-  private async parseRequest(req: http.IncomingMessage): Promise<Request> {
-    const parsedUrl = url.parse(req.url || '', true);
-    
-    // Parse body for POST/PUT
-    let body;
-    if (req.method === 'POST' || req.method === 'PUT') {
-      body = await this.parseBody(req);
-    }
-
-    return {
-      method: req.method || 'GET',
-      url: req.url || '',
-      headers: req.headers,
-      body,
-      query: parsedUrl.query,
-      params: {}
-    };
-  }
-
-  private parseBody(req: http.IncomingMessage): Promise<any> {
-    return new Promise((resolve) => {
-      let data = '';
-      req.on('data', chunk => {
-        data += chunk;
-      });
-      req.on('end', () => {
-        try {
-          resolve(data ? JSON.parse(data) : {});
-        } catch {
-          resolve({});
-        }
-      });
     });
+    this.wsService = new WebSocketService(this.io);
+    this.setupMiddleware();
+    this.setupRoutes();
+    this.setupErrorHandling();
   }
 
-  private createResponse(res: http.ServerResponse): Response {
-    return {
-      statusCode: 200,
-      status: (code: number) => {
-        res.statusCode = code;
-        return this.createResponse(res);
+  private setupMiddleware(): void {
+    // Security middleware
+    this.app.use(helmet({
+      contentSecurityPolicy: false // Allow extension scripts
+    }));
+    
+    // CORS for extension
+    this.app.use(cors({
+      origin: function(origin, callback) {
+        // Allow Chrome extension origins
+        if (!origin || origin.startsWith('chrome-extension://')) {
+          callback(null, true);
+        } else {
+          callback(null, false);
+        }
       },
-      json: (data: any) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(data));
-      },
-      send: (data: any) => {
-        res.end(typeof data === 'string' ? data : JSON.stringify(data));
-      },
-      setHeader: (name: string, value: string) => {
-        res.setHeader(name, value);
-      },
-      end: (data?: string) => {
-        res.end(data);
-      }
-    };
-  }
-
-  private getRoutePath(url: string): string {
-    const parsed = new URL(url, 'http://localhost');
-    return parsed.pathname;
+      credentials: true
+    }));
+    
+    // Compression
+    this.app.use(compression());
+    
+    // Rate limiting
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 1000, // limit each IP to 1000 requests per windowMs
+      message: 'Too many requests from this IP'
+    });
+    this.app.use(limiter);
+    
+    // Body parsing
+    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   }
 
   private setupRoutes(): void {
-    // Debug route to list all routes
-    this.routes.set('GET /debug/routes', (req: Request, res: Response) => {
-      const routesList = Array.from(this.routes.keys());
-      res.json({
-        routes: routesList,
-        total: routesList.length
-      });
-    });
-
     // Health check
-    this.routes.set('GET /health', (req: Request, res: Response) => {
-      res.json({
-        status: 'healthy',
+    this.app.get('/health', (req: Request, res: Response) => {
+      res.json({ 
+        status: 'healthy', 
         timestamp: new Date().toISOString(),
-        version: '1.0.0'
+        version: process.env.VERSION || (() => {
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error('VERSION environment variable is required in production');
+          }
+          return '1.0.0-dev';
+        })()
       });
     });
-
-    // Auth routes
-    this.routes.set('POST /api/auth/login', async (req: Request, res: Response) => {
+    
+    // API routes
+    this.app.use('/api/auth', this.createAuthRoutes());
+    this.app.use('/api/organisms', authMiddleware, organismRoutes);
+    this.app.use('/api/social', authMiddleware, this.createSocialRoutes());
+    this.app.use('/api/metrics', authMiddleware, this.createMetricsRoutes());
+  }
+  
+  private createAuthRoutes(): any {
+    const router = express.Router();
+    
+    router.post('/register', async (req: Request, res: Response) => {
       try {
         const { email, password } = req.body;
-        
-        if (!email || !password) {
-          return res.status(400).json({ error: 'Email et mot de passe requis' });
-        }
-
-        const result = await this.auth.authenticateUser(email, password);
-        if (result) {
-          res.json({ success: true, data: result });
-        } else {
-          res.status(401).json({ error: 'Identifiants invalides' });
-        }
-      } catch (error) {
-        res.status(500).json({ error: 'Erreur serveur' });
+        const user = await this.auth.register(email, password);
+        res.json({ success: true, user });
+      } catch (error: any) {
+        res.status(400).json({ error: error.message });
       }
     });
-
-    this.routes.set('POST /api/auth/register', async (req: Request, res: Response) => {
+    
+    router.post('/login', async (req: Request, res: Response) => {
       try {
-        const { email, username, password } = req.body;
-        
-        if (!email || !username || !password) {
-          return res.status(400).json({ error: 'Tous les champs sont requis' });
-        }
-
-        const user = await this.auth.registerUser(email, username, password);
-        res.status(201).json({ success: true, data: user });
-      } catch (error) {
-        res.status(500).json({ error: 'Erreur serveur' });
+        const { email, password } = req.body;
+        const result = await this.auth.login(email, password);
+        res.json(result);
+      } catch (error: any) {
+        res.status(401).json({ error: error.message });
       }
     });
-
-    // Organisms routes (with auth middleware)
-    this.routes.set('GET /api/organisms', async (req: Request, res: Response) => {
+    
+    router.post('/refresh', async (req: Request, res: Response) => {
       try {
-        // Simple auth check
-        const authHeader = req.headers.authorization;
-        if (!authHeader) {
-          return res.status(401).json({ error: 'Token manquant' });
-        }
-
-        const token = authHeader.replace('Bearer ', '');
-        const user = this.auth.verifyToken(token);
-        if (!user) {
-          return res.status(401).json({ error: 'Token invalide' });
-        }
-
-        const organisms = this.db.client.organism.findMany();
-        res.json({ success: true, data: organisms });
-      } catch (error) {
-        res.status(500).json({ error: 'Erreur serveur' });
+        const { refreshToken } = req.body;
+        const result = await this.auth.refreshToken(refreshToken);
+        res.json(result);
+      } catch (error: any) {
+        res.status(401).json({ error: error.message });
       }
     });
-
-    this.routes.set('POST /api/organisms', async (req: Request, res: Response) => {
-      try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader) {
-          return res.status(401).json({ error: 'Token manquant' });
-        }
-
-        const token = authHeader.replace('Bearer ', '');
-        const user = this.auth.verifyToken(token);
-        if (!user) {
-          return res.status(401).json({ error: 'Token invalide' });
-        }
-
-        const { name, initialTraits } = req.body;
-        if (!name) {
-          return res.status(400).json({ error: 'Nom requis' });
-        }
-
-        const organism = this.db.client.organism.create({
-          data: {
-            userId: user.userId,
-            name,
-            dna: this.generateDNA(),
-            generation: 1,
-            health: 1.0,
-            energy: 0.8,
-            consciousness: 0.5,
-            traits: initialTraits || this.getDefaultTraits()
-          }
-        });
-
-        res.status(201).json({ success: true, data: organism });
-      } catch (error) {
-        res.status(500).json({ error: 'Erreur serveur' });
-      }
-    });
-
-    // Analytics routes
-    this.routes.set('GET /api/analytics/behavior', async (req: Request, res: Response) => {
-      try {
-        const analytics = {
-          dominantCategories: ['work', 'social', 'entertainment'],
-          timeDistribution: { work: 3600, social: 1800, entertainment: 900 },
-          patterns: ['deep_work_sessions', 'high_social_engagement'],
-          anomalies: []
-        };
-        res.json({ success: true, data: analytics });
-      } catch (error) {
-        res.status(500).json({ error: 'Erreur serveur' });
-      }
-    });
-
-    this.routes.set('POST /api/analytics/generate-dna', async (req: Request, res: Response) => {
-      try {
-        const dna = this.generateDNA();
-        res.json({ success: true, data: { dna } });
-      } catch (error) {
-        res.status(500).json({ error: 'Erreur serveur' });
-      }
-    });
-
-    // System monitoring routes
-    this.routes.set('GET /api/system/health', (req: Request, res: Response) => {
-      res.json({
-        api: 'healthy',
-        database: 'healthy',
-        cache: 'healthy',
-        websocket: 'connected'
-      });
-    });
-
-    this.routes.set('GET /api/system/metrics', (req: Request, res: Response) => {
-      res.json({
-        activeUsers: Math.floor(Math.random() * 100) + 10,
-        totalOrganisms: Math.floor(Math.random() * 1000) + 100,
-        mutationsPerHour: Math.floor(Math.random() * 50) + 5,
-        apiLatency: Math.floor(Math.random() * 50) + 20,
-        uptime: '24h 30m',
-        version: '1.0.0'
-      });
-    });
-
-    this.routes.set('GET /api/system/network-stats', (req: Request, res: Response) => {
-      res.json({
-        totalConnections: Math.floor(Math.random() * 200) + 50,
-        activeRituals: Math.floor(Math.random() * 5),
-        dataProcessed: `${Math.floor(Math.random() * 100) + 10} MB`,
-        evolutionEvents: Math.floor(Math.random() * 20) + 5
-      });
-    });
+    
+    return router;
   }
-
-  private generateDNA(): string {
-    const bases = ['A', 'T', 'G', 'C'];
-    let dna = '';
-    for (let i = 0; i < 64; i++) {
-      dna += bases[Math.floor(Math.random() * 4)];
-    }
-    return dna;
+  
+  private createSocialRoutes(): any {
+    const router = express.Router();
+    
+    router.post('/invitations', async (req: Request, res: Response) => {
+      try {
+        const invitation = await this.db.createInvitation(req.body);
+        res.json(invitation);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    router.get('/invitations/:code', async (req: Request, res: Response) => {
+      try {
+        const invitation = await this.db.getInvitation(req.params.code);
+        res.json(invitation);
+      } catch (error: any) {
+        res.status(404).json({ error: error.message });
+      }
+    });
+    
+    return router;
   }
-
-  private getDefaultTraits(): any {
-    return {
-      curiosity: 0.5,
-      focus: 0.5,
-      social: 0.5,
-      creativity: 0.5,
-      analytical: 0.5,
-      adaptability: 0.5
-    };
+  
+  private createMetricsRoutes(): any {
+    const router = express.Router();
+    
+    router.post('/events', async (req: Request, res: Response) => {
+      try {
+        await this.db.logMetricEvent(req.body);
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    router.get('/dashboard', async (req: Request, res: Response) => {
+      try {
+        const metrics = await this.db.getMetricsDashboard();
+        res.json(metrics);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    return router;
+  }
+  
+  private setupErrorHandling(): void {
+    // 404 handler
+    this.app.use('*', (req: Request, res: Response) => {
+      res.status(404).json({ error: 'Endpoint not found' });
+    });
+    
+    // Global error handler
+    this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+      this.logger.error('Server error:', err);
+      res.status(500).json({ 
+        error: process.env.NODE_ENV === 'production' 
+          ? 'Internal server error' 
+          : err.message 
+      });
+    });
   }
 
   public async start(): Promise<void> {
-    const port = process.env.PORT || 3001;
+    const port = parseInt(process.env.PORT || (process.env.NODE_ENV === 'production' ? '3001' : '3000'));
     
     try {
-      // Initialize services
+      // Initialize database connection
       await this.db.connect();
+      
+      // Initialize cache
       await this.cache.connect();
       
       // Start server
       this.server.listen(port, () => {
-        this.logger.info(`🚀 SYMBIONT Server running on port ${port}`);
-        this.logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-        this.logger.info(`🗄️  Database: Connected (Mock)`);
-        this.logger.info(`⚡ Cache: Connected (Mock)`);
-        this.logger.info(`🔒 Security: Basic Auth`);
+        this.logger.info(`🚀 SYMBIONT Backend running on port ${port}`);
+        this.logger.info(`📊 Health check: http://localhost:${port}/health`);
       });
+      
+      // Initialize WebSocket handlers
+      this.wsService.initialize();
       
     } catch (error) {
       this.logger.error('Failed to start server:', error);
       process.exit(1);
     }
   }
-
+  
   public async stop(): Promise<void> {
-    this.server.close();
+    this.logger.info('Shutting down server...');
+    
+    // Close WebSocket connections
+    this.io.close();
+    
+    // Close database connections
     await this.db.disconnect();
     await this.cache.disconnect();
+    
+    // Close HTTP server
+    this.server.close(() => {
+      this.logger.info('Server stopped');
+      process.exit(0);
+    });
   }
 }
 
-// Start server
+// Create and start server
 const server = new SymbiontServer();
-server.start().catch((error) => {
-  console.error('Failed to start SYMBIONT server:', error);
-  process.exit(1);
-});
 
-export default server; 
+// Handle graceful shutdown
+process.on('SIGTERM', () => server.stop());
+process.on('SIGINT', () => server.stop());
+
+// Start server
+if (require.main === module) {
+  server.start().catch(console.error);
+}
+
+export default server;

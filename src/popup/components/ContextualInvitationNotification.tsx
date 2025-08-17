@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SecureRandom } from '../shared/utils/secureRandom';
 
 interface ContextualInvitationProps {
   context?: string;
@@ -17,7 +18,7 @@ export const ContextualInvitationNotification: React.FC<ContextualInvitationProp
   useEffect(() => {
     if (context) {
       setVisible(true);
-      setCode(Math.random().toString(36).substr(2, 9).toUpperCase());
+      setCode(SecureRandom.random().toString(36).substr(2, 9).toUpperCase());
     }
   }, [context]);
 

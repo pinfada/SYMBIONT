@@ -1,113 +1,130 @@
+/**
+ * OrganismCore refactorisé - Architecture hexagonale
+ * Version simplifiée utilisant des services spécialisés
+ */
 import { OrganismState, OrganismTraits } from '../shared/types/organism';
-import { INeuralMesh, PerformanceMetrics } from './interfaces/INeuralMesh';
 import { IOrganismCore, OrganismJSON, ShaderParameters } from './interfaces/IOrganismCore';
+import { INeuralMesh } from './interfaces/INeuralMesh';
+export interface OrganismDependencies {
+    neuralMesh: INeuralMesh;
+    logger?: {
+        debug: Function;
+        info: Function;
+        error: Function;
+    };
+}
 export declare class OrganismCore implements IOrganismCore {
-    private mesh;
-    private dna;
-    private interpreter;
-    private traits;
-    private energy;
+    private readonly id;
+    private readonly dna;
     private health;
     private lastMutation;
-    private metabolismRate;
-    private mutationBatcher;
-    private logger?;
-    private id;
-    private neuralMesh?;
-    private isBooted;
-    constructor(dna: string, traits?: Partial<OrganismTraits>, createMesh?: () => INeuralMesh);
+    private readonly traitService;
+    private readonly energyService;
+    private readonly neuralService;
+    private readonly metricsService;
+    private readonly featureFlags;
+    private readonly logger;
+    constructor(dna: string, initialTraits?: Partial<OrganismTraits>, dependencies?: OrganismDependencies);
     /**
-     * Valide les paramètres d'entrée avec ErrorHandler
+     * Configuration des listeners entre services
+     */
+    private setupServiceListeners;
+    /**
+     * Gestionnaire de changement de traits
+     */
+    private onTraitChanged;
+    /**
+     * Validation des entrées
      */
     private validateInput;
     /**
-     * Initialise le réseau neuronal avec gestion d'erreurs robuste
+     * Génère un ID unique
      */
-    private initializeNeuralNetwork;
-    /**
-     * Met à jour l'état de l'organisme (appelé périodiquement)
-     */
-    update(deltaTime?: number): void;
-    /**
-     * Met à jour l'énergie basée sur l'activité neurale
-     */
-    private updateEnergy;
-    /**
-     * Met à jour la santé basée sur les conditions actuelles
-     */
-    private updateHealth;
-    /**
-     * Fait évoluer les traits basés sur l'activité neurale
-     */
-    private evolveTraits;
-    /**
-     * Stimule le réseau (ex : perception sensorielle)
-     */
-    stimulate(inputId: string, value: number): void;
-    /**
-     * Traite une mutation batchée
-     */
-    private processBatchedMutation;
-    /**
-     * Applique une mutation (neural et potentiellement ADN) - Version optimisée avec batching
-     */
-    mutate(rate?: number): void;
-    /**
-     * Force l'application immédiate de toutes les mutations en attente
-     */
-    flushMutations(): Promise<void>;
-    /**
-     * Nourrit l'organisme pour restaurer l'énergie
-     */
-    feed(amount?: number): void;
-    /**
-     * Récupère les traits courants
-     */
+    getId(): string;
+    getDNA(): string;
     getTraits(): OrganismTraits;
+    updateTrait(name: keyof OrganismTraits, value: number): void;
+    getEnergyLevel(): number;
+    getHealth(): number;
     /**
-     * Définit de nouveaux traits
+     * Évolution de l'organisme basée sur un stimulus
      */
-    setTraits(traits: Partial<OrganismTraits>): void;
+    evolve(stimulus: any): Promise<void>;
     /**
-     * Récupère l'état global de l'organisme
+     * Apprentissage à partir de données comportementales
+     */
+    learn(behaviorData: any): Promise<void>;
+    /**
+     * Traitement d'un stimulus simple
+     */
+    processStimulus(stimulus: any): void;
+    /**
+     * Obtient l'état complet de l'organisme
      */
     getState(): OrganismState;
     /**
-     * Récupère les métriques de performance - Version étendue avec mutations
+     * Génère les paramètres de shader pour le rendu visuel
      */
-    getPerformanceMetrics(): Promise<PerformanceMetrics & {
-        neuralActivity: number;
-        connectionStrength: number;
-        mutationStats: any;
-    }>;
+    generateShaderParameters(): ShaderParameters;
     /**
-     * Export JSON typé pour debug/visualisation
+     * Sérialisation pour sauvegarde
      */
     toJSON(): OrganismJSON;
     /**
-     * Récupère les paramètres shaders courants (pour WebGL)
+     * Restauration depuis JSON
      */
-    getShaderParameters(): ShaderParameters;
+    fromJSON(data: OrganismJSON): void;
     /**
-     * Initialise l'organisme
+     * Nettoyage et libération des ressources
+     */
+    cleanup(): void;
+    /**
+     * Vérification de l'état de santé
+     */
+    healthCheck(): {
+        healthy: boolean;
+        issues: string[];
+    };
+    /**
+     * Boot the organism
      */
     boot(): Promise<void>;
     /**
-     * Met l'organisme en hibernation - Version étendue avec nettoyage du batcher
+     * Hibernate the organism
      */
     hibernate(): Promise<void>;
     /**
-     * Mesure les performances de base
+     * Update organism with delta time
      */
-    private measurePerformance;
+    update(deltaTime?: number): void;
     /**
-     * Calcule l'activité neurale
+     * Stimulate organism input
      */
-    private calculateNeuralActivity;
+    stimulate(inputId: string, value: number): void;
     /**
-     * Calcule la force de connexion
+     * Mutate organism with given rate
      */
-    private calculateConnectionStrength;
-    private handleBootError;
+    mutate(rate?: number): void;
+    /**
+     * Feed organism with energy
+     */
+    feed(amount?: number): void;
+    /**
+     * Set traits (partial update)
+     */
+    setTraits(traits: Partial<OrganismTraits>): void;
+    /**
+     * Get performance metrics
+     */
+    getPerformanceMetrics(): Promise<{
+        cpu: number;
+        memory: number;
+        neuralActivity: any;
+        connectionStrength: any;
+    }>;
+    /**
+     * Get shader parameters for WebGL rendering
+     */
+    getShaderParameters(): ShaderParameters;
 }
 //# sourceMappingURL=OrganismCore.d.ts.map

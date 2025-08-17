@@ -2,12 +2,13 @@
 import { PatternAnalyzer } from './PatternAnalyzer';
 import { BehaviorPredictor } from './BehaviorPredictor';
 import { BehaviorAnalysis, NavigationEvent } from '../../types/behavioral';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 class SessionTracker {
   // @ts-expect-error Paramètre réservé pour usage futur
   track(data: any): void {
     // Simplified tracking
-    console.log('Tracking behavior');
+    SecureLogger.info('Tracking behavior');
   }
 }
 

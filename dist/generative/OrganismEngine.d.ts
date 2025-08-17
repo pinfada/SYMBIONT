@@ -1,4 +1,4 @@
-import { OrganismState, OrganismMutation } from '@shared/types';
+import { OrganismState, OrganismMutation } from '../shared/types/organism';
 /**
  * OrganismEngine - Moteur WebGL pour le rendu de l'organisme
  */

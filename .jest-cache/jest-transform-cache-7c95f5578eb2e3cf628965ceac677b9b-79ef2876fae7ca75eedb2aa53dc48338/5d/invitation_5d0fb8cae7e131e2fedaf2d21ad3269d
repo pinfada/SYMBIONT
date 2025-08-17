@@ -1,0 +1,61 @@
+5cdf857d2c65e95a7eca7fa18f07bff1
+"use strict";
+
+// Types centralisés pour la gestion des invitations
+/* istanbul ignore next */
+function cov_1ayw29my4e() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/invitation.ts";
+  var hash = "19dd9167ed19aeb1cedc13681573027d02c3d961";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/invitation.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 62
+        }
+      }
+    },
+    fnMap: {},
+    branchMap: {},
+    s: {
+      "0": 0
+    },
+    f: {},
+    b: {},
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/invitation.ts",
+      mappings: ";AAAA,oDAAoD",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/invitation.ts"],
+      sourcesContent: ["// Types centralis\xE9s pour la gestion des invitations\r\n\r\nexport interface Invitation {\r\n  code: string;\r\n  createdAt: number;\r\n  consumed: boolean;\r\n  consumedAt?: number;\r\n  inviter?: string;\r\n  invitee?: string;\r\n}\r\n\r\nexport type InvitationStatus = 'valid' | 'invalid' | 'consumed' | 'expired';\r\n\r\nexport interface InvitationPayload {\r\n  code: string;\r\n}\r\n\r\nexport interface InvitationResult {\r\n  code: string;\r\n  status: InvitationStatus;\r\n  invitation?: Invitation;\r\n} "],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "19dd9167ed19aeb1cedc13681573027d02c3d961"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_1ayw29my4e = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_1ayw29my4e();
+cov_1ayw29my4e().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJjb3ZfMWF5dzI5bXk0ZSIsInBhdGgiLCJoYXNoIiwiZ2xvYmFsIiwiRnVuY3Rpb24iLCJnY3YiLCJjb3ZlcmFnZURhdGEiLCJzdGF0ZW1lbnRNYXAiLCJzdGFydCIsImxpbmUiLCJjb2x1bW4iLCJlbmQiLCJmbk1hcCIsImJyYW5jaE1hcCIsInMiLCJmIiwiYiIsImlucHV0U291cmNlTWFwIiwiZmlsZSIsIm1hcHBpbmdzIiwibmFtZXMiLCJzb3VyY2VzIiwic291cmNlc0NvbnRlbnQiLCJ2ZXJzaW9uIiwiX2NvdmVyYWdlU2NoZW1hIiwiY292ZXJhZ2UiLCJhY3R1YWxDb3ZlcmFnZSJdLCJzb3VyY2VzIjpbIi9tbnQvYy9Vc2Vycy9tX29saS9Qcm9qZXRzL1NZTUJJT05UL3NyYy9zaGFyZWQvdHlwZXMvaW52aXRhdGlvbi50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBUeXBlcyBjZW50cmFsaXPDqXMgcG91ciBsYSBnZXN0aW9uIGRlcyBpbnZpdGF0aW9uc1xyXG5cclxuZXhwb3J0IGludGVyZmFjZSBJbnZpdGF0aW9uIHtcclxuICBjb2RlOiBzdHJpbmc7XHJcbiAgY3JlYXRlZEF0OiBudW1iZXI7XHJcbiAgY29uc3VtZWQ6IGJvb2xlYW47XHJcbiAgY29uc3VtZWRBdD86IG51bWJlcjtcclxuICBpbnZpdGVyPzogc3RyaW5nO1xyXG4gIGludml0ZWU/OiBzdHJpbmc7XHJcbn1cclxuXHJcbmV4cG9ydCB0eXBlIEludml0YXRpb25TdGF0dXMgPSAndmFsaWQnIHwgJ2ludmFsaWQnIHwgJ2NvbnN1bWVkJyB8ICdleHBpcmVkJztcclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgSW52aXRhdGlvblBheWxvYWQge1xyXG4gIGNvZGU6IHN0cmluZztcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBJbnZpdGF0aW9uUmVzdWx0IHtcclxuICBjb2RlOiBzdHJpbmc7XHJcbiAgc3RhdHVzOiBJbnZpdGF0aW9uU3RhdHVzO1xyXG4gIGludml0YXRpb24/OiBJbnZpdGF0aW9uO1xyXG59ICJdLCJtYXBwaW5ncyI6Ijs7QUFBQTtBQUFBO0FBQUEsU0FBQUEsZUFBQTtFQUFBLElBQUFDLElBQUE7RUFBQSxJQUFBQyxJQUFBO0VBQUEsSUFBQUMsTUFBQSxPQUFBQyxRQUFBO0VBQUEsSUFBQUMsR0FBQTtFQUFBLElBQUFDLFlBQUE7SUFBQUwsSUFBQTtJQUFBTSxZQUFBO01BQUE7UUFBQUMsS0FBQTtVQUFBQyxJQUFBO1VBQUFDLE1BQUE7UUFBQTtRQUFBQyxHQUFBO1VBQUFGLElBQUE7VUFBQUMsTUFBQTtRQUFBO01BQUE7SUFBQTtJQUFBRSxLQUFBO0lBQUFDLFNBQUE7SUFBQUMsQ0FBQTtNQUFBO0lBQUE7SUFBQUMsQ0FBQTtJQUFBQyxDQUFBO0lBQUFDLGNBQUE7TUFBQUMsSUFBQTtNQUFBQyxRQUFBO01BQUFDLEtBQUE7TUFBQUMsT0FBQTtNQUFBQyxjQUFBO01BQUFDLE9BQUE7SUFBQTtJQUFBQyxlQUFBO0lBQUF0QixJQUFBO0VBQUE7RUFBQSxJQUFBdUIsUUFBQSxHQUFBdEIsTUFBQSxDQUFBRSxHQUFBLE1BQUFGLE1BQUEsQ0FBQUUsR0FBQTtFQUFBLEtBQUFvQixRQUFBLENBQUF4QixJQUFBLEtBQUF3QixRQUFBLENBQUF4QixJQUFBLEVBQUFDLElBQUEsS0FBQUEsSUFBQTtJQUFBdUIsUUFBQSxDQUFBeEIsSUFBQSxJQUFBSyxZQUFBO0VBQUE7RUFBQSxJQUFBb0IsY0FBQSxHQUFBRCxRQUFBLENBQUF4QixJQUFBO0VBQUEiLCJpZ25vcmVMaXN0IjpbXX0=

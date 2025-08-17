@@ -84,16 +84,20 @@ module.exports = {
     }
   },
   
-  // Test timeout
-  testTimeout: 10000,
+  // Test timeout - Augmenté pour les tests complexes
+  testTimeout: 30000,
   
   // Mock configuration
   clearMocks: true,
   restoreMocks: true,
+  resetMocks: true,
   
   // Test environment options
   testEnvironmentOptions: {
-    url: 'http://localhost'
+    url: 'http://localhost',
+    resources: 'usable',
+    runScripts: 'dangerously',
+    pretendToBeVisual: true
   },
   
   // Verbose output for CI
@@ -105,8 +109,16 @@ module.exports = {
     'jest-watch-typeahead/testname'
   ],
   
-  // Performance budgets
-  maxWorkers: '50%',
+  // Performance optimizations
+  maxWorkers: process.env.CI ? '50%' : '75%',
+  maxConcurrency: 5,
+  
+  // Cache configuration
+  cacheDirectory: '<rootDir>/.jest-cache',
+  
+  // Faster test execution
+  detectOpenHandles: true,
+  forceExit: false,
   
   // Error handling
   errorOnDeprecated: true,

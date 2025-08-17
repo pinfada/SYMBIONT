@@ -135,5 +135,34 @@ Content Script <-> Background (bus de messages)
 
 ---
 
-**Lien vers la checklist d'avancement** :
-- Voir [README.md](../README.md) ou la documentation interne pour le suivi en temps réel des actions. 
+## Intégration Backend (2025)
+
+### Services Backend Critiques
+- **AuthService** : Authentification JWT, gestion sessions, validation tokens
+- **DatabaseService** : Wrapper Prisma, gestion connexions, transactions
+- **WebSocketService** : Communication temps réel, gestion déconnexions
+- **AIService** : Intégration modèles ML, traitement patterns comportementaux
+- **CacheService** : Cache Redis, invalidation intelligente, performance
+
+### Architecture Full-Stack
+```
+[Extension Chrome] <--WebSocket--> [Backend Express.js] <--> [PostgreSQL]
+       |                              |                        |
+   [localStorage]                 [Redis Cache]            [Prisma ORM]
+       |                              |                        |
+[HybridStorageManager]         [CacheService]           [DatabaseService]
+```
+
+### Points de Sécurité Critiques
+- Validation des tokens JWT sur chaque requête sensible
+- Chiffrement des données avant transit
+- Rate limiting sur les endpoints critiques
+- Logs d'audit pour conformité RGPD
+- Sanitisation des inputs utilisateur
+
+---
+
+**Liens vers la documentation détaillée** :
+- [README.md](../README.md) - Vue d'ensemble et liens rapides
+- [production-readiness-plan.md](./production-readiness-plan.md) - Plan de mise en production
+- [securite-rgpd.md](./securite-rgpd.md) - Sécurité et conformité

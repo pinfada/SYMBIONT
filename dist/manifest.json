@@ -5,22 +5,33 @@
     "description": "A living digital organism that evolves with your browsing patterns",
     "permissions": [
       "storage",
-      "tabs",
-      "webNavigation",
       "alarms",
       "idle",
+      "activeTab",
+      "scripting"
+    ],
+    "optional_permissions": [
+      "tabs",
+      "webNavigation",
       "windows"
     ],
     "host_permissions": [
-      "<all_urls>"
+      "https://*/"
     ],
+    "optional_host_permissions": [
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    },
     "background": {
       "service_worker": "background/index.js",
       "type": "module"
     },
     "content_scripts": [
       {
-        "matches": ["<all_urls>"],
+        "matches": ["https://*/*"],
         "js": ["content/index.js"],
         "run_at": "document_idle",
         "all_frames": false
@@ -45,7 +56,7 @@
     "web_accessible_resources": [
       {
         "resources": ["assets/*"],
-        "matches": ["<all_urls>"]
+        "matches": ["https://*/*"]
       }
     ]
 }

@@ -4,6 +4,7 @@ import { NeuralCoreEngine } from '../neural/NeuralCoreEngine'
 import { SocialNetworkManager } from '../social/SocialNetworkManager'
 import { SecretRitualSystem } from '../mystical/SecretRitualSystem'
 import { WebGLOrchestrator } from './WebGLOrchestrator'
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 interface SynapticRouterDeps {
   neural: NeuralCoreEngine
@@ -69,7 +70,8 @@ export class SynapticRouter {
     }
   }
 
-  async optimizeRouting(_performance: PerformanceMetrics): Promise<void> {
-    // TODO: Optimisation dynamique du routage
+  async optimizeRouting(performance: PerformanceMetrics): Promise<void> {
+    // TODO: Optimisation dynamique du routage basée sur les métriques de performance
+    SecureLogger.debug('Optimisation routage avec métriques:', performance);
   }
 } 

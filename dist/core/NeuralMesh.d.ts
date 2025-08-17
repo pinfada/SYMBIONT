@@ -65,5 +65,40 @@ export declare class NeuralMesh implements INeuralMesh {
      * Get memory usage estimation
      */
     getMemoryUsage(): Promise<number>;
+    /**
+     * Save current state for persistence
+     */
+    saveState(): any;
+    /**
+     * Load state from saved data
+     */
+    loadState(state: any): void;
+    /**
+     * Reset neural mesh to initial state
+     */
+    reset(): void;
+    /**
+     * Health check for neural mesh
+     */
+    healthCheck(): {
+        healthy: boolean;
+        issues: string[];
+    };
+    /**
+     * Cleanup resources
+     */
+    cleanup(): void;
+    /**
+     * Process a pattern through the neural mesh (optional)
+     */
+    processPattern(pattern: any): Promise<any>;
+    /**
+     * Learn from data (optional)
+     */
+    learn(data: any): Promise<void>;
+    /**
+     * Get performance metrics (optional)
+     */
+    getPerformanceMetrics(): any;
 }
 //# sourceMappingURL=NeuralMesh.d.ts.map

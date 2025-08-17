@@ -4,6 +4,8 @@ import { BehaviorPredictor } from '../behavioral/core/BehaviorPredictor'
 import { GeneticMutator } from './GeneticMutator'
 import { OrganismState, BehaviorPattern, Mutation, PageContext, ActionPrediction } from '../shared/types/organism'
 import { errorHandler } from '../core/utils/ErrorHandler'
+import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export class NeuralCoreEngine {
   private organisms: Map<string, OrganismState>
@@ -27,7 +29,7 @@ export class NeuralCoreEngine {
       // Charger les organismes depuis la mémoire (utiliser la méthode existante)
       // Note: Comme retrieveOrganisms n'existe pas, on va créer une logique alternative
       this.initialized = true
-      console.log(`🧠 NeuralCoreEngine initialisé`)
+      SecureLogger.info(`🧠 NeuralCoreEngine initialisé`)
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'initialize', error, 'warning')
       this.initialized = true // Continue même en cas d'erreur
@@ -48,14 +50,15 @@ export class NeuralCoreEngine {
         energy: 1.0,
         consciousness: 0.5,
         traits: {
-          curiosity: 0.4 + Math.random() * 0.2,      // 0.4-0.6
-          focus: 0.4 + Math.random() * 0.2,          // 0.4-0.6
-          rhythm: 0.4 + Math.random() * 0.2,         // 0.4-0.6
-          empathy: 0.4 + Math.random() * 0.2,        // 0.4-0.6
-          creativity: 0.4 + Math.random() * 0.2,     // 0.4-0.6
-          energy: 0.4 + Math.random() * 0.2,         // 0.4-0.6
-          harmony: 0.4 + Math.random() * 0.2,        // 0.4-0.6
-          wisdom: 0.1 + Math.random() * 0.1          // 0.1-0.2 (plus rare)
+          curiosity: 0.4 + SecureRandom.random() * 0.2,      // 0.4-0.6
+          focus: 0.4 + SecureRandom.random() * 0.2,          // 0.4-0.6
+          rhythm: 0.4 + SecureRandom.random() * 0.2,         // 0.4-0.6
+          empathy: 0.4 + SecureRandom.random() * 0.2,        // 0.4-0.6
+          creativity: 0.4 + SecureRandom.random() * 0.2,     // 0.4-0.6
+          resilience: 0.4 + SecureRandom.random() * 0.2,     // 0.4-0.6
+          adaptability: 0.4 + SecureRandom.random() * 0.2,   // 0.4-0.6
+          memory: 0.4 + SecureRandom.random() * 0.2,         // 0.4-0.6
+          intuition: 0.1 + SecureRandom.random() * 0.1       // 0.1-0.2 (plus rare)
         },
         mutations: [],
         socialConnections: [],
@@ -69,7 +72,7 @@ export class NeuralCoreEngine {
       this.organisms.set(userId, organism)
       await this.memoryBank.saveOrganismState(userId, organism)
 
-      console.log(`🌱 Nouvel organisme créé pour ${userId}`)
+      SecureLogger.info(`🌱 Nouvel organisme créé pour ${userId}`)
       return organism
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'createOrganism', error, 'error')
@@ -116,7 +119,7 @@ export class NeuralCoreEngine {
       }
 
       // Mutation aléatoire occasionnelle (1% de chance)
-      if (Math.random() < 0.01) {
+      if (SecureRandom.random() < 0.01) {
         const randomMutation = this.mutator.generateMutation('energy', 'random')
         if (randomMutation) {
           mutations.push(randomMutation)
@@ -130,13 +133,16 @@ export class NeuralCoreEngine {
 
       // Mettre à jour l'organisme
       organism.lastMutation = Date.now()
+      if (!organism.mutations) {
+        organism.mutations = [];
+      }
       organism.mutations.push(...mutations)
       this.organisms.set(id, organism)
       
       // Sauvegarder
       await this.memoryBank.saveOrganismState(id, organism)
 
-      console.log(`🧬 ${mutations.length} mutations appliquées à l'organisme ${id}`)
+      SecureLogger.info(`🧬 ${mutations.length} mutations appliquées à l'organisme ${id}`)
       return mutations
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'evolveOrganism', error, 'error')
@@ -162,7 +168,7 @@ export class NeuralCoreEngine {
         reasoning: `Basé sur les traits: curiosité=${organism.traits.curiosity.toFixed(2)}, focus=${organism.traits.focus.toFixed(2)}`
       }
 
-      console.log(`🔮 Prédiction générée pour ${id}: ${enrichedPrediction.action}`)
+      SecureLogger.info(`🔮 Prédiction générée pour ${id}: ${enrichedPrediction.action}`)
       return enrichedPrediction
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'predictNextAction', error, 'error')
@@ -213,7 +219,8 @@ export class NeuralCoreEngine {
   // @ts-expect-error Paramètre réservé pour usage futur
   private calculateConfidence(organism: OrganismState, context: PageContext): number {
     // Base confidence sur l'expérience (nombre de mutations = expérience)
-    const experienceBonus = Math.min(0.3, organism.mutations.length * 0.01)
+    const mutationsLength = organism.mutations ? organism.mutations.length : 0;
+    const experienceBonus = Math.min(0.3, mutationsLength * 0.01)
     
     // Bonus pour les traits pertinents
     const focusBonus = organism.traits.focus * 0.2

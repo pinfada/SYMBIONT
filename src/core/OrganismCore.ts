@@ -1,584 +1,485 @@
+/**
+ * OrganismCore refactorisé - Architecture hexagonale
+ * Version simplifiée utilisant des services spécialisés
+ */
+
 import { OrganismState, OrganismTraits } from '../shared/types/organism';
-import { INeuralMesh, PerformanceMetrics } from './interfaces/INeuralMesh';
 import { IOrganismCore, OrganismJSON, ShaderParameters } from './interfaces/IOrganismCore';
-import { DNAInterpreter, ValidationResult } from '../types/core';
 import { errorHandler } from './utils/ErrorHandler';
-import { MutationBatcher, BatchedMutation } from './utils/MutationBatcher';
+import { TraitService, TraitUpdateEvent } from './services/TraitService';
+import { EnergyService, EnergyEvent } from './services/EnergyService';
+import { NeuralService, NeuralProcessingResult } from './services/NeuralService';
+import { INeuralMesh } from './interfaces/INeuralMesh';
+import RealMetricsService from './services/RealMetricsService';
+import FeatureFlagService from './services/FeatureFlagService';
+import { generateSecureUUID } from '../shared/utils/uuid';
+import { SecureRandom } from '../shared/utils/secureRandom';
+
+export interface OrganismDependencies {
+  neuralMesh: INeuralMesh;
+  logger?: { debug: Function; info: Function; error: Function };
+}
 
 export class OrganismCore implements IOrganismCore {
-  private mesh: INeuralMesh;
-  private dna: string;
-  // @ts-expect-error Interpréteur réservé pour usage futur
-  private interpreter: DNAInterpreter | null = null;
-  private traits: OrganismTraits;
-  private energy: number;
-  private health: number;
-  private lastMutation: number;
-  private metabolismRate: number;
-  private mutationBatcher: MutationBatcher;
-  private logger?: { debug: Function; info: Function; error: Function }; // Logger optionnel
-  private id: string = Math.random().toString(36).substr(2, 9); // ID unique
-  private neuralMesh?: INeuralMesh; // Référence pour boot
-  // @ts-expect-error État réservé pour usage futur
-  private isBooted: boolean = false; // État boot
+  private readonly id: string;
+  private readonly dna: string;
+  private health: number = 100;
+  private lastMutation: number = Date.now();
+  
+  // Services spécialisés (injection de dépendances)
+  private readonly traitService: TraitService;
+  private readonly energyService: EnergyService;
+  private readonly neuralService: NeuralService;
+  private readonly metricsService: RealMetricsService;
+  // @ts-expect-error Service réservé pour usage futur
+  private readonly featureFlags: FeatureFlagService;
+  private readonly logger: { debug: Function; info: Function; error: Function } | undefined;
 
-  constructor(dna: string, traits?: Partial<OrganismTraits>, createMesh?: () => INeuralMesh) {
-    // Validation d'entrée stricte avec ErrorHandler
-    const validation = this.validateInput(dna, traits);
+  constructor(
+    dna: string, 
+    initialTraits?: Partial<OrganismTraits>,
+    dependencies?: OrganismDependencies
+  ) {
+    // Validation d'entrée
+    const validation = this.validateInput(dna, initialTraits);
     if (!validation.isValid) {
       throw new Error(`OrganismCore creation failed: ${validation.errors.join(', ')}`);
     }
 
+    this.id = generateSecureUUID();
     this.dna = dna;
+    this.logger = dependencies?.logger;
+
+    // Initialisation des services de base
+    this.metricsService = RealMetricsService.getInstance();
+    this.featureFlags = FeatureFlagService.getInstance();
     
-    // Utilisation de l'injection de dépendances
-    if (createMesh) {
-      this.mesh = createMesh();
-      this.neuralMesh = this.mesh; // Initialise la référence pour boot()
+    // Initialisation des services métier
+    this.traitService = new TraitService(initialTraits);
+    this.energyService = new EnergyService(100);
+    
+    // Service neural nécessite une dépendance externe
+    if (dependencies?.neuralMesh) {
+      this.neuralService = new NeuralService(dependencies.neuralMesh);
     } else {
-      // Fallback pour compatibilité - import dynamique
+      // Fallback pour compatibilité
       const { NeuralMesh } = require('./NeuralMesh');
-      this.mesh = new NeuralMesh();
-      this.neuralMesh = this.mesh; // Initialise la référence pour boot()
+      this.neuralService = new NeuralService(new NeuralMesh());
     }
-    
-    this.traits = {
-      curiosity: 0.5,
-      focus: 0.5,
-      rhythm: 0.5,
-      empathy: 0.5,
-      creativity: 0.5,
-      energy: 0.5,
-      harmony: 0.5,
-      wisdom: 0.1,
-      ...traits
-    };
-    this.energy = 1.0;
-    this.health = 1.0;
-    this.lastMutation = Date.now();
-    this.metabolismRate = 0.01;
-    
-    // Initialise le système de batching des mutations
-    this.mutationBatcher = new MutationBatcher(
-      this.processBatchedMutation.bind(this),
-      {
-        debounceMs: 100, // 100ms debounce pour les mutations
-        maxBatchSize: 5,
-        maxWaitTimeMs: 500,
-        combinationStrategy: 'weighted'
+
+    this.setupServiceListeners();
+    this.logger?.debug('OrganismCore initialized', { id: this.id, dna: this.dna });
+  }
+
+  /**
+   * Configuration des listeners entre services
+   */
+  private setupServiceListeners(): void {
+    // Écoute les changements de traits pour ajuster l'énergie
+    this.traitService.addTraitChangeListener((event: TraitUpdateEvent) => {
+      this.onTraitChanged(event);
+    });
+
+    // Écoute les événements d'énergie pour log
+    this.energyService.addEnergyListener((event: EnergyEvent) => {
+      if (event.type === 'consumption' && event.energyAfter < 10) {
+        this.logger?.debug('Low energy warning', { energy: event.energyAfter });
       }
-    );
-    
-    this.initializeNeuralNetwork().catch(error => {
-      errorHandler.logSimpleError('OrganismCore', 'constructor', error, 'error');
     });
   }
 
   /**
-   * Valide les paramètres d'entrée avec ErrorHandler
+   * Gestionnaire de changement de traits
    */
-  private validateInput(dna: string, traits?: Partial<OrganismTraits>): ValidationResult {
-    // Validation DNA - vérification de base
-    const dnaValidation = errorHandler.validateType(
-      dna, 'string', { required: true, min: 10, pattern: /^[ATCG]+$/i }, 
-      'dna', 'OrganismCore', 'validateInput'
-    );
-    
-    if (!dnaValidation.isValid) {
-      return dnaValidation;
+  private onTraitChanged(event: TraitUpdateEvent): void {
+    // Ajuste l'efficacité métabolique basée sur les traits
+    const traits = this.traitService.getAllTraits();
+    const efficiencyFactor = (traits.resilience + traits.adaptability) / 2;
+    this.energyService.setEfficiency(efficiencyFactor);
+
+    this.logger?.debug('Trait changed, metabolism adjusted', { 
+      trait: event.traitName, 
+      newValue: event.newValue,
+      efficiency: efficiencyFactor 
+    });
+  }
+
+  /**
+   * Validation des entrées
+   */
+  private validateInput(dna: string, traits?: Partial<OrganismTraits>): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!dna || typeof dna !== 'string') {
+      errors.push('DNA must be a non-empty string');
     }
 
-    // Validation supplémentaire DNA - caractères valides seulement
-    if (!/^[ATCG]+$/i.test(dna)) {
-      return {
-        isValid: false,
-        errors: ['DNA must contain only valid nucleotide characters (A, T, C, G)'],
-        warnings: [],
-        context: {
-          component: 'OrganismCore',
-          method: 'validateInput',
-          timestamp: Date.now(),
-          severity: 'error',
-          details: { fieldName: 'dna', invalidCharacters: dna.replace(/[ATCG]/gi, '') }
-        }
-      };
+    if (dna && dna.length < 10) {
+      errors.push('DNA must be at least 10 characters long');
     }
 
-    // Validation traits
     if (traits) {
-      for (const [key, value] of Object.entries(traits)) {
-        const traitValidation = errorHandler.validateType(
-          value, 'number', { required: true, min: 0, max: 1 },
-          `trait.${key}`, 'OrganismCore', 'validateInput'
-        );
-        
-        if (!traitValidation.isValid) {
-          return traitValidation;
+      Object.entries(traits).forEach(([key, value]) => {
+        if (typeof value !== 'number' || value < 0 || value > 1) {
+          errors.push(`Trait ${key} must be a number between 0 and 1`);
         }
-      }
+      });
     }
 
-    return { isValid: true, errors: [], warnings: [] };
+    return { isValid: errors.length === 0, errors };
   }
 
   /**
-   * Initialise le réseau neuronal avec gestion d'erreurs robuste
+   * Génère un ID unique
    */
-  private async initializeNeuralNetwork(): Promise<void> {
-    return errorHandler.withRetry(
-      async () => {
-        await this.mesh.initialize();
-        
-        // Configure network based on traits
-        this.mesh.stimulate('sensory_input', this.traits.curiosity);
-        this.mesh.stimulate('memory_input', this.traits.focus);
-      },
-      {
-        maxRetries: 3,
-        backoffMs: 100,
-        // @ts-expect-error Paramètre réservé pour usage futur
-        shouldRetry: (error, attempt) => attempt < 3
-      },
-      { component: 'OrganismCore', method: 'initializeNeuralNetwork' }
-    );
+  // generateId() supprimé - utilise generateSecureUUID() maintenant
+
+  // =============================================================================
+  // API PUBLIQUE - Interface IOrganismCore
+  // =============================================================================
+
+  getId(): string {
+    return this.id;
+  }
+
+  getDNA(): string {
+    return this.dna;
+  }
+
+  getTraits(): OrganismTraits {
+    return this.traitService.getAllTraits();
+  }
+
+  updateTrait(name: keyof OrganismTraits, value: number): void {
+    if (!this.energyService.consumeEnergy(1, `trait_update_${name}`)) {
+      throw new Error('Insufficient energy to update trait');
+    }
+
+    this.traitService.updateTrait(name, value, 'manual_update');
+    this.logger?.debug('Trait updated', { trait: name, value });
+  }
+
+  getEnergyLevel(): number {
+    return this.energyService.getEnergyLevel();
+  }
+
+  getHealth(): number {
+    return this.health;
   }
 
   /**
-   * Met à jour l'état de l'organisme (appelé périodiquement)
+   * Évolution de l'organisme basée sur un stimulus
    */
-  public update(deltaTime: number = 1): void {
-    errorHandler.safeExecute(
-      () => {
-        // Validation des paramètres
-        const validation = errorHandler.validateType(
-          deltaTime, 'number', { required: true, min: 0.001, max: 1000 },
-          'deltaTime', 'OrganismCore', 'update'
-        );
-        
-        if (!validation.isValid) {
-          throw new Error(`Invalid deltaTime: ${validation.errors.join(', ')}`);
-        }
+  async evolve(stimulus: any): Promise<void> {
+    const energyCost = 5;
+    if (!this.energyService.consumeEnergy(energyCost, 'evolution')) {
+      this.logger?.debug('Evolution skipped: insufficient energy');
+      return;
+    }
 
-        // Neural processing
-        this.mesh.propagate();
-        
-        // Energy management
-        this.updateEnergy(deltaTime);
-        
-        // Health management
-        this.updateHealth();
-        
-        // Trait evolution based on neural activity
-        this.evolveTraits();
-      },
-      undefined, // No fallback for update
-      { component: 'OrganismCore', method: 'update' }
-    );
-  }
+    try {
+      const currentTraits = this.traitService.getAllTraits();
+      const result: NeuralProcessingResult = await this.neuralService.processStimulus(stimulus, currentTraits);
 
-  /**
-   * Met à jour l'énergie basée sur l'activité neurale
-   */
-  private updateEnergy(deltaTime: number): void {
-    errorHandler.safeExecute(
-      () => {
-        const neuralActivity = this.mesh.getNeuralActivity();
-        const energyCost = neuralActivity * this.metabolismRate * deltaTime;
-        
-        this.energy = Math.max(0, Math.min(1, this.energy - energyCost));
-        
-        // Low energy affects health
-        if (this.energy < 0.2) {
-          this.health *= 0.999;
-        }
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'updateEnergy' }
-    );
-  }
-
-  /**
-   * Met à jour la santé basée sur les conditions actuelles
-   */
-  private updateHealth(): void {
-    errorHandler.safeExecute(
-      () => {
-        // Health recovery when energy is high
-        if (this.energy > 0.8) {
-          this.health = Math.min(1, this.health + 0.001);
-        }
-        
-        // Ensure health doesn't drop below 0
-        this.health = Math.max(0, this.health);
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'updateHealth' }
-    );
-  }
-
-  /**
-   * Fait évoluer les traits basés sur l'activité neurale
-   */
-  private evolveTraits(): void {
-    errorHandler.safeExecute(
-      () => {
-        const activity = this.mesh.getNeuralActivity();
-        const connectionStrength = this.mesh.getConnectionStrength();
-        
-        // Subtle trait evolution
-        const evolutionRate = 0.001;
-        
-        this.traits.focus += (activity - 0.5) * evolutionRate;
-        this.traits.creativity += (connectionStrength - 0.5) * evolutionRate;
-        
-        // Clamp traits to valid range
-        Object.keys(this.traits).forEach(key => {
-          const typedKey = key as keyof OrganismTraits;
-          this.traits[typedKey] = Math.max(0, Math.min(1, this.traits[typedKey]));
-        });
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'evolveTraits' }
-    );
-  }
-
-  /**
-   * Stimule le réseau (ex : perception sensorielle)
-   */
-  public stimulate(inputId: string, value: number): void {
-    errorHandler.safeExecute(
-      () => {
-        // Validation des paramètres avec ErrorHandler
-        const inputValidation = errorHandler.validateType(
-          inputId, 'string', { required: true },
-          'inputId', 'OrganismCore', 'stimulate'
-        );
-        
-        const valueValidation = errorHandler.validateType(
-          value, 'number', { required: true },
-          'value', 'OrganismCore', 'stimulate'
-        );
-
-        if (!inputValidation.isValid || !valueValidation.isValid) {
-          throw new Error('Invalid stimulate parameters');
-        }
-
-        this.mesh.stimulate(inputId, value);
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'stimulate' }
-    );
-  }
-
-  /**
-   * Traite une mutation batchée
-   */
-  private async processBatchedMutation(batch: BatchedMutation): Promise<void> {
-    return errorHandler.safeExecuteAsync(
-      async () => {
-        // Applique la mutation au réseau neuronal
-        await this.mesh.mutate(batch.combinedRate);
-        
-        // Applique des mutations aux traits basées sur le batch
-        const traitMutationRate = batch.combinedRate * 0.5; // Moins agressif pour les traits
-        
-        Object.keys(this.traits).forEach(key => {
-          if (Math.random() < traitMutationRate) {
-            const mutation = (Math.random() - 0.5) * 0.1 * batch.combinedRate;
-            const typedKey = key as keyof OrganismTraits;
-            this.traits[typedKey] = Math.max(0, Math.min(1, 
-              this.traits[typedKey] + mutation));
-          }
-        });
-        
+      if (result.success && Object.keys(result.adaptations).length > 0) {
+        this.traitService.updateTraits(result.adaptations, 'evolution');
         this.lastMutation = Date.now();
         
-        errorHandler.logSimpleError('OrganismCore', 'processBatchedMutation', 
-          `Processed batched mutation: rate=${batch.combinedRate.toFixed(3)}, requests=${batch.requestCount}`, 'info');
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'processBatchedMutation' }
-    );
-  }
-
-  /**
-   * Applique une mutation (neural et potentiellement ADN) - Version optimisée avec batching
-   */
-  public mutate(rate: number = 0.05): void {
-    errorHandler.safeExecute(
-      () => {
-        // Validation du taux de mutation
-        const validation = errorHandler.validateType(
-          rate, 'number', { required: true, min: 0, max: 1 },
-          'rate', 'OrganismCore', 'mutate'
-        );
-        
-        if (!validation.isValid) {
-          throw new Error(`Invalid mutation rate: ${validation.errors.join(', ')}`);
-        }
-
-        // Détermine la priorité basée sur le taux de mutation
-        let priority: 'low' | 'normal' | 'high' = 'normal';
-        if (rate > 0.3) priority = 'high';
-        else if (rate < 0.01) priority = 'low';
-
-        // Ajoute la mutation au batch au lieu de l'exécuter immédiatement
-        const mutationId = this.mutationBatcher.addMutation(rate, priority);
-        
-        errorHandler.logSimpleError('OrganismCore', 'mutate', 
-          `Queued mutation: id=${mutationId}, rate=${rate}, priority=${priority}`, 'debug');
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'mutate' }
-    );
-  }
-
-  /**
-   * Force l'application immédiate de toutes les mutations en attente
-   */
-  public async flushMutations(): Promise<void> {
-    return errorHandler.safeExecuteAsync(
-      async () => {
-        await this.mutationBatcher.flushBatch();
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'flushMutations' }
-    );
-  }
-
-  /**
-   * Nourrit l'organisme pour restaurer l'énergie
-   */
-  public feed(amount: number = 0.3): void {
-    errorHandler.safeExecute(
-      () => {
-        const validation = errorHandler.validateType(
-          amount, 'number', { required: true, min: 0, max: 1 },
-          'amount', 'OrganismCore', 'feed'
-        );
-        
-        if (!validation.isValid) {
-          throw new Error(`Invalid feed amount: ${validation.errors.join(', ')}`);
-        }
-        
-        this.energy = Math.min(1, this.energy + amount);
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'feed' }
-    );
-  }
-
-  /**
-   * Récupère les traits courants
-   */
-  public getTraits(): OrganismTraits {
-    return { ...this.traits };
-  }
-
-  /**
-   * Définit de nouveaux traits
-   */
-  public setTraits(traits: Partial<OrganismTraits>): void {
-    errorHandler.safeExecute(
-      () => {
-        const validation = this.validateInput(this.dna, traits);
-        if (!validation.isValid) {
-          throw new Error(`Invalid traits: ${validation.errors.join(', ')}`);
-        }
-
-        // On fusionne en s'assurant que chaque champ est bien un nombre
-        Object.keys(traits).forEach(key => {
-          const value = traits[key as keyof OrganismTraits];
-          if (typeof value === 'number' && !isNaN(value)) {
-            this.traits[key as keyof OrganismTraits] = value;
-          }
+        this.logger?.debug('Evolution successful', { 
+          adaptations: result.adaptations,
+          confidence: result.confidence 
         });
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'setTraits' }
-    );
+      }
+    } catch (error) {
+      this.logger?.error('Evolution failed', error);
+      errorHandler.logSimpleError('OrganismCore', 'evolve', error, 'error');
+    }
   }
 
   /**
-   * Récupère l'état global de l'organisme
+   * Apprentissage à partir de données comportementales
    */
-  public getState(): OrganismState {
+  async learn(behaviorData: any): Promise<void> {
+    const energyCost = 2;
+    if (!this.energyService.consumeEnergy(energyCost, 'learning')) {
+      return;
+    }
+
+    const success = await this.neuralService.learn(behaviorData);
+    if (success) {
+      // Améliore légèrement la mémoire lors de l'apprentissage
+      const currentMemory = this.traitService.getTrait('memory');
+      this.traitService.updateTrait('memory', currentMemory + 0.01, 'learning');
+    }
+
+    this.logger?.debug('Learning completed', { success, data: behaviorData });
+  }
+
+  /**
+   * Traitement d'un stimulus simple
+   */
+  processStimulus(stimulus: any): void {
+    const energyCost = 1;
+    if (!this.energyService.consumeEnergy(energyCost, 'stimulus_processing')) {
+      return;
+    }
+
+    // Traitement simplifié en arrière-plan
+    this.neuralService.queuePattern({
+      id: `pattern_${Date.now()}`,
+      type: 'behavioral',
+      data: stimulus,
+      timestamp: Date.now(),
+      confidence: 0.8
+    });
+
+    this.logger?.debug('Stimulus processed', { stimulus });
+  }
+
+  /**
+   * Obtient l'état complet de l'organisme
+   */
+  getState(): OrganismState {
+    const traits = this.traitService.getAllTraits();
+    const energyStats = this.energyService.getEnergyStats();
+
     return {
-      id: 'core',
-      generation: 1,
+      id: this.id,
+      traits,
+      energy: energyStats.current,
+      maxEnergy: energyStats.max,
       health: this.health,
-      energy: this.energy,
-      traits: this.getTraits(),
-      visualDNA: this.dna,
-      lastMutation: this.lastMutation,
-      mutations: [],
-      createdAt: Date.now(),
       dna: this.dna,
-      birthTime: Date.now(),
-      socialConnections: [],
-      memoryFragments: []
+      lastMutation: this.lastMutation,
+      balance: this.traitService.calculateBalance(),
+      metabolismRate: energyStats.metabolismRate,
+      age: Date.now() - parseInt(this.id.split('_')[1]) // Approximation basée sur l'ID
     };
   }
 
   /**
-   * Récupère les métriques de performance - Version étendue avec mutations
+   * Génère les paramètres de shader pour le rendu visuel
    */
-  public async getPerformanceMetrics(): Promise<PerformanceMetrics & { 
-    neuralActivity: number;
-    connectionStrength: number;
-    mutationStats: any;
-  }> {
-    try {
-      const baseMetrics = await this.measurePerformance();
-      
-      return {
-        ...baseMetrics,
-        neuralActivity: this.calculateNeuralActivity(),
-        connectionStrength: this.calculateConnectionStrength(),
-        mutationStats: this.mutationBatcher.getStatistics()
-      };
-    } catch (err) {
-      this.logger?.error('Failed to get performance metrics', { organismId: this.id, err });
-      
-      return {
-        cpu: 0,
-        memory: 0,
-        neuralActivity: 0,
-        connectionStrength: 0,
-        mutationStats: this.mutationBatcher.getStatistics()
-      };
-    }
+  generateShaderParameters(): ShaderParameters {
+    const traits = this.traitService.getAllTraits();
+    
+    return {
+      energy: this.energyService.getEnergyPercentage() / 100,
+      health: this.health / 100,
+      neuralActivity: this.neuralService.getNeuralActivity(),
+      creativity: traits.creativity,
+      focus: traits.focus,
+      time: Date.now() / 1000,
+      colorPrimary: [traits.creativity, traits.empathy, traits.intuition],
+      colorSecondary: [traits.focus, traits.resilience, traits.adaptability],
+      morphology: traits.adaptability,
+      complexity: traits.creativity * traits.memory
+    };
   }
 
   /**
-   * Export JSON typé pour debug/visualisation
+   * Sérialisation pour sauvegarde
    */
-  public toJSON(): OrganismJSON {
+  toJSON(): OrganismJSON {
     return {
-      mesh: this.mesh.toJSON(),
-      traits: this.traits,
-      energy: this.energy,
-      health: this.health,
+      mesh: {},
       dna: this.dna,
+      health: this.health,
+      lastMutation: this.lastMutation,
+      traits: this.traitService.toJSON(),
+      energy: this.energyService.toJSON(),
+      neural: this.neuralService.saveState(),
       timestamp: Date.now()
     };
   }
 
   /**
-   * Récupère les paramètres shaders courants (pour WebGL)
+   * Restauration depuis JSON
    */
-  public getShaderParameters(): ShaderParameters {
-    // Return shader parameters based on current organism state
-    return {
-      energy: this.energy,
-      health: this.health,
-      neuralActivity: this.mesh.getNeuralActivity(),
-      creativity: this.traits.creativity,
-      focus: this.traits.focus,
-      time: Date.now() / 1000
-    };
+  fromJSON(data: OrganismJSON): void {
+    if (data.traits) {
+      this.traitService.fromJSON(data.traits);
+    }
+    
+    if (data.energy) {
+      this.energyService.fromJSON(data.energy);
+    }
+    
+    if (data.neural) {
+      this.neuralService.loadState(data.neural);
+    }
+
+    this.health = data.health || 100;
+    this.lastMutation = data.lastMutation || Date.now();
+
+    this.logger?.debug('State restored from JSON', { id: this.id });
   }
 
   /**
-   * Initialise l'organisme
+   * Nettoyage et libération des ressources
    */
-  public async boot(): Promise<void> {
+  cleanup(): void {
+    this.energyService.destroy();
+    this.traitService.cleanup();
+    this.neuralService.cleanup();
+    
+    this.logger?.debug('OrganismCore cleaned up', { id: this.id });
+  }
+
+  /**
+   * Vérification de l'état de santé
+   */
+  healthCheck(): { healthy: boolean; issues: string[] } {
+    const issues: string[] = [];
+
+    if (this.health < 20) {
+      issues.push('Low health');
+    }
+
+    if (this.energyService.getEnergyLevel() < 10) {
+      issues.push('Low energy');
+    }
+
+    const neuralHealth = this.neuralService.healthCheck();
+    if (!neuralHealth.healthy) {
+      issues.push(...neuralHealth.issues);
+    }
+
+    return {
+      healthy: issues.length === 0,
+      issues
+    };
+  }
+
+  // =============================================================================
+  // MÉTHODES MANQUANTES POUR IOrganismCore
+  // =============================================================================
+
+  /**
+   * Boot the organism
+   */
+  async boot(): Promise<void> {
+    // Initialize neural mesh if needed
     try {
-      this.logger?.debug('Starting organism boot sequence', this.id);
-      
-      // Initialize neural mesh
-      if (!this.neuralMesh) {
-        throw new Error('Neural mesh not provided');
-      }
-      
-      // Add basic neural network structure
-      this.neuralMesh.addNode('sensory_input', 'input');
-      this.neuralMesh.addNode('memory_input', 'input');
-      this.neuralMesh.addNode('decision_output', 'output');
-      this.neuralMesh.addNode('emotion_output', 'output');
-      
-      // Connect inputs to outputs
-      this.neuralMesh.addConnection('sensory_input', 'decision_output', 0.5);
-      this.neuralMesh.addConnection('memory_input', 'emotion_output', 0.3);
-      
-      this.isBooted = true;
-      this.logger?.info('Organism boot completed successfully', this.id);
+      await this.neuralService.initialize();
+      this.logger?.debug('Organism booted successfully', { id: this.id });
     } catch (error) {
-      this.logger?.error('Failed to boot organism', { organismId: this.id, error });
-      errorHandler.logSimpleError('OrganismCore', 'boot', error instanceof Error ? error.message : 'Boot failed', 'error');
+      this.logger?.error('Failed to boot organism', { id: this.id, error });
       throw error;
     }
   }
 
   /**
-   * Met l'organisme en hibernation - Version étendue avec nettoyage du batcher
+   * Hibernate the organism
    */
-  public async hibernate(): Promise<void> {
-    return errorHandler.safeExecuteAsync(
-      async () => {
-        // Traite les mutations en attente avant hibernation
-        await this.mutationBatcher.flushBatch();
-        
-        // Nettoie le batcher
-        this.mutationBatcher.dispose();
-        
-        await this.mesh.suspend();
-        
-        console.log('Organism core hibernating...');
-      },
-      undefined,
-      { component: 'OrganismCore', method: 'hibernate' }
-    );
-  }
-
-  /**
-   * Mesure les performances de base
-   */
-  private async measurePerformance(): Promise<PerformanceMetrics> {
+  async hibernate(): Promise<void> {
     try {
-      const cpuUsage = await this.mesh.getCPUUsage();
-      const memoryUsage = await this.mesh.getMemoryUsage();
-      
-      return {
-        cpu: cpuUsage,
-        memory: memoryUsage,
-        neuralActivity: this.calculateNeuralActivity(),
-        connectionStrength: this.calculateConnectionStrength()
-      };
+      this.energyService.setEfficiency(0.1); // Reduce energy consumption
+      await this.neuralService.suspend();
+      this.logger?.debug('Organism hibernated', { id: this.id });
     } catch (error) {
-      return {
-        cpu: 0,
-        memory: 0,
-        neuralActivity: 0,
-        connectionStrength: 0
-      };
+      this.logger?.error('Failed to hibernate organism', { id: this.id, error });
+      throw error;
     }
   }
 
   /**
-   * Calcule l'activité neurale
+   * Update organism with delta time
    */
-  private calculateNeuralActivity(): number {
-    try {
-      return this.mesh.getNeuralActivity();
-    } catch (error) {
-      return 0;
+  update(deltaTime: number = 16.67): void {
+    // Standard frame time processing
+    const timeFactor = deltaTime / 16.67; // Normalize to 60fps
+    
+    // Update energy decay
+    this.energyService.consumeEnergy(0.1 * timeFactor, 'metabolism');
+    
+    // Update neural processing
+    this.neuralService.update(deltaTime);
+    
+    // Health regeneration if high energy
+    if (this.energyService.getEnergyLevel() > 80) {
+      this.health = Math.min(100, this.health + (0.1 * timeFactor));
     }
   }
 
   /**
-   * Calcule la force de connexion
+   * Stimulate organism input
    */
-  private calculateConnectionStrength(): number {
-    try {
-      return this.mesh.getConnectionStrength();
-    } catch (error) {
-      return 0;
+  stimulate(inputId: string, value: number): void {
+    this.neuralService.stimulate(inputId, value);
+    
+    // Consume energy for processing
+    this.energyService.consumeEnergy(0.5, `stimulation_${inputId}`);
+  }
+
+  /**
+   * Mutate organism with given rate
+   */
+  mutate(rate: number = 0.01): void {
+    const traits = this.traitService.getAllTraits();
+    const mutations: { [key: string]: number } = {};
+    
+    // Mutate each trait based on rate
+    Object.keys(traits).forEach(traitName => {
+      if (SecureRandom.random() < rate) {
+        const currentValue = traits[traitName as keyof OrganismTraits];
+        const mutation = (SecureRandom.random() - 0.5) * 0.1; // ±5% mutation
+        const newValue = Math.max(0, Math.min(1, currentValue + mutation));
+        mutations[traitName] = newValue;
+      }
+    });
+    
+    // Apply mutations
+    if (Object.keys(mutations).length > 0) {
+      this.traitService.updateTraits(mutations as Partial<OrganismTraits>, 'mutation');
+      this.lastMutation = Date.now();
+      this.logger?.debug('Mutation applied', { id: this.id, mutations });
     }
   }
 
-  // @ts-expect-error Méthode réservée pour usage futur
-  private handleBootError(): void {
-    // Implementation of handleBootError method
+  /**
+   * Feed organism with energy
+   */
+  feed(amount: number = 10): void {
+    this.energyService.addEnergy(amount);
+    this.logger?.debug('Organism fed', { id: this.id, amount });
+  }
+
+  /**
+   * Set traits (partial update)
+   */
+  setTraits(traits: Partial<OrganismTraits>): void {
+    this.traitService.updateTraits(traits, 'external_update');
+  }
+
+  /**
+   * Get performance metrics
+   */
+  async getPerformanceMetrics() {
+    const neuralMetrics = this.neuralService.getPerformanceMetrics();
+    
+    return {
+      cpu: await this.metricsService.getCPUUsage(),
+      memory: await this.metricsService.getMemoryUsage(),
+      neuralActivity: neuralMetrics?.neuralActivity || 0,
+      connectionStrength: neuralMetrics?.connectionStrength || 0
+    };
+  }
+
+  /**
+   * Get shader parameters for WebGL rendering
+   */
+  getShaderParameters(): ShaderParameters {
+    const traits = this.getTraits();
+    const energy = this.energyService.getEnergyLevel();
+    
+    return {
+      energy: energy / 100,
+      health: this.health / 100,
+      neuralActivity: this.neuralService.getNeuralActivity() || 0,
+      creativity: traits.creativity,
+      focus: traits.focus,
+      time: Date.now() / 1000
+    };
   }
 }

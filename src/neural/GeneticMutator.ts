@@ -1,4 +1,5 @@
 import { OrganismState, Mutation } from '../shared/types/organism'
+import { SecureRandom } from '../shared/utils/secureRandom';
 
 export class GeneticMutator {
   private mutationProbability: number;
@@ -23,7 +24,7 @@ export class GeneticMutator {
 
   // Génère une mutation sur un trait ou le DNA
   generateMutation(trait: string, trigger?: any): Mutation {
-    const delta = (Math.random() - 0.5) * 0.2; // variation [-0.1, +0.1]
+    const delta = (SecureRandom.random() - 0.5) * 0.2; // variation [-0.1, +0.1]
     return { trait, delta, reason: trigger || 'genetic' };
   }
 
@@ -32,8 +33,8 @@ export class GeneticMutator {
     if (mutation.trait === 'dna') {
       // Mutation du DNA (remplacement aléatoire d'un caractère)
       const chars = organism.dna.split('');
-      const idx = Math.floor(Math.random() * chars.length);
-      chars[idx] = String.fromCharCode(33 + Math.floor(Math.random() * 94));
+      const idx = Math.floor(SecureRandom.random() * chars.length);
+      chars[idx] = String.fromCharCode(33 + Math.floor(SecureRandom.random() * 94));
       organism.dna = chars.join('');
     } else {
       // Mutation d'un trait

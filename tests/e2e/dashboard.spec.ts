@@ -9,7 +9,7 @@ test.describe('Dashboard SYMBIONT', () => {
   test('Affichage des visualisations et des traits', async ({ page }) => {
     const errors = capturePageErrors(page);
     
-    await page.goto('/popup');
+    await page.goto('file://' + dashboardPath);
     await waitForReactToLoad(page);
     await debugPageState(page);
     
@@ -71,7 +71,7 @@ test.describe('Dashboard SYMBIONT', () => {
   test('Navigation vers les autres sections', async ({ page }) => {
     const errors = capturePageErrors(page);
     
-    await page.goto('/popup');
+    await page.goto('file://' + dashboardPath);
     await waitForReactToLoad(page);
     await debugPageState(page);
     
@@ -110,7 +110,7 @@ test.describe('Dashboard SYMBIONT', () => {
   test('Vérification de la stabilité après interactions', async ({ page }) => {
     const errors = capturePageErrors(page);
     
-    await page.goto('/popup');
+    await page.goto('file://' + dashboardPath);
     await waitForReactToLoad(page);
     
     try {

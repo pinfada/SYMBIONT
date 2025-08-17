@@ -1,5 +1,7 @@
 // social/collective-intelligence.ts
 // Intelligence collective émergente (Phase 3)
+import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export class CollectiveIntelligence {
   private proposals: Map<string, any[]> = new Map()
@@ -9,7 +11,7 @@ export class CollectiveIntelligence {
   private onCollectiveMutation: ((mutationId: string) => void) | null = null
 
   constructor(onCollectiveMutation?: (mutationId: string) => void) {
-    this.peerId = 'peer_' + Math.random().toString(36).substr(2, 8)
+    this.peerId = 'peer_' + SecureRandom.random().toString(36).substr(2, 8)
     if (onCollectiveMutation) this.onCollectiveMutation = onCollectiveMutation
   }
 
@@ -21,13 +23,13 @@ export class CollectiveIntelligence {
     this.proposals.get(mutation.id)!.push({ mutation, proposerId })
     // Vote automatiquement pour sa propre proposition
     this.vote(mutation.id, proposerId)
-    console.log(`[Collective] Mutation proposée par ${proposerId}`)
+    SecureLogger.info(`[Collective] Mutation proposée par ${proposerId}`)
   }
 
   vote(mutationId: string, voterId: string) {
     if (!this.votes.has(mutationId)) this.votes.set(mutationId, new Set())
     this.votes.get(mutationId)!.add(voterId)
-    console.log(`[Collective] Vote de ${voterId} pour mutation ${mutationId}`)
+    SecureLogger.info(`[Collective] Vote de ${voterId} pour mutation ${mutationId}`)
   }
 
   aggregateVotes(mutationId: string): number {
@@ -38,11 +40,11 @@ export class CollectiveIntelligence {
     const votes = this.aggregateVotes(mutationId)
     const consensus = votes > Math.max(1, Math.floor(totalPeers / 2))
     if (consensus) {
-      console.log(`[Collective] Mutation collective déclenchée : ${mutationId}`)
+      SecureLogger.info(`[Collective] Mutation collective déclenchée : ${mutationId}`)
       if (this.onCollectiveMutation) this.onCollectiveMutation(mutationId)
       return true
     } else {
-      console.log(`[Collective] Consensus non atteint pour ${mutationId} (${votes}/${totalPeers})`)
+      SecureLogger.info(`[Collective] Consensus non atteint pour ${mutationId} (${votes}/${totalPeers})`)
       return false
     }
   }

@@ -8,7 +8,7 @@ test.describe('Onboarding SYMBIONT', () => {
   test('L\'utilisateur réalise un onboarding interactif complet', async ({ page }) => {
     const errors = capturePageErrors(page);
     
-    await page.goto('/popup');
+    await page.goto('file://' + popupPath);
     await waitForReactToLoad(page);
     await debugPageState(page);
     
@@ -66,7 +66,7 @@ test.describe('Onboarding SYMBIONT', () => {
   test('L\'onboarding est résilient à un rechargement de la popup', async ({ page }) => {
     const errors = capturePageErrors(page);
     
-    await page.goto('/popup');
+    await page.goto('file://' + popupPath);
     await waitForReactToLoad(page);
     
     try {

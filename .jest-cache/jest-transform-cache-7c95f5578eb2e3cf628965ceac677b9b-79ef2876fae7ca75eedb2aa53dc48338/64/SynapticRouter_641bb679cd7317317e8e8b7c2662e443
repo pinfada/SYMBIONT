@@ -1,0 +1,274 @@
+ca32f2ed4917c9f1f8acad9a3575a3b0
+"use strict";
+
+/* istanbul ignore next */
+function cov_1rc86b7d4k() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/neural/SynapticRouter.ts";
+  var hash = "b010ff96e3cfd9f2d5630a4da7e35545e3b06daf";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/neural/SynapticRouter.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 2,
+          column: 0
+        },
+        end: {
+          line: 2,
+          column: 62
+        }
+      },
+      "1": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 32
+        }
+      },
+      "2": {
+        start: {
+          line: 6,
+          column: 8
+        },
+        end: {
+          line: 6,
+          column: 27
+        }
+      },
+      "3": {
+        start: {
+          line: 8,
+          column: 25
+        },
+        end: {
+          line: 8,
+          column: 50
+        }
+      },
+      "4": {
+        start: {
+          line: 9,
+          column: 23
+        },
+        end: {
+          line: 10,
+          column: 33
+        }
+      },
+      "5": {
+        start: {
+          line: 10,
+          column: 8
+        },
+        end: {
+          line: 10,
+          column: 33
+        }
+      },
+      "6": {
+        start: {
+          line: 12,
+          column: 0
+        },
+        end: {
+          line: 12,
+          column: 40
+        }
+      }
+    },
+    fnMap: {
+      "0": {
+        name: "(anonymous_0)",
+        decl: {
+          start: {
+            line: 5,
+            column: 4
+          },
+          end: {
+            line: 5,
+            column: 5
+          }
+        },
+        loc: {
+          start: {
+            line: 5,
+            column: 18
+          },
+          end: {
+            line: 7,
+            column: 5
+          }
+        },
+        line: 5
+      },
+      "1": {
+        name: "(anonymous_1)",
+        decl: {
+          start: {
+            line: 8,
+            column: 4
+          },
+          end: {
+            line: 8,
+            column: 5
+          }
+        },
+        loc: {
+          start: {
+            line: 8,
+            column: 23
+          },
+          end: {
+            line: 8,
+            column: 52
+          }
+        },
+        line: 8
+      },
+      "2": {
+        name: "(anonymous_2)",
+        decl: {
+          start: {
+            line: 9,
+            column: 4
+          },
+          end: {
+            line: 9,
+            column: 5
+          }
+        },
+        loc: {
+          start: {
+            line: 9,
+            column: 21
+          },
+          end: {
+            line: 10,
+            column: 35
+          }
+        },
+        line: 9
+      }
+    },
+    branchMap: {
+      "0": {
+        loc: {
+          start: {
+            line: 9,
+            column: 23
+          },
+          end: {
+            line: 10,
+            column: 33
+          }
+        },
+        type: "if",
+        locations: [{
+          start: {
+            line: 9,
+            column: 23
+          },
+          end: {
+            line: 10,
+            column: 33
+          }
+        }, {
+          start: {
+            line: undefined,
+            column: undefined
+          },
+          end: {
+            line: undefined,
+            column: undefined
+          }
+        }],
+        line: 9
+      }
+    },
+    s: {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+    },
+    f: {
+      "0": 0,
+      "1": 0,
+      "2": 0
+    },
+    b: {
+      "0": [0, 0]
+    },
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/neural/SynapticRouter.ts",
+      mappings: ";;;AAAA,MAAa,cAAc;IAA3B;QACU,aAAQ,GAA6B,EAAE,CAAC;IAGlD,CAAC;IAFC,QAAQ,CAAC,IAAY,EAAE,EAAY,IAAI,IAAI,CAAC,QAAQ,CAAC,IAAI,CAAC,GAAG,EAAE,CAAC,CAAC,CAAC;IAClE,KAAK,CAAC,IAAY,EAAE,GAAQ,IAAI,IAAI,IAAI,CAAC,QAAQ,CAAC,IAAI,CAAC;QAAE,IAAI,CAAC,QAAQ,CAAC,IAAI,CAAC,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC;CACrF;AAJD,wCAIC",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/neural/SynapticRouter.ts"],
+      sourcesContent: ["export class SynapticRouter {\r\n  private handlers: Record<string, Function> = {};\r\n  register(name: string, fn: Function) { this.handlers[name] = fn; }\r\n  route(name: string, msg: any) { if (this.handlers[name]) this.handlers[name](msg); }\r\n} "],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "b010ff96e3cfd9f2d5630a4da7e35545e3b06daf"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_1rc86b7d4k = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_1rc86b7d4k();
+cov_1rc86b7d4k().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/* istanbul ignore next */
+cov_1rc86b7d4k().s[1]++;
+exports.SynapticRouter = void 0;
+class SynapticRouter {
+  constructor() {
+    /* istanbul ignore next */
+    cov_1rc86b7d4k().f[0]++;
+    cov_1rc86b7d4k().s[2]++;
+    this.handlers = {};
+  }
+  register(name, fn) {
+    /* istanbul ignore next */
+    cov_1rc86b7d4k().f[1]++;
+    cov_1rc86b7d4k().s[3]++;
+    this.handlers[name] = fn;
+  }
+  route(name, msg) {
+    /* istanbul ignore next */
+    cov_1rc86b7d4k().f[2]++;
+    cov_1rc86b7d4k().s[4]++;
+    if (this.handlers[name]) {
+      /* istanbul ignore next */
+      cov_1rc86b7d4k().b[0][0]++;
+      cov_1rc86b7d4k().s[5]++;
+      this.handlers[name](msg);
+    } else
+    /* istanbul ignore next */
+    {
+      cov_1rc86b7d4k().b[0][1]++;
+    }
+  }
+}
+/* istanbul ignore next */
+cov_1rc86b7d4k().s[6]++;
+exports.SynapticRouter = SynapticRouter;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJTeW5hcHRpY1JvdXRlciIsImNvbnN0cnVjdG9yIiwiY292XzFyYzg2YjdkNGsiLCJmIiwicyIsImhhbmRsZXJzIiwicmVnaXN0ZXIiLCJuYW1lIiwiZm4iLCJyb3V0ZSIsIm1zZyIsImIiLCJleHBvcnRzIl0sInNvdXJjZXMiOlsiL21udC9jL1VzZXJzL21fb2xpL1Byb2pldHMvU1lNQklPTlQvc3JjL25ldXJhbC9TeW5hcHRpY1JvdXRlci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY2xhc3MgU3luYXB0aWNSb3V0ZXIge1xyXG4gIHByaXZhdGUgaGFuZGxlcnM6IFJlY29yZDxzdHJpbmcsIEZ1bmN0aW9uPiA9IHt9O1xyXG4gIHJlZ2lzdGVyKG5hbWU6IHN0cmluZywgZm46IEZ1bmN0aW9uKSB7IHRoaXMuaGFuZGxlcnNbbmFtZV0gPSBmbjsgfVxyXG4gIHJvdXRlKG5hbWU6IHN0cmluZywgbXNnOiBhbnkpIHsgaWYgKHRoaXMuaGFuZGxlcnNbbmFtZV0pIHRoaXMuaGFuZGxlcnNbbmFtZV0obXNnKTsgfVxyXG59ICJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsTUFBYUEsY0FBYztFQUEzQkMsWUFBQTtJQUFBO0lBQUFDLGNBQUEsR0FBQUMsQ0FBQTtJQUFBRCxjQUFBLEdBQUFFLENBQUE7SUFDVSxLQUFBQyxRQUFRLEdBQTZCLEVBQUU7RUFHakQ7RUFGRUMsUUFBUUEsQ0FBQ0MsSUFBWSxFQUFFQyxFQUFZO0lBQUE7SUFBQU4sY0FBQSxHQUFBQyxDQUFBO0lBQUFELGNBQUEsR0FBQUUsQ0FBQTtJQUFJLElBQUksQ0FBQ0MsUUFBUSxDQUFDRSxJQUFJLENBQUMsR0FBR0MsRUFBRTtFQUFFO0VBQ2pFQyxLQUFLQSxDQUFDRixJQUFZLEVBQUVHLEdBQVE7SUFBQTtJQUFBUixjQUFBLEdBQUFDLENBQUE7SUFBQUQsY0FBQSxHQUFBRSxDQUFBO0lBQUksSUFBSSxJQUFJLENBQUNDLFFBQVEsQ0FBQ0UsSUFBSSxDQUFDLEVBQUU7TUFBQTtNQUFBTCxjQUFBLEdBQUFTLENBQUE7TUFBQVQsY0FBQSxHQUFBRSxDQUFBO01BQUEsSUFBSSxDQUFDQyxRQUFRLENBQUNFLElBQUksQ0FBQyxDQUFDRyxHQUFHLENBQUM7SUFBQSxDQUFDO0lBQUE7SUFBQTtNQUFBUixjQUFBLEdBQUFTLENBQUE7SUFBQTtFQUFDOztBQUNwRjtBQUFBVCxjQUFBLEdBQUFFLENBQUE7QUFKRFEsT0FBQSxDQUFBWixjQUFBLEdBQUFBLGNBQUEiLCJpZ25vcmVMaXN0IjpbXX0=

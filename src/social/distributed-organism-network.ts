@@ -1,5 +1,7 @@
 // social/distributed-organism-network.ts
 // Réseau distribué d'organismes (Phase 3)
+import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export class DistributedOrganismNetwork {
   private peers: Set<string> = new Set()
@@ -9,7 +11,7 @@ export class DistributedOrganismNetwork {
   private peerId: string
 
   constructor() {
-    this.peerId = 'peer_' + Math.random().toString(36).substr(2, 8)
+    this.peerId = 'peer_' + SecureRandom.random().toString(36).substr(2, 8)
     this.channel = new BroadcastChannel('symbiont_network')
     this.channel.onmessage = (event) => this.handleMessage(event.data)
     // S'annonce à la création
@@ -23,28 +25,28 @@ export class DistributedOrganismNetwork {
   joinNetwork(peerId: string) {
     this.peers.add(peerId)
     this.channel.postMessage({ type: 'join', peerId: this.peerId })
-    console.log(`[Network] Pair rejoint : ${peerId}`)
+    SecureLogger.info(`[Network] Pair rejoint : ${peerId}`)
   }
 
   leaveNetwork(peerId: string) {
     this.peers.delete(peerId)
     this.channel.postMessage({ type: 'leave', peerId: this.peerId })
-    console.log(`[Network] Pair quitté : ${peerId}`)
+    SecureLogger.info(`[Network] Pair quitté : ${peerId}`)
   }
 
   broadcastMutation(mutation: any) {
     this.channel.postMessage({ type: 'mutation', from: this.peerId, mutation })
-    console.log(`[Network] Diffusion mutation à ${this.peers.size} pairs`)
+    SecureLogger.info(`[Network] Diffusion mutation à ${this.peers.size} pairs`)
   }
 
   receiveMutation(mutation: any, fromPeer: string) {
     // Appliquer la mutation reçue (log pour l'instant)
-    console.log(`[Network] Mutation reçue de ${fromPeer}`, mutation)
+    SecureLogger.info(`[Network] Mutation reçue de ${fromPeer}`, mutation)
   }
 
   performCommunityBackup(state: any) {
     this.channel.postMessage({ type: 'backup', from: this.peerId, state })
-    console.log(`[Network] Backup communautaire lancé`)
+    SecureLogger.info(`[Network] Backup communautaire lancé`)
   }
 
   private handleMessage(msg: any) {
@@ -64,7 +66,7 @@ export class DistributedOrganismNetwork {
         break
       case 'backup':
         // Pour l'instant, log seulement
-        console.log(`[Network] Backup reçu de ${msg.from}`, msg.state)
+        SecureLogger.info(`[Network] Backup reçu de ${msg.from}`, msg.state)
         break
     }
   }

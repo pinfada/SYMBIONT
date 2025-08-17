@@ -24,8 +24,35 @@ export {
   runErrorTests
 } from './errorValidation';
 
+// Génération sécurisée de nombres aléatoires
+export {
+  SecureRandom,
+  secureRandom,
+  secureRandomInt,
+  secureRandomFloat
+} from './secureRandom';
+
+// Système de logging sécurisé
+export {
+  SecureLogger,
+  LogLevel,
+  logger,
+  secureLog,
+  secureWarn,
+  secureError,
+  secureDebug
+} from './secureLogger';
+
+// UUID sécurisé
+export {
+  generateUUID,
+  generateSecureUUID,
+  isCryptoUUIDAvailable
+} from './uuid';
+
 // Imports pour utilisation interne
 import { enableErrorValidation, runErrorTests } from './errorValidation';
+import { logger } from './secureLogger';
 
 // Types utilitaires pour TypeScript
 export type SafeOperationConfig = {
@@ -44,7 +71,7 @@ export const DEFAULT_SAFE_CONFIG: SafeOperationConfig = {
 // Helper pour initialiser les utilitaires sécurisés en production
 export function initializeSafeOperations(config: SafeOperationConfig = DEFAULT_SAFE_CONFIG): void {
   if (config.isDevelopment && config.enableLogging) {
-    console.log('🛡️ Safe Operations initialized with config:', config);
+    logger.info('🛡️ Safe Operations initialized with config', { config });
     
     // Activer la validation d'erreurs en mode développement
     enableErrorValidation(config.isDevelopment);

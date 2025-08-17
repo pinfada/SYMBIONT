@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOrganism } from '../hooks/useOrganism';
+import { SecureLogger } from '../shared/utils/secureLogger';
 
 interface Ritual {
   id: string;
@@ -128,7 +129,7 @@ const MysticalPanel: React.FC = () => {
         setRitualCooldowns(JSON.parse(savedCooldowns));
       }
     } catch (e) {
-      console.warn('Erreur lors du chargement de l\'historique des rituels');
+      SecureLogger.warn('Erreur lors du chargement de l\'historique des rituels');
     }
   }, []);
 
@@ -210,7 +211,7 @@ const MysticalPanel: React.FC = () => {
         return { canPerform: false, reason: `Conscience minimum: ${(ritual.requirements.minConsciousness * 100).toFixed(0)}%` };
       }
       
-      if (ritual.requirements.minGeneration && organism.generation < ritual.requirements.minGeneration) {
+      if (ritual.requirements.minGeneration && (organism.generation || 1) < ritual.requirements.minGeneration) {
         return { canPerform: false, reason: `Génération minimum: ${ritual.requirements.minGeneration}` };
       }
       

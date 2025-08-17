@@ -30,5 +30,16 @@ export interface INeuralMesh {
     getMemoryUsage(): Promise<number>;
     toJSON(): any;
     suspend(): Promise<void>;
+    processPattern?: (pattern: any) => Promise<any>;
+    learn?: (data: any) => Promise<void>;
+    getPerformanceMetrics?: () => any;
+    saveState(): any;
+    loadState(state: any): void;
+    reset(): void;
+    healthCheck(): {
+        healthy: boolean;
+        issues: string[];
+    };
+    cleanup(): void;
 }
 //# sourceMappingURL=INeuralMesh.d.ts.map

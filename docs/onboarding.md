@@ -1,7 +1,15 @@
-# Onboarding fonctionnel – SYMBIONT
+# Onboarding SYMBIONT – Guide Complet
 
-## Objectif
-Guider l’utilisateur dans l’activation et la prise en main de l’organisme numérique SYMBIONT, en respectant les rituels de transmission, la sécurité et l’expérience immersive.
+## 👥 Pour les Utilisateurs
+### Objectif
+Guider l'utilisateur dans l'activation et la prise en main de l'organisme numérique SYMBIONT, en respectant les rituels de transmission, la sécurité et l'expérience immersive.
+
+## 🧑‍💻 Pour les Développeurs
+### Prérequis
+- Node.js 18+ et npm 8+
+- Connaissance TypeScript/React
+- Familiarité avec les extensions Chrome
+- Accès à PostgreSQL et Redis (pour le backend)
 
 ## Étapes de l’onboarding
 
@@ -37,8 +45,67 @@ Guider l’utilisateur dans l’activation et la prise en main de l’organisme 
 - Stockage local (IndexedDB/chrome.storage), pas de synchronisation externe par défaut.
 - Permissions minimales, explicitées à l’utilisateur.
 
-## Bonnes pratiques d’onboarding
+## Bonnes pratiques d'onboarding
 - Toujours donner un feedback immédiat (succès, erreur, progression).
 - Rendre chaque étape immersive (visuel, murmure, animation).
 - Encourager la transmission et la découverte des rituels.
-- Proposer un accès facile à la documentation et à l’export des données. 
+- Proposer un accès facile à la documentation et à l'export des données.
+
+---
+
+## 🚀 Guide de Démarrage Développeur
+
+### Installation rapide
+```bash
+# 1. Clone et installation
+git clone <repo-url>
+cd SYMBIONT
+npm install
+
+# 2. Configuration backend
+cd backend
+npm install
+cp .env.example .env
+# Configurer DATABASE_URL, REDIS_URL, JWT_SECRET
+
+# 3. Base de données
+npm run migrate
+npm run seed
+
+# 4. Démarrage
+npm run dev  # Backend
+cd .. && npm run dev  # Extension en mode développement
+```
+
+### Structure du projet
+```
+SYMBIONT/
+├── src/                 # Code source extension
+│   ├── background/      # Service worker
+│   ├── content/         # Scripts injectés
+│   ├── popup/           # Interface utilisateur
+│   ├── core/            # Logique métier
+│   └── shared/          # Types et utilitaires
+├── backend/             # API Express.js
+│   ├── src/services/    # Services métier
+│   ├── prisma/          # Schema DB et migrations
+│   └── dist/            # Compiled JavaScript
+├── docs/                # Documentation complète
+└── tests/               # Tests unitaires et E2E
+```
+
+### Première contribution
+1. **Lire la documentation** dans `/docs/`
+2. **Configurer l'environnement** de développement
+3. **Lancer les tests** : `npm test`
+4. **Créer une branche** : `git checkout -b feature/my-feature`
+5. **Développer** en suivant les patterns existants
+6. **Tester** : coverage ≥ 80%
+7. **Soumettre une PR** avec description détaillée
+
+### Outils de développement
+- **Chrome DevTools** : debugging extension
+- **Prisma Studio** : visualisation base de données
+- **Jest + Playwright** : tests automatisés
+- **ESLint + Prettier** : qualité de code
+- **TypeScript** : typage statique

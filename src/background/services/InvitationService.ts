@@ -1,4 +1,5 @@
 import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
+import { SecureRandom } from '../../shared/utils/secureRandom';
 
 interface Invitation {
   code: string;
@@ -52,7 +53,7 @@ export class InvitationService {
   // Génère un motif/couleur symbolique (exemple simple)
   private generateSymbolicLink(): string {
     const colors = ['#FF00FF', '#00FFFF', '#FFFF00', '#FF8800', '#00FF88', '#8800FF'];
-    return colors[Math.floor(Math.random() * colors.length)];
+    return colors[Math.floor(SecureRandom.random() * colors.length)];
   }
 
   // Pour tests ou export

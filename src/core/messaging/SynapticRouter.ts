@@ -1,4 +1,5 @@
 import { NeuralMesh } from '../neural/NeuralMesh';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 // Types minimaux pour lever les erreurs
 class EventEmitter {
@@ -39,7 +40,7 @@ export class SynapticRouter extends EventEmitter {
     const optimizedRoute = await this.findOptimalRoute(impulse);
     
     if (optimizedRoute.predicted) {
-      console.log(`🧠 Predicted route for ${impulse.type}`);
+      SecureLogger.info(`🧠 Predicted route for ${impulse.type}`);
       return optimizedRoute.predictedResponse;
     }
 

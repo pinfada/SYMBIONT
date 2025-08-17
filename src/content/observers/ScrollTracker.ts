@@ -1,6 +1,7 @@
 // Tracking avancé du scroll pour l'analyse comportementale SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
 import { safeAverage } from '../../shared/utils/safeOperations';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export interface ScrollMetrics {
   totalDistance: number; // pixels totaux scrollés
@@ -452,7 +453,7 @@ export class ScrollTracker extends EventTarget {
     this.startTime = Date.now();
     this.lastScrollPosition = window.scrollY;
     this.lastScrollTime = Date.now();
-    console.log('📜 ScrollTracker started');
+    SecureLogger.info('📜 ScrollTracker started');
   }
 
   public stop(): void {
@@ -469,7 +470,7 @@ export class ScrollTracker extends EventTarget {
       });
     }
     
-    console.log('📜 ScrollTracker stopped');
+    SecureLogger.info('📜 ScrollTracker stopped');
   }
 
   public getMetrics(): ScrollMetrics {

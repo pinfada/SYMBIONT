@@ -1,15 +1,54 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
   retries: 1,
+  
+  // Configuration des projets cross-browser
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    // Tests sur mobile
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 12'] },
+    },
+  ],
+  
   use: {
-    baseURL: 'http://localhost:42201',
+    baseURL: 'http://localhost:8080',
     headless: true,
     viewport: { width: 1280, height: 800 },
     ignoreHTTPSErrors: true,
-    video: 'off'
+    video: 'off',
+    screenshot: 'only-on-failure',
   },
-  reporter: [['list'], ['html', { outputFolder: 'playwright-report' }]],
+  
+  reporter: [
+    ['list'], 
+    ['html', { outputFolder: 'playwright-report' }],
+    ['junit', { outputFile: 'test-results/junit.xml' }]
+  ],
+  
+  webServer: {
+    command: 'npx serve -l 8080 dist',
+    port: 8080,
+    reuseExistingServer: false,
+    timeout: 10000,
+  },
 }); 

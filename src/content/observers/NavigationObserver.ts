@@ -3,6 +3,7 @@
 // Observer de navigation avancé pour SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
 import { safeAverage, safeRatio } from '../../shared/utils/safeOperations';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export interface NavigationEvent {
   type: 'page_load' | 'page_unload' | 'navigation_start' | 'navigation_end' | 'hash_change' | 'state_change' | 'back_forward' | 'link_click' | 'form_navigation';
@@ -108,7 +109,7 @@ export class NavigationObserver extends EventTarget {
       
       observer.observe({ entryTypes: ['navigation'] });
     } catch (error) {
-      console.warn('Performance Observer not available:', error);
+      SecureLogger.warn('Performance Observer not available:', error);
     }
   }
 
@@ -524,13 +525,13 @@ export class NavigationObserver extends EventTarget {
   // Public API
   public start(): void {
     this.isActive = true;
-    console.log('🧭 NavigationObserver started');
+    SecureLogger.info('🧭 NavigationObserver started');
   }
 
   public stop(): void {
     this.isActive = false;
     this.recordPageDuration();
-    console.log('🧭 NavigationObserver stopped');
+    SecureLogger.info('🧭 NavigationObserver stopped');
   }
 
   public getMetrics(): NavigationMetrics {

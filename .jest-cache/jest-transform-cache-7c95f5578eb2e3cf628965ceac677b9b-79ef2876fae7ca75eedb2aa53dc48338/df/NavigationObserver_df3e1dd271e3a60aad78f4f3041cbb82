@@ -1,0 +1,235 @@
+a9e72ecb0b2d3c9080e159ccc11a0294
+"use strict";
+
+/* istanbul ignore next */
+function cov_1hyadg8hws() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/observers/NavigationObserver.ts";
+  var hash = "56811a24c2fda91fab91addedef6ab00de0f2f78";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/observers/NavigationObserver.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 2,
+          column: 0
+        },
+        end: {
+          line: 2,
+          column: 62
+        }
+      },
+      "1": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 36
+        }
+      },
+      "2": {
+        start: {
+          line: 7,
+          column: 8
+        },
+        end: {
+          line: 7,
+          column: 29
+        }
+      },
+      "3": {
+        start: {
+          line: 10,
+          column: 8
+        },
+        end: {
+          line: 10,
+          column: 32
+        }
+      },
+      "4": {
+        start: {
+          line: 14,
+          column: 8
+        },
+        end: {
+          line: 14,
+          column: 29
+        }
+      },
+      "5": {
+        start: {
+          line: 18,
+          column: 0
+        },
+        end: {
+          line: 18,
+          column: 48
+        }
+      },
+      "6": {
+        start: {
+          line: 19,
+          column: 0
+        },
+        end: {
+          line: 19,
+          column: 37
+        }
+      }
+    },
+    fnMap: {
+      "0": {
+        name: "(anonymous_0)",
+        decl: {
+          start: {
+            line: 5,
+            column: 4
+          },
+          end: {
+            line: 5,
+            column: 5
+          }
+        },
+        loc: {
+          start: {
+            line: 5,
+            column: 29
+          },
+          end: {
+            line: 8,
+            column: 5
+          }
+        },
+        line: 5
+      },
+      "1": {
+        name: "(anonymous_1)",
+        decl: {
+          start: {
+            line: 9,
+            column: 4
+          },
+          end: {
+            line: 9,
+            column: 5
+          }
+        },
+        loc: {
+          start: {
+            line: 9,
+            column: 21
+          },
+          end: {
+            line: 12,
+            column: 5
+          }
+        },
+        line: 9
+      },
+      "2": {
+        name: "(anonymous_2)",
+        decl: {
+          start: {
+            line: 13,
+            column: 4
+          },
+          end: {
+            line: 13,
+            column: 5
+          }
+        },
+        loc: {
+          start: {
+            line: 13,
+            column: 17
+          },
+          end: {
+            line: 16,
+            column: 5
+          }
+        },
+        line: 13
+      }
+    },
+    branchMap: {},
+    s: {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+    },
+    f: {
+      "0": 0,
+      "1": 0,
+      "2": 0
+    },
+    b: {},
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/observers/NavigationObserver.ts",
+      mappings: ";;;AAEA,MAAa,kBAAkB;IAI7B,YAAY,WAAiB;QAH7B,oDAAoD;QAC5C,aAAQ,GAAgD,IAAI,CAAC;IAErC,CAAC;IAEjC,OAAO,CAAC,OAA2C;QACjD,IAAI,CAAC,QAAQ,GAAG,OAAO,CAAC;QACxB,yEAAyE;IAC3E,CAAC;IAED,UAAU;QACR,IAAI,CAAC,QAAQ,GAAG,IAAI,CAAC;QACrB,mDAAmD;IACrD,CAAC;CACF;AAfD,gDAeC;AAED,kBAAe,kBAAkB,CAAC",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/observers/NavigationObserver.ts"],
+      sourcesContent: ["import type { NavigationChange } from '../../content/index';\r\n\r\nexport class NavigationObserver {\r\n  // @ts-expect-error Handler r\xE9serv\xE9 pour usage futur\r\n  private _handler: ((change: NavigationChange) => void) | null = null;\r\n\r\n  constructor(_messageBus?: any) {}\r\n\r\n  observe(handler: (change: NavigationChange) => void): void {\r\n    this._handler = handler;\r\n    // Ici, on pourrait brancher sur l'historique ou les events SPA si besoin\r\n  }\r\n\r\n  disconnect(): void {\r\n    this._handler = null;\r\n    // Ici, on pourrait retirer les listeners si besoin\r\n  }\r\n}\r\n\r\nexport default NavigationObserver; \r\n"],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "56811a24c2fda91fab91addedef6ab00de0f2f78"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_1hyadg8hws = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_1hyadg8hws();
+cov_1hyadg8hws().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/* istanbul ignore next */
+cov_1hyadg8hws().s[1]++;
+exports.NavigationObserver = void 0;
+class NavigationObserver {
+  constructor(_messageBus) {
+    /* istanbul ignore next */
+    cov_1hyadg8hws().f[0]++;
+    cov_1hyadg8hws().s[2]++;
+    // @ts-expect-error Handler réservé pour usage futur
+    this._handler = null;
+  }
+  observe(handler) {
+    /* istanbul ignore next */
+    cov_1hyadg8hws().f[1]++;
+    cov_1hyadg8hws().s[3]++;
+    this._handler = handler;
+    // Ici, on pourrait brancher sur l'historique ou les events SPA si besoin
+  }
+  disconnect() {
+    /* istanbul ignore next */
+    cov_1hyadg8hws().f[2]++;
+    cov_1hyadg8hws().s[4]++;
+    this._handler = null;
+    // Ici, on pourrait retirer les listeners si besoin
+  }
+}
+/* istanbul ignore next */
+cov_1hyadg8hws().s[5]++;
+exports.NavigationObserver = NavigationObserver;
+/* istanbul ignore next */
+cov_1hyadg8hws().s[6]++;
+exports.default = NavigationObserver;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJjb3ZfMWh5YWRnOGh3cyIsImFjdHVhbENvdmVyYWdlIiwicyIsIk5hdmlnYXRpb25PYnNlcnZlciIsImNvbnN0cnVjdG9yIiwiX21lc3NhZ2VCdXMiLCJmIiwiX2hhbmRsZXIiLCJvYnNlcnZlIiwiaGFuZGxlciIsImRpc2Nvbm5lY3QiLCJleHBvcnRzIiwiZGVmYXVsdCJdLCJzb3VyY2VzIjpbIi9tbnQvYy9Vc2Vycy9tX29saS9Qcm9qZXRzL1NZTUJJT05UL3NyYy9zaGFyZWQvb2JzZXJ2ZXJzL05hdmlnYXRpb25PYnNlcnZlci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgdHlwZSB7IE5hdmlnYXRpb25DaGFuZ2UgfSBmcm9tICcuLi8uLi9jb250ZW50L2luZGV4JztcclxuXHJcbmV4cG9ydCBjbGFzcyBOYXZpZ2F0aW9uT2JzZXJ2ZXIge1xyXG4gIC8vIEB0cy1leHBlY3QtZXJyb3IgSGFuZGxlciByw6lzZXJ2w6kgcG91ciB1c2FnZSBmdXR1clxyXG4gIHByaXZhdGUgX2hhbmRsZXI6ICgoY2hhbmdlOiBOYXZpZ2F0aW9uQ2hhbmdlKSA9PiB2b2lkKSB8IG51bGwgPSBudWxsO1xyXG5cclxuICBjb25zdHJ1Y3RvcihfbWVzc2FnZUJ1cz86IGFueSkge31cclxuXHJcbiAgb2JzZXJ2ZShoYW5kbGVyOiAoY2hhbmdlOiBOYXZpZ2F0aW9uQ2hhbmdlKSA9PiB2b2lkKTogdm9pZCB7XHJcbiAgICB0aGlzLl9oYW5kbGVyID0gaGFuZGxlcjtcclxuICAgIC8vIEljaSwgb24gcG91cnJhaXQgYnJhbmNoZXIgc3VyIGwnaGlzdG9yaXF1ZSBvdSBsZXMgZXZlbnRzIFNQQSBzaSBiZXNvaW5cclxuICB9XHJcblxyXG4gIGRpc2Nvbm5lY3QoKTogdm9pZCB7XHJcbiAgICB0aGlzLl9oYW5kbGVyID0gbnVsbDtcclxuICAgIC8vIEljaSwgb24gcG91cnJhaXQgcmV0aXJlciBsZXMgbGlzdGVuZXJzIHNpIGJlc29pblxyXG4gIH1cclxufVxyXG5cclxuZXhwb3J0IGRlZmF1bHQgTmF2aWdhdGlvbk9ic2VydmVyOyBcclxuIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7SUFnQkc7SUFBQUEsY0FBQSxZQUFBQSxDQUFBO01BQUEsT0FBQUMsY0FBQTtJQUFBO0VBQUE7RUFBQSxPQUFBQSxjQUFBO0FBQUE7QUFBQUQsY0FBQTtBQUFBQSxjQUFBLEdBQUFFLENBQUE7Ozs7Ozs7QUFkSCxNQUFhQyxrQkFBa0I7RUFJN0JDLFlBQVlDLFdBQWlCO0lBQUE7SUFBQUwsY0FBQSxHQUFBTSxDQUFBO0lBQUFOLGNBQUEsR0FBQUUsQ0FBQTtJQUg3QjtJQUNRLEtBQUFLLFFBQVEsR0FBZ0QsSUFBSTtFQUVwQztFQUVoQ0MsT0FBT0EsQ0FBQ0MsT0FBMkM7SUFBQTtJQUFBVCxjQUFBLEdBQUFNLENBQUE7SUFBQU4sY0FBQSxHQUFBRSxDQUFBO0lBQ2pELElBQUksQ0FBQ0ssUUFBUSxHQUFHRSxPQUFPO0lBQ3ZCO0VBQ0Y7RUFFQUMsVUFBVUEsQ0FBQTtJQUFBO0lBQUFWLGNBQUEsR0FBQU0sQ0FBQTtJQUFBTixjQUFBLEdBQUFFLENBQUE7SUFDUixJQUFJLENBQUNLLFFBQVEsR0FBRyxJQUFJO0lBQ3BCO0VBQ0Y7O0FBQ0Q7QUFBQVAsY0FBQSxHQUFBRSxDQUFBO0FBZkRTLE9BQUEsQ0FBQVIsa0JBQUEsR0FBQUEsa0JBQUE7QUFlQztBQUFBSCxjQUFBLEdBQUFFLENBQUE7QUFFRFMsT0FBQSxDQUFBQyxPQUFBLEdBQWVULGtCQUFrQiIsImlnbm9yZUxpc3QiOltdfQ==

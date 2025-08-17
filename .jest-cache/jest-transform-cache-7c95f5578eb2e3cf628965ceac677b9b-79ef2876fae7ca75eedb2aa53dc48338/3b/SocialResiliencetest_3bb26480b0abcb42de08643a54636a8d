@@ -1,0 +1,13 @@
+11916961570e995e9b42e023f6dc2727
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const social_resilience_1 = require("../src/social/social-resilience");
+describe('SocialResilience', () => {
+    it('envoie une demande de backup et une alerte communautaire', () => {
+        const sr = new social_resilience_1.SocialResilience();
+        // On ne peut pas tester le BroadcastChannel, mais on vérifie l'appel sans erreur
+        expect(() => sr.requestCommunityBackup('org1')).not.toThrow();
+        expect(() => sr.launchCommunityAlert('test')).not.toThrow();
+    });
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL21udC9jL1VzZXJzL21fb2xpL1Byb2pldHMvU1lNQklPTlQvX190ZXN0c19fL1NvY2lhbFJlc2lsaWVuY2UudGVzdC50cyIsIm1hcHBpbmdzIjoiOztBQUFBLHVFQUFrRTtBQUVsRSxRQUFRLENBQUMsa0JBQWtCLEVBQUUsR0FBRyxFQUFFO0lBQ2hDLEVBQUUsQ0FBQywwREFBMEQsRUFBRSxHQUFHLEVBQUU7UUFDbEUsTUFBTSxFQUFFLEdBQUcsSUFBSSxvQ0FBZ0IsRUFBRSxDQUFBO1FBQ2pDLGlGQUFpRjtRQUNqRixNQUFNLENBQUMsR0FBRyxFQUFFLENBQUMsRUFBRSxDQUFDLHNCQUFzQixDQUFDLE1BQU0sQ0FBQyxDQUFDLENBQUMsR0FBRyxDQUFDLE9BQU8sRUFBRSxDQUFBO1FBQzdELE1BQU0sQ0FBQyxHQUFHLEVBQUUsQ0FBQyxFQUFFLENBQUMsb0JBQW9CLENBQUMsTUFBTSxDQUFDLENBQUMsQ0FBQyxHQUFHLENBQUMsT0FBTyxFQUFFLENBQUE7SUFDN0QsQ0FBQyxDQUFDLENBQUE7QUFDSixDQUFDLENBQUMsQ0FBQSIsIm5hbWVzIjpbXSwic291cmNlcyI6WyIvbW50L2MvVXNlcnMvbV9vbGkvUHJvamV0cy9TWU1CSU9OVC9fX3Rlc3RzX18vU29jaWFsUmVzaWxpZW5jZS50ZXN0LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IFNvY2lhbFJlc2lsaWVuY2UgfSBmcm9tICcuLi9zcmMvc29jaWFsL3NvY2lhbC1yZXNpbGllbmNlJ1xyXG5cclxuZGVzY3JpYmUoJ1NvY2lhbFJlc2lsaWVuY2UnLCAoKSA9PiB7XHJcbiAgaXQoJ2Vudm9pZSB1bmUgZGVtYW5kZSBkZSBiYWNrdXAgZXQgdW5lIGFsZXJ0ZSBjb21tdW5hdXRhaXJlJywgKCkgPT4ge1xyXG4gICAgY29uc3Qgc3IgPSBuZXcgU29jaWFsUmVzaWxpZW5jZSgpXHJcbiAgICAvLyBPbiBuZSBwZXV0IHBhcyB0ZXN0ZXIgbGUgQnJvYWRjYXN0Q2hhbm5lbCwgbWFpcyBvbiB2w6lyaWZpZSBsJ2FwcGVsIHNhbnMgZXJyZXVyXHJcbiAgICBleHBlY3QoKCkgPT4gc3IucmVxdWVzdENvbW11bml0eUJhY2t1cCgnb3JnMScpKS5ub3QudG9UaHJvdygpXHJcbiAgICBleHBlY3QoKCkgPT4gc3IubGF1bmNoQ29tbXVuaXR5QWxlcnQoJ3Rlc3QnKSkubm90LnRvVGhyb3coKVxyXG4gIH0pXHJcbn0pICJdLCJ2ZXJzaW9uIjozfQ==

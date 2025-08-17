@@ -1,0 +1,61 @@
+7f2aa9bd0e3f2ba4d08c221191fd4ea1
+"use strict";
+
+// Interface d'abstraction pour résoudre la dépendance circulaire OrganismCore ↔ NeuralMesh
+/* istanbul ignore next */
+function cov_2lw71i8ajh() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/core/interfaces/INeuralMesh.ts";
+  var hash = "515d627b94e26197d839b5b4cd10991e70a18929";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/core/interfaces/INeuralMesh.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 62
+        }
+      }
+    },
+    fnMap: {},
+    branchMap: {},
+    s: {
+      "0": 0
+    },
+    f: {},
+    b: {},
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/core/interfaces/INeuralMesh.ts",
+      mappings: ";AAAA,2FAA2F",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/core/interfaces/INeuralMesh.ts"],
+      sourcesContent: ["// Interface d'abstraction pour r\xE9soudre la d\xE9pendance circulaire OrganismCore \u2194 NeuralMesh\r\n\r\nexport interface NeuralNode {\r\n  id: string;\r\n  type: 'input' | 'hidden' | 'output';\r\n  activation: number;\r\n  bias: number;\r\n}\r\n\r\nexport interface NeuralConnection {\r\n  from: string;\r\n  to: string;\r\n  weight: number;\r\n  active: boolean;\r\n}\r\n\r\nexport interface PerformanceMetrics {\r\n  cpu: number;\r\n  memory: number;\r\n  neuralActivity: number;\r\n  connectionStrength: number;\r\n}\r\n\r\nexport interface INeuralMesh {\r\n  // Configuration\r\n  initialize(): Promise<void>;\r\n  \r\n  // Structure du r\xE9seau\r\n  addNode(id: string, type: 'input' | 'hidden' | 'output', bias?: number): void;\r\n  addConnection(fromId: string, toId: string, weight: number): void;\r\n  \r\n  // Activation et propagation\r\n  stimulate(nodeId: string, value: number): void;\r\n  propagate(): void;\r\n  getActivation(nodeId: string): number;\r\n  \r\n  // \xC9volution\r\n  mutate(rate?: number): void;\r\n  \r\n  // M\xE9triques\r\n  getNeuralActivity(): number;\r\n  getConnectionStrength(): number;\r\n  getCPUUsage(): Promise<number>;\r\n  getMemoryUsage(): Promise<number>;\r\n  \r\n  // S\xE9rialisation\r\n  toJSON(): any;\r\n  suspend(): Promise<void>;\r\n  \r\n  // Pattern processing for service compatibility\r\n  processPattern?: (pattern: any) => Promise<any>;\r\n  learn?: (data: any) => Promise<void>;\r\n  getPerformanceMetrics?: () => any;\r\n\r\n  // Missing methods for service compatibility\r\n  saveState(): any;\r\n  loadState(state: any): void;\r\n  reset(): void;\r\n  healthCheck(): { healthy: boolean; issues: string[] };\r\n  cleanup(): void;\r\n} "],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "515d627b94e26197d839b5b4cd10991e70a18929"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_2lw71i8ajh = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_2lw71i8ajh();
+cov_2lw71i8ajh().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJjb3ZfMmx3NzFpOGFqaCIsInBhdGgiLCJoYXNoIiwiZ2xvYmFsIiwiRnVuY3Rpb24iLCJnY3YiLCJjb3ZlcmFnZURhdGEiLCJzdGF0ZW1lbnRNYXAiLCJzdGFydCIsImxpbmUiLCJjb2x1bW4iLCJlbmQiLCJmbk1hcCIsImJyYW5jaE1hcCIsInMiLCJmIiwiYiIsImlucHV0U291cmNlTWFwIiwiZmlsZSIsIm1hcHBpbmdzIiwibmFtZXMiLCJzb3VyY2VzIiwic291cmNlc0NvbnRlbnQiLCJ2ZXJzaW9uIiwiX2NvdmVyYWdlU2NoZW1hIiwiY292ZXJhZ2UiLCJhY3R1YWxDb3ZlcmFnZSJdLCJzb3VyY2VzIjpbIi9tbnQvYy9Vc2Vycy9tX29saS9Qcm9qZXRzL1NZTUJJT05UL3NyYy9jb3JlL2ludGVyZmFjZXMvSU5ldXJhbE1lc2gudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gSW50ZXJmYWNlIGQnYWJzdHJhY3Rpb24gcG91ciByw6lzb3VkcmUgbGEgZMOpcGVuZGFuY2UgY2lyY3VsYWlyZSBPcmdhbmlzbUNvcmUg4oaUIE5ldXJhbE1lc2hcclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgTmV1cmFsTm9kZSB7XHJcbiAgaWQ6IHN0cmluZztcclxuICB0eXBlOiAnaW5wdXQnIHwgJ2hpZGRlbicgfCAnb3V0cHV0JztcclxuICBhY3RpdmF0aW9uOiBudW1iZXI7XHJcbiAgYmlhczogbnVtYmVyO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIE5ldXJhbENvbm5lY3Rpb24ge1xyXG4gIGZyb206IHN0cmluZztcclxuICB0bzogc3RyaW5nO1xyXG4gIHdlaWdodDogbnVtYmVyO1xyXG4gIGFjdGl2ZTogYm9vbGVhbjtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBQZXJmb3JtYW5jZU1ldHJpY3Mge1xyXG4gIGNwdTogbnVtYmVyO1xyXG4gIG1lbW9yeTogbnVtYmVyO1xyXG4gIG5ldXJhbEFjdGl2aXR5OiBudW1iZXI7XHJcbiAgY29ubmVjdGlvblN0cmVuZ3RoOiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgSU5ldXJhbE1lc2gge1xyXG4gIC8vIENvbmZpZ3VyYXRpb25cclxuICBpbml0aWFsaXplKCk6IFByb21pc2U8dm9pZD47XHJcbiAgXHJcbiAgLy8gU3RydWN0dXJlIGR1IHLDqXNlYXVcclxuICBhZGROb2RlKGlkOiBzdHJpbmcsIHR5cGU6ICdpbnB1dCcgfCAnaGlkZGVuJyB8ICdvdXRwdXQnLCBiaWFzPzogbnVtYmVyKTogdm9pZDtcclxuICBhZGRDb25uZWN0aW9uKGZyb21JZDogc3RyaW5nLCB0b0lkOiBzdHJpbmcsIHdlaWdodDogbnVtYmVyKTogdm9pZDtcclxuICBcclxuICAvLyBBY3RpdmF0aW9uIGV0IHByb3BhZ2F0aW9uXHJcbiAgc3RpbXVsYXRlKG5vZGVJZDogc3RyaW5nLCB2YWx1ZTogbnVtYmVyKTogdm9pZDtcclxuICBwcm9wYWdhdGUoKTogdm9pZDtcclxuICBnZXRBY3RpdmF0aW9uKG5vZGVJZDogc3RyaW5nKTogbnVtYmVyO1xyXG4gIFxyXG4gIC8vIMOJdm9sdXRpb25cclxuICBtdXRhdGUocmF0ZT86IG51bWJlcik6IHZvaWQ7XHJcbiAgXHJcbiAgLy8gTcOpdHJpcXVlc1xyXG4gIGdldE5ldXJhbEFjdGl2aXR5KCk6IG51bWJlcjtcclxuICBnZXRDb25uZWN0aW9uU3RyZW5ndGgoKTogbnVtYmVyO1xyXG4gIGdldENQVVVzYWdlKCk6IFByb21pc2U8bnVtYmVyPjtcclxuICBnZXRNZW1vcnlVc2FnZSgpOiBQcm9taXNlPG51bWJlcj47XHJcbiAgXHJcbiAgLy8gU8OpcmlhbGlzYXRpb25cclxuICB0b0pTT04oKTogYW55O1xyXG4gIHN1c3BlbmQoKTogUHJvbWlzZTx2b2lkPjtcclxuICBcclxuICAvLyBQYXR0ZXJuIHByb2Nlc3NpbmcgZm9yIHNlcnZpY2UgY29tcGF0aWJpbGl0eVxyXG4gIHByb2Nlc3NQYXR0ZXJuPzogKHBhdHRlcm46IGFueSkgPT4gUHJvbWlzZTxhbnk+O1xyXG4gIGxlYXJuPzogKGRhdGE6IGFueSkgPT4gUHJvbWlzZTx2b2lkPjtcclxuICBnZXRQZXJmb3JtYW5jZU1ldHJpY3M/OiAoKSA9PiBhbnk7XHJcblxyXG4gIC8vIE1pc3NpbmcgbWV0aG9kcyBmb3Igc2VydmljZSBjb21wYXRpYmlsaXR5XHJcbiAgc2F2ZVN0YXRlKCk6IGFueTtcclxuICBsb2FkU3RhdGUoc3RhdGU6IGFueSk6IHZvaWQ7XHJcbiAgcmVzZXQoKTogdm9pZDtcclxuICBoZWFsdGhDaGVjaygpOiB7IGhlYWx0aHk6IGJvb2xlYW47IGlzc3Vlczogc3RyaW5nW10gfTtcclxuICBjbGVhbnVwKCk6IHZvaWQ7XHJcbn0gIl0sIm1hcHBpbmdzIjoiOztBQUFBO0FBQUE7QUFBQSxTQUFBQSxlQUFBO0VBQUEsSUFBQUMsSUFBQTtFQUFBLElBQUFDLElBQUE7RUFBQSxJQUFBQyxNQUFBLE9BQUFDLFFBQUE7RUFBQSxJQUFBQyxHQUFBO0VBQUEsSUFBQUMsWUFBQTtJQUFBTCxJQUFBO0lBQUFNLFlBQUE7TUFBQTtRQUFBQyxLQUFBO1VBQUFDLElBQUE7VUFBQUMsTUFBQTtRQUFBO1FBQUFDLEdBQUE7VUFBQUYsSUFBQTtVQUFBQyxNQUFBO1FBQUE7TUFBQTtJQUFBO0lBQUFFLEtBQUE7SUFBQUMsU0FBQTtJQUFBQyxDQUFBO01BQUE7SUFBQTtJQUFBQyxDQUFBO0lBQUFDLENBQUE7SUFBQUMsY0FBQTtNQUFBQyxJQUFBO01BQUFDLFFBQUE7TUFBQUMsS0FBQTtNQUFBQyxPQUFBO01BQUFDLGNBQUE7TUFBQUMsT0FBQTtJQUFBO0lBQUFDLGVBQUE7SUFBQXRCLElBQUE7RUFBQTtFQUFBLElBQUF1QixRQUFBLEdBQUF0QixNQUFBLENBQUFFLEdBQUEsTUFBQUYsTUFBQSxDQUFBRSxHQUFBO0VBQUEsS0FBQW9CLFFBQUEsQ0FBQXhCLElBQUEsS0FBQXdCLFFBQUEsQ0FBQXhCLElBQUEsRUFBQUMsSUFBQSxLQUFBQSxJQUFBO0lBQUF1QixRQUFBLENBQUF4QixJQUFBLElBQUFLLFlBQUE7RUFBQTtFQUFBLElBQUFvQixjQUFBLEdBQUFELFFBQUEsQ0FBQXhCLElBQUE7RUFBQSIsImlnbm9yZUxpc3QiOltdfQ==

@@ -1,5 +1,6 @@
 import { OrganismState, OrganismHistory, TimeSpan, ConsolidationResult } from '../shared/types/organism'
 import { SecurityManager } from './SecurityManager'
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export class OrganismMemoryBank {
   private security: SecurityManager
@@ -38,9 +39,19 @@ export class OrganismMemoryBank {
     })
   }
 
-  async consolidateMemories(_timespan: TimeSpan): Promise<ConsolidationResult> {
-    // TODO: Consolidation avancée
-    return { consolidated: true, details: 'Consolidation non implémentée' }
+  async saveOrganismHistory(id: string, history: OrganismHistory): Promise<void> {
+    const encrypted = await this.security.encryptSensitiveData(history)
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set({ [this.getKey(id) + '_history']: encrypted }, () => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
+        else resolve()
+      })
+    })
+  }
+
+  async consolidateMemories(timespan: TimeSpan): Promise<ConsolidationResult> {
+    // TODO: Consolidation avancée selon le timespan fourni
+    return { consolidated: true, details: `Consolidation pour période ${timespan} non implémentée` }
   }
 
   // Hook d'optimisation du stockage
@@ -54,7 +65,7 @@ export class OrganismMemoryBank {
   logPerformance(msg: string) {
     // Hook pour loguer ou alerter sur la performance
     // (À remplacer par un vrai monitoring en prod)
-    console.log(`[OrganismMemoryBank][Perf] ${msg}`)
+    SecureLogger.info(`[OrganismMemoryBank][Perf] ${msg}`)
   }
 
   public cleanup(): void {

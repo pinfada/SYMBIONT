@@ -1,0 +1,60 @@
+f454954050dd801776e0bf44eae2e85f
+"use strict";
+
+/* istanbul ignore next */
+function cov_rmsz55ysb() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/organism.ts";
+  var hash = "a38e19b102bb7d5570c444bc8e6d2b816b2a0dd2";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/organism.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 2,
+          column: 0
+        },
+        end: {
+          line: 2,
+          column: 62
+        }
+      }
+    },
+    fnMap: {},
+    branchMap: {},
+    s: {
+      "0": 0
+    },
+    f: {},
+    b: {},
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/organism.ts",
+      mappings: "",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/shared/types/organism.ts"],
+      sourcesContent: ["// Squelette minimal pour lever les erreurs d'import\r\nexport interface OrganismTraits {\r\n    curiosity: number;\r\n    focus: number;\r\n    rhythm: number;\r\n    empathy: number;\r\n    creativity: number;\r\n    resilience: number;\r\n    adaptability: number;\r\n    memory: number;\r\n    intuition: number;\r\n    [key: string]: number;\r\n}\r\n\r\nexport interface OrganismState {\r\n    /** Identifiant unique de l'organisme */\r\n    id: string;\r\n    /** G\xE9n\xE9ration (lign\xE9e) */\r\n    generation?: number;\r\n    /** ADN complet (pour h\xE9ritage) */\r\n    dna: string;\r\n    /** Traits principaux */\r\n    traits: OrganismTraits;\r\n    /** Date de cr\xE9ation */\r\n    birthTime?: number;\r\n    /** Timestamp de la derni\xE8re mutation */\r\n    lastMutation: number | null;\r\n    /** Historique des mutations */\r\n    mutations?: any[];\r\n    /** Connexions sociales */\r\n    socialConnections?: string[];\r\n    /** Fragments de m\xE9moire */\r\n    memoryFragments?: any[];\r\n    // Ajouts pour compatibilit\xE9\r\n    health?: number;\r\n    energy?: number;\r\n    maxEnergy?: number;\r\n    consciousness?: number;\r\n    createdAt?: number;\r\n    visualDNA?: string;\r\n    visualState?: VisualState;\r\n    balance?: number;\r\n    metabolismRate?: number;\r\n    age?: number;\r\n}\r\n\r\nexport interface VisualState {\r\n    color?: [number, number, number];\r\n    scale?: number;\r\n    geometry?: string;\r\n    animation?: string;\r\n    opacity?: number;\r\n    size?: number;\r\n}\r\n\r\nexport interface OrganismMutation {\r\n    type: 'visual' | 'behavioral' | 'cognitive';\r\n    trigger: string;\r\n    magnitude: number;\r\n    // Ajoutez d'autres propri\xE9t\xE9s si besoin\r\n}\r\n\r\nexport interface MutationState {\r\n    colorShift: number;\r\n    patternIntensity: number;\r\n    sizeMultiplier: number;\r\n    opacity: number;\r\n}\r\n\r\nexport interface BehaviorPattern {\r\n    url: string;\r\n    interactions: number;\r\n    timeSpent: number;\r\n    scrollDepth: number;\r\n    timestamp: number;\r\n}\r\n\r\nexport interface Mutation {\r\n    trait: string;\r\n    delta: number;\r\n    reason: string;\r\n}\r\n\r\nexport interface PageContext {\r\n    url: string;\r\n    time: number;\r\n    userAgent: string;\r\n}\r\n\r\nexport interface ActionPrediction {\r\n    action: string;\r\n    confidence: number;\r\n    alternatives?: string[];\r\n    reasoning?: string;\r\n}\r\n\r\nexport interface Message {\r\n    type: string;\r\n    payload: any;\r\n}\r\n\r\nexport type MessageType = string;\r\n\r\nexport interface RoutingResult {\r\n    success: boolean;\r\n    route?: string;\r\n}\r\n\r\nexport interface PerformanceMetrics {\r\n    cpu: number;\r\n    memory: number;\r\n    latency: number;\r\n    fps?: number;\r\n    memoryUsage?: number;\r\n    renderTime?: number;\r\n}\r\n\r\nexport interface VisualMutation {\r\n    type: 'color' | 'size' | 'shape' | 'animation';\r\n    value: [number, number, number] | number | string;\r\n    timestamp?: number;\r\n}\r\n\r\nexport interface WebGLContext {\r\n    tabId: number;\r\n    canvas: HTMLCanvasElement;\r\n    gl: WebGLRenderingContext;\r\n    ready: boolean;\r\n}\r\n\r\nexport type RenderQueue = Array<{\r\n    id: string;\r\n    mutations: VisualMutation[];\r\n    timestamp: number;\r\n}>;\r\n\r\nexport interface OrganismHistory {\r\n    states: OrganismState[];\r\n    mutations: Mutation[];\r\n}\r\n\r\nexport interface TimeSpan {\r\n    start: number;\r\n    end: number;\r\n}\r\n\r\nexport interface ConsolidationResult {\r\n    consolidated: boolean;\r\n    details: string;\r\n}"],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "a38e19b102bb7d5570c444bc8e6d2b816b2a0dd2"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_rmsz55ysb = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_rmsz55ysb();
+cov_rmsz55ysb().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiL21udC9jL1VzZXJzL21fb2xpL1Byb2pldHMvU1lNQklPTlQvc3JjL3NoYXJlZC90eXBlcy9vcmdhbmlzbS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBTcXVlbGV0dGUgbWluaW1hbCBwb3VyIGxldmVyIGxlcyBlcnJldXJzIGQnaW1wb3J0XHJcbmV4cG9ydCBpbnRlcmZhY2UgT3JnYW5pc21UcmFpdHMge1xyXG4gICAgY3VyaW9zaXR5OiBudW1iZXI7XHJcbiAgICBmb2N1czogbnVtYmVyO1xyXG4gICAgcmh5dGhtOiBudW1iZXI7XHJcbiAgICBlbXBhdGh5OiBudW1iZXI7XHJcbiAgICBjcmVhdGl2aXR5OiBudW1iZXI7XHJcbiAgICByZXNpbGllbmNlOiBudW1iZXI7XHJcbiAgICBhZGFwdGFiaWxpdHk6IG51bWJlcjtcclxuICAgIG1lbW9yeTogbnVtYmVyO1xyXG4gICAgaW50dWl0aW9uOiBudW1iZXI7XHJcbiAgICBba2V5OiBzdHJpbmddOiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgT3JnYW5pc21TdGF0ZSB7XHJcbiAgICAvKiogSWRlbnRpZmlhbnQgdW5pcXVlIGRlIGwnb3JnYW5pc21lICovXHJcbiAgICBpZDogc3RyaW5nO1xyXG4gICAgLyoqIEfDqW7DqXJhdGlvbiAobGlnbsOpZSkgKi9cclxuICAgIGdlbmVyYXRpb24/OiBudW1iZXI7XHJcbiAgICAvKiogQUROIGNvbXBsZXQgKHBvdXIgaMOpcml0YWdlKSAqL1xyXG4gICAgZG5hOiBzdHJpbmc7XHJcbiAgICAvKiogVHJhaXRzIHByaW5jaXBhdXggKi9cclxuICAgIHRyYWl0czogT3JnYW5pc21UcmFpdHM7XHJcbiAgICAvKiogRGF0ZSBkZSBjcsOpYXRpb24gKi9cclxuICAgIGJpcnRoVGltZT86IG51bWJlcjtcclxuICAgIC8qKiBUaW1lc3RhbXAgZGUgbGEgZGVybmnDqHJlIG11dGF0aW9uICovXHJcbiAgICBsYXN0TXV0YXRpb246IG51bWJlciB8IG51bGw7XHJcbiAgICAvKiogSGlzdG9yaXF1ZSBkZXMgbXV0YXRpb25zICovXHJcbiAgICBtdXRhdGlvbnM/OiBhbnlbXTtcclxuICAgIC8qKiBDb25uZXhpb25zIHNvY2lhbGVzICovXHJcbiAgICBzb2NpYWxDb25uZWN0aW9ucz86IHN0cmluZ1tdO1xyXG4gICAgLyoqIEZyYWdtZW50cyBkZSBtw6ltb2lyZSAqL1xyXG4gICAgbWVtb3J5RnJhZ21lbnRzPzogYW55W107XHJcbiAgICAvLyBBam91dHMgcG91ciBjb21wYXRpYmlsaXTDqVxyXG4gICAgaGVhbHRoPzogbnVtYmVyO1xyXG4gICAgZW5lcmd5PzogbnVtYmVyO1xyXG4gICAgbWF4RW5lcmd5PzogbnVtYmVyO1xyXG4gICAgY29uc2Npb3VzbmVzcz86IG51bWJlcjtcclxuICAgIGNyZWF0ZWRBdD86IG51bWJlcjtcclxuICAgIHZpc3VhbEROQT86IHN0cmluZztcclxuICAgIHZpc3VhbFN0YXRlPzogVmlzdWFsU3RhdGU7XHJcbiAgICBiYWxhbmNlPzogbnVtYmVyO1xyXG4gICAgbWV0YWJvbGlzbVJhdGU/OiBudW1iZXI7XHJcbiAgICBhZ2U/OiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgVmlzdWFsU3RhdGUge1xyXG4gICAgY29sb3I/OiBbbnVtYmVyLCBudW1iZXIsIG51bWJlcl07XHJcbiAgICBzY2FsZT86IG51bWJlcjtcclxuICAgIGdlb21ldHJ5Pzogc3RyaW5nO1xyXG4gICAgYW5pbWF0aW9uPzogc3RyaW5nO1xyXG4gICAgb3BhY2l0eT86IG51bWJlcjtcclxuICAgIHNpemU/OiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgT3JnYW5pc21NdXRhdGlvbiB7XHJcbiAgICB0eXBlOiAndmlzdWFsJyB8ICdiZWhhdmlvcmFsJyB8ICdjb2duaXRpdmUnO1xyXG4gICAgdHJpZ2dlcjogc3RyaW5nO1xyXG4gICAgbWFnbml0dWRlOiBudW1iZXI7XHJcbiAgICAvLyBBam91dGV6IGQnYXV0cmVzIHByb3ByacOpdMOpcyBzaSBiZXNvaW5cclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBNdXRhdGlvblN0YXRlIHtcclxuICAgIGNvbG9yU2hpZnQ6IG51bWJlcjtcclxuICAgIHBhdHRlcm5JbnRlbnNpdHk6IG51bWJlcjtcclxuICAgIHNpemVNdWx0aXBsaWVyOiBudW1iZXI7XHJcbiAgICBvcGFjaXR5OiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgQmVoYXZpb3JQYXR0ZXJuIHtcclxuICAgIHVybDogc3RyaW5nO1xyXG4gICAgaW50ZXJhY3Rpb25zOiBudW1iZXI7XHJcbiAgICB0aW1lU3BlbnQ6IG51bWJlcjtcclxuICAgIHNjcm9sbERlcHRoOiBudW1iZXI7XHJcbiAgICB0aW1lc3RhbXA6IG51bWJlcjtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBNdXRhdGlvbiB7XHJcbiAgICB0cmFpdDogc3RyaW5nO1xyXG4gICAgZGVsdGE6IG51bWJlcjtcclxuICAgIHJlYXNvbjogc3RyaW5nO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIFBhZ2VDb250ZXh0IHtcclxuICAgIHVybDogc3RyaW5nO1xyXG4gICAgdGltZTogbnVtYmVyO1xyXG4gICAgdXNlckFnZW50OiBzdHJpbmc7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgQWN0aW9uUHJlZGljdGlvbiB7XHJcbiAgICBhY3Rpb246IHN0cmluZztcclxuICAgIGNvbmZpZGVuY2U6IG51bWJlcjtcclxuICAgIGFsdGVybmF0aXZlcz86IHN0cmluZ1tdO1xyXG4gICAgcmVhc29uaW5nPzogc3RyaW5nO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIE1lc3NhZ2Uge1xyXG4gICAgdHlwZTogc3RyaW5nO1xyXG4gICAgcGF5bG9hZDogYW55O1xyXG59XHJcblxyXG5leHBvcnQgdHlwZSBNZXNzYWdlVHlwZSA9IHN0cmluZztcclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgUm91dGluZ1Jlc3VsdCB7XHJcbiAgICBzdWNjZXNzOiBib29sZWFuO1xyXG4gICAgcm91dGU/OiBzdHJpbmc7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgUGVyZm9ybWFuY2VNZXRyaWNzIHtcclxuICAgIGNwdTogbnVtYmVyO1xyXG4gICAgbWVtb3J5OiBudW1iZXI7XHJcbiAgICBsYXRlbmN5OiBudW1iZXI7XHJcbiAgICBmcHM/OiBudW1iZXI7XHJcbiAgICBtZW1vcnlVc2FnZT86IG51bWJlcjtcclxuICAgIHJlbmRlclRpbWU/OiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgVmlzdWFsTXV0YXRpb24ge1xyXG4gICAgdHlwZTogJ2NvbG9yJyB8ICdzaXplJyB8ICdzaGFwZScgfCAnYW5pbWF0aW9uJztcclxuICAgIHZhbHVlOiBbbnVtYmVyLCBudW1iZXIsIG51bWJlcl0gfCBudW1iZXIgfCBzdHJpbmc7XHJcbiAgICB0aW1lc3RhbXA/OiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgV2ViR0xDb250ZXh0IHtcclxuICAgIHRhYklkOiBudW1iZXI7XHJcbiAgICBjYW52YXM6IEhUTUxDYW52YXNFbGVtZW50O1xyXG4gICAgZ2w6IFdlYkdMUmVuZGVyaW5nQ29udGV4dDtcclxuICAgIHJlYWR5OiBib29sZWFuO1xyXG59XHJcblxyXG5leHBvcnQgdHlwZSBSZW5kZXJRdWV1ZSA9IEFycmF5PHtcclxuICAgIGlkOiBzdHJpbmc7XHJcbiAgICBtdXRhdGlvbnM6IFZpc3VhbE11dGF0aW9uW107XHJcbiAgICB0aW1lc3RhbXA6IG51bWJlcjtcclxufT47XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIE9yZ2FuaXNtSGlzdG9yeSB7XHJcbiAgICBzdGF0ZXM6IE9yZ2FuaXNtU3RhdGVbXTtcclxuICAgIG11dGF0aW9uczogTXV0YXRpb25bXTtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBUaW1lU3BhbiB7XHJcbiAgICBzdGFydDogbnVtYmVyO1xyXG4gICAgZW5kOiBudW1iZXI7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgQ29uc29saWRhdGlvblJlc3VsdCB7XHJcbiAgICBjb25zb2xpZGF0ZWQ6IGJvb2xlYW47XHJcbiAgICBkZXRhaWxzOiBzdHJpbmc7XHJcbn0iXSwibWFwcGluZ3MiOiIiLCJpZ25vcmVMaXN0IjpbXX0=

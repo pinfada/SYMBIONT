@@ -6,7 +6,7 @@ test.describe('Événements mystiques et rituels SYMBIONT', () => {
   const popupPath = path.resolve(__dirname, '../../dist/popup.html');
 
   test('Déclenchement d’un rituel secret', async ({ page }) => {
-    await page.goto('/popup');
+    await page.goto('file://' + popupPath);
     await waitForReactToLoad(page, '.mystical-panel');
     await debugPageState(page);
     try {
@@ -24,7 +24,7 @@ test.describe('Événements mystiques et rituels SYMBIONT', () => {
   });
 
   test('Affichage d’un événement mystique', async ({ page }) => {
-    await page.goto('/popup');
+    await page.goto('file://' + popupPath);
     await waitForReactToLoad(page, '.mystical-panel');
     await debugPageState(page);
     try {

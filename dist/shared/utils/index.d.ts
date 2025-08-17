@@ -1,5 +1,8 @@
 export { safeAverage, safeRatio, safeGetClasses, safeGetSelection, safeSplit, safeLength, safeJsonParse, safeGet, safeLimitArray, safeArrayOperation } from './safeOperations';
 export { validateVariable, validateLengthProperty, validateSplitOperation, enableErrorValidation, runErrorTests } from './errorValidation';
+export { SecureRandom, secureRandom, secureRandomInt, secureRandomFloat } from './secureRandom';
+export { SecureLogger, LogLevel, logger, secureLog, secureWarn, secureError, secureDebug } from './secureLogger';
+export { generateUUID, generateSecureUUID, isCryptoUUIDAvailable } from './uuid';
 export type SafeOperationConfig = {
     isDevelopment?: boolean;
     enableLogging?: boolean;

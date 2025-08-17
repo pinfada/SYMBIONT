@@ -9,7 +9,27 @@ const app = express();
 const PORT = process.env.PORT || 8090;
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017';
 const DB_NAME = process.env.DB_NAME || 'symbiont';
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'symbiont-admin';
+
+// SÉCURITÉ CRITIQUE : Clé admin obligatoire
+const ADMIN_API_KEY = (() => {
+  const key = process.env.ADMIN_API_KEY;
+  
+  if (!key) {
+    throw new Error('ADMIN_API_KEY obligatoire - Variable d\'environnement manquante');
+  }
+  
+  if (key.length < 32) {
+    throw new Error('ADMIN_API_KEY trop courte (minimum 32 caractères cryptographiquement sécurisés)');
+  }
+  
+  // Vérifier que ce n'est pas une clé par défaut faible
+  const weakKeys = ['symbiont-admin', 'admin', 'password', '123456', 'admin123'];
+  if (weakKeys.includes(key.toLowerCase())) {
+    throw new Error('ADMIN_API_KEY trop faible - Utiliser une clé cryptographiquement sécurisée');
+  }
+  
+  return key;
+})();
 
 app.use(cors());
 app.use(express.json());

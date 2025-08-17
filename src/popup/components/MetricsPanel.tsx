@@ -48,7 +48,7 @@ export const MetricsPanel: React.FC = () => {
         <div className="ext-evolution-stats flex gap-8 justify-center">
           <div className="ext-stat-item flex flex-col items-center">
             <span className="ext-stat-label text-[#888] text-sm">Total Mutations</span>
-            <span className="ext-stat-value text-lg font-bold">{organism.mutations.length}</span>
+            <span className="ext-stat-value text-lg font-bold">{organism.mutations?.length || 0}</span>
           </div>
           <div className="ext-stat-item flex flex-col items-center">
             <span className="ext-stat-label text-[#888] text-sm">Génération</span>

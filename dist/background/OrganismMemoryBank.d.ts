@@ -6,7 +6,8 @@ export declare class OrganismMemoryBank {
     private getKey;
     saveOrganismState(id: string, state: OrganismState): Promise<void>;
     loadOrganismHistory(id: string): Promise<OrganismHistory>;
-    consolidateMemories(_timespan: TimeSpan): Promise<ConsolidationResult>;
+    saveOrganismHistory(id: string, history: OrganismHistory): Promise<void>;
+    consolidateMemories(timespan: TimeSpan): Promise<ConsolidationResult>;
     optimizeStorage(): Promise<void>;
     logPerformance(msg: string): void;
     cleanup(): void;

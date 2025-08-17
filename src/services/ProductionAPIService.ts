@@ -2,6 +2,8 @@
 // ATTENTION : Correction de l'import pour éviter l'erreur de module introuvable
 // On définit ici les types nécessaires localement pour garantir la compatibilité
 
+import { logger } from '../shared/utils/secureLogger';
+
 export interface PersonalityTraits {
   [key: string]: number | string | boolean;
 }
@@ -55,7 +57,12 @@ export class ProductionAPIService {
   private wsConnection: WebSocket | null = null;
 
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+    // SÉCURITÉ: Configuration API selon environnement
+    const apiUrl = process.env.REACT_APP_API_URL;
+    if (!apiUrl && process.env.NODE_ENV === 'production') {
+      throw new Error('REACT_APP_API_URL obligatoire en production');
+    }
+    this.baseURL = apiUrl || 'http://localhost:3001/api';
   }
 
   /**
@@ -238,7 +245,7 @@ export class ProductionAPIService {
     this.wsConnection = new WebSocket(wsURL);
 
     this.wsConnection.onopen = () => {
-      console.log('🔌 WebSocket connected');
+      logger.info('🔌 WebSocket connected', undefined, 'ProductionAPIService');
       // Authentification WebSocket
       this.wsConnection?.send(JSON.stringify({
         type: 'authenticate',
@@ -252,11 +259,11 @@ export class ProductionAPIService {
     };
 
     this.wsConnection.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
+      logger.error('❌ WebSocket error', { error }, 'ProductionAPIService');
     };
 
     this.wsConnection.onclose = () => {
-      console.log('🔌 WebSocket disconnected');
+      logger.info('🔌 WebSocket disconnected', undefined, 'ProductionAPIService');
       // Reconnexion automatique
       setTimeout(() => this.connectWebSocket(), 5000);
     };
@@ -336,7 +343,7 @@ export class ProductionAPIService {
 
       return await response.json();
     } catch (error) {
-      console.error(`API Error [${method} ${endpoint}]:`, error);
+      logger.error(`API Error [${method} ${endpoint}]`, { error }, 'ProductionAPIService');
       
       // Fallback vers données mock en cas d'erreur
       if (process.env.NODE_ENV === 'development') {
@@ -351,7 +358,7 @@ export class ProductionAPIService {
    * Données de fallback pour le développement
    */
   private getFallbackData<T>(endpoint: string, method: string): APIResponse<T> {
-    console.warn(`🔄 Using fallback data for ${method} ${endpoint}`);
+    logger.warn(`🔄 Using fallback data for ${method} ${endpoint}`, undefined, 'ProductionAPIService');
     
     const fallbackData: any = {
       '/organisms': {

@@ -46,4 +46,16 @@ export interface INeuralMesh {
   // Sérialisation
   toJSON(): any;
   suspend(): Promise<void>;
+  
+  // Pattern processing for service compatibility
+  processPattern?: (pattern: any) => Promise<any>;
+  learn?: (data: any) => Promise<void>;
+  getPerformanceMetrics?: () => any;
+
+  // Missing methods for service compatibility
+  saveState(): any;
+  loadState(state: any): void;
+  reset(): void;
+  healthCheck(): { healthy: boolean; issues: string[] };
+  cleanup(): void;
 } 

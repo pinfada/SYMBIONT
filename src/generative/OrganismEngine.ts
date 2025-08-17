@@ -5,9 +5,12 @@ import { MutationEngine } from './MutationEngine';
 import { ProceduralGenerator } from './ProceduralGenerator';
 import { PerformanceMonitor } from '../monitoring/PerformanceMonitor';
 import {
+import { SecureLogger } from '@shared/utils/secureLogger';
   OrganismState,
   OrganismMutation,
-  OrganismTraits,
+  OrganismTraits
+} from '../shared/types/organism';
+import {
   VisualProperties,
   Geometry
 } from '@shared/types';
@@ -73,7 +76,8 @@ export class OrganismEngine {
     // Propriétés initiales
     this.traits = {
       curiosity: 0.5, focus: 0.5, rhythm: 0.5, empathy: 0.5,
-      creativity: 0.5, energy: 0.5, harmony: 0.5, wisdom: 0.1
+      creativity: 0.5, resilience: 0.5, adaptability: 0.5, 
+      memory: 0.5, intuition: 0.5
     };
     this.visualProperties = {
       primaryColor: { h: 200, s: 80, l: 60 },
@@ -193,7 +197,7 @@ export class OrganismEngine {
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+      SecureLogger.error('Shader compilation error:', gl.getShaderInfoLog(shader));
       gl.deleteShader(shader);
       return null;
     }
@@ -312,7 +316,7 @@ export class OrganismEngine {
     // Suppression des event listeners
     window.removeEventListener('resize', this.resizeCanvas.bind(this));
     
-    console.log('OrganismEngine resources cleaned up');
+    SecureLogger.info('OrganismEngine resources cleaned up');
   }
   
   /**

@@ -2,6 +2,7 @@
 // Évite les mutations trop fréquentes qui peuvent dégrader les performances
 
 import { errorHandler } from './ErrorHandler';
+import { SecureRandom } from '../../shared/utils/secureRandom';
 
 export interface MutationRequest {
   id: string;
@@ -54,7 +55,7 @@ export class MutationBatcher {
    * Ajoute une requête de mutation au batch
    */
   public addMutation(rate: number, priority: 'low' | 'normal' | 'high' = 'normal'): string {
-    const mutationId = `mutation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const mutationId = `mutation_${Date.now()}_${SecureRandom.random().toString(36).substr(2, 9)}`;
     
     const request: MutationRequest = {
       id: mutationId,

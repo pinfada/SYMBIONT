@@ -5,6 +5,7 @@ import { OrganismViewer } from './OrganismViewer';
 import { ConsciousnessGauge } from './ConsciousnessGauge';
 import { TraitsRadarChart } from './TraitsRadarChart';
 import { OrganismTraits } from '../types';
+import { SecureRandom } from '../shared/utils/secureRandom';
 
 /**
  * OrganismDashboard - Dashboard principal de visualisation et contrôle
@@ -24,19 +25,19 @@ const DEFAULT_TRAITS: OrganismTraits = {
 
 function randomDNA(length = 16) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return Array.from({ length }, () => chars[Math.floor(SecureRandom.random() * chars.length)]).join('');
 }
 
 function randomTraits(): OrganismTraits {
   return {
-    curiosity: Math.random(),
-    focus: Math.random(),
-    rhythm: Math.random(),
-    empathy: Math.random(),
-    creativity: Math.random(),
-    energy: Math.random(),
-    harmony: Math.random(),
-    wisdom: Math.random()
+    curiosity: SecureRandom.random(),
+    focus: SecureRandom.random(),
+    rhythm: SecureRandom.random(),
+    empathy: SecureRandom.random(),
+    creativity: SecureRandom.random(),
+    energy: SecureRandom.random(),
+    harmony: SecureRandom.random(),
+    wisdom: SecureRandom.random()
   };
 }
 

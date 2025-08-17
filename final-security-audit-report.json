@@ -1,0 +1,97 @@
+{
+  "timestamp": "2025-08-17T16:48:50.300Z",
+  "version": "1.0.0",
+  "globalScore": {
+    "score": 48,
+    "maxScore": 70,
+    "percentage": 68.57142857142857,
+    "grade": "D"
+  },
+  "results": [
+    {
+      "name": "Math.random Usage",
+      "status": "WARNING",
+      "score": 0,
+      "details": "11 occurrences trouvées",
+      "recommendations": [
+        "Migrer vers SecureRandom.random()"
+      ]
+    },
+    {
+      "name": "Console.log Exposure",
+      "status": "WARNING",
+      "score": 8,
+      "details": "2 occurrences console.log",
+      "recommendations": [
+        "Remplacer par logger sécurisé"
+      ]
+    },
+    {
+      "name": "Hardcoded Secrets",
+      "status": "PASS",
+      "score": 10,
+      "details": "0 secrets potentiels détectés",
+      "recommendations": []
+    },
+    {
+      "name": "Crypto Compliance",
+      "status": "PASS",
+      "score": 10,
+      "details": "3/3 vérifications crypto passées",
+      "recommendations": []
+    },
+    {
+      "name": "Environment Config",
+      "status": "PASS",
+      "score": 10,
+      "details": "Configuration environnement 100% complète",
+      "recommendations": []
+    },
+    {
+      "name": "Test Coverage",
+      "status": "CRITICAL",
+      "score": 5,
+      "details": "2/2 tests sécurité, execution KO",
+      "recommendations": [
+        "Améliorer coverage tests sécurité"
+      ]
+    },
+    {
+      "name": "Build Integrity",
+      "status": "CRITICAL",
+      "score": 5,
+      "details": "Build KO, 3/3 fichiers",
+      "recommendations": [
+        "Corriger erreurs de build"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "CRITICAL",
+      "title": "Problèmes critiques à résoudre avant production",
+      "actions": [
+        "Améliorer coverage tests sécurité",
+        "Corriger erreurs de build"
+      ]
+    },
+    {
+      "priority": "HIGH",
+      "title": "Améliorations recommandées",
+      "actions": [
+        "Migrer vers SecureRandom.random()",
+        "Remplacer par logger sécurisé"
+      ]
+    },
+    {
+      "priority": "MEDIUM",
+      "title": "Améliorations générales",
+      "actions": [
+        "Finaliser migration Math.random vers SecureRandom",
+        "Compléter les tests de sécurité",
+        "Valider configuration production"
+      ]
+    }
+  ],
+  "productionReady": false
+}

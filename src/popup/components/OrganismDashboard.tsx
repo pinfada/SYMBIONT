@@ -63,7 +63,7 @@ export const OrganismDashboard: React.FC = () => {
           </div>
           <div className="info-item flex flex-col items-center">
             <span className="info-label text-[#888] text-sm">Mutations</span>
-            <span className="info-value text-lg font-bold">{organism.mutations.length}</span>
+            <span className="info-value text-lg font-bold">{organism.mutations?.length || 0}</span>
           </div>
         </div>
         <div className="flex flex-col md:flex-row gap-8 justify-center items-center mt-8">

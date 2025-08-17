@@ -4,6 +4,8 @@
 import { INeuralMesh } from './interfaces/INeuralMesh';
 import { WorkerMessage, WorkerResponse } from '../workers/NeuralWorker';
 import { errorHandler } from './utils/ErrorHandler';
+import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 interface NeuralNode {
   id: string;
@@ -59,7 +61,7 @@ export class NeuralMeshAsync implements INeuralMesh {
       timeoutMs: 5000,
       ...config
     };
-    this.networkId = `network_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.networkId = `network_${Date.now()}_${SecureRandom.random().toString(36).substr(2, 9)}`;
     this.initializeWorker();
   }
 
@@ -144,7 +146,7 @@ export class NeuralMeshAsync implements INeuralMesh {
         return;
       }
 
-      const id = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const id = `${type}_${Date.now()}_${SecureRandom.random().toString(36).substr(2, 9)}`;
       
       const timeout = setTimeout(() => {
         this.pendingOperations.delete(id);
@@ -311,8 +313,8 @@ export class NeuralMeshAsync implements INeuralMesh {
     // Mutate connection weights
     for (const connections of this.connections.values()) {
       for (const connection of connections) {
-        if (Math.random() < rate) {
-          connection.weight += (Math.random() - 0.5) * 0.2;
+        if (SecureRandom.random() < rate) {
+          connection.weight += (SecureRandom.random() - 0.5) * 0.2;
           connection.weight = Math.max(-2, Math.min(2, connection.weight));
         }
       }
@@ -320,8 +322,8 @@ export class NeuralMeshAsync implements INeuralMesh {
 
     // Mutate node biases
     for (const node of this.nodes.values()) {
-      if (Math.random() < rate) {
-        node.bias += (Math.random() - 0.5) * 0.1;
+      if (SecureRandom.random() < rate) {
+        node.bias += (SecureRandom.random() - 0.5) * 0.1;
         node.bias = Math.max(-1, Math.min(1, node.bias));
       }
     }
@@ -476,7 +478,7 @@ export class NeuralMeshAsync implements INeuralMesh {
       this.workerReady = false;
     }
     
-    console.log('Neural mesh suspended');
+    SecureLogger.info('Neural mesh suspended');
   }
 
   /**
@@ -524,5 +526,133 @@ export class NeuralMeshAsync implements INeuralMesh {
       operationCount: this.operationCount,
       workerReady: this.workerReady
     };
+  }
+
+  /**
+   * Save current state for persistence
+   */
+  saveState(): any {
+    return {
+      nodes: Array.from(this.nodes.entries()),
+      connections: Array.from(this.connections.entries()).map(([key, connections]) => [
+        key,
+        connections
+      ]),
+      activations: Object.fromEntries(this.activations),
+      performance: this.getPerformanceMetrics()
+    };
+  }
+
+  /**
+   * Load state from saved data
+   */
+  loadState(state: any): void {
+    if (state.nodes) {
+      this.nodes.clear();
+      for (const [id, node] of state.nodes) {
+        this.nodes.set(id, node as NeuralNode);
+      }
+    }
+    
+    if (state.connections) {
+      this.connections.clear();
+      for (const [fromId, connections] of state.connections) {
+        this.connections.set(fromId, connections as NeuralConnection[]);
+      }
+    }
+    
+    if (state.activations) {
+      this.activations.clear();
+      for (const [id, activation] of Object.entries(state.activations)) {
+        this.activations.set(id, activation as number);
+      }
+    }
+
+    if (state.performance) {
+      this.lastPropagationTime = state.performance.lastPropagationTime || 0;
+      this.averageProcessingTime = state.performance.averageProcessingTime || 0;
+      this.operationCount = state.performance.operationCount || 0;
+    }
+  }
+
+  /**
+   * Reset neural mesh to initial state
+   */
+  reset(): void {
+    this.nodes.clear();
+    this.connections.clear();
+    this.activations.clear();
+    this.lastPropagationTime = 0;
+    this.averageProcessingTime = 0;
+    this.operationCount = 0;
+    this.setupDefaultNetwork();
+  }
+
+  /**
+   * Health check for neural mesh
+   */
+  healthCheck(): { healthy: boolean; issues: string[] } {
+    const issues: string[] = [];
+    
+    if (this.nodes.size === 0) {
+      issues.push('No nodes in neural mesh');
+    }
+    
+    if (this.connections.size === 0) {
+      issues.push('No connections in neural mesh');
+    }
+
+    if (this.pendingOperations.size > 10) {
+      issues.push(`Too many pending operations: ${this.pendingOperations.size}`);
+    }
+
+    if (this.worker && !this.workerReady) {
+      issues.push('Worker is not ready');
+    }
+    
+    // Check for orphaned nodes
+    const connectedNodes = new Set<string>();
+    for (const [fromId, connections] of this.connections) {
+      connectedNodes.add(fromId);
+      for (const connection of connections) {
+        connectedNodes.add(connection.to);
+      }
+    }
+    
+    const orphanedNodes = Array.from(this.nodes.keys()).filter(
+      nodeId => !connectedNodes.has(nodeId)
+    );
+    
+    if (orphanedNodes.length > 0) {
+      issues.push(`Orphaned nodes: ${orphanedNodes.join(', ')}`);
+    }
+    
+    return {
+      healthy: issues.length === 0,
+      issues
+    };
+  }
+
+  /**
+   * Cleanup resources
+   */
+  cleanup(): void {
+    // Clean up pending operations
+    this.pendingOperations.forEach(({ timeout }) => {
+      clearTimeout(timeout);
+    });
+    this.pendingOperations.clear();
+
+    // Terminate worker
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
+    }
+
+    // Clear all data
+    this.nodes.clear();
+    this.connections.clear();
+    this.activations.clear();
+    this.workerReady = false;
   }
 } 

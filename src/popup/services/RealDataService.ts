@@ -1,6 +1,8 @@
 // Service de transition des données mockées vers vraies données
 import { OrganismState } from '../../shared/types/organism';
 import { Invitation, InvitationStatus } from '../../shared/types/invitation';
+import { SecureRandom } from '@shared/utils/secureRandom';
+import { SecureLogger } from '../shared/utils/secureLogger';
 
 // Feature flags pour migration progressive
 const FEATURE_FLAGS = {
@@ -10,12 +12,39 @@ const FEATURE_FLAGS = {
   USE_BACKEND_API: localStorage.getItem('symbiont_feature_backend_api') === 'true'
 };
 
-// Configuration backend API
-const API_CONFIG = {
-  BASE_URL: process.env.SYMBIONT_API_URL || 'http://localhost:3001/api',
-  WS_URL: process.env.SYMBIONT_WS_URL || 'ws://localhost:3001',
-  API_KEY: process.env.SYMBIONT_API_KEY || 'demo-key'
-};
+// Configuration backend API - SÉCURITÉ CRITIQUE
+const API_CONFIG = (() => {
+  const apiUrl = process.env.SYMBIONT_API_URL;
+  const wsUrl = process.env.SYMBIONT_WS_URL;
+  const apiKey = process.env.SYMBIONT_API_KEY;
+  
+  // En développement, permettre fallback avec avertissement
+  if (process.env.NODE_ENV === 'development') {
+    return {
+      BASE_URL: apiUrl || 'http://localhost:3001/api',
+      WS_URL: wsUrl || 'ws://localhost:3001',
+      API_KEY: apiKey || (() => {
+        SecureLogger.warn('⚠️ DÉVELOPPEMENT: Utilisation API key par défaut - NE PAS UTILISER EN PRODUCTION');
+        return 'dev-api-key-unsafe';
+      })()
+    };
+  }
+  
+  // En production, variables obligatoires
+  if (!apiUrl || !apiKey) {
+    throw new Error('Variables d\'environnement SYMBIONT_API_URL et SYMBIONT_API_KEY obligatoires en production');
+  }
+  
+  if (apiKey.length < 32) {
+    throw new Error('SYMBIONT_API_KEY trop courte (minimum 32 caractères cryptographiquement sécurisés)');
+  }
+  
+  return {
+    BASE_URL: apiUrl,
+    WS_URL: wsUrl || apiUrl.replace('http', 'ws').replace('/api', ''),
+    API_KEY: apiKey
+  };
+})();
 
 interface BehaviorMetrics {
   domains: Map<string, DomainData>;
@@ -92,7 +121,7 @@ export class RealDataService {
       const behaviors = await this.collectUserBehaviors(userId);
       return this.buildDNAFromBehaviors(behaviors);
     } catch (error) {
-      console.warn('Erreur génération ADN réel, fallback mock:', error);
+      SecureLogger.warn('Erreur génération ADN réel, fallback mock:', error);
       return 'MOCKDNA123456789ABCDEF';
     }
   }
@@ -222,7 +251,7 @@ export class RealDataService {
       
       return await response.json();
     } catch (error) {
-      console.warn('Erreur API invitations, fallback mock:', error);
+      SecureLogger.warn('Erreur API invitations, fallback mock:', error);
       // Fallback vers données mock
       const { MockInvitationService } = await import('./MockInvitationService');
       return {
@@ -244,9 +273,9 @@ export class RealDataService {
     if (!FEATURE_FLAGS.USE_REAL_BEHAVIOR) {
       // Mode démo - métriques aléatoires
       return {
-        cpu: Math.random() * 0.2,
-        memory: Math.random() * 20,
-        latency: Math.random() * 5
+        cpu: SecureRandom.random() * 0.2,
+        memory: SecureRandom.random() * 20,
+        latency: SecureRandom.random() * 5
       };
     }
 
@@ -258,11 +287,11 @@ export class RealDataService {
 
       return { cpu, memory, latency };
     } catch (error) {
-      console.warn('Erreur métriques réelles, fallback mock:', error);
+      SecureLogger.warn('Erreur métriques réelles, fallback mock:', error);
       return {
-        cpu: Math.random() * 0.2,
-        memory: Math.random() * 20,
-        latency: Math.random() * 5
+        cpu: SecureRandom.random() * 0.2,
+        memory: SecureRandom.random() * 20,
+        latency: SecureRandom.random() * 5
       };
     }
   }
@@ -273,7 +302,7 @@ export class RealDataService {
       const memInfo = await performance.measureUserAgentSpecificMemory();
       return memInfo.bytes / (1024 * 1024); // MB
     }
-    return Math.random() * 20; // Fallback
+    return SecureRandom.random() * 20; // Fallback
   }
 
   private async getCPUUsage(): Promise<number> {
@@ -284,7 +313,7 @@ export class RealDataService {
       
       // CPU stress test léger
       for (let i = 0; i < iterations; i++) {
-        Math.random() * Math.random();
+        SecureRandom.random() * SecureRandom.random();
       }
       
       const duration = performance.now() - start;
@@ -299,7 +328,7 @@ export class RealDataService {
       await fetch('/favicon.ico', { method: 'HEAD' });
       return performance.now() - start;
     } catch {
-      return Math.random() * 5; // Fallback
+      return SecureRandom.random() * 5; // Fallback
     }
   }
 
@@ -351,7 +380,7 @@ export class RealDataService {
   private trackTabChange(tabId: number): void {
     chrome.tabs.get(tabId, (tab) => {
       if (tab.url) {
-        console.log('Tab changed to:', new URL(tab.url).hostname);
+        SecureLogger.info('Tab changed to:', new URL(tab.url).hostname);
       }
     });
   }
@@ -390,7 +419,7 @@ export class RealDataService {
   // === MIGRATION UTILITIES ===
 
   async migrateToRealData(userId: string): Promise<void> {
-    console.log('🚀 Démarrage migration vers vraies données...');
+    SecureLogger.info('🚀 Démarrage migration vers vraies données...');
 
     try {
       // 1. Générer ADN réel
@@ -420,9 +449,9 @@ export class RealDataService {
       // 4. Sauvegarder
       localStorage.setItem('symbiont_organism', JSON.stringify(updatedOrganism));
       
-      console.log('✅ Migration réussie:', realDNA);
+      SecureLogger.info('✅ Migration réussie:', realDNA);
     } catch (error) {
-      console.error('❌ Erreur migration:', error);
+      SecureLogger.error('❌ Erreur migration:', error);
       throw error;
     }
   }

@@ -1,4 +1,6 @@
 import { INeuralMesh } from './interfaces/INeuralMesh';
+import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export class NeuralMesh implements INeuralMesh {
   private nodes: Map<string, { type: string; activation: number; bias: number }> = new Map();
@@ -45,7 +47,7 @@ export class NeuralMesh implements INeuralMesh {
   stimulate(nodeId: string, value: number): void {
     const node = this.nodes.get(nodeId);
     if (!node || node.type !== 'input') {
-      console.warn(`Cannot stimulate non-input node: ${nodeId}`);
+      SecureLogger.warn(`Cannot stimulate non-input node: ${nodeId}`);
       return;
     }
     this.activations.set(nodeId, value);
@@ -95,8 +97,8 @@ export class NeuralMesh implements INeuralMesh {
     // Mutate connection weights
     for (const connections of this.connections.values()) {
       for (const [toId, weight] of connections) {
-        if (Math.random() < rate) {
-          connections.set(toId, weight + (Math.random() - 0.5) * 0.2);
+        if (SecureRandom.random() < rate) {
+          connections.set(toId, weight + (SecureRandom.random() - 0.5) * 0.2);
           connections.set(toId, Math.max(-2, Math.min(2, connections.get(toId) || 0)));
         }
       }
@@ -104,8 +106,8 @@ export class NeuralMesh implements INeuralMesh {
 
     // Mutate node biases
     for (const node of this.nodes.values()) {
-      if (Math.random() < rate) {
-        node.bias += (Math.random() - 0.5) * 0.1;
+      if (SecureRandom.random() < rate) {
+        node.bias += (SecureRandom.random() - 0.5) * 0.1;
         node.bias = Math.max(-1, Math.min(1, node.bias));
       }
     }
@@ -197,7 +199,7 @@ export class NeuralMesh implements INeuralMesh {
   async suspend(): Promise<void> {
     // Clear activations but keep structure
     this.activations.clear();
-    console.log('Neural mesh suspended');
+    SecureLogger.info('Neural mesh suspended');
   }
 
   /**
@@ -216,5 +218,160 @@ export class NeuralMesh implements INeuralMesh {
     // Mock implementation - in real scenario, measure actual memory footprint
     const memorySize = (this.nodes.size + this.connections.size) * 64; // bytes approximation
     return Math.min(1, memorySize / (1024 * 1024)); // Convert to MB ratio
+  }
+
+  /**
+   * Save current state for persistence
+   */
+  saveState(): any {
+    return {
+      nodes: Object.fromEntries(this.nodes),
+      connections: Object.fromEntries(
+        Array.from(this.connections.entries()).map(([key, map]) => [
+          key,
+          Object.fromEntries(map)
+        ])
+      ),
+      activations: Object.fromEntries(this.activations)
+    };
+  }
+
+  /**
+   * Load state from saved data
+   */
+  loadState(state: any): void {
+    if (state.nodes) {
+      this.nodes.clear();
+      for (const [id, node] of Object.entries(state.nodes)) {
+        this.nodes.set(id, node as any);
+      }
+    }
+    
+    if (state.connections) {
+      this.connections.clear();
+      for (const [fromId, connections] of Object.entries(state.connections)) {
+        this.connections.set(fromId, new Map(Object.entries(connections as any)));
+      }
+    }
+    
+    if (state.activations) {
+      this.activations.clear();
+      for (const [id, activation] of Object.entries(state.activations)) {
+        this.activations.set(id, activation as number);
+      }
+    }
+  }
+
+  /**
+   * Reset neural mesh to initial state
+   */
+  reset(): void {
+    this.nodes.clear();
+    this.connections.clear();
+    this.activations.clear();
+    this.setupDefaultNetwork();
+  }
+
+  /**
+   * Health check for neural mesh
+   */
+  healthCheck(): { healthy: boolean; issues: string[] } {
+    const issues: string[] = [];
+    
+    if (this.nodes.size === 0) {
+      issues.push('No nodes in neural mesh');
+    }
+    
+    if (this.connections.size === 0) {
+      issues.push('No connections in neural mesh');
+    }
+    
+    // Check for orphaned nodes
+    const connectedNodes = new Set<string>();
+    for (const [fromId, connections] of this.connections) {
+      connectedNodes.add(fromId);
+      for (const toId of connections.keys()) {
+        connectedNodes.add(toId);
+      }
+    }
+    
+    const orphanedNodes = Array.from(this.nodes.keys()).filter(
+      nodeId => !connectedNodes.has(nodeId)
+    );
+    
+    if (orphanedNodes.length > 0) {
+      issues.push(`Orphaned nodes: ${orphanedNodes.join(', ')}`);
+    }
+    
+    return {
+      healthy: issues.length === 0,
+      issues
+    };
+  }
+
+  /**
+   * Cleanup resources
+   */
+  cleanup(): void {
+    this.nodes.clear();
+    this.connections.clear();
+    this.activations.clear();
+  }
+
+  /**
+   * Process a pattern through the neural mesh (optional)
+   */
+  async processPattern(pattern: any): Promise<any> {
+    // Simple pattern processing - stimulate input nodes with pattern data
+    if (pattern && typeof pattern === 'object') {
+      const inputNodes = Array.from(this.nodes.entries())
+        .filter(([, node]) => node.type === 'input')
+        .map(([id]) => id);
+
+      // Stimulate input nodes with pattern values
+      Object.entries(pattern).forEach(([, value], index) => {
+        if (index < inputNodes.length && typeof value === 'number') {
+          this.stimulate(inputNodes[index], value);
+        }
+      });
+
+      // Propagate and return output activations
+      this.propagate();
+      
+      const outputNodes = Array.from(this.nodes.entries())
+        .filter(([, node]) => node.type === 'output');
+      
+      return Object.fromEntries(
+        outputNodes.map(([id]) => [id, this.getActivation(id)])
+      );
+    }
+    
+    return {};
+  }
+
+  /**
+   * Learn from data (optional)
+   */
+  async learn(data: any): Promise<void> {
+    // Simple learning implementation - adjust based on data
+    if (data && typeof data === 'object' && data.feedback) {
+      // Apply small mutations based on feedback
+      const learningRate = Math.abs(data.feedback) * 0.01;
+      this.mutate(learningRate);
+    }
+  }
+
+  /**
+   * Get performance metrics (optional)
+   */
+  getPerformanceMetrics(): any {
+    return {
+      nodeCount: this.nodes.size,
+      connectionCount: Array.from(this.connections.values()).reduce(
+        (sum, connections) => sum + connections.size, 0
+      ),
+      neuralActivity: this.getNeuralActivity(),
+      connectionStrength: this.getConnectionStrength()
+    };
   }
 }

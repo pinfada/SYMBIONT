@@ -53,4 +53,10 @@ SYMBIONT intègre une sécurité avancée et une conformité RGPD native :
 
 - **[tests.md](./tests.md)** - Guide des tests unitaires et d'intégration
 - **[onboarding.md](./onboarding.md)** - Guide d'intégration développeur
-- **[optimisations.md](./optimisations.md)** - Optimisations de performance 
+- **[optimisations.md](./optimisations.md)** - Optimisations de performance
+
+## 🚀 Production & Déploiement
+
+- **[production-readiness-plan.md](./production-readiness-plan.md)** - Plan complet de mise en production
+- **[plan-evaluation-matrix.md](./plan-evaluation-matrix.md)** - Matrice d'évaluation et critères de qualité
+- **[plan-optimization-iteration.md](./plan-optimization-iteration.md)** - Processus d'amélioration continue

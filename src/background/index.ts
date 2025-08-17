@@ -11,6 +11,7 @@ import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
 import { OrganismFactory } from '../core/factories/OrganismFactory';
 import { generateUUID } from '../shared/utils/uuid';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 // --- Ajout des modules résilients ---
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
@@ -24,6 +25,7 @@ import { SocialResilience } from '../social/social-resilience';
 import { MysticalEvents } from '../social/mystical-events';
 
 // --- Instanciation des modules résilients ---
+import { SecureRandom } from '../shared/utils/secureRandom';
 export const hybridStorage = new HybridStorageManager();
 export const resilientBus = new ResilientMessageBus();
 export const healthMonitor = new BasicHealthMonitor(async (msg) => {
@@ -39,7 +41,7 @@ export const healthMonitor = new BasicHealthMonitor(async (msg) => {
   };
   const result = await resilientBus.send(message);
   if (!result.success) {
-    console.warn('Message ORGANISM_UPDATE fallback, voir la queue persistante.');
+    SecureLogger.warn('Message ORGANISM_UPDATE fallback, voir la queue persistante.');
   }
 })();
 
@@ -111,9 +113,9 @@ class BackgroundService {
       // Start periodic tasks
       this.startPeriodicTasks();
       
-      console.log('Background service initialized');
+      SecureLogger.info('Background service initialized');
     } catch (error) {
-      console.error('Failed to initialize background service:', error);
+      SecureLogger.error('Failed to initialize background service:', error);
     }
   }
 
@@ -125,11 +127,15 @@ class BackgroundService {
       health: 100,
       energy: 100,
       traits: {
-        curiosity: Math.random() * 100,
-        focus: Math.random() * 100,
-        rhythm: Math.random() * 100,
-        empathy: Math.random() * 100,
-        creativity: Math.random() * 100,
+        curiosity: SecureRandom.random() * 100,
+        focus: SecureRandom.random() * 100,
+        rhythm: SecureRandom.random() * 100,
+        empathy: SecureRandom.random() * 100,
+        creativity: SecureRandom.random() * 100,
+        resilience: SecureRandom.random() * 100,
+        adaptability: SecureRandom.random() * 100,
+        memory: SecureRandom.random() * 100,
+        intuition: SecureRandom.random() * 100,
       },
       visualDNA,
       lastMutation: Date.now(),
@@ -147,7 +153,7 @@ class BackgroundService {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < 64; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+      result += chars.charAt(Math.floor(SecureRandom.random() * chars.length));
     }
     return result;
   }
@@ -158,7 +164,7 @@ class BackgroundService {
       const { url, title } = message.payload;
       
       // Update behavior data
-      let behavior = await this.storage.getBehavior(url) || {
+      const behavior = await this.storage.getBehavior(url) || {
         url,
         visitCount: 0,
         totalTime: 0,
@@ -307,7 +313,7 @@ class BackgroundService {
 
     this.messageBus.on(MessageType.REQUEST_SHARED_MUTATION, (message: any) => {
       const { initiatorId, traits } = message.payload;
-      const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+      const code = SecureRandom.random().toString(36).substr(2, 6).toUpperCase();
       const expiresAt = Date.now() + 1000 * 60 * 5; // 5 min
       sharedMutationSessions.set(code, { initiatorId, traits, expiresAt });
       resilientBus.send({
@@ -358,7 +364,7 @@ class BackgroundService {
     });
 
     // --- Rituel de réveil collectif (simple, local) ---
-    let collectiveWakeParticipants: Set<string> = new Set();
+    const collectiveWakeParticipants: Set<string> = new Set();
     let collectiveWakeTimeout: NodeJS.Timeout | null = null;
 
     this.messageBus.on(MessageType.COLLECTIVE_WAKE_REQUEST, (message: any) => {
@@ -517,7 +523,7 @@ class BackgroundService {
     const timeSinceLastMutation = now - (org.lastMutation ?? 0);
     // Mutation probability increases with time
     const mutationProbability = Math.min(0.5, timeSinceLastMutation / (1000 * 60 * 60)); // Max 50% after 1 hour
-    if (Math.random() < mutationProbability) {
+    if (SecureRandom.random() < mutationProbability) {
       const mutation = this.generateMutation();
       await this.storage.addMutation(mutation);
       org.lastMutation = now;
@@ -528,11 +534,11 @@ class BackgroundService {
 
   private generateMutation(): OrganismMutation {
     const types: Array<'visual' | 'behavioral' | 'cognitive'> = ['visual', 'behavioral', 'cognitive'];
-    const type = types[Math.floor(Math.random() * types.length)];
+    const type = types[Math.floor(SecureRandom.random() * types.length)];
     return {
       type,
       trigger: this.getMutationTrigger(type),
-      magnitude: Math.random() * 0.5 + 0.1, // 0.1 to 0.6
+      magnitude: SecureRandom.random() * 0.5 + 0.1, // 0.1 to 0.6
       timestamp: Date.now(),
     } as OrganismMutation;
   }
@@ -545,7 +551,7 @@ class BackgroundService {
     };
     
     const typeTriggers = triggers[type];
-    return typeTriggers[Math.floor(Math.random() * typeTriggers.length)];
+    return typeTriggers[Math.floor(SecureRandom.random() * typeTriggers.length)];
   }
 
   private applyMutation(mutation: OrganismMutation): void {
@@ -555,32 +561,34 @@ class BackgroundService {
         // Modify visual DNA
         this.organism.visualDNA = this.mutateVisualDNA(this.organism.visualDNA ?? '', mutation.magnitude);
         break;
-      case 'behavioral':
+      case 'behavioral': {
         // Adjust traits based on mutation
         const traitKeys = Object.keys(this.organism.traits) as Array<keyof typeof this.organism.traits>;
-        const randomTrait = traitKeys[Math.floor(Math.random() * traitKeys.length)];
-        this.organism.traits[randomTrait] += (Math.random() - 0.5) * mutation.magnitude * 20;
+        const randomTrait = traitKeys[Math.floor(SecureRandom.random() * traitKeys.length)];
+        this.organism.traits[randomTrait] += (SecureRandom.random() - 0.5) * mutation.magnitude * 20;
         break;
-      case 'cognitive':
+      }
+      case 'cognitive': {
         // Affect multiple traits slightly
         if (!this.organism) return;
         const traits = this.organism.traits;
         if (!traits) return;
         Object.keys(traits).forEach(trait => {
-          traits[trait as keyof typeof traits] += (Math.random() - 0.5) * mutation.magnitude * 5;
+          traits[trait as keyof typeof traits] += (SecureRandom.random() - 0.5) * mutation.magnitude * 5;
         });
         break;
+      }
     }
   }
 
   private mutateVisualDNA(dna: string, magnitude: number): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const numChanges = Math.floor(dna.length * magnitude);
-    let newDNA = dna.split('');
+    const newDNA = dna.split('');
     
     for (let i = 0; i < numChanges; i++) {
-      const position = Math.floor(Math.random() * dna.length);
-      newDNA[position] = chars.charAt(Math.floor(Math.random() * chars.length));
+      const position = Math.floor(SecureRandom.random() * dna.length);
+      newDNA[position] = chars.charAt(Math.floor(SecureRandom.random() * chars.length));
     }
     
     return newDNA.join('');
@@ -711,25 +719,4 @@ export const socialResilience = new SocialResilience();
 export const mysticalEvents = new MysticalEvents();
 
 // --- Hooks d'intégration (après instanciation des modules) ---
-// Synchronisation d'état avec le réseau
-// @ts-expect-error Fonction réservée pour usage futur
-function _syncOrganismState(state: any) {
-  distributedNetwork.performCommunityBackup(state)
-}
-// Propagation d'une mutation à la communauté
-// @ts-expect-error Fonction réservée pour usage futur
-function _propagateMutation(mutation: any) {
-  distributedNetwork.broadcastMutation(mutation)
-  collectiveIntelligence.proposeMutation(mutation, 'self')
-}
-// Déclenchement d'un événement mystique
-// @ts-expect-error Fonction réservée pour usage futur
-function _triggerMystical(eventId: string, payload: any) {
-  mysticalEvents.triggerMysticalEvent(eventId, payload)
-  mysticalEvents.propagateToCommunity(eventId, payload)
-}
-// Backup communautaire en cas de panne
-// @ts-expect-error Fonction réservée pour usage futur
-function _backupOnFailure(organismId: string) {
-  socialResilience.requestCommunityBackup(organismId)
-}
+// Note: Fonctions réservées pour usage futur, hooks d'intégration sociale

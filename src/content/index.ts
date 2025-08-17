@@ -7,6 +7,7 @@ import { InteractionCollector } from './collectors/InteractionCollector';
 import { DOMAnalyzer } from './observers/DOMAnalyzer';
 import { ScrollTracker } from './observers/ScrollTracker';
 import { AttentionMonitor } from './monitors/AttentionMonitor';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 /**
  * ContentScript - Système sensoriel de SYMBIONT
@@ -42,7 +43,7 @@ class ContentScript {
   private latestLCP: number = 0;
 
   private constructor() {
-    console.log('🔍 SYMBIONT Content Script initializing...');
+    SecureLogger.info('🔍 SYMBIONT Content Script initializing...');
     
     this.messageBus = new MessageBus('content');
     this.navigationObserver = new NavigationObserver(this.messageBus);
@@ -70,7 +71,7 @@ class ContentScript {
     // Nettoyage à la fermeture
     window.addEventListener('beforeunload', this.cleanup.bind(this));
     
-    console.log('✅ SYMBIONT Content Script ready');
+    SecureLogger.info('✅ SYMBIONT Content Script ready');
   }
 
   private setupObservers(): void {
@@ -358,7 +359,7 @@ class ContentScript {
   private handleLCP(entry: PerformanceEntry): void {
     // Notification optionnelle sur LCP
     if (entry.startTime > 2500) { // Seuil critique LCP > 2.5s
-      console.debug('Slow LCP detected:', entry.startTime);
+      SecureLogger.debug('Slow LCP detected:', entry.startTime);
     }
   }
 
@@ -372,7 +373,7 @@ class ContentScript {
     this.scrollTracker.stop();
     this.attentionMonitor.stop();
     
-    console.log('🧹 SYMBIONT Content Script cleaned up');
+    SecureLogger.info('🧹 SYMBIONT Content Script cleaned up');
   }
 }
 

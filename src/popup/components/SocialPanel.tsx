@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureLogger } from '../shared/utils/secureLogger';
 
 interface InviteData {
   code: string;
@@ -26,7 +28,7 @@ const SocialPanel: React.FC = () => {
 
   // Génération d'un code d'invitation
   const generateInvite = () => {
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const code = SecureRandom.random().toString(36).substring(2, 10).toUpperCase();
     const invite: InviteData = {
       code,
       expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 jours
@@ -39,7 +41,7 @@ const SocialPanel: React.FC = () => {
     try {
       localStorage.setItem('symbiont_invite_' + code, JSON.stringify(invite));
     } catch (e) {
-      console.warn('Impossible de sauvegarder l\'invitation');
+      SecureLogger.warn('Impossible de sauvegarder l\'invitation');
     }
   };
 
@@ -68,7 +70,7 @@ const SocialPanel: React.FC = () => {
         }
       }
     } catch (e) {
-      console.warn('Erreur lors de l\'acceptation de l\'invitation');
+      SecureLogger.warn('Erreur lors de l\'acceptation de l\'invitation');
     }
   };
 

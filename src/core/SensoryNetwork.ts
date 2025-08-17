@@ -1,3 +1,4 @@
+import { SecureRandom } from '@shared/utils/secureRandom';
 /**
  * SensoryNetwork - Réseau sensoriel pour organisme artificiel
  * - Gère les capteurs, la normalisation, le bruit, l'adaptation
@@ -66,8 +67,8 @@ export class SensoryNetwork {
    */
   private gaussianNoise(mu: number, sigma: number): number {
     let u = 0, v = 0;
-    while (u === 0) u = Math.random();
-    while (v === 0) v = Math.random();
+    while (u === 0) u = SecureRandom.random();
+    while (v === 0) v = SecureRandom.random();
     return mu + sigma * Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   }
 

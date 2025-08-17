@@ -14,7 +14,7 @@ export declare class SynapticRouter {
     private deps;
     constructor(deps: SynapticRouterDeps);
     routeMessage(message: SymbiontMessage): Promise<SymbiontResponse>;
-    optimizeRouting(_performance: PerformanceMetrics): Promise<void>;
+    optimizeRouting(performance: PerformanceMetrics): Promise<void>;
 }
 export {};
 //# sourceMappingURL=SynapticRouter.d.ts.map

@@ -57,9 +57,13 @@ if (obj instanceof HTMLCanvasElement) {
 - Toujours utiliser les types unifiés de `src/types/index.d.ts`
 - Nettoyer les ressources WebGL (`cleanup()`) lors de la destruction du composant ou du contexte perdu
 - Gérer les erreurs de rendu et de mutation via try/catch dans l'adaptateur
-- **NOUVEAU** : Éviter de passer des objets DOM complets dans les payloads de messages
-- **NOUVEAU** : Utiliser `sanitizeMessage()` pour tout objet complexe avant sérialisation
+- **Éviter de passer des objets DOM complets dans les payloads de messages**
+- **Utiliser `sanitizeMessage()` pour tout objet complexe avant sérialisation**
+- **Implémenter la gestion d'erreurs avec circuit breaker patterns**
+- **Utiliser le HybridStorageManager pour toute persistence critique**
 - Tester chaque module indépendamment (TDD recommandé)
+- **Suivre les métriques de performance en temps réel**
+- **Documenter toute nouvelle dépendance ou service externe**
 
 ## 5. Extension et personnalisation
 
@@ -96,11 +100,25 @@ messaging.send(MessageType.WEBGL_INIT, {
 
 ## 8. Dépannage
 
-- Si les shaders ne se chargent pas : vérifier la règle Webpack `asset/source`
-- Si le contexte WebGL est perdu : appeler `engine.cleanup()`
-- Si le bus de messages ne fonctionne pas : vérifier l'import et la configuration de `MessageBus` et `MessageType`
-- **NOUVEAU** : Si erreur de sérialisation circulaire : vérifier que l'objet passe par `sanitizeMessage()`
-- **NOUVEAU** : Si performance dégradée : vérifier les logs de nettoyage d'objets complexes
+### Problèmes courants
+- **Shaders ne se chargent pas** : vérifier la règle Webpack `asset/source`
+- **Contexte WebGL perdu** : appeler `engine.cleanup()` et réinitialiser
+- **Bus de messages défaillant** : vérifier l'import et la configuration de `MessageBus` et `MessageType`
+- **Erreur de sérialisation circulaire** : vérifier que l'objet passe par `sanitizeMessage()`
+- **Performance dégradée** : vérifier les logs de nettoyage d'objets complexes
+
+### Débogage avancé
+- **Extension qui crash** : vérifier le SecurityManager et les logs de sécurité
+- **Mémoire qui fuit** : utiliser les outils de profiling Chrome DevTools
+- **Tests qui timeout** : augmenter les timeouts et vérifier les mocks
+- **Vulnérabilités détectées** : lancer `npm audit` et corriger immédiatement
+- **Backend instable** : vérifier les logs de WebSocketService et DatabaseService
+
+### Monitoring en production
+- Utiliser PerformanceAnalytics pour surveiller les métriques temps réel
+- Configurer des alertes sur les seuils critiques (CPU, mémoire, erreurs)
+- Monitorer les patterns de crash et les erreurs de sérialisation
+- Surveiller la health des connexions WebSocket et base de données
 
 ## 9. Propagation virale, triggers contextuels et transmission collective
 

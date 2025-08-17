@@ -3,6 +3,7 @@
 import { MessageBus } from '../../core/messaging';
 import { Message, MessageType } from '../../shared/messaging/MessageBus';
 import { OrganismMutation, OrganismState } from '../../shared/types/organism';
+import { SecureLogger } from '@shared/utils/secureLogger';
 
 export class WebGLBridge {
   private messageBus: MessageBus;
@@ -33,7 +34,7 @@ export class WebGLBridge {
   
   public startRendering(dna: string): void {
     if (this.isRendering) {
-      console.warn('Le rendu est déjà en cours');
+      SecureLogger.warn('Le rendu est déjà en cours');
       return;
     }
     
@@ -59,7 +60,7 @@ export class WebGLBridge {
   public updateState(state: OrganismState): void {
     // Validation basique de l'état
     if (!state) {
-      console.error('État d\'organisme invalide:', state);
+      SecureLogger.error('État d\'organisme invalide:', state);
       return;
     }
     this.currentState = { ...state }; // Copie défensive
@@ -67,7 +68,7 @@ export class WebGLBridge {
   
   public triggerMutation(mutation: OrganismMutation): void {
     if (!mutation || !mutation.type) {
-      console.error('Mutation invalide:', mutation);
+      SecureLogger.error('Mutation invalide:', mutation);
       return;
     }
     

@@ -10,15 +10,22 @@ export interface ShaderParameters {
   creativity: number;
   focus: number;
   time: number;
+  colorPrimary?: [number, number, number];
+  colorSecondary?: [number, number, number];
+  morphology?: number;
+  complexity?: number;
+  animation?: number;
 }
 
 export interface OrganismJSON {
   mesh: any;
-  traits: OrganismTraits;
-  energy: number;
+  traits: any;
+  energy: any;
   health: number;
   dna: string;
   timestamp: number;
+  neural?: any;
+  lastMutation?: number;
 }
 
 export interface IOrganismCore {

@@ -1,0 +1,62 @@
+dec7fa2626a947739bcddc9474a138cd
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateUUID = generateUUID;
+exports.isCryptoUUIDAvailable = isCryptoUUIDAvailable;
+exports.generateSecureUUID = generateSecureUUID;
+/**
+ * Génère un UUID v4 avec fallback pour les environnements sans crypto.randomUUID
+ */
+function generateUUID() {
+    // Essayer d'abord crypto.randomUUID si disponible
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        try {
+            return crypto.randomUUID();
+        }
+        catch (error) {
+            console.warn('crypto.randomUUID failed, using fallback:', error);
+        }
+    }
+    // Fallback pour les environnements qui ne supportent pas crypto.randomUUID
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+/**
+ * Vérifie si crypto.randomUUID est disponible dans l'environnement actuel
+ */
+function isCryptoUUIDAvailable() {
+    return typeof crypto !== 'undefined' &&
+        typeof crypto.randomUUID === 'function';
+}
+/**
+ * Génère un UUID v4 cryptographiquement sécurisé si possible
+ * Sinon utilise Math.random() comme fallback
+ */
+function generateSecureUUID() {
+    if (isCryptoUUIDAvailable()) {
+        return crypto.randomUUID();
+    }
+    // Fallback sécurisé utilisant crypto.getRandomValues si disponible
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        // Version 4 UUID format
+        array[6] = (array[6] & 0x0f) | 0x40; // version
+        array[8] = (array[8] & 0x3f) | 0x80; // variant
+        const hex = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        return [
+            hex.slice(0, 8),
+            hex.slice(8, 12),
+            hex.slice(12, 16),
+            hex.slice(16, 20),
+            hex.slice(20, 32)
+        ].join('-');
+    }
+    // Dernier recours : Math.random()
+    console.warn('Using Math.random() for UUID generation - not cryptographically secure');
+    return generateUUID();
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL21udC9jL1VzZXJzL21fb2xpL1Byb2pldHMvU1lNQklPTlQvc3JjL3NoYXJlZC91dGlscy91dWlkLnRzIiwibWFwcGluZ3MiOiI7O0FBR0Esb0NBZ0JDO0FBS0Qsc0RBR0M7QUFNRCxnREEyQkM7QUE1REQ7O0dBRUc7QUFDSCxTQUFnQixZQUFZO0lBQzFCLGtEQUFrRDtJQUNsRCxJQUFJLE9BQU8sTUFBTSxLQUFLLFdBQVcsSUFBSSxNQUFNLENBQUMsVUFBVSxFQUFFLENBQUM7UUFDdkQsSUFBSSxDQUFDO1lBQ0gsT0FBTyxNQUFNLENBQUMsVUFBVSxFQUFFLENBQUM7UUFDN0IsQ0FBQztRQUFDLE9BQU8sS0FBSyxFQUFFLENBQUM7WUFDZixPQUFPLENBQUMsSUFBSSxDQUFDLDJDQUEyQyxFQUFFLEtBQUssQ0FBQyxDQUFDO1FBQ25FLENBQUM7SUFDSCxDQUFDO0lBRUQsMkVBQTJFO0lBQzNFLE9BQU8sc0NBQXNDLENBQUMsT0FBTyxDQUFDLE9BQU8sRUFBRSxVQUFTLENBQUM7UUFDdkUsTUFBTSxDQUFDLEdBQUcsSUFBSSxDQUFDLE1BQU0sRUFBRSxHQUFHLEVBQUUsR0FBRyxDQUFDLENBQUM7UUFDakMsTUFBTSxDQUFDLEdBQUcsQ0FBQyxLQUFLLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsR0FBRyxHQUFHLEdBQUcsR0FBRyxDQUFDLENBQUM7UUFDMUMsT0FBTyxDQUFDLENBQUMsUUFBUSxDQUFDLEVBQUUsQ0FBQyxDQUFDO0lBQ3hCLENBQUMsQ0FBQyxDQUFDO0FBQ0wsQ0FBQztBQUVEOztHQUVHO0FBQ0gsU0FBZ0IscUJBQXFCO0lBQ25DLE9BQU8sT0FBTyxNQUFNLEtBQUssV0FBVztRQUM3QixPQUFPLE1BQU0sQ0FBQyxVQUFVLEtBQUssVUFBVSxDQUFDO0FBQ2pELENBQUM7QUFFRDs7O0dBR0c7QUFDSCxTQUFnQixrQkFBa0I7SUFDaEMsSUFBSSxxQkFBcUIsRUFBRSxFQUFFLENBQUM7UUFDNUIsT0FBTyxNQUFNLENBQUMsVUFBVSxFQUFFLENBQUM7SUFDN0IsQ0FBQztJQUVELG1FQUFtRTtJQUNuRSxJQUFJLE9BQU8sTUFBTSxLQUFLLFdBQVcsSUFBSSxNQUFNLENBQUMsZUFBZSxFQUFFLENBQUM7UUFDNUQsTUFBTSxLQUFLLEdBQUcsSUFBSSxVQUFVLENBQUMsRUFBRSxDQUFDLENBQUM7UUFDakMsTUFBTSxDQUFDLGVBQWUsQ0FBQyxLQUFLLENBQUMsQ0FBQztRQUU5Qix3QkFBd0I7UUFDeEIsS0FBSyxDQUFDLENBQUMsQ0FBQyxHQUFHLENBQUMsS0FBSyxDQUFDLENBQUMsQ0FBQyxHQUFHLElBQUksQ0FBQyxHQUFHLElBQUksQ0FBQyxDQUFDLFVBQVU7UUFDL0MsS0FBSyxDQUFDLENBQUMsQ0FBQyxHQUFHLENBQUMsS0FBSyxDQUFDLENBQUMsQ0FBQyxHQUFHLElBQUksQ0FBQyxHQUFHLElBQUksQ0FBQyxDQUFDLFVBQVU7UUFFL0MsTUFBTSxHQUFHLEdBQUcsS0FBSyxDQUFDLElBQUksQ0FBQyxLQUFLLEVBQUUsSUFBSSxDQUFDLEVBQUUsQ0FBQyxJQUFJLENBQUMsUUFBUSxDQUFDLEVBQUUsQ0FBQyxDQUFDLFFBQVEsQ0FBQyxDQUFDLEVBQUUsR0FBRyxDQUFDLENBQUMsQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUM7UUFDbkYsT0FBTztZQUNMLEdBQUcsQ0FBQyxLQUFLLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQztZQUNmLEdBQUcsQ0FBQyxLQUFLLENBQUMsQ0FBQyxFQUFFLEVBQUUsQ0FBQztZQUNoQixHQUFHLENBQUMsS0FBSyxDQUFDLEVBQUUsRUFBRSxFQUFFLENBQUM7WUFDakIsR0FBRyxDQUFDLEtBQUssQ0FBQyxFQUFFLEVBQUUsRUFBRSxDQUFDO1lBQ2pCLEdBQUcsQ0FBQyxLQUFLLENBQUMsRUFBRSxFQUFFLEVBQUUsQ0FBQztTQUNsQixDQUFDLElBQUksQ0FBQyxHQUFHLENBQUMsQ0FBQztJQUNkLENBQUM7SUFFRCxrQ0FBa0M7SUFDbEMsT0FBTyxDQUFDLElBQUksQ0FBQyx3RUFBd0UsQ0FBQyxDQUFDO0lBQ3ZGLE9BQU8sWUFBWSxFQUFFLENBQUM7QUFDeEIsQ0FBQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyIvbW50L2MvVXNlcnMvbV9vbGkvUHJvamV0cy9TWU1CSU9OVC9zcmMvc2hhcmVkL3V0aWxzL3V1aWQudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXHJcbiAqIEfDqW7DqHJlIHVuIFVVSUQgdjQgYXZlYyBmYWxsYmFjayBwb3VyIGxlcyBlbnZpcm9ubmVtZW50cyBzYW5zIGNyeXB0by5yYW5kb21VVUlEXHJcbiAqL1xyXG5leHBvcnQgZnVuY3Rpb24gZ2VuZXJhdGVVVUlEKCk6IHN0cmluZyB7XHJcbiAgLy8gRXNzYXllciBkJ2Fib3JkIGNyeXB0by5yYW5kb21VVUlEIHNpIGRpc3BvbmlibGVcclxuICBpZiAodHlwZW9mIGNyeXB0byAhPT0gJ3VuZGVmaW5lZCcgJiYgY3J5cHRvLnJhbmRvbVVVSUQpIHtcclxuICAgIHRyeSB7XHJcbiAgICAgIHJldHVybiBjcnlwdG8ucmFuZG9tVVVJRCgpO1xyXG4gICAgfSBjYXRjaCAoZXJyb3IpIHtcclxuICAgICAgY29uc29sZS53YXJuKCdjcnlwdG8ucmFuZG9tVVVJRCBmYWlsZWQsIHVzaW5nIGZhbGxiYWNrOicsIGVycm9yKTtcclxuICAgIH1cclxuICB9XHJcblxyXG4gIC8vIEZhbGxiYWNrIHBvdXIgbGVzIGVudmlyb25uZW1lbnRzIHF1aSBuZSBzdXBwb3J0ZW50IHBhcyBjcnlwdG8ucmFuZG9tVVVJRFxyXG4gIHJldHVybiAneHh4eHh4eHgteHh4eC00eHh4LXl4eHgteHh4eHh4eHh4eHh4Jy5yZXBsYWNlKC9beHldL2csIGZ1bmN0aW9uKGMpIHtcclxuICAgIGNvbnN0IHIgPSBNYXRoLnJhbmRvbSgpICogMTYgfCAwO1xyXG4gICAgY29uc3QgdiA9IGMgPT09ICd4JyA/IHIgOiAociAmIDB4MyB8IDB4OCk7XHJcbiAgICByZXR1cm4gdi50b1N0cmluZygxNik7XHJcbiAgfSk7XHJcbn1cclxuXHJcbi8qKlxyXG4gKiBWw6lyaWZpZSBzaSBjcnlwdG8ucmFuZG9tVVVJRCBlc3QgZGlzcG9uaWJsZSBkYW5zIGwnZW52aXJvbm5lbWVudCBhY3R1ZWxcclxuICovXHJcbmV4cG9ydCBmdW5jdGlvbiBpc0NyeXB0b1VVSURBdmFpbGFibGUoKTogYm9vbGVhbiB7XHJcbiAgcmV0dXJuIHR5cGVvZiBjcnlwdG8gIT09ICd1bmRlZmluZWQnICYmIFxyXG4gICAgICAgICB0eXBlb2YgY3J5cHRvLnJhbmRvbVVVSUQgPT09ICdmdW5jdGlvbic7XHJcbn1cclxuXHJcbi8qKlxyXG4gKiBHw6luw6hyZSB1biBVVUlEIHY0IGNyeXB0b2dyYXBoaXF1ZW1lbnQgc8OpY3VyaXPDqSBzaSBwb3NzaWJsZVxyXG4gKiBTaW5vbiB1dGlsaXNlIE1hdGgucmFuZG9tKCkgY29tbWUgZmFsbGJhY2tcclxuICovXHJcbmV4cG9ydCBmdW5jdGlvbiBnZW5lcmF0ZVNlY3VyZVVVSUQoKTogc3RyaW5nIHtcclxuICBpZiAoaXNDcnlwdG9VVUlEQXZhaWxhYmxlKCkpIHtcclxuICAgIHJldHVybiBjcnlwdG8ucmFuZG9tVVVJRCgpO1xyXG4gIH1cclxuXHJcbiAgLy8gRmFsbGJhY2sgc8OpY3VyaXPDqSB1dGlsaXNhbnQgY3J5cHRvLmdldFJhbmRvbVZhbHVlcyBzaSBkaXNwb25pYmxlXHJcbiAgaWYgKHR5cGVvZiBjcnlwdG8gIT09ICd1bmRlZmluZWQnICYmIGNyeXB0by5nZXRSYW5kb21WYWx1ZXMpIHtcclxuICAgIGNvbnN0IGFycmF5ID0gbmV3IFVpbnQ4QXJyYXkoMTYpO1xyXG4gICAgY3J5cHRvLmdldFJhbmRvbVZhbHVlcyhhcnJheSk7XHJcbiAgICBcclxuICAgIC8vIFZlcnNpb24gNCBVVUlEIGZvcm1hdFxyXG4gICAgYXJyYXlbNl0gPSAoYXJyYXlbNl0gJiAweDBmKSB8IDB4NDA7IC8vIHZlcnNpb25cclxuICAgIGFycmF5WzhdID0gKGFycmF5WzhdICYgMHgzZikgfCAweDgwOyAvLyB2YXJpYW50XHJcbiAgICBcclxuICAgIGNvbnN0IGhleCA9IEFycmF5LmZyb20oYXJyYXksIGJ5dGUgPT4gYnl0ZS50b1N0cmluZygxNikucGFkU3RhcnQoMiwgJzAnKSkuam9pbignJyk7XHJcbiAgICByZXR1cm4gW1xyXG4gICAgICBoZXguc2xpY2UoMCwgOCksXHJcbiAgICAgIGhleC5zbGljZSg4LCAxMiksXHJcbiAgICAgIGhleC5zbGljZSgxMiwgMTYpLFxyXG4gICAgICBoZXguc2xpY2UoMTYsIDIwKSxcclxuICAgICAgaGV4LnNsaWNlKDIwLCAzMilcclxuICAgIF0uam9pbignLScpO1xyXG4gIH1cclxuXHJcbiAgLy8gRGVybmllciByZWNvdXJzIDogTWF0aC5yYW5kb20oKVxyXG4gIGNvbnNvbGUud2FybignVXNpbmcgTWF0aC5yYW5kb20oKSBmb3IgVVVJRCBnZW5lcmF0aW9uIC0gbm90IGNyeXB0b2dyYXBoaWNhbGx5IHNlY3VyZScpO1xyXG4gIHJldHVybiBnZW5lcmF0ZVVVSUQoKTtcclxufSAiXSwidmVyc2lvbiI6M30=

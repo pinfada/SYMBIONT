@@ -1,3 +1,4 @@
+import { SecureRandom } from '../../shared/utils/secureRandom';
 /**
  * NeuralMesh - Graphe neuronal orienté pour organisme artificiel
  * - Nœuds (neurones) avec activation
@@ -92,13 +93,13 @@ export class NeuralMesh {
    */
   public mutate(rate = 0.05): void {
     for (const conn of this.connections) {
-      if (Math.random() < rate) {
-        conn.weight += (Math.random() - 0.5) * 0.2;
+      if (SecureRandom.random() < rate) {
+        conn.weight += (SecureRandom.random() - 0.5) * 0.2;
       }
     }
     for (const node of this.nodes.values()) {
-      if (Math.random() < rate) {
-        node.bias += (Math.random() - 0.5) * 0.1;
+      if (SecureRandom.random() < rate) {
+        node.bias += (SecureRandom.random() - 0.5) * 0.1;
       }
     }
   }

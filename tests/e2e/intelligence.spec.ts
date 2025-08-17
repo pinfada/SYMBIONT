@@ -6,7 +6,7 @@ test.describe('Intelligence adaptative et ML SYMBIONT', () => {
   const popupPath = path.resolve(__dirname, '../../dist/popup.html');
 
   test('Prédiction d’action et adaptation', async ({ page }) => {
-    await page.goto('/popup');
+    await page.goto('file://' + popupPath);
     await waitForReactToLoad(page, '.prediction-panel');
     await debugPageState(page);
     try {
@@ -25,7 +25,7 @@ test.describe('Intelligence adaptative et ML SYMBIONT', () => {
   });
 
   test('Visualisation des métriques ML', async ({ page }) => {
-    await page.goto('/popup');
+    await page.goto('file://' + popupPath);
     await waitForReactToLoad(page, '.prediction-panel');
     await debugPageState(page);
     try {

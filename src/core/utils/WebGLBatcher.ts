@@ -2,6 +2,7 @@
 // Regroupe les appels de rendu pour réduire la charge GPU
 
 import { errorHandler } from './ErrorHandler';
+import { SecureRandom } from '../../shared/utils/secureRandom';
 
 export interface WebGLDrawCall {
   id: string;
@@ -96,7 +97,7 @@ export class WebGLBatcher {
    * Ajoute un appel de rendu au batch
    */
   public addDrawCall(drawCall: Omit<WebGLDrawCall, 'id' | 'timestamp'>): string {
-    const id = `draw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `draw_${Date.now()}_${SecureRandom.random().toString(36).substr(2, 9)}`;
     const fullDrawCall: WebGLDrawCall = {
       ...drawCall,
       id,
