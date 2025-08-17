@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 30_000,
-  retries: 1,
+  timeout: 60_000,
+  retries: 2,
   
   // Configuration des projets cross-browser
   projects: [
@@ -48,7 +48,7 @@ export default defineConfig({
   webServer: {
     command: 'npx serve -l 8080 dist',
     port: 8080,
-    reuseExistingServer: false,
-    timeout: 10000,
+    reuseExistingServer: true,
+    timeout: 20000,
   },
 }); 

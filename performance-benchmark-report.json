@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-08-17T22:22:47.341Z",
+  "environment": {
+    "nodeVersion": "v18.19.1",
+    "platform": "linux",
+    "arch": "x64",
+    "cpus": 28
+  },
+  "benchmarks": {
+    "light": {
+      "mathRandom": {
+        "name": "Math.random()",
+        "iterations": 10000,
+        "duration": 0.23292799945920706,
+        "throughput": 42931721.48997618,
+        "memoryDelta": 0.30931854248046875,
+        "finalMemory": {
+          "rss": 56.0078125,
+          "heapUsed": 4.451347351074219,
+          "heapTotal": 7.77734375,
+          "external": 1.5948514938354492
+        },
+        "checksum": 4996.701004072945
+      },
+      "secureRandom": {
+        "name": "SecureRandom.random()",
+        "iterations": 10000,
+        "duration": 21.894914999604225,
+        "throughput": 456727.05284221296,
+        "memoryDelta": 0.8270111083984375,
+        "finalMemory": {
+          "rss": 64.7265625,
+          "heapUsed": 5.5149688720703125,
+          "heapTotal": 8.52734375,
+          "external": 1.6685791015625
+        },
+        "checksum": 5009.636944100494
+      },
+      "performanceRatio": 93.99863928097105,
+      "acceptable": false
+    },
+    "medium": {
+      "mathRandom": {
+        "name": "Math.random()",
+        "iterations": 100000,
+        "duration": 3.1489749997854233,
+        "throughput": 31756365.16860698,
+        "memoryDelta": -0.17389678955078125,
+        "finalMemory": {
+          "rss": 65.234375,
+          "heapUsed": 5.347724914550781,
+          "heapTotal": 8.52734375,
+          "external": 1.6685791015625
+        },
+        "checksum": 49906.583176847926
+      },
+      "secureRandom": {
+        "name": "SecureRandom.random()",
+        "iterations": 100000,
+        "duration": 140.12364799994975,
+        "throughput": 713655.4138244806,
+        "memoryDelta": 0.589752197265625,
+        "finalMemory": {
+          "rss": 66.265625,
+          "heapUsed": 5.940155029296875,
+          "heapTotal": 8.52734375,
+          "external": 1.6736106872558594
+        },
+        "checksum": 50078.96569818654
+      },
+      "performanceRatio": 44.4981773464375,
+      "acceptable": false
+    },
+    "heavy": {
+      "mathRandom": {
+        "name": "Math.random()",
+        "iterations": 1000000,
+        "duration": 5.053570999763906,
+        "throughput": 197879875.44782063,
+        "memoryDelta": -0.4668731689453125,
+        "finalMemory": {
+          "rss": 66.51953125,
+          "heapUsed": 5.4809112548828125,
+          "heapTotal": 8.52734375,
+          "external": 1.6525802612304688
+        },
+        "checksum": 499591.7036153163
+      },
+      "secureRandom": {
+        "name": "SecureRandom.random()",
+        "iterations": 1000000,
+        "duration": 1433.3348310003057,
+        "throughput": 697673.6896166215,
+        "memoryDelta": 0.48796844482421875,
+        "finalMemory": {
+          "rss": 66.76171875,
+          "heapUsed": 5.9717559814453125,
+          "heapTotal": 8.52734375,
+          "external": 1.6750106811523438
+        },
+        "checksum": 499882.99854194163
+      },
+      "performanceRatio": 283.6281178333635,
+      "acceptable": false
+    }
+  },
+  "fps": {
+    "mathRandom": {
+      "fps": 220847.03227482262,
+      "time": 4.52802100032568
+    },
+    "secureRandom": {
+      "fps": 2428.78507664881,
+      "time": 411.7284850003198
+    },
+    "performanceRatio": 0.010997589832343427,
+    "acceptable": false
+  },
+  "summary": {
+    "overallAcceptable": false,
+    "maxPerformanceRatio": 283.6281178333635,
+    "fpsPerformanceRatio": 0.010997589832343427,
+    "recommendation": "⚠️ Régression détectée - Optimisation recommandée"
+  }
+}

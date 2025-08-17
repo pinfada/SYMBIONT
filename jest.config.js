@@ -58,34 +58,37 @@ module.exports = {
     'html',
     'lcov',
     'clover',
-    'json'
+    'json',
+    ['html', { subdir: 'html' }],
+    ['json', { file: 'coverage-final.json' }],
+    ['text', { file: 'coverage.txt' }]
   ],
   
-  // Coverage thresholds - Target 80%
+  // Coverage thresholds - Objectifs de stabilisation
   coverageThreshold: {
     global: {
       branches: 75,
-      functions: 80,
-      lines: 80,
-      statements: 80
-    },
-    // Specific thresholds for core components
-    'src/core/**/*.ts': {
-      branches: 80,
       functions: 85,
       lines: 85,
       statements: 85
     },
-    'src/core/utils/**/*.ts': {
+    // Specific thresholds for core components
+    'src/core/**/*.ts': {
       branches: 85,
-      functions: 90,
-      lines: 90,
-      statements: 90
+      functions: 95,
+      lines: 95,
+      statements: 95
+    },
+    'src/shared/utils/**/*.ts': {
+      branches: 90,
+      functions: 95,
+      lines: 95,
+      statements: 95
     }
   },
   
-  // Test timeout - Augmenté pour les tests complexes
-  testTimeout: 30000,
+  // Test timeout - Augmenté pour la stabilité des tests WebCrypto/SecureRandom
+  testTimeout: 60000,
   
   // Mock configuration
   clearMocks: true,

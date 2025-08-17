@@ -2,10 +2,10 @@
  * Tests pour le système de logging sécurisé
  */
 
-import { SecureLogger, LogLevel } from '../../src/shared/utils/secureLogger';
+import { SecureLogger, LogLevel, logger } from '../../src/shared/utils/secureLogger';
 
 describe('SecureLogger', () => {
-  let logger: SecureLogger;
+  let loggerInstance: SecureLogger;
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -42,21 +42,21 @@ describe('SecureLogger', () => {
         enableConsole: false,
         enableStorage: false,
       };
-      logger = SecureLogger.getInstance(config);
+      loggerInstance = SecureLogger.getInstance(config);
       
       // Log at DEBUG level (should be filtered out)
-      logger.debug('test message');
+      loggerInstance.debug('test message');
       expect(consoleSpy).not.toHaveBeenCalled();
       
       // Log at WARN level (should pass through)
-      logger.warn('warn message');
+      loggerInstance.warn('warn message');
       expect(consoleSpy).not.toHaveBeenCalled(); // Console disabled
     });
   });
 
   describe('Data Sanitization', () => {
     beforeEach(() => {
-      logger = SecureLogger.getInstance({
+      loggerInstance = SecureLogger.getInstance({
         level: LogLevel.DEBUG,
         enableConsole: true,
         enableStorage: true,
@@ -72,7 +72,7 @@ describe('SecureLogger', () => {
         normalData: 'this is fine',
       };
 
-      logger.info('Test with sensitive data', sensitiveData);
+      loggerInstance.info('Test with sensitive data', sensitiveData);
       
       const logs = logger.getLogs();
       const lastLog = logs[logs.length - 1];
@@ -87,7 +87,7 @@ describe('SecureLogger', () => {
     it('should detect and sanitize pattern-based sensitive data', () => {
       const sensitiveString = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
       
-      logger.warn(sensitiveString);
+      loggerInstance.warn(sensitiveString);
       
       const logs = logger.getLogs();
       const lastLog = logs[logs.length - 1];
@@ -107,7 +107,7 @@ describe('SecureLogger', () => {
         },
       };
 
-      logger.info('Nested data test', nestedData);
+      loggerInstance.info('Nested data test', nestedData);
       
       const logs = logger.getLogs();
       const lastLog = logs[logs.length - 1];
@@ -124,7 +124,7 @@ describe('SecureLogger', () => {
         { id: 2, name: 'visible' },
       ];
 
-      logger.info('Array data test', arrayData);
+      loggerInstance.info('Array data test', arrayData);
       
       const logs = logger.getLogs();
       const lastLog = logs[logs.length - 1];
@@ -137,7 +137,7 @@ describe('SecureLogger', () => {
 
   describe('Log Levels', () => {
     beforeEach(() => {
-      logger = SecureLogger.getInstance({
+      loggerInstance = SecureLogger.getInstance({
         level: LogLevel.INFO,
         enableConsole: true,
         enableStorage: true,
@@ -145,10 +145,10 @@ describe('SecureLogger', () => {
     });
 
     it('should respect log level filtering', () => {
-      logger.debug('debug message'); // Should be filtered
-      logger.info('info message');   // Should pass
-      logger.warn('warn message');   // Should pass
-      logger.error('error message'); // Should pass
+      loggerInstance.debug('debug message'); // Should be filtered
+      loggerInstance.info('info message');   // Should pass
+      loggerInstance.warn('warn message');   // Should pass
+      loggerInstance.error('error message'); // Should pass
 
       const logs = logger.getLogs();
       expect(logs.length).toBe(3); // debug filtered out
@@ -165,10 +165,10 @@ describe('SecureLogger', () => {
 
       logger.setLevel(LogLevel.DEBUG);
       
-      logger.debug('debug');
-      logger.info('info');
-      logger.warn('warn');
-      logger.error('error');
+      loggerInstance.debug('debug');
+      loggerInstance.info('info');
+      loggerInstance.warn('warn');
+      loggerInstance.error('error');
       logger.fatal('fatal');
 
       expect(debugSpy).toHaveBeenCalled();
@@ -180,7 +180,7 @@ describe('SecureLogger', () => {
 
   describe('Log Storage', () => {
     beforeEach(() => {
-      logger = SecureLogger.getInstance({
+      loggerInstance = SecureLogger.getInstance({
         level: LogLevel.DEBUG,
         enableConsole: false,
         enableStorage: true,
@@ -189,7 +189,7 @@ describe('SecureLogger', () => {
     });
 
     it('should store logs with proper structure', () => {
-      logger.info('test message', { name: 'value' }, 'TestContext');
+      loggerInstance.info('test message', { name: 'value' }, 'TestContext');
       
       const logs = logger.getLogs();
       const log = logs[0];
@@ -203,10 +203,10 @@ describe('SecureLogger', () => {
     });
 
     it('should limit stored entries', () => {
-      logger.info('message 1');
-      logger.info('message 2');
-      logger.info('message 3');
-      logger.info('message 4'); // Should cause oldest to be removed
+      loggerInstance.info('message 1');
+      loggerInstance.info('message 2');
+      loggerInstance.info('message 3');
+      loggerInstance.info('message 4'); // Should cause oldest to be removed
       
       const logs = logger.getLogs();
       expect(logs.length).toBe(3);
@@ -215,10 +215,10 @@ describe('SecureLogger', () => {
     });
 
     it('should filter logs by level when retrieving', () => {
-      logger.debug('debug');
-      logger.info('info');
-      logger.warn('warn');
-      logger.error('error');
+      loggerInstance.debug('debug');
+      loggerInstance.info('info');
+      loggerInstance.warn('warn');
+      loggerInstance.error('error');
 
       const errorLogs = logger.getLogs(LogLevel.ERROR);
       expect(errorLogs.length).toBe(1);
@@ -253,9 +253,9 @@ describe('SecureLogger', () => {
     });
 
     it('should disable console in production by default', () => {
-      logger = SecureLogger.getInstance();
+      loggerInstance = SecureLogger.getInstance();
       
-      logger.info('production message');
+      loggerInstance.info('production message');
       
       expect(consoleSpy).not.toHaveBeenCalled();
       
@@ -266,7 +266,7 @@ describe('SecureLogger', () => {
 
   describe('Utility Methods', () => {
     beforeEach(() => {
-      logger = SecureLogger.getInstance({
+      loggerInstance = SecureLogger.getInstance({
         level: LogLevel.DEBUG,
         enableConsole: true,
         enableStorage: true,
@@ -276,9 +276,9 @@ describe('SecureLogger', () => {
     it('should change log level dynamically', () => {
       logger.setLevel(LogLevel.WARN);
       
-      logger.debug('debug'); // Should be filtered
-      logger.info('info');   // Should be filtered
-      logger.warn('warn');   // Should pass
+      loggerInstance.debug('debug'); // Should be filtered
+      loggerInstance.info('info');   // Should be filtered
+      loggerInstance.warn('warn');   // Should pass
       
       const logs = logger.getLogs();
       expect(logs.length).toBe(1);
@@ -287,17 +287,17 @@ describe('SecureLogger', () => {
 
     it('should enable/disable console dynamically', () => {
       logger.enableConsole(false);
-      logger.info('test');
+      loggerInstance.info('test');
       expect(consoleSpy).not.toHaveBeenCalled();
       
       logger.enableConsole(true);
-      logger.info('test2');
+      loggerInstance.info('test2');
       expect(consoleSpy).toHaveBeenCalled();
     });
 
     it('should clear logs', () => {
-      logger.info('message 1');
-      logger.info('message 2');
+      loggerInstance.info('message 1');
+      loggerInstance.info('message 2');
       
       expect(logger.getLogs().length).toBe(2);
       
@@ -307,8 +307,8 @@ describe('SecureLogger', () => {
     });
 
     it('should export logs as JSON', () => {
-      logger.info('message 1', { data: 'test' });
-      logger.warn('message 2');
+      loggerInstance.info('message 1', { data: 'test' });
+      loggerInstance.warn('message 2');
       
       const exported = logger.exportLogs();
       const parsed = JSON.parse(exported);
