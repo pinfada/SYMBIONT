@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { OrganismViewer } from './components/OrganismViewer';
 import { OrganismDashboard } from './components/OrganismDashboard';
-import { SecureLogger } from '../shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'viewer' | 'dashboard'>('viewer');
 
   useEffect(() => {
     // Initialize app
-    SecureLogger.info('SYMBIONT Popup initialized');
+    logger.info('SYMBIONT Popup initialized');
   }, []);
 
   return (

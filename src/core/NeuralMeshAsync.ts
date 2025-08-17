@@ -5,7 +5,7 @@ import { INeuralMesh } from './interfaces/INeuralMesh';
 import { WorkerMessage, WorkerResponse } from '../workers/NeuralWorker';
 import { errorHandler } from './utils/ErrorHandler';
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 interface NeuralNode {
   id: string;
@@ -478,7 +478,7 @@ export class NeuralMeshAsync implements INeuralMesh {
       this.workerReady = false;
     }
     
-    SecureLogger.info('Neural mesh suspended');
+    logger.info('Neural mesh suspended');
   }
 
   /**

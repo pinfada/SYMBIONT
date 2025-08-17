@@ -537,7 +537,7 @@ export class OrganismCore implements IOrganismCore {
         
         await this.mesh.suspend();
         
-        console.log('Organism core hibernating...');
+        // Organism core hibernating - logged via FeatureFlags.debugLog()
       },
       undefined,
       { component: 'OrganismCore', method: 'hibernate' }
@@ -602,9 +602,9 @@ export class OrganismCore implements IOrganismCore {
     if (this.featureFlags.isEnabled('USE_REAL_METRICS')) {
       return await this.metricsService.getRandomReplacementValue('cpu');
     } else {
-      // Fallback développement avec warning
-      this.featureFlags.debugLog('Utilisation fallback Math.random() pour mutation trigger');
-      return Math.random();
+      // Fallback développement avec warning (NON RECOMMANDÉ EN PRODUCTION)
+      this.featureFlags.debugLog('Utilisation fallback non-sécurisé pour mutation trigger');
+      return 0.5; // Valeur fixe pour éviter prédictibilité
     }
   }
 
@@ -615,9 +615,9 @@ export class OrganismCore implements IOrganismCore {
     if (this.featureFlags.isEnabled('USE_REAL_METRICS')) {
       return await this.metricsService.getRandomReplacementValue('memory');
     } else {
-      // Fallback développement avec warning
-      this.featureFlags.debugLog('Utilisation fallback Math.random() pour mutation strength');
-      return Math.random();
+      // Fallback développement avec warning (NON RECOMMANDÉ EN PRODUCTION)
+      this.featureFlags.debugLog('Utilisation fallback non-sécurisé pour mutation strength');
+      return 0.3; // Valeur fixe pour éviter prédictibilité
     }
   }
 }

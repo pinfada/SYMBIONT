@@ -1,6 +1,6 @@
 import { INeuralMesh } from './interfaces/INeuralMesh';
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class NeuralMesh implements INeuralMesh {
   private nodes: Map<string, { type: string; activation: number; bias: number }> = new Map();
@@ -47,7 +47,7 @@ export class NeuralMesh implements INeuralMesh {
   stimulate(nodeId: string, value: number): void {
     const node = this.nodes.get(nodeId);
     if (!node || node.type !== 'input') {
-      SecureLogger.warn(`Cannot stimulate non-input node: ${nodeId}`);
+      logger.warn(`Cannot stimulate non-input node: ${nodeId}`);
       return;
     }
     this.activations.set(nodeId, value);
@@ -199,7 +199,7 @@ export class NeuralMesh implements INeuralMesh {
   async suspend(): Promise<void> {
     // Clear activations but keep structure
     this.activations.clear();
-    SecureLogger.info('Neural mesh suspended');
+    logger.info('Neural mesh suspended');
   }
 
   /**

@@ -4,8 +4,8 @@ import { DNAInterpreter } from './DNAInterpreter';
 import { MutationEngine } from './MutationEngine';
 import { ProceduralGenerator } from './ProceduralGenerator';
 import { PerformanceMonitor } from '../monitoring/PerformanceMonitor';
+import { logger } from '@shared/utils/secureLogger';
 import {
-import { SecureLogger } from '@shared/utils/secureLogger';
   OrganismState,
   OrganismMutation,
   OrganismTraits
@@ -197,7 +197,7 @@ export class OrganismEngine {
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      SecureLogger.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+      logger.error('Shader compilation error:', gl.getShaderInfoLog(shader));
       gl.deleteShader(shader);
       return null;
     }
@@ -316,7 +316,7 @@ export class OrganismEngine {
     // Suppression des event listeners
     window.removeEventListener('resize', this.resizeCanvas.bind(this));
     
-    SecureLogger.info('OrganismEngine resources cleaned up');
+    logger.info('OrganismEngine resources cleaned up');
   }
   
   /**

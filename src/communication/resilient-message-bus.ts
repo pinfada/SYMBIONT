@@ -2,7 +2,7 @@
 // Message Bus résilient avec circuit breaker (Phase 1)
 
 import { swLocalStorage } from '../background/service-worker-adapter'
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 type Message = { type: string; payload: any }
 type SendResult = { success: boolean; queued?: boolean; error?: any }
@@ -47,22 +47,22 @@ class SimplePersistentQueue {
   private key = 'symbiont_messages'
   constructor() {}
   async enqueue(msg: Message) {
-    SecureLogger.info('[ResilientMessageBus] enqueue', msg)
+    logger.info('[ResilientMessageBus] enqueue', msg)
     const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
     arr.push(msg)
     await swLocalStorage.setItem(this.key, JSON.stringify(arr))
-    SecureLogger.info('[ResilientMessageBus] enqueue OK', arr.length)
+    logger.info('[ResilientMessageBus] enqueue OK', arr.length)
   }
   async dequeue(): Promise<Message | undefined> {
     const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
     const msg = arr.shift()
     await swLocalStorage.setItem(this.key, JSON.stringify(arr))
-    SecureLogger.info('[ResilientMessageBus] dequeue', msg)
+    logger.info('[ResilientMessageBus] dequeue', msg)
     return msg
   }
   async getAll(): Promise<Message[]> {
     const arr = JSON.parse(await swLocalStorage.getItem(this.key) || '[]')
-    SecureLogger.info('[ResilientMessageBus] getAll', arr.length)
+    logger.info('[ResilientMessageBus] getAll', arr.length)
     return arr
   }
 }
@@ -147,15 +147,15 @@ export class ResilientMessageBus {
 
   // Fallbacks simulés
   private async cacheOrganismState(msg: Message) {
-    SecureLogger.info('[ResilientMessageBus] fallback cacheOrganismState', msg)
+    logger.info('[ResilientMessageBus] fallback cacheOrganismState', msg)
     await swLocalStorage.setItem('symbiont_organism_cache', JSON.stringify(msg))
   }
   private async queueForLaterSync(msg: Message) {
-    SecureLogger.info('[ResilientMessageBus] fallback queueForLaterSync', msg)
+    logger.info('[ResilientMessageBus] fallback queueForLaterSync', msg)
     await this.messageQueue.enqueue(msg)
   }
   private async processLocally(msg: Message) {
-    SecureLogger.info('[ResilientMessageBus] fallback processLocally', msg)
+    logger.info('[ResilientMessageBus] fallback processLocally', msg)
     await swLocalStorage.setItem('symbiont_local_processing', JSON.stringify(msg))
   }
 

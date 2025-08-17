@@ -1,7 +1,7 @@
 // Système de gestion d'erreurs centralisé pour SYMBIONT
 
 import { ErrorContext, ValidationResult } from '../../types/core';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export type LogLevel = 'debug' | 'info' | 'warning' | 'error' | 'critical';
 
@@ -365,16 +365,16 @@ export class ErrorHandler {
     switch (context.severity) {
       case 'critical':
       case 'error':
-        SecureLogger.error(message, context.details);
+        logger.error(message, context.details);
         break;
       case 'warning':
-        SecureLogger.warn(message, context.details);
+        logger.warn(message, context.details);
         break;
       case 'info':
         console.info(message, context.details);
         break;
       case 'debug':
-        SecureLogger.debug(message, context.details);
+        logger.debug(message, context.details);
         break;
     }
   }

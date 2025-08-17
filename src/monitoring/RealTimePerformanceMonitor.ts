@@ -1,5 +1,5 @@
 import { SecureRandom } from '@shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 /**
  * RealTimePerformanceMonitor - Monitoring de performance en temps réel
  * Remplace les simulations par des métriques réelles
@@ -86,7 +86,7 @@ export class RealTimePerformanceMonitor {
    */
   private setupPerformanceObserver(): void {
     if (typeof PerformanceObserver === 'undefined') {
-      SecureLogger.warn('PerformanceObserver non disponible');
+      logger.warn('PerformanceObserver non disponible');
       return;
     }
 
@@ -110,7 +110,7 @@ export class RealTimePerformanceMonitor {
       try {
         this.performanceObserver!.observe({ entryTypes: [type] });
       } catch (e) {
-        SecureLogger.warn(`Type d'entrée ${type} non supporté:`, e);
+        logger.warn(`Type d'entrée ${type} non supporté:`, e);
       }
     });
   }
@@ -310,7 +310,7 @@ export class RealTimePerformanceMonitor {
         // Vérification du budget
         const budgetCheck = this.checkPerformanceBudget();
         if (!budgetCheck.passed) {
-          SecureLogger.warn('Budget de performance dépassé:', budgetCheck.violations);
+          logger.warn('Budget de performance dépassé:', budgetCheck.violations);
         }
       }
     }, 5000); // Toutes les 5 secondes

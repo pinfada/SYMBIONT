@@ -1,7 +1,7 @@
 // Monitoring avancé de l'attention utilisateur pour SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
 import { safeGetClasses } from '../../shared/utils/safeOperations';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export interface AttentionMetrics {
   focusLevel: number; // 0-1
@@ -449,12 +449,12 @@ export class AttentionMonitor extends EventTarget {
     this.startTime = Date.now();
     this.windowFocusStart = Date.now();
     this.lastActivity = Date.now();
-    SecureLogger.info('👁️ AttentionMonitor started');
+    logger.info('👁️ AttentionMonitor started');
   }
 
   public stop(): void {
     this.isActive = false;
-    SecureLogger.info('👁️ AttentionMonitor stopped');
+    logger.info('👁️ AttentionMonitor stopped');
   }
 
   public getMetrics(): AttentionMetrics {

@@ -1,4 +1,4 @@
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 // ml/behavioral-predictor.ts
 // Prédiction comportementale par apprentissage automatique (Phase 4)
 
@@ -10,7 +10,7 @@ export class BehavioralPredictor {
     this.history.push({ features, label })
     // Simulation : le "modèle" est la moyenne des labels pour chaque feature
     this.model = this.buildModel()
-    SecureLogger.info('[ML] Entraînement sur un nouvel exemple')
+    logger.info('[ML] Entraînement sur un nouvel exemple')
   }
 
   predict(features: any): any {
@@ -18,7 +18,7 @@ export class BehavioralPredictor {
     // Simulation : retourne la prédiction la plus fréquente pour des features similaires
     const key = JSON.stringify(features)
     const pred = this.model[key] || null
-    SecureLogger.info('[ML] Prédiction pour', features, '=>', pred)
+    logger.info('[ML] Prédiction pour', features, '=>', pred)
     return pred
   }
 
@@ -31,7 +31,7 @@ export class BehavioralPredictor {
       if (this.model[key] === ex.label) correct++
     }
     const accuracy = correct / (this.history.length || 1)
-    SecureLogger.info(`[ML] Précision du modèle : ${(accuracy * 100).toFixed(1)}%`)
+    logger.info(`[ML] Précision du modèle : ${(accuracy * 100).toFixed(1)}%`)
     return accuracy
   }
 

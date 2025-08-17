@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 const API_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://symbiont-backend.onrender.com';
 const WS_URL = process.env.NODE_ENV === 'development' ? 'ws://localhost:8080' : 'wss://symbiont-backend.onrender.com';
@@ -61,7 +61,7 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
         const data = JSON.parse(event.data);
         setNetwork(data);
       } catch (error) {
-        SecureLogger.error('Failed to parse network data:', error);
+        logger.error('Failed to parse network data:', error);
       }
     };
     

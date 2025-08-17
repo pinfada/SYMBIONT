@@ -1,4 +1,4 @@
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 /**
  * RealMetricsService - Service central pour collecte de vraies métriques
  * Remplace Math.random() par des données de performance réelles
@@ -83,7 +83,7 @@ class RealMetricsService {
         percentage: 50
       };
     } catch (error) {
-      SecureLogger.warn('Erreur collecte mémoire, fallback estimation:', error);
+      logger.warn('Erreur collecte mémoire, fallback estimation:', error);
       return this.getFallbackMemoryMetrics();
     }
   }
@@ -106,7 +106,7 @@ class RealMetricsService {
         firstContentfulPaint
       };
     } catch (error) {
-      SecureLogger.warn('Erreur collecte timing, fallback estimation:', error);
+      logger.warn('Erreur collecte timing, fallback estimation:', error);
       return this.getFallbackTimingMetrics();
     }
   }
@@ -127,7 +127,7 @@ class RealMetricsService {
         connectionType: connection?.effectiveType || 'unknown'
       };
     } catch (error) {
-      SecureLogger.warn('Erreur collecte réseau, fallback estimation:', error);
+      logger.warn('Erreur collecte réseau, fallback estimation:', error);
       return this.getFallbackNetworkMetrics();
     }
   }
@@ -142,7 +142,7 @@ class RealMetricsService {
       
       return { usage, cores };
     } catch (error) {
-      SecureLogger.warn('Erreur collecte CPU, fallback estimation:', error);
+      logger.warn('Erreur collecte CPU, fallback estimation:', error);
       return this.getFallbackCPUMetrics();
     }
   }
@@ -179,7 +179,7 @@ class RealMetricsService {
       this.metricsCache.set(cacheKey, { value: metrics, timestamp: Date.now() });
       return metrics;
     } catch (error) {
-      SecureLogger.error('Erreur collecte métriques système:', error);
+      logger.error('Erreur collecte métriques système:', error);
       return this.getFallbackSystemMetrics();
     }
   }
@@ -199,7 +199,7 @@ class RealMetricsService {
 
       return { lcp, fid, cls, fcp, ttfb };
     } catch (error) {
-      SecureLogger.warn('Erreur Web Vitals, fallback defaults:', error);
+      logger.warn('Erreur Web Vitals, fallback defaults:', error);
       return this.getFallbackWebVitals();
     }
   }
@@ -406,7 +406,7 @@ class RealMetricsService {
       return this.getSystemMetrics();
     }
 
-    SecureLogger.warn('🚧 MODE DÉVELOPPEMENT: Utilisation métriques simulées pour les tests');
+    logger.warn('🚧 MODE DÉVELOPPEMENT: Utilisation métriques simulées pour les tests');
     return this.getFallbackSystemMetrics();
   }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOrganism } from '../hooks/useOrganism';
-import { SecureLogger } from '../shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 interface Ritual {
   id: string;
@@ -129,7 +129,7 @@ const MysticalPanel: React.FC = () => {
         setRitualCooldowns(JSON.parse(savedCooldowns));
       }
     } catch (e) {
-      SecureLogger.warn('Erreur lors du chargement de l\'historique des rituels');
+      logger.warn('Erreur lors du chargement de l\'historique des rituels');
     }
   }, []);
 

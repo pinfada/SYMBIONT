@@ -1,5 +1,5 @@
 import { SecureRandom } from '@shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 // intelligence/context-aware-organism.ts
 // Intelligence adaptative contextuelle (Phase 2)
 
@@ -93,11 +93,11 @@ export class ContextAwareOrganism {
     }
     if (website.isResourceIntensive) {
       // TODO: Activer un mode performance
-      SecureLogger.info('[Context] Mode performance activé (site intensif)')
+      logger.info('[Context] Mode performance activé (site intensif)')
     }
     if (website.hasPrivacyConcerns) {
       // TODO: Activer un mode confidentialité
-      SecureLogger.info('[Context] Mode confidentialité activé (site sensible)')
+      logger.info('[Context] Mode confidentialité activé (site sensible)')
     }
   }
 
@@ -106,22 +106,22 @@ export class ContextAwareOrganism {
       case 'multitask':
         this.traits.focus = Math.min(1, this.traits.focus + 0.05)
         this.traits.analytical = Math.min(1, this.traits.analytical + 0.05)
-        SecureLogger.info('[Context] Adaptation multitâche : focus et analytique +')
+        logger.info('[Context] Adaptation multitâche : focus et analytique +')
         break
       case 'long_read':
         this.traits.curiosity = Math.min(1, this.traits.curiosity + 0.05)
         this.traits.focus = Math.min(1, this.traits.focus + 0.03)
-        SecureLogger.info('[Context] Adaptation lecture longue : curiosité et focus +')
+        logger.info('[Context] Adaptation lecture longue : curiosité et focus +')
         break
       case 'fast_nav':
         this.traits.creativity = Math.min(1, this.traits.creativity + 0.04)
         this.traits.empathy = Math.max(0, this.traits.empathy - 0.02)
-        SecureLogger.info('[Context] Adaptation navigation rapide : créativité +, empathie -')
+        logger.info('[Context] Adaptation navigation rapide : créativité +, empathie -')
         break
       case 'idle':
         this.traits.focus = Math.max(0, this.traits.focus - 0.03)
         this.traits.curiosity = Math.max(0, this.traits.curiosity - 0.02)
-        SecureLogger.info('[Context] Adaptation inactivité : focus et curiosité -')
+        logger.info('[Context] Adaptation inactivité : focus et curiosité -')
         break
     }
   }
@@ -131,14 +131,14 @@ export class ContextAwareOrganism {
       // Réduire la complexité visuelle, augmenter la robustesse
       this.traits.creativity = Math.max(0, this.traits.creativity - 0.05)
       this.traits.analytical = Math.min(1, this.traits.analytical + 0.03)
-      SecureLogger.info('[Context] Adaptation technique : mode léger activé')
+      logger.info('[Context] Adaptation technique : mode léger activé')
     } else if (technical.cpu === 'high' && technical.gpu === 'high') {
       this.traits.creativity = Math.min(1, this.traits.creativity + 0.05)
-      SecureLogger.info('[Context] Adaptation technique : mode enrichi activé')
+      logger.info('[Context] Adaptation technique : mode enrichi activé')
     }
     // Bande passante faible : mode offline
     if (technical.bandwidth === 'low') {
-      SecureLogger.info('[Context] Adaptation technique : mode offline préventif')
+      logger.info('[Context] Adaptation technique : mode offline préventif')
     }
   }
 
@@ -147,11 +147,11 @@ export class ContextAwareOrganism {
     if (social.density > 1) {
       this.traits.empathy = Math.min(1, this.traits.empathy + 0.07)
       this.traits.creativity = Math.min(1, this.traits.creativity + 0.04)
-      SecureLogger.info('[Context] Adaptation sociale : forte densité, empathie et créativité ++')
+      logger.info('[Context] Adaptation sociale : forte densité, empathie et créativité ++')
     } else if (social.density < 0.3) {
       this.traits.empathy = Math.max(0, this.traits.empathy - 0.03)
       this.traits.creativity = Math.max(0, this.traits.creativity - 0.01)
-      SecureLogger.info('[Context] Adaptation sociale : faible densité, empathie et créativité -')
+      logger.info('[Context] Adaptation sociale : faible densité, empathie et créativité -')
     }
   }
 } 

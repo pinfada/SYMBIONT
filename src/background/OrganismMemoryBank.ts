@@ -1,6 +1,6 @@
 import { OrganismState, OrganismHistory, TimeSpan, ConsolidationResult } from '../shared/types/organism'
 import { SecurityManager } from './SecurityManager'
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class OrganismMemoryBank {
   private security: SecurityManager
@@ -65,7 +65,7 @@ export class OrganismMemoryBank {
   logPerformance(msg: string) {
     // Hook pour loguer ou alerter sur la performance
     // (À remplacer par un vrai monitoring en prod)
-    SecureLogger.info(`[OrganismMemoryBank][Perf] ${msg}`)
+    logger.info(`[OrganismMemoryBank][Perf] ${msg}`)
   }
 
   public cleanup(): void {

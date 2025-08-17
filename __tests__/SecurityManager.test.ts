@@ -45,9 +45,12 @@ const mockCryptoSubtle = {
     const testData = JSON.stringify({ foo: 'bar', n: 42 });
     return new TextEncoder().encode(testData).buffer;
   }),
-  digest: jest.fn().mockImplementation(async () => {
+  digest: jest.fn().mockImplementation(async (algorithm, data) => {
+    // Create a realistic hash-like result
     const hash = new Uint8Array(32);
-    hash.fill(0xCD);
+    for (let i = 0; i < 32; i++) {
+      hash[i] = (0xCD + i) % 256;
+    }
     return hash.buffer;
   })
 };
@@ -62,11 +65,14 @@ const mockCryptoGetRandomValues = jest.fn().mockImplementation((arr) => {
   return arr;
 });
 
+// Mock the service worker adapter
+const mockSwCryptoAPI = {
+  subtle: mockCryptoSubtle,
+  getRandomValues: mockCryptoGetRandomValues
+};
+
 jest.mock('../src/background/service-worker-adapter', () => ({
-  swCryptoAPI: {
-    subtle: mockCryptoSubtle,
-    getRandomValues: mockCryptoGetRandomValues
-  }
+  swCryptoAPI: mockSwCryptoAPI
 }));
 
 import { SecurityManager } from '../src/background/SecurityManager'
@@ -210,6 +216,7 @@ describe('SecurityManager', () => {
       const testString = 'test-string';
       const hash = await security.hash(testString);
       
+      console.log('Hash result:', hash, 'Length:', hash.length);
       expect(typeof hash).toBe('string');
       expect(hash.length).toBeGreaterThan(0);
       expect(mockCryptoSubtle.digest).toHaveBeenCalledWith('SHA-256', expect.any(Uint8Array));

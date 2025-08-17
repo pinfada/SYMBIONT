@@ -1,4 +1,4 @@
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 /**
  * FeatureFlagService - Gestion centralisée des feature flags
  * Sépare proprement le comportement dev/staging/production
@@ -172,7 +172,7 @@ class FeatureFlagService {
    */
   setFlag(flag: keyof FeatureFlags, value: boolean): void {
     if (this.environment !== 'development') {
-      SecureLogger.warn(`⚠️ Override de feature flag '${flag}' ignoré en ${this.environment}`);
+      logger.warn(`⚠️ Override de feature flag '${flag}' ignoré en ${this.environment}`);
       return;
     }
 
@@ -184,7 +184,7 @@ class FeatureFlagService {
       localStorage.setItem(storageKey, value.toString());
     }
 
-    SecureLogger.info(`🔧 Feature flag '${flag}' défini à ${value}`);
+    logger.info(`🔧 Feature flag '${flag}' défini à ${value}`);
   }
 
   /**
@@ -192,7 +192,7 @@ class FeatureFlagService {
    */
   resetOverrides(): void {
     if (this.environment !== 'development') {
-      SecureLogger.warn('⚠️ Reset des overrides ignoré en production');
+      logger.warn('⚠️ Reset des overrides ignoré en production');
       return;
     }
 
@@ -206,7 +206,7 @@ class FeatureFlagService {
       });
     }
 
-    SecureLogger.info('🔄 Tous les feature flags remis aux valeurs par défaut');
+    logger.info('🔄 Tous les feature flags remis aux valeurs par défaut');
   }
 
   /**
@@ -273,7 +273,7 @@ class FeatureFlagService {
    */
   debugLog(message: string, ...args: any[]): void {
     if (this.isEnabled('ENABLE_DEBUG_LOGGING')) {
-      SecureLogger.info(`🐛 [SYMBIONT Debug] ${message}`, ...args);
+      logger.info(`🐛 [SYMBIONT Debug] ${message}`, ...args);
     }
   }
 
@@ -289,7 +289,7 @@ class FeatureFlagService {
     const result = operation();
     const duration = performance.now() - start;
     
-    SecureLogger.info(`⏱️ [SYMBIONT Profile] ${name}: ${duration.toFixed(2)}ms`);
+    logger.info(`⏱️ [SYMBIONT Profile] ${name}: ${duration.toFixed(2)}ms`);
     
     return result;
   }

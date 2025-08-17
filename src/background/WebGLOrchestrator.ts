@@ -1,6 +1,6 @@
 import { RenderQueue, WebGLContext, PerformanceMetrics, VisualMutation } from '../shared/types/organism'
 import { OrganismMemoryBank } from './OrganismMemoryBank'
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 interface ShaderProgram {
   program: WebGLProgram;
@@ -75,7 +75,7 @@ export class WebGLOrchestrator {
         ready: true
       } as WebGLContext
     } catch (error) {
-      SecureLogger.error('WebGL initialization failed:', error)
+      logger.error('WebGL initialization failed:', error)
       throw error
     }
   }
@@ -123,7 +123,7 @@ export class WebGLOrchestrator {
       // Save updated organism state
       await this.memoryBank.saveOrganismHistory(id, history)
     } catch (error) {
-      SecureLogger.error('Failed to update organism visuals:', error)
+      logger.error('Failed to update organism visuals:', error)
     }
   }
 
@@ -150,7 +150,7 @@ export class WebGLOrchestrator {
       
       this.logPerformance('GPU optimization executed', metrics)
     } catch (error) {
-      SecureLogger.error('Performance optimization failed:', error)
+      logger.error('Performance optimization failed:', error)
     }
   }
 
@@ -174,7 +174,7 @@ export class WebGLOrchestrator {
       context.gl.linkProgram(program)
       
       if (!context.gl.getProgramParameter(program, context.gl.LINK_STATUS)) {
-        SecureLogger.error('Shader program link failed:', context.gl.getProgramInfoLog(program))
+        logger.error('Shader program link failed:', context.gl.getProgramInfoLog(program))
         continue
       }
       
@@ -211,7 +211,7 @@ export class WebGLOrchestrator {
     gl.compileShader(shader)
     
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      SecureLogger.error('Shader compilation failed:', gl.getShaderInfoLog(shader))
+      logger.error('Shader compilation failed:', gl.getShaderInfoLog(shader))
       gl.deleteShader(shader)
       return null
     }
@@ -343,13 +343,13 @@ export class WebGLOrchestrator {
   // --- Monitoring ---
   logPerformance(msg: string, metrics?: PerformanceMetrics) {
     if (metrics) {
-      SecureLogger.info(`[WebGL] ${msg}`, {
+      logger.info(`[WebGL] ${msg}`, {
         fps: metrics.fps,
         renderTime: metrics.renderTime,
         memoryUsage: metrics.memoryUsage
       })
     } else {
-      SecureLogger.info(`[WebGL] ${msg}`)
+      logger.info(`[WebGL] ${msg}`)
     }
   }
   

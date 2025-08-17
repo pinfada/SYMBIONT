@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { addRitual, getRituals } from '../../shared/ritualsApi';
 import { PluginManager, Plugin } from '../../core/PluginManager';
-import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureRandom } from '@shared/utils/secureRandom';
 
 export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<string, number> }> = ({ userId, traits }) => {
   const [step, setStep] = useState<'init' | 'waiting' | 'enter' | 'result'>('init');

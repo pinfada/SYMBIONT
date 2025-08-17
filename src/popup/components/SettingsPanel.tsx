@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
-import { SecureLogger } from '../shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 interface Settings {
   theme: 'light' | 'dark' | 'auto';
@@ -54,7 +54,7 @@ export const SettingsPanel: React.FC = () => {
       const flags = RealDataService.getFeatureStatus();
       setFeatureFlags(flags);
     } catch (error) {
-      SecureLogger.warn('Impossible de charger les feature flags:', error);
+      logger.warn('Impossible de charger les feature flags:', error);
       // Garder les valeurs par défaut
     }
   };
@@ -92,7 +92,7 @@ export const SettingsPanel: React.FC = () => {
         [feature]: !currentValue
       }));
     } catch (error) {
-      SecureLogger.error('Erreur toggle feature flag:', error);
+      logger.error('Erreur toggle feature flag:', error);
     }
   };
 
@@ -104,7 +104,7 @@ export const SettingsPanel: React.FC = () => {
       await realDataService.migrateToRealData(userId);
       alert('✅ Migration vers vraies données réussie ! Rechargez l\'extension.');
     } catch (error) {
-      SecureLogger.error('Erreur migration:', error);
+      logger.error('Erreur migration:', error);
       alert('❌ Erreur lors de la migration. Voir console.');
     }
   };

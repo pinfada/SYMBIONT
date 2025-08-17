@@ -11,7 +11,7 @@ import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
 import { OrganismFactory } from '../core/factories/OrganismFactory';
 import { generateUUID } from '../shared/utils/uuid';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 // --- Ajout des modules résilients ---
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
@@ -41,7 +41,7 @@ export const healthMonitor = new BasicHealthMonitor(async (msg) => {
   };
   const result = await resilientBus.send(message);
   if (!result.success) {
-    SecureLogger.warn('Message ORGANISM_UPDATE fallback, voir la queue persistante.');
+    logger.warn('Message ORGANISM_UPDATE fallback, voir la queue persistante.');
   }
 })();
 
@@ -113,9 +113,9 @@ class BackgroundService {
       // Start periodic tasks
       this.startPeriodicTasks();
       
-      SecureLogger.info('Background service initialized');
+      logger.info('Background service initialized');
     } catch (error) {
-      SecureLogger.error('Failed to initialize background service:', error);
+      logger.error('Failed to initialize background service:', error);
     }
   }
 

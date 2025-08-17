@@ -7,7 +7,7 @@ import MysticalPanel from './MysticalPanel';
 import SocialPanel from './SocialPanel';
 import { GlobalNetworkGraph } from './GlobalNetworkGraph';
 import { OrganismViewer } from './OrganismViewer';
-import { SecureLogger } from '../shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Organisme', icon: '🧬', description: 'Votre organisme digital' },
@@ -36,7 +36,7 @@ const App: React.FC = () => {
         // Fermer le popup actuel
         window.close();
       } catch (error) {
-        SecureLogger.warn('Impossible d\'ouvrir en fenêtre:', error);
+        logger.warn('Impossible d\'ouvrir en fenêtre:', error);
         setToast({ 
           message: 'Ouverture en fenêtre non disponible dans ce contexte', 
           type: 'info' 

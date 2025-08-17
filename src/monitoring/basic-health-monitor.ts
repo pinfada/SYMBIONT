@@ -1,5 +1,5 @@
 import { SecureRandom } from '@shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 // monitoring/basic-health-monitor.ts
 // Monitoring basique de la santé du système (Phase 1)
 
@@ -63,7 +63,7 @@ export class BasicHealthMonitor {
     
     // Vérifie le cooldown
     if (!lastAlert || now - lastAlert > this.alertCooldown) {
-      SecureLogger.warn('🛑 [HealthMonitor]', msg)
+      logger.warn('🛑 [HealthMonitor]', msg)
       this.lastAlerts.set(alertKey, now);
       if (this.alertCallback) this.alertCallback(msg)
     }

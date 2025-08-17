@@ -1,5 +1,5 @@
 import { SecureRandom } from '@shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 // monitoring/predictive-health-monitor.ts
 // Monitoring prédictif de la santé (Phase 2)
 
@@ -97,11 +97,11 @@ export class PredictiveHealthMonitor {
   }
 
   private alert(msg: string) {
-    SecureLogger.warn('🛑 [PredictiveHealthMonitor]', msg)
+    logger.warn('🛑 [PredictiveHealthMonitor]', msg)
     if (this.onAlert) this.onAlert(msg)
   }
 
   private logAction(msg: string) {
-    SecureLogger.info('🟢 [Prévention]', msg)
+    logger.info('🟢 [Prévention]', msg)
   }
 } 

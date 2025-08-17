@@ -1,4 +1,4 @@
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 // Utilitaires de sérialisation pour SYMBIONT
 // Gère la sérialisation sécurisée des objets complexes
 
@@ -51,7 +51,7 @@ export function sanitizeOrganismState(state: any): SerializableOrganismState | n
       memoryFragments: sanitizeMemoryFragments(state.memoryFragments)
     };
   } catch (error) {
-    SecureLogger.error('Failed to sanitize organism state:', error);
+    logger.error('Failed to sanitize organism state:', error);
     return null;
   }
 }

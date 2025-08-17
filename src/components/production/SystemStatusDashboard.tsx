@@ -1,6 +1,6 @@
 // System Status Dashboard - Production Monitoring
 import React, { useState, useEffect } from 'react';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 interface SystemHealth {
   api: 'healthy' | 'degraded' | 'down';
@@ -80,7 +80,7 @@ export const SystemStatusDashboard: React.FC = () => {
         setNetworkStats(networkData);
       }
     } catch (error) {
-      SecureLogger.error('Failed to fetch system status:', error);
+      logger.error('Failed to fetch system status:', error);
       setHealth(prev => ({ ...prev, api: 'down' }));
     }
   };

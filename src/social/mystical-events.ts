@@ -1,7 +1,7 @@
 // social/mystical-events.ts
 // Événements mystiques distribués (Phase 3)
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class MysticalEvents {
   private channel: BroadcastChannel
@@ -15,17 +15,17 @@ export class MysticalEvents {
 
   triggerMysticalEvent(eventId: string, payload: any) {
     this.channel.postMessage({ type: 'mystical', from: this.peerId, eventId, payload })
-    SecureLogger.info(`[MysticalEvents] Événement mystique déclenché : ${eventId}`)
+    logger.info(`[MysticalEvents] Événement mystique déclenché : ${eventId}`)
   }
 
   propagateToCommunity(eventId: string, payload: any) {
     this.channel.postMessage({ type: 'mystical', from: this.peerId, eventId, payload })
-    SecureLogger.info(`[MysticalEvents] Propagation à la communauté : ${eventId}`)
+    logger.info(`[MysticalEvents] Propagation à la communauté : ${eventId}`)
   }
 
   applySpecialEffect(effect: string) {
     // Appliquer un effet spécial distribué (log pour l'instant)
-    SecureLogger.info(`[MysticalEvents] Effet spécial appliqué : ${effect}`)
+    logger.info(`[MysticalEvents] Effet spécial appliqué : ${effect}`)
   }
 
   private handleMessage(msg: any) {

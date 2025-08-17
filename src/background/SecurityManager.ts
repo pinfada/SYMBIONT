@@ -3,7 +3,7 @@
  */
 import { BehaviorPattern } from '../shared/types/organism'
 import { swCryptoAPI } from './service-worker-adapter'
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class SecurityManager {
   private encryptionKey: CryptoKey | null = null
@@ -93,7 +93,7 @@ export class SecurityManager {
         symbiont_key_created: Date.now()
       })
     } catch (error) {
-      SecureLogger.error('Erreur lors du stockage de la clé:', error)
+      logger.error('Erreur lors du stockage de la clé:', error)
     }
   }
 
@@ -138,7 +138,7 @@ export class SecurityManager {
       buf.set(new Uint8Array(ciphertext), iv.length)
       return btoa(String.fromCharCode(...buf))
     } catch (error) {
-      SecureLogger.error('Erreur de chiffrement:', error)
+      logger.error('Erreur de chiffrement:', error)
       throw new Error('Échec du chiffrement des données sensibles')
     }
   }
@@ -170,7 +170,7 @@ export class SecurityManager {
       const plainText = new TextDecoder().decode(plainBuffer)
       return JSON.parse(plainText)
     } catch (error) {
-      SecureLogger.error('Erreur de déchiffrement:', error)
+      logger.error('Erreur de déchiffrement:', error)
       throw new Error('Échec du déchiffrement des données - données corrompues ou clé invalide')
     }
   }
@@ -254,7 +254,7 @@ export class SecurityManager {
       // Conversion en base64 pour un hash compact
       return btoa(String.fromCharCode(...hashArray))
     } catch (error) {
-      SecureLogger.error('Erreur de hashage:', error)
+      logger.error('Erreur de hashage:', error)
       throw new Error('Échec du hashage sécurisé')
     }
   }

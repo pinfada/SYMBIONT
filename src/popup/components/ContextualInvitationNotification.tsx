@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SecureRandom } from '../shared/utils/secureRandom';
+import { SecureRandom } from '@shared/utils/secureRandom';
 
 interface ContextualInvitationProps {
   context?: string;

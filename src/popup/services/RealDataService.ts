@@ -2,7 +2,7 @@
 import { OrganismState } from '../../shared/types/organism';
 import { Invitation, InvitationStatus } from '../../shared/types/invitation';
 import { SecureRandom } from '@shared/utils/secureRandom';
-import { SecureLogger } from '../shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 // Feature flags pour migration progressive
 const FEATURE_FLAGS = {
@@ -24,7 +24,7 @@ const API_CONFIG = (() => {
       BASE_URL: apiUrl || 'http://localhost:3001/api',
       WS_URL: wsUrl || 'ws://localhost:3001',
       API_KEY: apiKey || (() => {
-        SecureLogger.warn('⚠️ DÉVELOPPEMENT: Utilisation API key par défaut - NE PAS UTILISER EN PRODUCTION');
+        logger.warn('⚠️ DÉVELOPPEMENT: Utilisation API key par défaut - NE PAS UTILISER EN PRODUCTION');
         return 'dev-api-key-unsafe';
       })()
     };
@@ -121,7 +121,7 @@ export class RealDataService {
       const behaviors = await this.collectUserBehaviors(userId);
       return this.buildDNAFromBehaviors(behaviors);
     } catch (error) {
-      SecureLogger.warn('Erreur génération ADN réel, fallback mock:', error);
+      logger.warn('Erreur génération ADN réel, fallback mock:', error);
       return 'MOCKDNA123456789ABCDEF';
     }
   }
@@ -251,7 +251,7 @@ export class RealDataService {
       
       return await response.json();
     } catch (error) {
-      SecureLogger.warn('Erreur API invitations, fallback mock:', error);
+      logger.warn('Erreur API invitations, fallback mock:', error);
       // Fallback vers données mock
       const { MockInvitationService } = await import('./MockInvitationService');
       return {
@@ -287,7 +287,7 @@ export class RealDataService {
 
       return { cpu, memory, latency };
     } catch (error) {
-      SecureLogger.warn('Erreur métriques réelles, fallback mock:', error);
+      logger.warn('Erreur métriques réelles, fallback mock:', error);
       return {
         cpu: SecureRandom.random() * 0.2,
         memory: SecureRandom.random() * 20,
@@ -380,7 +380,7 @@ export class RealDataService {
   private trackTabChange(tabId: number): void {
     chrome.tabs.get(tabId, (tab) => {
       if (tab.url) {
-        SecureLogger.info('Tab changed to:', new URL(tab.url).hostname);
+        logger.info('Tab changed to:', new URL(tab.url).hostname);
       }
     });
   }
@@ -419,7 +419,7 @@ export class RealDataService {
   // === MIGRATION UTILITIES ===
 
   async migrateToRealData(userId: string): Promise<void> {
-    SecureLogger.info('🚀 Démarrage migration vers vraies données...');
+    logger.info('🚀 Démarrage migration vers vraies données...');
 
     try {
       // 1. Générer ADN réel
@@ -449,9 +449,9 @@ export class RealDataService {
       // 4. Sauvegarder
       localStorage.setItem('symbiont_organism', JSON.stringify(updatedOrganism));
       
-      SecureLogger.info('✅ Migration réussie:', realDNA);
+      logger.info('✅ Migration réussie:', realDNA);
     } catch (error) {
-      SecureLogger.error('❌ Erreur migration:', error);
+      logger.error('❌ Erreur migration:', error);
       throw error;
     }
   }

@@ -5,7 +5,7 @@ import { GeneticMutator } from './GeneticMutator'
 import { OrganismState, BehaviorPattern, Mutation, PageContext, ActionPrediction } from '../shared/types/organism'
 import { errorHandler } from '../core/utils/ErrorHandler'
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class NeuralCoreEngine {
   private organisms: Map<string, OrganismState>
@@ -29,7 +29,7 @@ export class NeuralCoreEngine {
       // Charger les organismes depuis la mémoire (utiliser la méthode existante)
       // Note: Comme retrieveOrganisms n'existe pas, on va créer une logique alternative
       this.initialized = true
-      SecureLogger.info(`🧠 NeuralCoreEngine initialisé`)
+      logger.info(`🧠 NeuralCoreEngine initialisé`)
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'initialize', error, 'warning')
       this.initialized = true // Continue même en cas d'erreur
@@ -72,7 +72,7 @@ export class NeuralCoreEngine {
       this.organisms.set(userId, organism)
       await this.memoryBank.saveOrganismState(userId, organism)
 
-      SecureLogger.info(`🌱 Nouvel organisme créé pour ${userId}`)
+      logger.info(`🌱 Nouvel organisme créé pour ${userId}`)
       return organism
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'createOrganism', error, 'error')
@@ -142,7 +142,7 @@ export class NeuralCoreEngine {
       // Sauvegarder
       await this.memoryBank.saveOrganismState(id, organism)
 
-      SecureLogger.info(`🧬 ${mutations.length} mutations appliquées à l'organisme ${id}`)
+      logger.info(`🧬 ${mutations.length} mutations appliquées à l'organisme ${id}`)
       return mutations
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'evolveOrganism', error, 'error')
@@ -168,7 +168,7 @@ export class NeuralCoreEngine {
         reasoning: `Basé sur les traits: curiosité=${organism.traits.curiosity.toFixed(2)}, focus=${organism.traits.focus.toFixed(2)}`
       }
 
-      SecureLogger.info(`🔮 Prédiction générée pour ${id}: ${enrichedPrediction.action}`)
+      logger.info(`🔮 Prédiction générée pour ${id}: ${enrichedPrediction.action}`)
       return enrichedPrediction
     } catch (error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'predictNextAction', error, 'error')

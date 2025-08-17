@@ -2,7 +2,7 @@
 // Analytics et monitoring avancé des performances avec métriques réelles
 
 import { RealTimePerformanceMonitor, PerformanceBudget } from '../monitoring/RealTimePerformanceMonitor'
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 interface AnalyticsMetric {
   cpu: number;
@@ -58,7 +58,7 @@ export class PerformanceAnalytics {
       await this.collect()
     }, 1000)
     
-    SecureLogger.info('[PerfAnalytics] Démarrage du monitoring avec métriques réelles')
+    logger.info('[PerfAnalytics] Démarrage du monitoring avec métriques réelles')
   }
 
   stop(): void {
@@ -68,7 +68,7 @@ export class PerformanceAnalytics {
     this.performanceMonitor.stopMonitoring()
     clearInterval(this.interval)
     
-    SecureLogger.info('[PerfAnalytics] Arrêt du monitoring')
+    logger.info('[PerfAnalytics] Arrêt du monitoring')
   }
 
   private async collect(): Promise<void> {
@@ -106,7 +106,7 @@ export class PerformanceAnalytics {
       this.checkPerformanceBudget()
       
     } catch (error) {
-      SecureLogger.error('[PerfAnalytics] Erreur lors de la collecte:', error)
+      logger.error('[PerfAnalytics] Erreur lors de la collecte:', error)
     }
   }
 
@@ -182,9 +182,9 @@ export class PerformanceAnalytics {
     const message = `[PerfAnalytics] ${anomaly.severity.toUpperCase()}: ${anomaly.type} = ${anomaly.value.toFixed(2)} > ${anomaly.threshold}`
     
     if (anomaly.severity === 'critical') {
-      SecureLogger.error(message)
+      logger.error(message)
     } else {
-      SecureLogger.warn(message)
+      logger.warn(message)
     }
   }
 
@@ -192,7 +192,7 @@ export class PerformanceAnalytics {
     const budgetCheck = this.performanceMonitor.checkPerformanceBudget()
     
     if (!budgetCheck.passed) {
-      SecureLogger.warn('[PerfAnalytics] Budget de performance dépassé:', budgetCheck.violations)
+      logger.warn('[PerfAnalytics] Budget de performance dépassé:', budgetCheck.violations)
     }
   }
 
@@ -260,6 +260,6 @@ export class PerformanceAnalytics {
   reset(): void {
     this.metrics = []
     this.anomalies = []
-    SecureLogger.info('[PerfAnalytics] Métriques réinitialisées')
+    logger.info('[PerfAnalytics] Métriques réinitialisées')
   }
 } 

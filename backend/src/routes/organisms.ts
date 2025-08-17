@@ -1,4 +1,7 @@
 // Organisms API Routes - Production Ready
+import { webcrypto } from 'crypto';
+const crypto = webcrypto;
+
 interface Request {
   params: any;
   body: any;
@@ -350,8 +353,9 @@ async function updateOrganism(id: string, userId: string, updates: any): Promise
 async function generateInitialDNA(traits: any): Promise<string> {
   const bases = ['A', 'T', 'G', 'C'];
   let dna = '';
+  const randomBytes = crypto.getRandomValues(new Uint8Array(64));
   for (let i = 0; i < 64; i++) {
-    dna += bases[Math.floor(Math.random() * 4)];
+    dna += bases[randomBytes[i] % 4];
   }
   return dna;
 }

@@ -1,4 +1,4 @@
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 // background/persistent-service-worker.ts
 // Service Worker persistant et auto-réparant (Phase 1)
 
@@ -29,13 +29,13 @@ export class PersistentServiceWorker {
 
     // Gestionnaire de réveil d'urgence
     chrome.runtime.onStartup.addListener(() => {
-      SecureLogger.info('🚀 Service Worker emergency restart')
+      logger.info('🚀 Service Worker emergency restart')
       this.reinitialize()
     })
 
     // Détection de suspension imminente
     chrome.runtime.onSuspend.addListener(() => {
-      SecureLogger.info('⚠️ Service Worker suspending - saving critical state')
+      logger.info('⚠️ Service Worker suspending - saving critical state')
       this.saveEmergencyState()
     })
   }
@@ -44,9 +44,9 @@ export class PersistentServiceWorker {
     this.lastHeartbeat = Date.now()
     chrome.storage.local.set({ symbiont_last_heartbeat: this.lastHeartbeat }, () => {
       if (chrome.runtime.lastError) {
-        SecureLogger.warn('Erreur heartbeat:', chrome.runtime.lastError)
+        logger.warn('Erreur heartbeat:', chrome.runtime.lastError)
       } else {
-        SecureLogger.info('💓 Heartbeat envoyé à', new Date(this.lastHeartbeat).toISOString())
+        logger.info('💓 Heartbeat envoyé à', new Date(this.lastHeartbeat).toISOString())
       }
     })
   }
@@ -56,7 +56,7 @@ export class PersistentServiceWorker {
       const last = result.symbiont_last_heartbeat || 0
       const now = Date.now()
       if (now - last > 35000) {
-        SecureLogger.warn('⏱️ Heartbeat trop ancien, possible problème de connexion/service worker')
+        logger.warn('⏱️ Heartbeat trop ancien, possible problème de connexion/service worker')
       }
     })
     return true
@@ -67,16 +67,16 @@ export class PersistentServiceWorker {
     this.lastHeartbeat = Date.now()
     this.setupSelfHealing()
     this.performMaintenance()
-    SecureLogger.info('♻️ Service Worker réinitialisé')
+    logger.info('♻️ Service Worker réinitialisé')
   }
 
   private saveEmergencyState() {
     // Simule la sauvegarde d'un état critique minimal
     chrome.storage.local.set({ symbiont_emergency_state: { timestamp: Date.now(), isAlive: this.isAlive } }, () => {
       if (chrome.runtime.lastError) {
-        SecureLogger.error('Erreur sauvegarde état critique:', chrome.runtime.lastError)
+        logger.error('Erreur sauvegarde état critique:', chrome.runtime.lastError)
       } else {
-        SecureLogger.info('💾 État critique sauvegardé')
+        logger.info('💾 État critique sauvegardé')
       }
     })
   }
@@ -84,13 +84,13 @@ export class PersistentServiceWorker {
   // Protocole de maintenance préventive
   private async performMaintenance(): Promise<void> {
     // Nettoyage mémoire préventif (simulation)
-    SecureLogger.info('🧹 Nettoyage mémoire préventif')
+    logger.info('🧹 Nettoyage mémoire préventif')
     // Vérification intégrité des données (simulation)
-    SecureLogger.info('🔍 Vérification intégrité des données')
+    logger.info('🔍 Vérification intégrité des données')
     // Optimisation performances (simulation)
-    SecureLogger.info('⚡ Optimisation des performances')
+    logger.info('⚡ Optimisation des performances')
     // Test de tous les systèmes critiques (simulation)
-    SecureLogger.info('🩺 Health check des systèmes critiques')
+    logger.info('🩺 Health check des systèmes critiques')
   }
 
   private setupPeriodicMaintenance() {}
@@ -105,7 +105,7 @@ export class PersistentServiceWorker {
     setInterval(() => {
       // @ts-expect-error Health map réservée pour usage futur
       const _connectionHealth = new Map<string, number>();
-      SecureLogger.debug('[ServiceWorker] Heartbeat');
+      logger.debug('[ServiceWorker] Heartbeat');
     }, 30000);
   }
 }

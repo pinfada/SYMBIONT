@@ -7,7 +7,7 @@ import { InteractionCollector } from './collectors/InteractionCollector';
 import { DOMAnalyzer } from './observers/DOMAnalyzer';
 import { ScrollTracker } from './observers/ScrollTracker';
 import { AttentionMonitor } from './monitors/AttentionMonitor';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 /**
  * ContentScript - Système sensoriel de SYMBIONT
@@ -43,7 +43,7 @@ class ContentScript {
   private latestLCP: number = 0;
 
   private constructor() {
-    SecureLogger.info('🔍 SYMBIONT Content Script initializing...');
+    logger.info('🔍 SYMBIONT Content Script initializing...');
     
     this.messageBus = new MessageBus('content');
     this.navigationObserver = new NavigationObserver(this.messageBus);
@@ -71,7 +71,7 @@ class ContentScript {
     // Nettoyage à la fermeture
     window.addEventListener('beforeunload', this.cleanup.bind(this));
     
-    SecureLogger.info('✅ SYMBIONT Content Script ready');
+    logger.info('✅ SYMBIONT Content Script ready');
   }
 
   private setupObservers(): void {
@@ -359,7 +359,7 @@ class ContentScript {
   private handleLCP(entry: PerformanceEntry): void {
     // Notification optionnelle sur LCP
     if (entry.startTime > 2500) { // Seuil critique LCP > 2.5s
-      SecureLogger.debug('Slow LCP detected:', entry.startTime);
+      logger.debug('Slow LCP detected:', entry.startTime);
     }
   }
 
@@ -373,7 +373,7 @@ class ContentScript {
     this.scrollTracker.stop();
     this.attentionMonitor.stop();
     
-    SecureLogger.info('🧹 SYMBIONT Content Script cleaned up');
+    logger.info('🧹 SYMBIONT Content Script cleaned up');
   }
 }
 

@@ -1,7 +1,7 @@
 // src/integration/WebGLMessageAdapter.ts
 import { OrganismEngine } from '../generative/OrganismEngine';
 import { OrganismState, OrganismMutation } from '../shared/types/organism';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 // MessageBus et MessageType doivent être importés selon votre architecture
 import { MessageBus, MessageType } from '../shared/messaging/MessageBus';
@@ -29,7 +29,7 @@ export class WebGLMessageAdapter {
         const { mutation } = message.payload;
         this.engine.mutate(mutation as OrganismMutation);
       } catch (err) {
-        SecureLogger.error('Erreur lors de l’application de la mutation WebGL :', err);
+        logger.error('Erreur lors de l’application de la mutation WebGL :', err);
       }
       });
       
@@ -39,7 +39,7 @@ export class WebGLMessageAdapter {
         const { state } = message.payload;
         this.engine.render(state as OrganismState);
       } catch (err) {
-        SecureLogger.error('Erreur lors du rendu WebGL :', err);
+        logger.error('Erreur lors du rendu WebGL :', err);
       }
       });
       

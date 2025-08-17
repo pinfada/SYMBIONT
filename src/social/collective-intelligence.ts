@@ -1,7 +1,7 @@
 // social/collective-intelligence.ts
 // Intelligence collective émergente (Phase 3)
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class CollectiveIntelligence {
   private proposals: Map<string, any[]> = new Map()
@@ -23,13 +23,13 @@ export class CollectiveIntelligence {
     this.proposals.get(mutation.id)!.push({ mutation, proposerId })
     // Vote automatiquement pour sa propre proposition
     this.vote(mutation.id, proposerId)
-    SecureLogger.info(`[Collective] Mutation proposée par ${proposerId}`)
+    logger.info(`[Collective] Mutation proposée par ${proposerId}`)
   }
 
   vote(mutationId: string, voterId: string) {
     if (!this.votes.has(mutationId)) this.votes.set(mutationId, new Set())
     this.votes.get(mutationId)!.add(voterId)
-    SecureLogger.info(`[Collective] Vote de ${voterId} pour mutation ${mutationId}`)
+    logger.info(`[Collective] Vote de ${voterId} pour mutation ${mutationId}`)
   }
 
   aggregateVotes(mutationId: string): number {
@@ -40,11 +40,11 @@ export class CollectiveIntelligence {
     const votes = this.aggregateVotes(mutationId)
     const consensus = votes > Math.max(1, Math.floor(totalPeers / 2))
     if (consensus) {
-      SecureLogger.info(`[Collective] Mutation collective déclenchée : ${mutationId}`)
+      logger.info(`[Collective] Mutation collective déclenchée : ${mutationId}`)
       if (this.onCollectiveMutation) this.onCollectiveMutation(mutationId)
       return true
     } else {
-      SecureLogger.info(`[Collective] Consensus non atteint pour ${mutationId} (${votes}/${totalPeers})`)
+      logger.info(`[Collective] Consensus non atteint pour ${mutationId} (${votes}/${totalPeers})`)
       return false
     }
   }

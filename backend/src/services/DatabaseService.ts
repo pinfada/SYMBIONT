@@ -1,5 +1,8 @@
 // Database Service - Mock Implementation (Production Ready)
+import { LoggerService } from './LoggerService';
+
 export class DatabaseService {
+  private logger = LoggerService.getInstance();
   private static instance: DatabaseService;
   private isConnected: boolean = false;
   private mockData: Map<string, any> = new Map();
@@ -19,7 +22,7 @@ export class DatabaseService {
   async connect(): Promise<void> {
     try {
       this.isConnected = true;
-      console.log('✅ Database connected (Mock)');
+      this.logger.info('Database connected (Mock)');
     } catch (error) {
       console.error('❌ Database connection failed:', error);
       throw error;
@@ -29,7 +32,7 @@ export class DatabaseService {
   async disconnect(): Promise<void> {
     try {
       this.isConnected = false;
-      console.log('🔌 Database disconnected (Mock)');
+      this.logger.info('Database disconnected (Mock)');
     } catch (error) {
       console.error('❌ Database disconnection failed:', error);
       throw error;

@@ -1,7 +1,7 @@
 // Collecteur d'interactions avancé pour SYMBIONT
 import { MessageBus } from '../../core/messaging/MessageBus';
 import { safeGetClasses } from '../../shared/utils/safeOperations';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export interface InteractionEvent {
   type: 'click' | 'keypress' | 'scroll' | 'hover' | 'form_submit' | 'form_focus' | 'media_play' | 'media_pause' | 'selection' | 'contextmenu';
@@ -560,13 +560,13 @@ export class InteractionCollector extends EventTarget {
       this.config = { ...this.config, ...config };
     }
     this.isActive = true;
-    SecureLogger.info('🔍 InteractionCollector started');
+    logger.info('🔍 InteractionCollector started');
   }
 
   public stop(): void {
     this.isActive = false;
     this.flushEvents();
-    SecureLogger.info('🔍 InteractionCollector stopped');
+    logger.info('🔍 InteractionCollector stopped');
   }
 
   public on(event: string, handler: (interaction: any) => void): void {

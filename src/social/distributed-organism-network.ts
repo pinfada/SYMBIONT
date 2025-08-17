@@ -1,7 +1,7 @@
 // social/distributed-organism-network.ts
 // Réseau distribué d'organismes (Phase 3)
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class DistributedOrganismNetwork {
   private peers: Set<string> = new Set()
@@ -25,28 +25,28 @@ export class DistributedOrganismNetwork {
   joinNetwork(peerId: string) {
     this.peers.add(peerId)
     this.channel.postMessage({ type: 'join', peerId: this.peerId })
-    SecureLogger.info(`[Network] Pair rejoint : ${peerId}`)
+    logger.info(`[Network] Pair rejoint : ${peerId}`)
   }
 
   leaveNetwork(peerId: string) {
     this.peers.delete(peerId)
     this.channel.postMessage({ type: 'leave', peerId: this.peerId })
-    SecureLogger.info(`[Network] Pair quitté : ${peerId}`)
+    logger.info(`[Network] Pair quitté : ${peerId}`)
   }
 
   broadcastMutation(mutation: any) {
     this.channel.postMessage({ type: 'mutation', from: this.peerId, mutation })
-    SecureLogger.info(`[Network] Diffusion mutation à ${this.peers.size} pairs`)
+    logger.info(`[Network] Diffusion mutation à ${this.peers.size} pairs`)
   }
 
   receiveMutation(mutation: any, fromPeer: string) {
     // Appliquer la mutation reçue (log pour l'instant)
-    SecureLogger.info(`[Network] Mutation reçue de ${fromPeer}`, mutation)
+    logger.info(`[Network] Mutation reçue de ${fromPeer}`, mutation)
   }
 
   performCommunityBackup(state: any) {
     this.channel.postMessage({ type: 'backup', from: this.peerId, state })
-    SecureLogger.info(`[Network] Backup communautaire lancé`)
+    logger.info(`[Network] Backup communautaire lancé`)
   }
 
   private handleMessage(msg: any) {
@@ -66,7 +66,7 @@ export class DistributedOrganismNetwork {
         break
       case 'backup':
         // Pour l'instant, log seulement
-        SecureLogger.info(`[Network] Backup reçu de ${msg.from}`, msg.state)
+        logger.info(`[Network] Backup reçu de ${msg.from}`, msg.state)
         break
     }
   }

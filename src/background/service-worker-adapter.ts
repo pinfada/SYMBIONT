@@ -1,4 +1,4 @@
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 // background/service-worker-adapter.ts
 // Adaptation du background script SYMBIONT pour Service Worker
 
@@ -17,7 +17,7 @@ class ServiceWorkerStorage {
     try {
       await chrome.storage.local.set({ [key]: value });
     } catch (error) {
-      SecureLogger.error('Storage error:', error);
+      logger.error('Storage error:', error);
       throw error;
     }
   }
@@ -27,7 +27,7 @@ class ServiceWorkerStorage {
       const result = await chrome.storage.local.get([key]);
       return result[key] || null;
     } catch (error) {
-      SecureLogger.error('Storage retrieval error:', error);
+      logger.error('Storage retrieval error:', error);
       return null;
     }
   }
@@ -36,7 +36,7 @@ class ServiceWorkerStorage {
     try {
       await chrome.storage.local.remove([key]);
     } catch (error) {
-      SecureLogger.error('Storage removal error:', error);
+      logger.error('Storage removal error:', error);
     }
   }
 }
@@ -74,7 +74,7 @@ class ServiceWorkerMessageChannel {
     try {
       return JSON.parse(JSON.stringify(data));
     } catch (error) {
-      SecureLogger.warn('Message serialization issue, cleaning object:', error);
+      logger.warn('Message serialization issue, cleaning object:', error);
       return this.cleanObjectForSerialization(data);
     }
   }
@@ -168,7 +168,7 @@ class ServiceWorkerMessageChannel {
       try {
         handler({ data });
       } catch (error) {
-        SecureLogger.error('Message handler error:', error);
+        logger.error('Message handler error:', error);
       }
     });
   }
@@ -214,7 +214,7 @@ class ServiceWorkerCrypto {
       
       return btoa(String.fromCharCode(...combined));
     } catch (error) {
-      SecureLogger.error('Encryption failed, using fallback:', error);
+      logger.error('Encryption failed, using fallback:', error);
       // Fallback simple pour les cas d'urgence
       const jsonString = JSON.stringify(data);
       return btoa(unescape(encodeURIComponent(jsonString)));
@@ -247,13 +247,13 @@ class ServiceWorkerCrypto {
       const decoder = new TextDecoder();
       return JSON.parse(decoder.decode(decryptedData));
     } catch (error) {
-      SecureLogger.error('Decryption failed, trying fallback:', error);
+      logger.error('Decryption failed, trying fallback:', error);
       // Fallback pour les données non chiffrées
       try {
         const jsonString = decodeURIComponent(escape(atob(encryptedData)));
         return JSON.parse(jsonString);
       } catch (fallbackError) {
-        SecureLogger.error('All decryption methods failed:', fallbackError);
+        logger.error('All decryption methods failed:', fallbackError);
         throw new Error('Unable to decrypt data');
       }
     }

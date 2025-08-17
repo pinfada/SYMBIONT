@@ -2,7 +2,7 @@
 // Système de stockage hybride multi-niveaux (Phase 1)
 
 import { swLocalStorage, swIndexedDB } from '../background/service-worker-adapter'
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 /**
  * HybridStorageManager
@@ -30,11 +30,11 @@ export class HybridStorageManager {
   async store(key: string, data: any, _options: any = {}): Promise<void> {
     // Évite de stocker les alertes de santé qui saturent le stockage
     if (key.includes('symbiont_health_alert_')) {
-      SecureLogger.info('[HybridStorageManager] Skipping health alert storage to prevent quota issues');
+      logger.info('[HybridStorageManager] Skipping health alert storage to prevent quota issues');
       return;
     }
     
-    SecureLogger.info('[HybridStorageManager] store - Mémoire', key, data)
+    logger.info('[HybridStorageManager] store - Mémoire', key, data)
     this.memoryCache.set(key, data)
     try {
       await new Promise((resolve, reject) => {
@@ -42,7 +42,7 @@ export class HybridStorageManager {
           if (chrome.runtime.lastError) {
             // Gestion spéciale du quota dépassé
             if (chrome.runtime.lastError.message?.includes('quota')) {
-              SecureLogger.warn('[HybridStorageManager] Chrome storage quota exceeded, cleaning old data');
+              logger.warn('[HybridStorageManager] Chrome storage quota exceeded, cleaning old data');
               this.cleanOldStorageData().then(() => {
                 // Retry après nettoyage
                 this.persistentStorage.set({ [key]: data }, () => {
@@ -58,9 +58,9 @@ export class HybridStorageManager {
           }
         })
       })
-      SecureLogger.info('[HybridStorageManager] store - chrome.storage.local OK', key)
+      logger.info('[HybridStorageManager] store - chrome.storage.local OK', key)
     } catch (e) {
-      SecureLogger.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', key, e)
+      logger.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', key, e)
     }
     try {
       await this.indexedDBReady
@@ -72,20 +72,20 @@ export class HybridStorageManager {
           req.onsuccess = () => resolve(true)
           req.onerror = () => reject(req.error)
         })
-        SecureLogger.info('[HybridStorageManager] store - IndexedDB OK', key)
+        logger.info('[HybridStorageManager] store - IndexedDB OK', key)
       } else {
         throw new Error('IndexedDB not ready')
       }
     } catch (e) {
-      SecureLogger.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', key, e)
+      logger.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', key, e)
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(data))
-      SecureLogger.info('[HybridStorageManager] store - localStorage d\'urgence OK', key)
+      logger.info('[HybridStorageManager] store - localStorage d\'urgence OK', key)
     }
   }
 
   async retrieve(key: string): Promise<any> {
     if (this.memoryCache.has(key)) {
-      SecureLogger.info('[HybridStorageManager] retrieve - Mémoire HIT', key)
+      logger.info('[HybridStorageManager] retrieve - Mémoire HIT', key)
       return this.memoryCache.get(key)
     }
     try {
@@ -97,11 +97,11 @@ export class HybridStorageManager {
       })
       if (result !== undefined) {
         this.memoryCache.set(key, result)
-        SecureLogger.info('[HybridStorageManager] retrieve - chrome.storage.local OK', key)
+        logger.info('[HybridStorageManager] retrieve - chrome.storage.local OK', key)
         return result
       }
     } catch (e) {
-      SecureLogger.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', key, e)
+      logger.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', key, e)
     }
     try {
       await this.indexedDBReady
@@ -115,21 +115,21 @@ export class HybridStorageManager {
         })
         if (val !== undefined) {
           this.memoryCache.set(key, val)
-          SecureLogger.info('[HybridStorageManager] retrieve - IndexedDB OK', key)
+          logger.info('[HybridStorageManager] retrieve - IndexedDB OK', key)
           return val
         }
       }
     } catch (e) {
-      SecureLogger.warn('[HybridStorageManager] retrieve - IndexedDB failed', key, e)
+      logger.warn('[HybridStorageManager] retrieve - IndexedDB failed', key, e)
     }
     try {
       const val = await this.emergencyLocalStorage.getItem(key)
       if (val) {
-        SecureLogger.info('[HybridStorageManager] retrieve - localStorage d\'urgence OK', key)
+        logger.info('[HybridStorageManager] retrieve - localStorage d\'urgence OK', key)
         return JSON.parse(val)
       }
     } catch (e) {
-      SecureLogger.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', key, e)
+      logger.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', key, e)
     }
     return null
   }
@@ -139,7 +139,7 @@ export class HybridStorageManager {
       let settled = false;
       const timeout = setTimeout(() => {
         if (!settled) {
-          SecureLogger.warn('[HybridStorageManager] IndexedDB init timeout (5s), fallback only');
+          logger.warn('[HybridStorageManager] IndexedDB init timeout (5s), fallback only');
           this.indexedDB = null;
           settled = true;
           resolve(false);
@@ -158,7 +158,7 @@ export class HybridStorageManager {
           if (!settled) {
             clearTimeout(timeout);
             settled = true;
-            SecureLogger.info('[HybridStorageManager] IndexedDB ready');
+            logger.info('[HybridStorageManager] IndexedDB ready');
             resolve(true);
           }
         };
@@ -167,7 +167,7 @@ export class HybridStorageManager {
           if (!settled) {
             clearTimeout(timeout);
             settled = true;
-            SecureLogger.warn('[HybridStorageManager] IndexedDB failed to open');
+            logger.warn('[HybridStorageManager] IndexedDB failed to open');
             resolve(false);
           }
         };
@@ -176,7 +176,7 @@ export class HybridStorageManager {
         if (!settled) {
           clearTimeout(timeout);
           settled = true;
-          SecureLogger.warn('[HybridStorageManager] IndexedDB exception', e);
+          logger.warn('[HybridStorageManager] IndexedDB exception', e);
           resolve(false);
         }
       }
@@ -206,10 +206,10 @@ export class HybridStorageManager {
             else resolve()
           })
         });
-        SecureLogger.info(`[HybridStorageManager] Cleaned ${keysToRemove.length} old storage items`);
+        logger.info(`[HybridStorageManager] Cleaned ${keysToRemove.length} old storage items`);
       }
     } catch (error) {
-      SecureLogger.error('[HybridStorageManager] Failed to clean old storage data:', error);
+      logger.error('[HybridStorageManager] Failed to clean old storage data:', error);
     }
   }
 
@@ -260,7 +260,7 @@ export class HybridStorageManager {
           for (const key in changes) {
             const { newValue } = changes[key]
             this.syncKeyAcrossLayers(key, newValue)
-            SecureLogger.info('[HybridStorageManager] DataReplication - Synchronisation des couches', key)
+            logger.info('[HybridStorageManager] DataReplication - Synchronisation des couches', key)
           }
         }
       })
@@ -293,7 +293,7 @@ export class HybridStorageManager {
           const values = [memVal, chromeVal, idbVal, localVal].filter(v => v !== undefined)
           const allEqual = values.every(v => JSON.stringify(v) === JSON.stringify(values[0]))
           if (!allEqual) {
-            SecureLogger.warn('[HybridStorageManager] IntegrityMonitoring - Divergence détectée pour', key)
+            logger.warn('[HybridStorageManager] IntegrityMonitoring - Divergence détectée pour', key)
             // Auto-réparation naïve : on prend la valeur majoritaire ou la plus récente (TODO: améliorer)
             const valueCounts: Record<string, number> = {}
             for (const v of values) {
@@ -311,10 +311,10 @@ export class HybridStorageManager {
               store.put(repaired, key)
             }
             this.emergencyLocalStorage.setItem(key, JSON.stringify(repaired))
-            SecureLogger.info('[HybridStorageManager] IntegrityMonitoring - Auto-réparation appliquée pour', key)
+            logger.info('[HybridStorageManager] IntegrityMonitoring - Auto-réparation appliquée pour', key)
           }
         } catch (e) {
-          SecureLogger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', key, e)
+          logger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', key, e)
         }
       }
     }, 60000) // toutes les 60 secondes

@@ -5,7 +5,7 @@
 
 import { INeuralMesh } from '../interfaces/INeuralMesh';
 import { OrganismTraits } from '../../shared/types/organism';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export interface NeuralProcessingResult {
   success: boolean;
@@ -58,7 +58,7 @@ export class NeuralService {
         processingTime
       };
     } catch (error) {
-      SecureLogger.error('Erreur de traitement neural:', error);
+      logger.error('Erreur de traitement neural:', error);
       
       return {
         success: false,
@@ -96,7 +96,7 @@ export class NeuralService {
             await this.mesh.learn(pattern.data);
           }
         } catch (error) {
-          SecureLogger.error('Erreur apprentissage neural:', error);
+          logger.error('Erreur apprentissage neural:', error);
         }
       }
     }
@@ -190,7 +190,7 @@ export class NeuralService {
       }
       return true;
     } catch (error) {
-      SecureLogger.error('Erreur apprentissage:', error);
+      logger.error('Erreur apprentissage:', error);
       return false;
     }
   }
@@ -204,7 +204,7 @@ export class NeuralService {
         ? this.mesh.getPerformanceMetrics()
         : { nodeCount: 0, connectionCount: 0, neuralActivity: 0, connectionStrength: 0 };
     } catch (error) {
-      SecureLogger.error('Erreur métriques:', error);
+      logger.error('Erreur métriques:', error);
       return {
         processingTime: 0,
         accuracy: 0,
@@ -220,7 +220,7 @@ export class NeuralService {
     try {
       return this.mesh.saveState();
     } catch (error) {
-      SecureLogger.error('Erreur sauvegarde état neural:', error);
+      logger.error('Erreur sauvegarde état neural:', error);
       return null;
     }
   }
@@ -233,7 +233,7 @@ export class NeuralService {
       this.mesh.loadState(state);
       return true;
     } catch (error) {
-      SecureLogger.error('Erreur chargement état neural:', error);
+      logger.error('Erreur chargement état neural:', error);
       return false;
     }
   }
@@ -247,7 +247,7 @@ export class NeuralService {
       this.processingQueue = [];
       this.isProcessing = false;
     } catch (error) {
-      SecureLogger.error('Erreur reset neural:', error);
+      logger.error('Erreur reset neural:', error);
     }
   }
 
@@ -323,7 +323,7 @@ export class NeuralService {
       const pattern = this.processingQueue.shift();
       if (pattern && this.mesh.learn) {
         this.mesh.learn(pattern.data).catch(error => {
-          SecureLogger.error('Neural processing error:', error);
+          logger.error('Neural processing error:', error);
         });
       }
     }

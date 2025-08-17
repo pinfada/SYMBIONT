@@ -1,7 +1,7 @@
 // social/social-resilience.ts
 // Résilience sociale et backup communautaire (Phase 3)
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 export class SocialResilience {
   private channel: BroadcastChannel
@@ -15,23 +15,23 @@ export class SocialResilience {
 
   requestCommunityBackup(organismId: string) {
     this.channel.postMessage({ type: 'backup_request', from: this.peerId, organismId })
-    SecureLogger.info(`[SocialResilience] Demande de backup pour ${organismId}`)
+    logger.info(`[SocialResilience] Demande de backup pour ${organismId}`)
   }
 
   restoreFromCommunity(organismId: string) {
     // Écoute les backups reçus et restaure si l'organismId correspond
     // (La logique réelle de restauration serait ici)
-    SecureLogger.info(`[SocialResilience] Restauration depuis la communauté pour ${organismId}`)
+    logger.info(`[SocialResilience] Restauration depuis la communauté pour ${organismId}`)
   }
 
   detectMassiveFailure() {
     // Simulation de détection
-    SecureLogger.info(`[SocialResilience] Détection de panne massive`)
+    logger.info(`[SocialResilience] Détection de panne massive`)
   }
 
   launchCommunityAlert(message: string) {
     this.channel.postMessage({ type: 'alert', from: this.peerId, message })
-    SecureLogger.info(`[SocialResilience] Alerte communautaire : ${message}`)
+    logger.info(`[SocialResilience] Alerte communautaire : ${message}`)
   }
 
   private handleMessage(msg: any) {
@@ -39,10 +39,10 @@ export class SocialResilience {
     switch (msg.type) {
       case 'backup_request':
         // TODO: Répondre avec un backup si on a l'organismId
-        SecureLogger.info(`[SocialResilience] Backup demandé par ${msg.from} pour ${msg.organismId}`)
+        logger.info(`[SocialResilience] Backup demandé par ${msg.from} pour ${msg.organismId}`)
         break
       case 'alert':
-        SecureLogger.info(`[SocialResilience] Alerte reçue : ${msg.message}`)
+        logger.info(`[SocialResilience] Alerte reçue : ${msg.message}`)
         break
     }
   }

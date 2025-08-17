@@ -2,13 +2,13 @@
 import { PatternAnalyzer } from './PatternAnalyzer';
 import { BehaviorPredictor } from './BehaviorPredictor';
 import { BehaviorAnalysis, NavigationEvent } from '../../types/behavioral';
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 
 class SessionTracker {
   // @ts-expect-error Paramètre réservé pour usage futur
   track(data: any): void {
     // Simplified tracking
-    SecureLogger.info('Tracking behavior');
+    logger.info('Tracking behavior');
   }
 }
 

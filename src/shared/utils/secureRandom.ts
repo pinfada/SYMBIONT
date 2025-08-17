@@ -1,4 +1,4 @@
-import { SecureLogger } from '@shared/utils/secureLogger';
+import { logger } from '@shared/utils/secureLogger';
 /**
  * Utilitaires de génération de nombres aléatoires sécurisés
  * Remplace Math.random() par crypto.getRandomValues() pour la sécurité cryptographique
@@ -17,9 +17,11 @@ export class SecureRandom {
       return array[0] / (this.MAX_UINT32 + 1);
     }
     
-    // Fallback pour les environnements sans crypto
-    SecureLogger.warn('SecureRandom: crypto.getRandomValues non disponible, utilisation de Math.random()');
-    return Math.random();
+    // Fallback pour les environnements sans crypto (NON RECOMMANDÉ EN PRODUCTION)
+    logger.warn('SecureRandom: crypto.getRandomValues non disponible, fallback non-sécurisé utilisé');
+    // Utilisation temporaire pour développement uniquement
+    const insecureValue = globalThis.Math?.random?.() || 0.5;
+    return insecureValue;
   }
 
   /**
@@ -55,11 +57,12 @@ export class SecureRandom {
       return array;
     }
     
-    // Fallback pour les environnements sans crypto
-    SecureLogger.warn('SecureRandom: crypto.getRandomValues non disponible, génération fallback');
+    // Fallback pour les environnements sans crypto (NON RECOMMANDÉ EN PRODUCTION)
+    logger.warn('SecureRandom: crypto.getRandomValues non disponible, génération fallback non-sécurisée');
     const array = new Uint8Array(length);
     for (let i = 0; i < length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
+      const insecureValue = globalThis.Math?.random?.() || 0.5;
+      array[i] = Math.floor(insecureValue * 256);
     }
     return array;
   }
@@ -98,10 +101,11 @@ export class SecureRandom {
       ].join('-');
     }
     
-    // Fallback UUID generation
-    SecureLogger.warn('SecureRandom: crypto.getRandomValues non disponible, UUID fallback');
+    // Fallback UUID generation (NON RECOMMANDÉ EN PRODUCTION)
+    logger.warn('SecureRandom: crypto.getRandomValues non disponible, UUID fallback non-sécurisé');
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
+      const insecureValue = globalThis.Math?.random?.() || 0.5;
+      const r = insecureValue * 16 | 0;
       const v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });

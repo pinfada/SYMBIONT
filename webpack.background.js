@@ -12,7 +12,16 @@ module.exports = {
   },
   target: 'webworker',
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@core': path.resolve(__dirname, 'src/core'),
+      '@background': path.resolve(__dirname, 'src/background'),
+      '@content': path.resolve(__dirname, 'src/content'),
+      '@popup': path.resolve(__dirname, 'src/popup'),
+      '@shared': path.resolve(__dirname, 'src/shared'),
+      '@types': path.resolve(__dirname, 'src/types')
+    }
   },
   module: {
     rules: [
