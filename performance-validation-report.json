@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-08-18T18:49:00.681Z",
+  "validation": false,
+  "benchmarks": {
+    "light": {
+      "originalTimeMs": 0.741739,
+      "hybridTimeMs": 1.046353,
+      "speedup": 0.7088802727186714,
+      "throughputOriginal": 13481831.210169613,
+      "throughputHybrid": 9557004.185012132,
+      "acceptable": false
+    },
+    "medium": {
+      "originalTimeMs": 2.263924,
+      "hybridTimeMs": 1.523292,
+      "speedup": 1.4862048773314636,
+      "throughputOriginal": 44171094.08266356,
+      "throughputHybrid": 65647295.46272152,
+      "acceptable": false
+    },
+    "heavy": {
+      "originalTimeMs": 13.924586,
+      "hybridTimeMs": 15.264797,
+      "speedup": 0.9122025009569403,
+      "throughputOriginal": 71815420.58054724,
+      "throughputHybrid": 65510206.26084972,
+      "acceptable": false
+    }
+  },
+  "fps": {
+    "achieved": 500571.48577959836,
+    "target": 30,
+    "acceptable": true
+  },
+  "neural": {
+    "throughput": 6067165.585871902,
+    "acceptable": true
+  },
+  "metrics": {
+    "totalCalls": 1616000,
+    "secureCalls": 0,
+    "poolCalls": 500000,
+    "fastCalls": 1116000
+  }
+}

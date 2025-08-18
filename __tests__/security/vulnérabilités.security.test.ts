@@ -217,10 +217,11 @@ describe('Scan de vulnérabilités', () => {
         '....//....//etc/passwd'
       ];
       
-      const isPathSafe = (path: string): boolean => {
-        const normalized = path.normalize();
+      const path = require('path');
+      const isPathSafe = (filePath: string): boolean => {
+        const normalized = path.normalize(filePath);
         const resolved = path.resolve(normalized);
-        const allowedBasePath = '/allowed/directory';
+        const allowedBasePath = path.resolve('/allowed/directory');
         
         return resolved.startsWith(allowedBasePath);
       };
