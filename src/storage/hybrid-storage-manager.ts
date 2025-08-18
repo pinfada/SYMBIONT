@@ -27,7 +27,7 @@ export class HybridStorageManager {
     this.setupIntegrityMonitoring()
   }
 
-  async store(key: string, data: any, _options: any = {}): Promise<void> {
+  async store(key: string, data: any): Promise<void> {
     // Évite de stocker les alertes de santé qui saturent le stockage
     if (key.includes('symbiont_health_alert_')) {
       logger.info('[HybridStorageManager] Skipping health alert storage to prevent quota issues');
@@ -234,7 +234,9 @@ export class HybridStorageManager {
           else resolve(true)
         })
       })
-    } catch {}
+    } catch (error) {
+      console.warn('Storage operation failed:', error);
+    }
     try {
       await this.indexedDBReady
       if (this.indexedDB) {
@@ -246,10 +248,14 @@ export class HybridStorageManager {
           req.onerror = () => reject(req.error)
         })
       }
-    } catch {}
+    } catch (error) {
+      console.warn('Storage operation failed:', error);
+    }
     try {
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(value))
-    } catch {}
+    } catch (error) {
+      console.warn('Storage operation failed:', error);
+    }
   }
 
   private setupDataReplication() {

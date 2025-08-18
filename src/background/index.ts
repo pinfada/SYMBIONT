@@ -57,7 +57,6 @@ async function setStorage(key: string, value: any): Promise<void> {
 }
 
 // --- Singleton pour accès global à BackgroundService ---
-// @ts-expect-error Variable réservée pour usage futur
 let _backgroundServiceInstance: BackgroundService | null = null;
 
 class BackgroundService {
@@ -708,6 +707,9 @@ class BackgroundService {
 
 // Démarrage effectif du service worker
 _backgroundServiceInstance = new BackgroundService();
+
+// Garde la référence pour éviter le garbage collection
+(globalThis as any)._backgroundService = _backgroundServiceInstance;
 
 // Export for testing
 export { BackgroundService };

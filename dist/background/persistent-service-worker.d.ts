@@ -13,7 +13,7 @@ export declare class PersistentServiceWorker {
     private performMaintenance;
     private setupPeriodicMaintenance;
     private setupEmergencyProtocols;
-    private _keepAlive;
+    private startHeartbeat;
 }
 export declare const persistentServiceWorker: PersistentServiceWorker;
 //# sourceMappingURL=persistent-service-worker.d.ts.map

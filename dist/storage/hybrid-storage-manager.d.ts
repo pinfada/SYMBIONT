@@ -15,7 +15,7 @@ export declare class HybridStorageManager {
     private emergencyLocalStorage;
     private indexedDBReady;
     constructor();
-    store(key: string, data: any, _options?: any): Promise<void>;
+    store(key: string, data: any): Promise<void>;
     retrieve(key: string): Promise<any>;
     private setupMultiLayerStorage;
     private cleanOldStorageData;

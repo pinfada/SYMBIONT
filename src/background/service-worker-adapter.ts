@@ -43,7 +43,7 @@ class ServiceWorkerStorage {
 
 // 2. Remplacement de BroadcastChannel par chrome.runtime messaging
 class ServiceWorkerMessageChannel {
-  private handlers: Map<string, Function[]> = new Map();
+  private handlers: Map<string, Array<(data: any) => void>> = new Map();
   private channelName: string;
 
   constructor(channelName: string) {
@@ -53,8 +53,7 @@ class ServiceWorkerMessageChannel {
 
   private setupMessageListener(): void {
     // Écouter les messages du runtime (depuis content scripts)
-    // @ts-expect-error Paramètres sender et sendResponse réservés pour usage futur
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
       if (message.type === 'CRYPTO_OPERATION') {
         // Traitement spécial pour les opérations crypto
         return true;

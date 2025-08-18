@@ -93,18 +93,17 @@ export class PersistentServiceWorker {
     logger.info('🩺 Health check des systèmes critiques')
   }
 
-  private setupPeriodicMaintenance() {}
+  private setupPeriodicMaintenance() {
+    // Maintenance périodique du service worker
+    this.startHeartbeat();
+  }
+  
   private setupEmergencyProtocols() {}
 
-  // @ts-expect-error Méthode réservée pour usage futur
-  private _keepAlive(): void {
-    // @ts-expect-error Instance réservée pour usage futur
-    const _instance = self;
-
+  // Méthode pour maintenir le service worker actif
+  private startHeartbeat(): void {
     // Ping périodique pour maintenir le service worker actif
     setInterval(() => {
-      // @ts-expect-error Health map réservée pour usage futur
-      const _connectionHealth = new Map<string, number>();
       logger.debug('[ServiceWorker] Heartbeat');
     }, 30000);
   }

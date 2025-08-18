@@ -136,11 +136,11 @@ export class SocialNetworkManager {
     const sync = await this.detectCollectiveSync(userIds)
     if (!sync) return { success: false, details: 'Pas assez de participants.' }
     const fusedTraits = await this.fuseTraits(userIds)
-    // Bonus collectif : +0.05 sur l'empathie et la créativité
+    // Bonus collectif: +0.05 sur l'empathie et la creativite
     await this.applyCollectiveBonus(userIds, { empathy: 0.05, creativity: 0.05 })
     return {
       success: true,
-      details: `Réveil collectif réussi pour ${userIds.length} participants. Traits fusionnés : ${JSON.stringify(fusedTraits)}`
+      details: `Reveil collectif reussi pour ${userIds.length} participants. Traits fusionnes: ${JSON.stringify(fusedTraits)}`
     }
   }
 } 
