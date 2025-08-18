@@ -1,62 +1,118 @@
-# SYMBIONT – Documentation Générale
+# 📚 Documentation SYMBIONT
 
-## 🛡️ Stabilité & Corrections Récentes
+**Extension Chrome d'Organismes Intelligents Évolutifs**
 
-### Corrections de Sérialisation (Janvier 2025) ⭐️
-SYMBIONT bénéficie maintenant d'un système de sérialisation ultra-robuste :
+Bienvenue dans la documentation complète du projet SYMBIONT. Cette documentation est organisée pour faciliter la navigation selon votre profil et vos besoins.
 
-- **✅ Références circulaires éliminées** : Plus d'erreurs "Converting circular structure to JSON" 
-- **✅ Objets DOM sécurisés** : HTMLCanvasElement, WebGL, React Fiber automatiquement traités
-- **✅ Performance optimisée** : Nettoyage préventif sans impact sur les performances
-- **✅ Stabilité maximale** : Extension 95% plus stable, zéro crash de sérialisation
+## 🚀 Démarrage Rapide
 
-**Voir :** [docs/serialization-fixes.md](./serialization-fixes.md) pour les détails techniques
+- **[Guide de Démarrage Rapide](./user/quick-start.md)** - Installation et première utilisation
+- **[Configuration Développeur](./developer/setup.md)** - Environnement de développement
+- **[Architecture du Projet](./technical/architecture.md)** - Vue d'ensemble technique
 
-## 📚 Documentation Technique
+## 👤 Documentation Utilisateur
 
-- **[technical.md](./technical.md)** - Architecture WebGL, sérialisation, bonnes pratiques
-- **[serialization-fixes.md](./serialization-fixes.md)** - Corrections de sérialisation détaillées
-- **[architecture.md](./architecture.md)** - Vue d'ensemble de l'architecture
-- **[api-messages.md](./api-messages.md)** - API de messagerie inter-modules
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[Guide Utilisateur](./user/user-guide.md)** | Guide complet d'utilisation | Utilisateurs finaux |
+| **[FAQ](./user/faq.md)** | Questions fréquentes | Tous |
+| **[Dépannage](./user/troubleshooting.md)** | Résolution de problèmes | Utilisateurs |
+| **[Politique de Confidentialité](./user/privacy-policy.md)** | RGPD et protection des données | Tous |
 
-## 🔒 Sécurité & RGPD
+## 👩‍💻 Documentation Développeur
 
-SYMBIONT intègre une sécurité avancée et une conformité RGPD native :
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[Guide Développeur](./developer/developer-guide.md)** | Setup, build, tests, contribution | Développeurs |
+| **[Guide de Tests](./developer/testing-guide.md)** | Tests unitaires, intégration, E2E | Développeurs |
+| **[CI/CD](./developer/ci-cd.md)** | Pipeline et déploiement | DevOps |
+| **[Guide de Contribution](./developer/contributing.md)** | Workflow et standards | Contributeurs |
 
-- **Chiffrement des données** : toutes les données sensibles (état, mutations, exports) sont chiffrées côté client (AES-GCM ou base64).
-- **Anonymisation** : aucune donnée personnelle, pas d'IP, pas de tracking, identifiants hashés pour le partage social.
-- **Contrôle d'accès** : chaque action critique (invitation, mutation partagée) est soumise à une validation de rôle.
-- **Export & portabilité** : l'utilisateur peut exporter ses données (brutes ou chiffrées) et les déchiffrer via l'outil RGPD intégré.
-- **Audit & logs** : tous les accès sensibles peuvent être journalisés/anonymisés pour répondre aux demandes RGPD.
+## 🔧 Documentation Technique
 
-**Schéma de flux** :
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[Architecture](./technical/architecture.md)** | Architecture système complète | Architectes |
+| **[API Messages](./technical/api-messages.md)** | Communication inter-composants | Développeurs |
+| **[Sécurité](./technical/security.md)** | Implémentation sécurité et RGPD | Security Engineers |
+| **[Performance](./technical/performance.md)** | Optimisations et benchmarks | Performance Engineers |
+| **[WebGL & 3D](./technical/webgl-rendering.md)** | Rendu 3D et visualisations | Graphics Developers |
+
+## 🧠 Documentation IA & Algorithmes
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[Neural Mesh](./technical/neural-mesh.md)** | Réseau neuronal adaptatif | AI Researchers |
+| **[Organism Core](./technical/organism-core.md)** | Logique métier centrale | Core Developers |
+| **[Pattern Detection](./technical/pattern-detection.md)** | Détection de motifs comportementaux | ML Engineers |
+| **[Perception Engine](./technical/perception-engine.md)** | Moteur de perception | AI Developers |
+
+## 🔄 Processus & Méthodologie
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[Méthodologie Projet](./process/methodology.md)** | Approche de développement | Project Managers |
+| **[Checklist Production](./process/production-checklist.md)** | Validation avant release | Release Managers |
+| **[Guide de Déploiement](./process/deployment.md)** | Procédures de mise en production | DevOps |
+
+## 🏪 Documentation Marketplace
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[Documentation Store](./marketplace/store-listing.md)** | Chrome Web Store | Marketing |
+| **[Assets Visuels](./marketplace/assets.md)** | Icônes, screenshots, vidéos | Designers |
+| **[Plan Marketing](./marketplace/marketing.md)** | Stratégie de lancement | Marketing |
+
+## 📊 Rapports & Analyses
+
+| Document | Description | Date |
+|----------|-------------|------|
+| **[Rapport de Validation Finale](../DELIVERY-VALIDATION-REPORT.md)** | Validation production | 17 août 2025 |
+| **[Audit Sécurité](../final-security-audit-report.html)** | Rapport sécurité Grade B+ | 17 août 2025 |
+| **[Performance Benchmark](../performance-benchmark-report.json)** | Analyse performance | 17 août 2025 |
+
+## 🛠️ Outils & Scripts
+
+| Script | Description | Usage |
+|--------|-------------|-------|
+| `scripts/validate-security.js` | Validation sécurité | `node scripts/validate-security.js` |
+| `scripts/performance-benchmark.js` | Benchmark performance | `node scripts/performance-benchmark.js` |
+| `scripts/generate-audit-pdf.js` | Rapport PDF audit | `node scripts/generate-audit-pdf.js` |
+
+## 📋 Structure du Projet
+
 ```
-[Utilisateur] --(export chiffré)--> [Outil RGPD] --(déchiffrement local)--> [Lecture JSON]
+symbiont/
+├── src/                     # Code source
+│   ├── background/         # Service Worker
+│   ├── content/           # Scripts de contenu
+│   ├── popup/             # Interface utilisateur
+│   ├── core/              # Logique métier
+│   └── shared/            # Utilitaires partagés
+├── docs/                   # Documentation (ce dossier)
+├── __tests__/             # Tests unitaires
+├── tests/e2e/             # Tests E2E Playwright
+├── scripts/               # Scripts utilitaires
+└── dist/                  # Build de production
 ```
 
-**Bonnes pratiques utilisateur** :
-- Utilisez l'export chiffré pour la portabilité maximale
-- Déchiffrez vos données uniquement sur un poste de confiance
-- En cas de perte de clé ou d'erreur, contactez le support SYMBIONT
+## 🚀 Status du Projet
 
-**Voir :** [docs/securite-rgpd.md](./securite-rgpd.md) pour plus de détails
+- **Version:** 1.0.0 Release Candidate
+- **Status:** ✅ Prêt pour production
+- **Score Audit Sécurité:** 82.5% (Grade B+)
+- **Coverage Tests:** 85% configuré
+- **Chrome Web Store:** Prêt pour soumission
 
-## 🚀 Modules Spécialisés
+## 📞 Support & Contact
 
-- **[ia.md](./ia.md)** - Intelligence artificielle et apprentissage
-- **[social.md](./social.md)** - Système social et invitations
-- **[rituels.md](./rituels.md)** - Rituels secrets et événements mystiques
-- **[neuralmesh.md](./neuralmesh.md)** - Réseau neuronal distribué
-- **[3d-visualisation.md](./3d-visualisation.md)** - Rendu 3D et mutations visuelles
+- **Questions Techniques:** [GitHub Issues](https://github.com/your-org/symbiont/issues)
+- **Support Utilisateur:** support@symbiont-extension.com
+- **Sécurité:** security@symbiont-extension.com
+- **Contribution:** [Guide de Contribution](./developer/contributing.md)
 
-## 🧪 Tests & Développement
+---
 
-- **[tests.md](./tests.md)** - Guide des tests unitaires et d'intégration
-- **[onboarding.md](./onboarding.md)** - Guide d'intégration développeur
-- **[optimisations.md](./optimisations.md)** - Optimisations de performance
-
-## 🚀 Production & Déploiement
-
-- **[production-readiness-plan.md](./production-readiness-plan.md)** - Plan complet de mise en production
-- **[plan-evaluation-matrix.md](./plan-evaluation-matrix.md)** - Matrice d'évaluation et critères de qualité
-- **[plan-optimization-iteration.md](./plan-optimization-iteration.md)** - Processus d'amélioration continue
+**Dernière mise à jour:** 17 août 2025  
+**Mainteneur:** Équipe SYMBIONT  
+**Licence:** MIT (voir LICENSE)
