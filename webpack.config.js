@@ -74,6 +74,11 @@ module.exports = {
       }
     ]
   },
+  performance: {
+    hints: 'warning',
+    maxEntrypointSize: 300000, // 300 KiB pour popup
+    maxAssetSize: 250000
+  },
   plugins: [
     new MiniCssExtractPlugin({
       filename: '[name]/index.css'

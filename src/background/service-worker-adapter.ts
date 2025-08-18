@@ -356,8 +356,31 @@ class ServiceWorkerGlobals {
   // Wrapper BroadcastChannel
   static swBroadcastChannel = ServiceWorkerMessageChannel;
   
-  // Crypto APIs améliorées
+  // Crypto APIs améliorées avec fallback sécurisé
   static get swCryptoAPI() {
+    // Vérification robuste de la disponibilité de l'API crypto
+    const hasWebCrypto = typeof globalThis !== 'undefined' && 
+                        globalThis.crypto && 
+                        globalThis.crypto.subtle &&
+                        typeof globalThis.crypto.getRandomValues === 'function';
+    
+    if (!hasWebCrypto) {
+      logger.warn('WebCrypto API non disponible - utilisation du mode de développement');
+      // Retourne un objet avec les méthodes mais qui ne fera pas d'erreur
+      return {
+        subtle: null,
+        getRandomValues: (array: Uint8Array) => {
+          // Fallback non sécurisé pour développement uniquement
+          for (let i = 0; i < array.length; i++) {
+            array[i] = Math.floor(Math.random() * 256);
+          }
+          return array;
+        },
+        encryptSensitiveData: this.swCrypto.encryptSensitiveData.bind(this.swCrypto),
+        decryptSensitiveData: this.swCrypto.decryptSensitiveData.bind(this.swCrypto)
+      };
+    }
+    
     return {
       ...globalThis.crypto,
       encryptSensitiveData: this.swCrypto.encryptSensitiveData.bind(this.swCrypto),

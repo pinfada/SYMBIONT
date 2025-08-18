@@ -15,6 +15,10 @@ export declare class SecurityManager {
      */
     private generateSecureKey;
     /**
+     * Crée une clé factice pour le développement (NON SÉCURISÉ)
+     */
+    private createDevelopmentKey;
+    /**
      * Récupère la clé stockée de manière sécurisée
      */
     private getStoredKey;

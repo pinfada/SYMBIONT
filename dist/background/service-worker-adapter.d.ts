@@ -43,6 +43,11 @@ declare class ServiceWorkerGlobals {
     static get swIndexedDB(): IDBFactory;
     static swBroadcastChannel: typeof ServiceWorkerMessageChannel;
     static get swCryptoAPI(): {
+        subtle: null;
+        getRandomValues: (array: Uint8Array) => Uint8Array<ArrayBufferLike>;
+        encryptSensitiveData: (data: any) => Promise<string>;
+        decryptSensitiveData: (encryptedData: string) => Promise<any>;
+    } | {
         encryptSensitiveData: (data: any) => Promise<string>;
         decryptSensitiveData: (encryptedData: string) => Promise<any>;
         subtle: SubtleCrypto;
@@ -57,6 +62,11 @@ export declare const swLocalStorage: {
 };
 export declare const swBroadcastChannel: typeof ServiceWorkerMessageChannel;
 export declare const swCryptoAPI: {
+    subtle: null;
+    getRandomValues: (array: Uint8Array) => Uint8Array<ArrayBufferLike>;
+    encryptSensitiveData: (data: any) => Promise<string>;
+    decryptSensitiveData: (encryptedData: string) => Promise<any>;
+} | {
     encryptSensitiveData: (data: any) => Promise<string>;
     decryptSensitiveData: (encryptedData: string) => Promise<any>;
     subtle: SubtleCrypto;
