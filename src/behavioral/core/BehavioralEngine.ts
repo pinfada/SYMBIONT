@@ -6,7 +6,7 @@ import { logger } from '@shared/utils/secureLogger';
 
 class SessionTracker {
   // @ts-expect-error Paramètre réservé pour usage futur
-  track(data: any): void {
+  track(data: unknown): void {
     // Simplified tracking
     logger.info('Tracking behavior');
   }
@@ -58,7 +58,7 @@ export class BehavioralEngine {
     };
   }
 
-  processBehavior(data: any): any {
+  processBehavior(data: unknown): any {
     // Process behavior data
     const pattern = this.analyzer.analyzeBehavior([data]);
     const prediction = this.predictor.predict([data]);

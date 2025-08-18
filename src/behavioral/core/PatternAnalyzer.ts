@@ -2,12 +2,12 @@
 
 export class PatternAnalyzer {
   // @ts-expect-error Paramètre réservé pour usage futur
-  analyzeSequence(data: any[]): any {
+  analyzeSequence(data: unknown[]): any {
     // Pattern analysis logic
     return { pattern: 'unknown', confidence: 0.5 };
   }
 
-  analyzeBehavior(sequence: any[]): any {
+  analyzeBehavior(sequence: unknown[]): any {
     // Analyze behavioral patterns
     return {
       pattern: 'default',
@@ -16,7 +16,7 @@ export class PatternAnalyzer {
     };
   }
 
-  detectPatterns(events: any[]): any[] {
+  detectPatterns(events: unknown[]): unknown[] {
     // Pattern detection logic
     return events.map(event => ({
       ...event,

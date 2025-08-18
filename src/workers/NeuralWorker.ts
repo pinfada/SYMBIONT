@@ -7,13 +7,13 @@ import { SecureRandom } from '@shared/utils/secureRandom';
 export interface WorkerMessage {
   type: 'NEURAL_PROPAGATE' | 'NEURAL_MUTATE' | 'NEURAL_ACTIVITY' | 'NEURAL_INIT';
   id: string;
-  payload: any;
+  payload: unknown;
 }
 
 export interface WorkerResponse {
   type: 'NEURAL_RESULT' | 'NEURAL_ERROR';
   id: string;
-  payload: any;
+  payload: unknown;
   processingTime: number;
 }
 
@@ -222,7 +222,7 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
   const { type, id, payload } = event.data;
   
   try {
-    let result: any;
+    let result: unknown;
 
     switch (type) {
       case 'NEURAL_INIT':
@@ -267,7 +267,7 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
 
     self.postMessage(response);
 
-  } catch (error) {
+  } catch (_error) {
     const processingTime = performance.now() - startTime;
     
     const errorResponse: WorkerResponse = {

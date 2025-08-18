@@ -78,7 +78,7 @@ interface InteractionData {
   type: 'click' | 'scroll' | 'focus' | 'blur';
   timestamp: number;
   element?: string;
-  value?: any;
+  value?: unknown;
 }
 
 export class RealDataService {
@@ -120,7 +120,7 @@ export class RealDataService {
     try {
       const behaviors = await this.collectUserBehaviors(userId);
       return this.buildDNAFromBehaviors(behaviors);
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur génération ADN réel, fallback mock:', error);
       return 'MOCKDNA123456789ABCDEF';
     }
@@ -250,7 +250,7 @@ export class RealDataService {
       if (!response.ok) throw new Error('API Error');
       
       return await response.json();
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur API invitations, fallback mock:', error);
       // Fallback vers données mock
       const { MockInvitationService } = await import('./MockInvitationService');
@@ -286,7 +286,7 @@ export class RealDataService {
       const latency = await this.getNetworkLatency();
 
       return { cpu, memory, latency };
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur métriques réelles, fallback mock:', error);
       return {
         cpu: SecureRandom.random() * 0.2,
@@ -358,7 +358,7 @@ export class RealDataService {
     });
   }
 
-  private processBehaviorData(data: any): void {
+  private processBehaviorData(data: unknown): void {
     // Traiter les données comportementales du content script
     const domain = new URL(data.url).hostname;
     const existing = this.behaviorMetrics.domains.get(domain) || {
@@ -450,7 +450,7 @@ export class RealDataService {
       localStorage.setItem('symbiont_organism', JSON.stringify(updatedOrganism));
       
       logger.info('✅ Migration réussie:', realDNA);
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Erreur migration:', error);
       throw error;
     }

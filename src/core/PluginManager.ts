@@ -8,7 +8,7 @@ export interface Plugin {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component?: any; // React component ou fonction
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  run?: (...args: any[]) => any; // Pour rituels logiques
+  run?: (...args: unknown[]) => any; // Pour rituels logiques
 }
 
 export class PluginManager {

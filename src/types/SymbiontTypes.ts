@@ -64,7 +64,7 @@ export interface RitualSession {
   duration: number;
   intensity: number;
   participants: string[];
-  effects: any;
+  effects: unknown;
   startedAt: Date;
   completedAt?: Date;
 }
@@ -74,7 +74,7 @@ export interface MemoryFragment {
   content: string;
   type: 'navigation' | 'interaction' | 'emotion' | 'learning';
   strength: number;
-  context?: any;
+  context?: unknown;
   createdAt: Date;
 }
 
@@ -90,7 +90,7 @@ export interface NetworkEvent {
   type: 'mutation' | 'connection' | 'ritual' | 'synchronization' | 'evolution';
   userId: string;
   organismId: string;
-  data: any;
+  data: unknown;
   timestamp: Date;
 }
 
@@ -124,7 +124,7 @@ export interface UserProfile {
   avatar?: string;
   timezone?: string;
   language: string;
-  preferences: any;
+  preferences: unknown;
   createdAt: Date;
 }
 
@@ -156,7 +156,7 @@ export type WebSocketEventType =
 
 export interface WebSocketMessage {
   type: WebSocketEventType;
-  data: any;
+  data: unknown;
   timestamp: Date;
 }
 
@@ -217,7 +217,7 @@ export interface APIResponse<T> {
 export interface APIError {
   error: string;
   code?: string;
-  details?: any;
+  details?: unknown;
 }
 
 // Hooks et Context

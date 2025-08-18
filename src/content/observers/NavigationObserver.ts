@@ -108,7 +108,7 @@ export class NavigationObserver extends EventTarget {
       });
       
       observer.observe({ entryTypes: ['navigation'] });
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Performance Observer not available:', error);
     }
   }
@@ -538,7 +538,7 @@ export class NavigationObserver extends EventTarget {
     return this.calculateMetrics();
   }
 
-  public on(event: string, handler: (event: any) => void): void {
+  public on(event: string, handler: (_event: Event) => void): void {
     this.addEventListener(event, (e: any) => handler(e.detail));
   }
 

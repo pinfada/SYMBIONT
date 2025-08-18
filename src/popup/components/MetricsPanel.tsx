@@ -19,7 +19,7 @@ export const MetricsPanel: React.FC = () => {
         setBehaviorData(patterns);
         const activity = await storage.getRecentActivity();
         setActivityData(activity);
-      } catch (e) {
+      } catch (_e) {
         setBehaviorData([]);
         setActivityData([]);
       }

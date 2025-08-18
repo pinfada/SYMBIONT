@@ -160,7 +160,7 @@ export class MutationBatcher {
       this.updateStatistics(mutations.length);
       this.lastBatchTime = Date.now();
 
-    } catch (error) {
+    } catch (_error) {
       errorHandler.logSimpleError('MutationBatcher', 'processPendingMutations', error);
       
       // Re-add mutations if processing failed

@@ -119,7 +119,7 @@ class ContentScript {
     }
     
     // Communication avec background
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
       this.messageBus.emit(message.type, {
         message,
         sender,

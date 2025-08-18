@@ -74,7 +74,7 @@ export class WebGLOrchestrator {
         gl: gl as WebGLRenderingContext,
         ready: true
       } as WebGLContext
-    } catch (error) {
+    } catch (_error) {
       logger.error('WebGL initialization failed:', error)
       throw error
     }
@@ -122,7 +122,7 @@ export class WebGLOrchestrator {
       
       // Save updated organism state
       await this.memoryBank.saveOrganismHistory(id, history)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update organism visuals:', error)
     }
   }
@@ -149,7 +149,7 @@ export class WebGLOrchestrator {
       }
       
       this.logPerformance('GPU optimization executed', metrics)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Performance optimization failed:', error)
     }
   }
@@ -394,7 +394,7 @@ export class WebGLOrchestrator {
     // ... existing code ...
   }
 
-  async getPerformanceMetrics(): Promise<any> {
+  async getPerformanceMetrics(): Promise<unknown> {
     // Get comprehensive performance metrics
     // ... existing code ...
   }

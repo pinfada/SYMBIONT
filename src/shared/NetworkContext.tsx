@@ -5,19 +5,19 @@ const API_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:8080'
 const WS_URL = process.env.NODE_ENV === 'development' ? 'ws://localhost:8080' : 'wss://symbiont-backend.onrender.com';
 
 interface Network {
-  nodes: any[];
-  links: any[];
+  nodes: unknown[];
+  links: unknown[];
 }
 interface InviteParams {
   source: string;
   target: string;
-  traits: any;
+  traits: unknown;
 }
 interface FusionParams {
   type: string;
   participants: string[];
   result: string;
-  traits: any;
+  traits: unknown;
 }
 
 interface NetworkContextType {
@@ -60,7 +60,7 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
       try {
         const data = JSON.parse(event.data);
         setNetwork(data);
-      } catch (error) {
+      } catch (_error) {
         logger.error('Failed to parse network data:', error);
       }
     };

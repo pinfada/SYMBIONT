@@ -114,8 +114,8 @@ export class SecurityManager {
         symbiont_key_v2: keyArray,
         symbiont_key_created: Date.now()
       })
-    } catch (error) {
-      logger.error('Erreur lors du stockage de la clé:', error)
+    } catch (_error) {
+      logger.error('Erreur lors du stockage de la clé:', _error)
     }
   }
 
@@ -137,7 +137,7 @@ export class SecurityManager {
   /**
    * Chiffre des données sensibles avec AES-GCM sécurisé
    */
-  async encryptSensitiveData(data: any): Promise<string> {
+  async encryptSensitiveData(data: unknown): Promise<string> {
     if (!swCryptoAPI?.subtle) {
       logger.warn('WebCrypto API non disponible - chiffrement factice pour développement');
       // Mode développement : pas de chiffrement réel mais évite les erreurs
@@ -161,8 +161,8 @@ export class SecurityManager {
       buf.set(iv, 0)
       buf.set(new Uint8Array(ciphertext), iv.length)
       return btoa(String.fromCharCode(...buf))
-    } catch (error) {
-      logger.error('Erreur de chiffrement:', error)
+    } catch (_error) {
+      logger.error('Erreur de chiffrement:', _error)
       throw new Error('Échec du chiffrement des données sensibles')
     }
   }
@@ -170,7 +170,7 @@ export class SecurityManager {
   /**
    * Déchiffre des données sensibles avec AES-GCM sécurisé
    */
-  async decryptSensitiveData(data: unknown): Promise<any> {
+  async decryptSensitiveData(data: unknown): Promise<unknown> {
     if (typeof data !== 'string') {
       throw new Error('decryptSensitiveData attend une chaîne de caractères.')
     }
@@ -180,8 +180,8 @@ export class SecurityManager {
       logger.warn('Déchiffrement en mode développement (non sécurisé)');
       try {
         return JSON.parse(atob(data.substring(9)));
-      } catch (error) {
-        logger.error('Erreur déchiffrement mode développement:', error);
+      } catch (_error) {
+        logger.error('Erreur déchiffrement mode développement:', _error);
         return null;
       }
     }
@@ -205,8 +205,8 @@ export class SecurityManager {
       
       const plainText = new TextDecoder().decode(plainBuffer)
       return JSON.parse(plainText)
-    } catch (error) {
-      logger.error('Erreur de déchiffrement:', error)
+    } catch (_error) {
+      logger.error('Erreur de déchiffrement:', _error)
       throw new Error('Échec du déchiffrement des données - données corrompues ou clé invalide')
     }
   }
@@ -214,7 +214,7 @@ export class SecurityManager {
   /**
    * Anonymise un pattern comportemental (suppression PII, hashage sécurisé)
    */
-  async anonymizeForSharing(data: BehaviorPattern): Promise<any> {
+  async anonymizeForSharing(data: BehaviorPattern): Promise<unknown> {
     const anonymized = { ...data }
     
     // Suppression des URLs sensibles
@@ -294,7 +294,7 @@ export class SecurityManager {
       
       // Conversion en base64 pour un hash compact
       return btoa(String.fromCharCode(...hashArray))
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur de hashage:', error)
       throw new Error('Échec du hashage sécurisé')
     }

@@ -7,7 +7,7 @@ interface Activity {
   timestamp: number;
   duration?: number;
   url?: string;
-  data?: any;
+  data?: unknown;
 }
 
 interface ActivityTimelineProps {

@@ -46,12 +46,12 @@ export const healthMonitor = new BasicHealthMonitor(async (msg) => {
 })();
 
 // Utilitaires pour chrome.storage.local (asynchrone)
-async function getStorage(key: string): Promise<any> {
+async function getStorage(key: string): Promise<unknown> {
   // Utilise le stockage hybride pour la récupération
   return await hybridStorage.retrieve(key);
 }
 
-async function setStorage(key: string, value: any): Promise<void> {
+async function setStorage(key: string, value: unknown): Promise<void> {
   // Utilise le stockage hybride pour la persistance
   await hybridStorage.store(key, value);
 }
@@ -113,7 +113,7 @@ class BackgroundService {
       this.startPeriodicTasks();
       
       logger.info('Background service initialized');
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to initialize background service:', error);
     }
   }
@@ -159,7 +159,7 @@ class BackgroundService {
 
   private setupMessageHandlers(): void {
     // Handle page visits
-    this.messageBus.on(MessageType.PAGE_VISIT, async (message: any) => {
+    this.messageBus.on(MessageType.PAGE_VISIT, async (message: MessageEvent | unknown) => {
       const { url, title } = message.payload;
       
       // Update behavior data
@@ -186,7 +186,7 @@ class BackgroundService {
     });
 
     // Handle scroll events
-    this.messageBus.on(MessageType.SCROLL_EVENT, async (message: any) => {
+    this.messageBus.on(MessageType.SCROLL_EVENT, async (message: MessageEvent | unknown) => {
       const { url, scrollDepth } = message.payload;
       
       const behavior = await this.storage.getBehavior(url);
@@ -201,14 +201,14 @@ class BackgroundService {
     });
 
     // Handler pour interactions utilisateur (à brancher si non existant)
-    this.messageBus.on(MessageType.INTERACTION_DETECTED, (message: any) => {
+    this.messageBus.on(MessageType.INTERACTION_DETECTED, (message: MessageEvent | unknown) => {
       const { type, timestamp, target, data } = message.payload;
       this.events.push({ type, timestamp, target, ...data });
       this.analyzeContextualPatterns();
     });
 
     // Invitation: génération
-    this.messageBus.on(MessageType.GENERATE_INVITATION, async (message: any) => {
+    this.messageBus.on(MessageType.GENERATE_INVITATION, async (message: MessageEvent | unknown) => {
       const { donorId } = message.payload;
       const rawInvitation = await this.invitationService.generateInvitation(donorId);
       // Adaptation à l'interface partagée
@@ -223,7 +223,7 @@ class BackgroundService {
       let encryptedPayload: import('../shared/types/invitation').Invitation | string = invitation;
       try {
         encryptedPayload = await this.security.encryptSensitiveData(invitation);
-      } catch (e) {
+      } catch (_e) {
         // fallback : en clair si erreur
         encryptedPayload = invitation;
       }
@@ -234,7 +234,7 @@ class BackgroundService {
     });
 
     // Invitation: validation/consommation
-    this.messageBus.on(MessageType.CONSUME_INVITATION, async (message: any) => {
+    this.messageBus.on(MessageType.CONSUME_INVITATION, async (message: MessageEvent | unknown) => {
       const { code, receiverId, role } = message.payload;
       // Contrôle d'accès : seul un utilisateur authentifié peut consommer une invitation
       if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
@@ -261,7 +261,7 @@ class BackgroundService {
     });
 
     // Invitation: vérification
-    this.messageBus.on(MessageType.CHECK_INVITATION, async (message: any) => {
+    this.messageBus.on(MessageType.CHECK_INVITATION, async (message: MessageEvent | unknown) => {
       const { code } = message.payload;
       const valid = await this.invitationService.isValid(code);
       resilientBus.send({
@@ -271,7 +271,7 @@ class BackgroundService {
     });
 
     // --- Handlers pour la lignée et l'historique d'invitation ---
-    this.messageBus.on(MessageType.GET_INVITER, async (message: any) => {
+    this.messageBus.on(MessageType.GET_INVITER, async (message: MessageEvent | unknown) => {
       const { userId } = message.payload;
       // Recherche de l'invitation où receiverId === userId
       const all = await this.invitationService.getAllInvitations();
@@ -282,7 +282,7 @@ class BackgroundService {
       });
     });
 
-    this.messageBus.on(MessageType.GET_INVITEES, async (message: any) => {
+    this.messageBus.on(MessageType.GET_INVITEES, async (message: MessageEvent | unknown) => {
       const { userId } = message.payload;
       // Recherche des invitations où donorId === userId
       const all = await this.invitationService.getAllInvitations();
@@ -293,7 +293,7 @@ class BackgroundService {
       });
     });
 
-    this.messageBus.on(MessageType.GET_INVITATION_HISTORY, async (message: any) => {
+    this.messageBus.on(MessageType.GET_INVITATION_HISTORY, async (message: MessageEvent | unknown) => {
       const { userId } = message.payload;
       // Historique = invitations reçues ou envoyées
       const all = await this.invitationService.getAllInvitations();
@@ -310,7 +310,7 @@ class BackgroundService {
     // --- Rituel de mutation partagée ---
     const sharedMutationSessions: Map<string, { initiatorId: string; traits: Record<string, number>; expiresAt: number }> = new Map();
 
-    this.messageBus.on(MessageType.REQUEST_SHARED_MUTATION, (message: any) => {
+    this.messageBus.on(MessageType.REQUEST_SHARED_MUTATION, (message: MessageEvent | unknown) => {
       const { initiatorId, traits } = message.payload;
       const code = SecureRandom.random().toString(36).substr(2, 6).toUpperCase();
       const expiresAt = Date.now() + 1000 * 60 * 5; // 5 min
@@ -321,7 +321,7 @@ class BackgroundService {
       });
     });
 
-    this.messageBus.on(MessageType.ACCEPT_SHARED_MUTATION, async (message: any) => {
+    this.messageBus.on(MessageType.ACCEPT_SHARED_MUTATION, async (message: MessageEvent | unknown) => {
       const { code, receiverId, traits, role } = message.payload;
       // Contrôle d'accès : seul un utilisateur authentifié peut accepter une mutation partagée
       if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
@@ -353,7 +353,7 @@ class BackgroundService {
       };
       try {
         resultPayload = await this.security.encryptSensitiveData(resultPayload);
-      } catch (e) {
+      } catch (_e) {
         // fallback : en clair si erreur
       }
       resilientBus.send({
@@ -366,7 +366,7 @@ class BackgroundService {
     const collectiveWakeParticipants: Set<string> = new Set();
     let collectiveWakeTimeout: NodeJS.Timeout | null = null;
 
-    this.messageBus.on(MessageType.COLLECTIVE_WAKE_REQUEST, (message: any) => {
+    this.messageBus.on(MessageType.COLLECTIVE_WAKE_REQUEST, (message: MessageEvent | unknown) => {
       const { userId } = message.payload;
       collectiveWakeParticipants.add(userId);
       if (!collectiveWakeTimeout) {
@@ -425,7 +425,7 @@ class BackgroundService {
 
     // --- Rituels secrets ---
     const SECRET_CODES = ['SYMBIOSE', 'AWAKEN', 'ECHO'];
-    this.messageBus.on(MessageType.SECRET_CODE_ENTERED, (message: any) => {
+    this.messageBus.on(MessageType.SECRET_CODE_ENTERED, (message: MessageEvent | unknown) => {
       const { code } = message.payload;
       if (SECRET_CODES.includes(code.toUpperCase())) {
         // Déclencher un effet spécial (ex : mutation unique)

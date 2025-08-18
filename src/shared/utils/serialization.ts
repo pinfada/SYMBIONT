@@ -50,7 +50,7 @@ export function sanitizeOrganismState(state: any): SerializableOrganismState | n
       socialConnections: sanitizeSocialConnections(state.socialConnections),
       memoryFragments: sanitizeMemoryFragments(state.memoryFragments)
     };
-  } catch (error) {
+  } catch (_error) {
     logger.error('Failed to sanitize organism state:', error);
     return null;
   }
@@ -117,7 +117,7 @@ function sanitizeMemoryFragments(fragments: any): Array<{id: string; content: st
     .slice(-50); // Garde seulement les 50 derniers fragments
 }
 
-export function sanitizeMessage(message: any): any {
+export function sanitizeMessage(message: MessageEvent | unknown): any {
   if (!message || typeof message !== 'object') {
     return message;
   }
@@ -126,7 +126,7 @@ export function sanitizeMessage(message: any): any {
   return deepCleanForSerialization(message);
 }
 
-function deepCleanForSerialization(obj: any, seen = new WeakSet()): any {
+function deepCleanForSerialization(obj: Record<string, unknown>, seen = new WeakSet()): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -189,13 +189,13 @@ function deepCleanForSerialization(obj: any, seen = new WeakSet()): any {
   }
   
   // Pour les objets, on nettoie récursivement
-  const cleaned: any = {};
+  const cleaned: unknown = {};
   
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       try {
         cleaned[key] = deepCleanForSerialization(obj[key], seen);
-      } catch (error) {
+      } catch (_error) {
         cleaned[key] = '[Non-serializable]';
       }
     }

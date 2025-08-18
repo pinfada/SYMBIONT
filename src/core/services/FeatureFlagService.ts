@@ -271,7 +271,7 @@ class FeatureFlagService {
   /**
    * Log conditionnel selon les feature flags
    */
-  debugLog(message: string, ...args: any[]): void {
+  debugLog(message: string, ...args: unknown[]): void {
     if (this.isEnabled('ENABLE_DEBUG_LOGGING')) {
       logger.info(`🐛 [SYMBIONT Debug] ${message}`, ...args);
     }

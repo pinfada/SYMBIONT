@@ -71,8 +71,8 @@ export interface AsyncOperation<T> {
 
 // Factory types pour l'injection de dépendances
 export interface ComponentFactory<T> {
-  create(...args: any[]): T;
-  createAsync(...args: any[]): Promise<T>;
+  create(...args: unknown[]): T;
+  createAsync(...args: unknown[]): Promise<T>;
 }
 
 export interface DependencyResolver {

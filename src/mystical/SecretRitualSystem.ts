@@ -17,7 +17,7 @@ export class SecretRitualSystem {
   constructor() {
     // Rituel navigation : visiter 3 catégories différentes en 5 min
     this.ritualTriggers.set('sacred_pattern', {
-      trigger: (interactions: any[]) => {
+      trigger: (interactions: unknown[]) => {
         const now = Date.now()
         const recent = interactions.filter(i => now - i.timestamp < 5 * 60 * 1000)
         const cats = recent.map(i => i.category).filter((v: string, i: number, arr: string[]) => arr.indexOf(v) === i)
@@ -34,7 +34,7 @@ export class SecretRitualSystem {
     // Rituel synchronisation collective
     this.ritualTriggers.set('collective_awakening', {
       // @ts-expect-error Paramètre réservé pour usage futur
-      trigger: (interactions: any[]) => {
+      trigger: (interactions: unknown[]) => {
         // TODO: Détection de synchronisation multi-utilisateurs
         return false
       },
@@ -57,7 +57,7 @@ export class SecretRitualSystem {
     }))
   }
 
-  detectRitualTrigger(interactions: any[]): RitualTrigger | null {
+  detectRitualTrigger(interactions: unknown[]): RitualTrigger | null {
     for (const [name, ritual] of this.ritualTriggers.entries()) {
       if (ritual.trigger(interactions) && SecureRandom.random() < ritual.rarity) {
         return {

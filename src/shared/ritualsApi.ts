@@ -1,7 +1,7 @@
 export interface Ritual {
   _id: string;
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const API_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:8090' : '';

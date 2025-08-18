@@ -40,7 +40,7 @@ const SocialPanel: React.FC = () => {
     // Sauvegarde locale
     try {
       localStorage.setItem('symbiont_invite_' + code, JSON.stringify(invite));
-    } catch (e) {
+    } catch (_e) {
       logger.warn('Impossible de sauvegarder l\'invitation');
     }
   };
@@ -69,7 +69,7 @@ const SocialPanel: React.FC = () => {
           setContacts(prev => [...prev, newContact]);
         }
       }
-    } catch (e) {
+    } catch (_e) {
       logger.warn('Erreur lors de l\'acceptation de l\'invitation');
     }
   };

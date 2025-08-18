@@ -33,7 +33,7 @@ export class SynapticRouter extends EventEmitter {
     return SynapticRouter.instance;
   }
 
-  public async routeImpulse(impulse: NeuralImpulse): Promise<any> {
+  public async routeImpulse(impulse: NeuralImpulse): Promise<unknown> {
     const routeKey = this.getRouteKey(impulse);
     
     // Tentative prédictive
@@ -57,9 +57,9 @@ export class SynapticRouter extends EventEmitter {
   // @ts-expect-error Paramètre réservé pour usage futur
   private getRouteKey(impulse: NeuralImpulse): string { return '' }
   // @ts-expect-error Paramètre réservé pour usage futur
-  private async findOptimalRoute(impulse: NeuralImpulse): Promise<any> { return {}; }
+  private async findOptimalRoute(impulse: NeuralImpulse): Promise<unknown> { return {}; }
   // @ts-expect-error Paramètres réservés pour usage futur
-  private async performRouting(impulse: NeuralImpulse, route: any): Promise<any> { return {}; }
+  private async performRouting(impulse: NeuralImpulse, route: any): Promise<unknown> { return {}; }
   // @ts-expect-error Paramètres réservés pour usage futur
   private learnFromRouting(routeKey: string, route: any, response: any): void {}
 

@@ -41,7 +41,7 @@ export const AdminRitualsPanel: React.FC = () => {
       setForm({});
       setError(null);
       refresh();
-    } catch (e) { setError('Erreur lors de la sauvegarde'); }
+    } catch (_e) { setError('Erreur lors de la sauvegarde'); }
   };
   const handleDelete = async (id: string) => {
     if (!window.confirm('Supprimer ce rituel ?')) return;
@@ -56,7 +56,7 @@ export const AdminRitualsPanel: React.FC = () => {
       setForm({});
       setError(null);
       refresh();
-    } catch (e) { setError('Erreur lors de l\'ajout'); }
+    } catch (_e) { setError('Erreur lors de l\'ajout'); }
   };
 
   return (

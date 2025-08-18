@@ -16,7 +16,7 @@ class ServiceWorkerStorage {
   async setItem(key: string, value: string): Promise<void> {
     try {
       await chrome.storage.local.set({ [key]: value });
-    } catch (error) {
+    } catch (_error) {
       logger.error('Storage error:', error);
       throw error;
     }
@@ -26,7 +26,7 @@ class ServiceWorkerStorage {
     try {
       const result = await chrome.storage.local.get([key]);
       return result[key] || null;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Storage retrieval error:', error);
       return null;
     }
@@ -35,7 +35,7 @@ class ServiceWorkerStorage {
   async removeItem(key: string): Promise<void> {
     try {
       await chrome.storage.local.remove([key]);
-    } catch (error) {
+    } catch (_error) {
       logger.error('Storage removal error:', error);
     }
   }
@@ -43,7 +43,7 @@ class ServiceWorkerStorage {
 
 // 2. Remplacement de BroadcastChannel par chrome.runtime messaging
 class ServiceWorkerMessageChannel {
-  private handlers: Map<string, Array<(data: any) => void>> = new Map();
+  private handlers: Map<string, Array<(data: unknown) => void>> = new Map();
   private channelName: string;
 
   constructor(channelName: string) {
@@ -53,7 +53,7 @@ class ServiceWorkerMessageChannel {
 
   private setupMessageListener(): void {
     // Écouter les messages du runtime (depuis content scripts)
-    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'CRYPTO_OPERATION') {
         // Traitement spécial pour les opérations crypto
         return true;
@@ -69,16 +69,16 @@ class ServiceWorkerMessageChannel {
   }
 
   // Fonction pour nettoyer les messages avant sérialisation
-  private serializeMessageData(data: any): any {
+  private serializeMessageData(data: unknown): unknown {
     try {
       return JSON.parse(JSON.stringify(data));
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Message serialization issue, cleaning object:', error);
       return this.cleanObjectForSerialization(data);
     }
   }
 
-  private cleanObjectForSerialization(obj: any, seen = new WeakSet()): any {
+  private cleanObjectForSerialization(obj: unknown, seen = new WeakSet()): unknown {
     if (obj === null || obj === undefined) return obj;
     if (typeof obj === 'function') return '[Function]';
     if (obj instanceof Date) return obj.toISOString();
@@ -108,12 +108,12 @@ class ServiceWorkerMessageChannel {
     
     if (Array.isArray(obj)) return obj.map(item => this.cleanObjectForSerialization(item, seen));
     
-    const cleaned: any = {};
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+    const cleaned: Record<string, unknown> = {};
+    for (const key in obj as Record<string, unknown>) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         try {
-          cleaned[key] = this.cleanObjectForSerialization(obj[key], seen);
-        } catch (error) {
+          cleaned[key] = this.cleanObjectForSerialization((obj as Record<string, unknown>)[key], seen);
+        } catch (_error) {
           // Supprime les logs verbeux
           cleaned[key] = '[Non-serializable]';
         }
@@ -122,7 +122,7 @@ class ServiceWorkerMessageChannel {
     return cleaned;
   }
 
-  postMessage(data: any): void {
+  postMessage(data: unknown): void {
     // Nettoyer les données avant envoi
     const cleanData = this.serializeMessageData(data);
     
@@ -144,7 +144,7 @@ class ServiceWorkerMessageChannel {
     this.broadcastViaStorage(cleanData);
   }
 
-  private async broadcastViaStorage(data: any): Promise<void> {
+  private async broadcastViaStorage(data: unknown): Promise<void> {
     const storage = ServiceWorkerStorage.getInstance();
     const timestamp = Date.now();
     const messageKey = `broadcast_${this.channelName}_${timestamp}`;
@@ -161,18 +161,18 @@ class ServiceWorkerMessageChannel {
     }, 30000);
   }
 
-  private handleMessage(data: any): void {
+  private handleMessage(data: unknown): void {
     const handlers = this.handlers.get('message') || [];
     handlers.forEach(handler => {
       try {
         handler({ data });
-      } catch (error) {
+      } catch (_error) {
         logger.error('Message handler error:', error);
       }
     });
   }
 
-  set onmessage(handler: (event: { data: any }) => void) {
+  set onmessage(handler: (event: { data: unknown }) => void) {
     if (!this.handlers.has('message')) {
       this.handlers.set('message', []);
     }
@@ -184,7 +184,7 @@ class ServiceWorkerMessageChannel {
 class ServiceWorkerCrypto {
   private encryptionKey = "symbiont-key-demo";
 
-  async encryptSensitiveData(data: any): Promise<string> {
+  async encryptSensitiveData(data: unknown): Promise<string> {
     try {
       // Utiliser les Crypto APIs natives du Service Worker
       const encoder = new TextEncoder();
@@ -212,7 +212,7 @@ class ServiceWorkerCrypto {
       combined.set(new Uint8Array(encryptedData), iv.length);
       
       return btoa(String.fromCharCode(...combined));
-    } catch (error) {
+    } catch (_error) {
       logger.error('Encryption failed, using fallback:', error);
       // Fallback simple pour les cas d'urgence
       const jsonString = JSON.stringify(data);
@@ -220,7 +220,7 @@ class ServiceWorkerCrypto {
     }
   }
 
-  async decryptSensitiveData(encryptedData: string): Promise<any> {
+  async decryptSensitiveData(encryptedData: string): Promise<unknown> {
     try {
       const combined = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
       const iv = combined.slice(0, 12);
@@ -245,7 +245,7 @@ class ServiceWorkerCrypto {
 
       const decoder = new TextDecoder();
       return JSON.parse(decoder.decode(decryptedData));
-    } catch (error) {
+    } catch (_error) {
       logger.error('Decryption failed, trying fallback:', error);
       // Fallback pour les données non chiffrées
       try {
@@ -307,7 +307,7 @@ class ServiceWorkerIndexedDB {
   }
 
   // Méthodes de base pour organism, behaviors, etc.
-  async getOrganism(): Promise<any> {
+  async getOrganism(): Promise<unknown> {
     if (!this.db) throw new Error('Database not initialized');
     
     return new Promise((resolve, reject) => {

@@ -37,7 +37,7 @@ export enum MessageType {
 
 export interface Message {
   type: MessageType;
-  payload?: any;
+  payload?: unknown;
   target?: string;
   timestamp?: number;
   source?: string;
@@ -46,9 +46,9 @@ export interface Message {
 
 export class MessageBus {
     constructor(_channel?: string) {}
-    on(_type: MessageType, _handler: (message: any) => void): void {}
-    send(_message: any): void {}
-    subscribe(_type: MessageType, _handler: (message: any) => void): void {
+    on(_type: MessageType, _handler: (message: MessageEvent | unknown) => void): void {}
+    send(_message: MessageEvent | unknown): void {}
+    subscribe(_type: MessageType, _handler: (message: MessageEvent | unknown) => void): void {
       this.on(_type, _handler);
     }
 }

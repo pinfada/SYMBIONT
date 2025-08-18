@@ -18,14 +18,14 @@ export interface DNAMutation {
 export interface PredictionResult {
   prediction: string;
   confidence: number;
-  details?: any;
+  details?: unknown;
 }
 
 export interface APIResponse<T> {
   success: boolean;
   data: T;
   message?: string;
-  meta?: any;
+  meta?: unknown;
 }
 
 export interface Organism {
@@ -71,9 +71,9 @@ export class ProductionAPIService {
   async authenticate(email: string, password: string): Promise<{
     token: string;
     refreshToken: string;
-    user: any;
+    user: unknown;
   }> {
-    const response = await this.request<any>('POST', '/auth/login', {
+    const response = await this.request<unknown>('POST', '/auth/login', {
       email,
       password
     });
@@ -87,7 +87,7 @@ export class ProductionAPIService {
     return response.data;
   }
 
-  async register(email: string, username: string, password: string): Promise<any> {
+  async register(email: string, username: string, password: string): Promise<unknown> {
     return this.request('POST', '/auth/register', {
       email,
       username,
@@ -145,12 +145,12 @@ export class ProductionAPIService {
     await this.request('POST', '/behavior/batch', { behaviors: data });
   }
 
-  async getBehaviorAnalytics(timeframe?: string): Promise<any> {
-    const response = await this.request<any>('GET', `/analytics/behavior?timeframe=${timeframe || '7d'}`);
+  async getBehaviorAnalytics(timeframe?: string): Promise<unknown> {
+    const response = await this.request<unknown>('GET', `/analytics/behavior?timeframe=${timeframe || '7d'}`);
     return response.data;
   }
 
-  async generatePersonalizedDNA(behaviorData: any[]): Promise<string> {
+  async generatePersonalizedDNA(behaviorData: unknown[]): Promise<string> {
     const response = await this.request<{ dna: string }>('POST', '/analytics/generate-dna', {
       behaviorData
     });
@@ -165,12 +165,12 @@ export class ProductionAPIService {
     return response.data;
   }
 
-  async analyzeEmotionalState(behaviorData: any[]): Promise<{
+  async analyzeEmotionalState(behaviorData: unknown[]): Promise<{
     mood: string;
     intensity: number;
     triggers: string[];
   }> {
-    const response = await this.request<any>('POST', '/analytics/emotional-state', {
+    const response = await this.request<unknown>('POST', '/analytics/emotional-state', {
       behaviorData
     });
     return response.data;
@@ -189,8 +189,8 @@ export class ProductionAPIService {
     return response.data;
   }
 
-  async useInvitation(code: string): Promise<any> {
-    const response = await this.request<any>('POST', '/invitations/use', { code });
+  async useInvitation(code: string): Promise<unknown> {
+    const response = await this.request<unknown>('POST', '/invitations/use', { code });
     return response.data;
   }
 
@@ -206,8 +206,8 @@ export class ProductionAPIService {
     ritualType: string;
     duration?: number;
     intensity?: number;
-  }): Promise<any> {
-    const response = await this.request<any>('POST', `/organisms/${organismId}/ritual`, ritual);
+  }): Promise<unknown> {
+    const response = await this.request<unknown>('POST', `/organisms/${organismId}/ritual`, ritual);
     return response.data;
   }
 
@@ -229,9 +229,9 @@ export class ProductionAPIService {
     content: string;
     type: string;
     strength?: number;
-    context?: any;
-  }): Promise<any> {
-    const response = await this.request<any>('POST', `/organisms/${organismId}/memories`, memory);
+    context?: unknown;
+  }): Promise<unknown> {
+    const response = await this.request<unknown>('POST', `/organisms/${organismId}/memories`, memory);
     return response.data;
   }
 
@@ -269,7 +269,7 @@ export class ProductionAPIService {
     };
   }
 
-  private handleWebSocketMessage(data: any): void {
+  private handleWebSocketMessage(data: unknown): void {
     switch (data.type) {
       case 'network_event':
         this.handleNetworkEvent(data.event);
@@ -286,26 +286,26 @@ export class ProductionAPIService {
     }
   }
 
-  private handleNetworkEvent(event: any): void {
+  private handleNetworkEvent(event: Event): void {
     // Diffuser l'événement aux composants React
     window.dispatchEvent(new CustomEvent('symbiont:network_event', {
       detail: event
     }));
   }
 
-  private handleMutationEvent(data: any): void {
+  private handleMutationEvent(data: unknown): void {
     window.dispatchEvent(new CustomEvent('symbiont:mutation', {
       detail: data
     }));
   }
 
-  private handleRitualInvitation(data: any): void {
+  private handleRitualInvitation(data: unknown): void {
     window.dispatchEvent(new CustomEvent('symbiont:ritual_invitation', {
       detail: data
     }));
   }
 
-  private handleSyncRequest(data: any): void {
+  private handleSyncRequest(data: unknown): void {
     window.dispatchEvent(new CustomEvent('symbiont:sync_request', {
       detail: data
     }));
@@ -342,7 +342,7 @@ export class ProductionAPIService {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (_error) {
       logger.error(`API Error [${method} ${endpoint}]`, { error }, 'ProductionAPIService');
       
       // Fallback vers données mock en cas d'erreur
@@ -360,7 +360,7 @@ export class ProductionAPIService {
   private getFallbackData<T>(endpoint: string, method: string): APIResponse<T> {
     logger.warn(`🔄 Using fallback data for ${method} ${endpoint}`, undefined, 'ProductionAPIService');
     
-    const fallbackData: any = {
+    const fallbackData: unknown = {
       '/organisms': {
         success: true,
         data: [{

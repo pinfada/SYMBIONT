@@ -4,7 +4,7 @@
 export interface BehaviorAnalysis {
   score: number;
   pattern: string;
-  details?: any;
+  details?: unknown;
 }
 
 /** Événement de navigation utilisateur */

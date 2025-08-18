@@ -68,7 +68,7 @@ export class ErrorHandler {
   public logSimpleError(
     component: string,
     method: string,
-    error: any,
+    error: Error | unknown,
     level: 'debug' | 'info' | 'warning' | 'error' = 'error',
     context?: any
   ): void {
@@ -237,7 +237,7 @@ export class ErrorHandler {
           );
         }
         return result;
-      } catch (error) {
+      } catch (_error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         
         this.logSimpleError(
@@ -280,7 +280,7 @@ export class ErrorHandler {
   ): T {
     try {
       return operation();
-    } catch (error) {
+    } catch (_error) {
       this.logSimpleError(context.component, context.method, error, 'error');
       return fallbackValue;
     }
@@ -296,7 +296,7 @@ export class ErrorHandler {
   ): Promise<T> {
     try {
       return await operation();
-    } catch (error) {
+    } catch (_error) {
       this.logSimpleError(context.component, context.method, error, 'error');
       return fallbackValue;
     }

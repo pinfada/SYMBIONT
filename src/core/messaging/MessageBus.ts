@@ -9,7 +9,7 @@ import { logger } from '@shared/utils/secureLogger';
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
 
-function isOrganismState(obj: any): obj is OrganismState {
+function isOrganismState(obj: Record<string, unknown>): obj is OrganismState {
   return obj &&
     typeof obj.id === 'string' &&
     typeof obj.generation === 'number' &&
@@ -18,23 +18,23 @@ function isOrganismState(obj: any): obj is OrganismState {
     obj.traits && typeof obj.traits === 'object';
 }
 
-function isOrganismMutation(obj: any): obj is OrganismMutation {
+function isOrganismMutation(obj: Record<string, unknown>): obj is OrganismMutation {
   return obj && typeof obj.type === 'string' && typeof obj.trigger === 'string';
 }
 
-function isBehaviorData(obj: any): boolean {
+function isBehaviorData(obj: Record<string, unknown>): boolean {
   return obj && typeof obj.url === 'string' && typeof obj.visitCount === 'number';
 }
 
-function isMurmur(obj: any): obj is Murmur {
+function isMurmur(obj: Record<string, unknown>): obj is Murmur {
   return obj && typeof obj.text === 'string' && typeof obj.timestamp === 'number';
 }
 
-function isInvitationPayload(obj: any): obj is InvitationPayload {
+function isInvitationPayload(obj: Record<string, unknown>): obj is InvitationPayload {
   return obj && typeof obj.code === 'string';
 }
 
-function isInvitationResult(obj: any): obj is InvitationResult {
+function isInvitationResult(obj: Record<string, unknown>): obj is InvitationResult {
   return obj && typeof obj.code === 'string' && typeof obj.status === 'string';
 }
 
@@ -68,11 +68,11 @@ function validatePayload(type: MessageType, payload: any): boolean {
 }
 
 // Fonction pour nettoyer les messages avant sérialisation
-function serializeMessage(message: any): any {
+function serializeMessage(message: MessageEvent | unknown): any {
   try {
     // Test de sérialisation avec JSON.parse/stringify
     return JSON.parse(JSON.stringify(message));
-  } catch (error) {
+  } catch (_error) {
     logger.warn('Message serialization issue, cleaning object:', error);
     
     // Nettoyage manuel pour les cas problématiques
@@ -81,7 +81,7 @@ function serializeMessage(message: any): any {
   }
 }
 
-function cleanObjectForSerialization(obj: any, seen = new WeakSet()): any {
+function cleanObjectForSerialization(obj: Record<string, unknown>, seen = new WeakSet()): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -134,13 +134,13 @@ function cleanObjectForSerialization(obj: any, seen = new WeakSet()): any {
   }
   
   // Pour les objets, on nettoie récursivement
-  const cleaned: any = {};
+  const cleaned: unknown = {};
   
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       try {
         cleaned[key] = cleanObjectForSerialization(obj[key], seen);
-      } catch (error) {
+      } catch (_error) {
         // Supprime les logs verbeux pour éviter le spam
         cleaned[key] = '[Non-serializable]';
       }
@@ -206,7 +206,7 @@ export class MessageBus {
     for (const handler of this.globalHandlers) {
       try {
         await handler(message);
-      } catch (error) {
+      } catch (_error) {
         logger.error(`Error in global handler:`, error);
       }
     }
@@ -217,7 +217,7 @@ export class MessageBus {
       for (const handler of handlers) {
         try {
           await handler(message);
-        } catch (error) {
+        } catch (_error) {
           logger.error(`Error in handler for ${message.type}:`, error);
         }
       }
@@ -282,13 +282,13 @@ export class MessageBus {
         // Also send to runtime for popup/background
         chrome.runtime.sendMessage(cleanMessage).catch(() => {});
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error sending message:', error);
     }
   }
 
   // Ajout pour compatibilité content script
-  public sendToBackground(message: any): void {
+  public sendToBackground(message: MessageEvent | unknown): void {
     this.send(message);
   }
 
@@ -301,13 +301,13 @@ export class MessageBus {
   }
 
   // @ts-expect-error Variables réservées pour usage futur
-  private handleMessage(message: any, targetFrame: string): void {
+  private handleMessage(message: MessageEvent | unknown, targetFrame: string): void {
     // Handle cross-frame messages
     logger.info('Handling message:', message);
   }
 
   // @ts-expect-error Paramètre réservé pour usage futur
-  private onMessage(message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
+  private onMessage(message: MessageEvent | unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
     // Handle incoming message
     logger.info('Received message:', message);
     return true;

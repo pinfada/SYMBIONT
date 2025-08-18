@@ -17,7 +17,7 @@ export interface NeuralProcessingResult {
 export interface NeuralPattern {
   id: string;
   type: 'behavioral' | 'environmental' | 'social';
-  data: any;
+  data: unknown;
   timestamp: number;
   confidence: number;
 }
@@ -57,7 +57,7 @@ export class NeuralService {
         confidence: result.confidence || 0.8,
         processingTime
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur de traitement neural:', error);
       
       return {
@@ -95,7 +95,7 @@ export class NeuralService {
           if (this.mesh.learn) {
             await this.mesh.learn(pattern.data);
           }
-        } catch (error) {
+        } catch (_error) {
           logger.error('Erreur apprentissage neural:', error);
         }
       }
@@ -189,7 +189,7 @@ export class NeuralService {
         await this.mesh.learn(behaviorData);
       }
       return true;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur apprentissage:', error);
       return false;
     }
@@ -203,7 +203,7 @@ export class NeuralService {
       return this.mesh.getPerformanceMetrics 
         ? this.mesh.getPerformanceMetrics()
         : { nodeCount: 0, connectionCount: 0, neuralActivity: 0, connectionStrength: 0 };
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur métriques:', error);
       return {
         processingTime: 0,
@@ -219,7 +219,7 @@ export class NeuralService {
   saveState(): any {
     try {
       return this.mesh.saveState();
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur sauvegarde état neural:', error);
       return null;
     }
@@ -232,7 +232,7 @@ export class NeuralService {
     try {
       this.mesh.loadState(state);
       return true;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur chargement état neural:', error);
       return false;
     }
@@ -246,7 +246,7 @@ export class NeuralService {
       this.mesh.reset();
       this.processingQueue = [];
       this.isProcessing = false;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur reset neural:', error);
     }
   }

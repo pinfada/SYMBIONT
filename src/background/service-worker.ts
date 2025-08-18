@@ -14,7 +14,7 @@ class ServiceWorkerManager {
     this.isInitialized = true;
   }
 
-  private handleMessage(message: any, sendResponse: (response: any) => void): void {
+  private handleMessage(message: MessageEvent | unknown, sendResponse: (response: any) => void): void {
     // Handle different message types
     switch (message.type) {
       case 'HEALTH_CHECK':

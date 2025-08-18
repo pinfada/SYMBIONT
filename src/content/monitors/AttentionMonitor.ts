@@ -461,7 +461,7 @@ export class AttentionMonitor extends EventTarget {
     return this.calculateMetrics();
   }
 
-  public on(event: string, handler: (event: any) => void): void {
+  public on(event: string, handler: (_event: Event) => void): void {
     this.addEventListener(event, (e: any) => handler(e.detail));
   }
 

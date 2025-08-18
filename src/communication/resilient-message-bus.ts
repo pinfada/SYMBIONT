@@ -119,7 +119,7 @@ export class ResilientMessageBus {
         await this.simulateSend(message)
         this.circuitBreaker.recordSuccess()
         return { success: true }
-      } catch (error) {
+      } catch (_error) {
         this.circuitBreaker.recordFailure()
         retries++
         if (retries > maxRetries) {

@@ -30,7 +30,7 @@ export class NeuralCoreEngine {
       // Note: Comme retrieveOrganisms n'existe pas, on va créer une logique alternative
       this.initialized = true
       logger.info(`🧠 NeuralCoreEngine initialisé`)
-    } catch (error) {
+    } catch (_error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'initialize', error, 'warning')
       this.initialized = true // Continue même en cas d'erreur
     }
@@ -74,7 +74,7 @@ export class NeuralCoreEngine {
 
       logger.info(`🌱 Nouvel organisme créé pour ${userId}`)
       return organism
-    } catch (error) {
+    } catch (_error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'createOrganism', error, 'error')
       throw error
     }
@@ -144,7 +144,7 @@ export class NeuralCoreEngine {
 
       logger.info(`🧬 ${mutations.length} mutations appliquées à l'organisme ${id}`)
       return mutations
-    } catch (error) {
+    } catch (_error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'evolveOrganism', error, 'error')
       return []
     }
@@ -170,7 +170,7 @@ export class NeuralCoreEngine {
 
       logger.info(`🔮 Prédiction générée pour ${id}: ${enrichedPrediction.action}`)
       return enrichedPrediction
-    } catch (error) {
+    } catch (_error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'predictNextAction', error, 'error')
       
       // Prédiction fallback
@@ -260,7 +260,7 @@ export class NeuralCoreEngine {
         return organism
       }
       return null
-    } catch (error) {
+    } catch (_error) {
       errorHandler.logSimpleError('NeuralCoreEngine', 'loadOrganism', error, 'error')
       return null
     }

@@ -1,4 +1,4 @@
-type MessageHandler = (message: any) => Promise<void>;
+type MessageHandler = (message: MessageEvent | unknown) => Promise<void>;
 
 export class SynapticRouter {
   private connections: Map<string, MessageHandler>;
@@ -17,7 +17,7 @@ export class SynapticRouter {
     if (this.isConnected) return;
     
     // @ts-expect-error Paramètre réservé pour usage futur
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
       this.handleMessage(message).then(sendResponse);
       return true;
     });
@@ -48,7 +48,7 @@ export class SynapticRouter {
    * @param {any} message - Message à traiter
    * @returns {Promise<void>}
    */
-  private async handleMessage(message: any): Promise<void> {
+  private async handleMessage(message: MessageEvent | unknown): Promise<void> {
     const handler = this.connections.get(message.route);
     if (handler) {
       await handler(message.payload);
@@ -56,7 +56,7 @@ export class SynapticRouter {
   }
 
   // @ts-expect-error Paramètre réservé pour usage futur
-  async route(message: Message, sender?: MessagePort): Promise<any> {
+  async route(message: Message, sender?: MessagePort): Promise<unknown> {
     // Simplified routing
     return Promise.resolve({ status: 'routed', data: message });
   }

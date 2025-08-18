@@ -25,7 +25,7 @@ interface LogEntry {
   timestamp: number;
   level: LogLevel;
   message: string;
-  data?: any;
+  data?: unknown;
   context?: string | undefined;
   sanitized: boolean;
 }
@@ -84,7 +84,7 @@ export class SecureLogger {
   /**
    * Sanitise les données pour supprimer les informations sensibles
    */
-  private sanitizeData(data: any): any {
+  private sanitizeData(data: unknown): any {
     if (typeof data === 'string') {
       return this.sanitizeString(data);
     }
@@ -94,7 +94,7 @@ export class SecureLogger {
         return data.map(item => this.sanitizeData(item));
       }
 
-      const sanitized: any = {};
+      const sanitized: unknown = {};
       for (const [key, value] of Object.entries(data)) {
         if (this.isSensitiveField(key)) {
           sanitized[key] = '[REDACTED]';

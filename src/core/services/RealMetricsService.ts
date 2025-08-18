@@ -47,7 +47,7 @@ export interface SystemMetrics {
 class RealMetricsService {
   private static instance: RealMetricsService;
   private isProduction: boolean;
-  private metricsCache: Map<string, { value: any; timestamp: number }> = new Map();
+  private metricsCache: Map<string, { value: unknown; timestamp: number }> = new Map();
   
   private constructor() {
     this.isProduction = process.env.NODE_ENV === 'production';
@@ -82,7 +82,7 @@ class RealMetricsService {
         total: estimate * 2,
         percentage: 50
       };
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur collecte mémoire, fallback estimation:', error);
       return this.getFallbackMemoryMetrics();
     }
@@ -105,7 +105,7 @@ class RealMetricsService {
         firstPaint,
         firstContentfulPaint
       };
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur collecte timing, fallback estimation:', error);
       return this.getFallbackTimingMetrics();
     }
@@ -126,7 +126,7 @@ class RealMetricsService {
         bandwidth: connection?.downlink || 0,
         connectionType: connection?.effectiveType || 'unknown'
       };
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur collecte réseau, fallback estimation:', error);
       return this.getFallbackNetworkMetrics();
     }
@@ -141,7 +141,7 @@ class RealMetricsService {
       const cores = navigator.hardwareConcurrency || 4;
       
       return { usage, cores };
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur collecte CPU, fallback estimation:', error);
       return this.getFallbackCPUMetrics();
     }
@@ -178,7 +178,7 @@ class RealMetricsService {
 
       this.metricsCache.set(cacheKey, { value: metrics, timestamp: Date.now() });
       return metrics;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Erreur collecte métriques système:', error);
       return this.getFallbackSystemMetrics();
     }
@@ -198,7 +198,7 @@ class RealMetricsService {
       ]);
 
       return { lcp, fid, cls, fcp, ttfb };
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Erreur Web Vitals, fallback defaults:', error);
       return this.getFallbackWebVitals();
     }

@@ -22,7 +22,7 @@ export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<str
     setStep('waiting');
     try {
       await addRitual({ _id: fusionCode, type: 'fusion', initiatorId: userId, traits, status: 'waiting' });
-    } catch (e) {
+    } catch (_e) {
       setError('Erreur lors de la création du rituel.');
       setStep('init');
     }
@@ -46,7 +46,7 @@ export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<str
       });
       setResult({ initiatorId: ritual.initiatorId, receiverId: userId, mergedTraits, timestamp: Date.now() });
       setStep('result');
-    } catch (e) {
+    } catch (_e) {
       setError('Erreur lors de la validation du code.');
       setStep('enter');
     }

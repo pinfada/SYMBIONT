@@ -321,7 +321,7 @@ export class NeuralMesh implements INeuralMesh {
   /**
    * Process a pattern through the neural mesh (optional)
    */
-  async processPattern(pattern: any): Promise<any> {
+  async processPattern(pattern: any): Promise<unknown> {
     // Simple pattern processing - stimulate input nodes with pattern data
     if (pattern && typeof pattern === 'object') {
       const inputNodes = Array.from(this.nodes.entries())
@@ -352,7 +352,7 @@ export class NeuralMesh implements INeuralMesh {
   /**
    * Learn from data (optional)
    */
-  async learn(data: any): Promise<void> {
+  async learn(data: unknown): Promise<void> {
     // Simple learning implementation - adjust based on data
     if (data && typeof data === 'object' && data.feedback) {
       // Apply small mutations based on feedback

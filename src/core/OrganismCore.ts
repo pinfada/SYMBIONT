@@ -190,7 +190,7 @@ export class OrganismCore implements IOrganismCore {
           confidence: result.confidence 
         });
       }
-    } catch (error) {
+    } catch (_error) {
       this.logger?.error('Evolution failed', error);
       errorHandler.logSimpleError('OrganismCore', 'evolve', error, 'error');
     }
@@ -363,7 +363,7 @@ export class OrganismCore implements IOrganismCore {
     try {
       await this.neuralService.initialize();
       this.logger?.debug('Organism booted successfully', { id: this.id });
-    } catch (error) {
+    } catch (_error) {
       this.logger?.error('Failed to boot organism', { id: this.id, error });
       throw error;
     }
@@ -377,7 +377,7 @@ export class OrganismCore implements IOrganismCore {
       this.energyService.setEfficiency(0.1); // Reduce energy consumption
       await this.neuralService.suspend();
       this.logger?.debug('Organism hibernated', { id: this.id });
-    } catch (error) {
+    } catch (_error) {
       this.logger?.error('Failed to hibernate organism', { id: this.id, error });
       throw error;
     }

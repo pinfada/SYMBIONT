@@ -8,7 +8,6 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
 import { OrganismTimeline } from './OrganismTimeline';
 import { TransmissionGraph } from './TransmissionGraph';
 import { useInvitationData } from '../hooks/useInvitationData';
-// import { OrganismState } from '@shared/types/organism';
 
 export const OrganismDashboard: React.FC = () => {
   const { organism, isLoading } = useOrganism();

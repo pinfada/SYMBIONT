@@ -3,13 +3,13 @@ import { OrganismState, PageContext, ActionPrediction } from '../../shared/types
 
 export class BehaviorPredictor {
   // @ts-expect-error Paramètre réservé pour usage futur
-  predict(data: any[]): any {
+  predict(data: unknown[]): any {
     // Prédiction comportementale simple - à implémenter
     return { confidence: 0.5, prediction: 'unknown' };
   }
 
   // @ts-expect-error Paramètre réservé pour usage futur
-  analyzeBehavior(sequence: any[]): any {
+  analyzeBehavior(sequence: unknown[]): any {
     // Analyse de séquence comportementale - à implémenter
     return { pattern: 'none', score: 0 };
   }

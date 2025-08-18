@@ -24,21 +24,21 @@ export class WebGLMessageAdapter {
    */
     private setupListeners(): void {
       // Écoute des mutations
-    this.messageBus.on(MessageType.ORGANISM_MUTATE, (message: any) => {
+    this.messageBus.on(MessageType.ORGANISM_MUTATE, (message: MessageEvent | unknown) => {
       try {
         const { mutation } = message.payload;
         this.engine.mutate(mutation as OrganismMutation);
-      } catch (err) {
+      } catch (_err) {
         logger.error('Erreur lors de l’application de la mutation WebGL :', err);
       }
       });
       
       // Écoute des changements d'état
-    this.messageBus.on(MessageType.ORGANISM_STATE_CHANGE, (message: any) => {
+    this.messageBus.on(MessageType.ORGANISM_STATE_CHANGE, (message: MessageEvent | unknown) => {
       try {
         const { state } = message.payload;
         this.engine.render(state as OrganismState);
-      } catch (err) {
+      } catch (_err) {
         logger.error('Erreur lors du rendu WebGL :', err);
       }
       });
@@ -51,7 +51,7 @@ export class WebGLMessageAdapter {
           type: MessageType.PERFORMANCE_UPDATE,
           payload: metrics
         });
-      } catch (err) {
+      } catch (_err) {
         // On ignore les erreurs de métriques pour ne pas polluer la console
       }
       }, 1000);

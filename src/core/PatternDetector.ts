@@ -7,13 +7,13 @@
 export interface SequenceEvent {
   type: string;
   timestamp: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface DetectedPattern {
   type: string;
   score: number;
-  details?: any;
+  details?: unknown;
 }
 
 export class PatternDetector {

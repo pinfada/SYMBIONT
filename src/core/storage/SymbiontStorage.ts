@@ -9,7 +9,7 @@ interface BehaviorData {
   interactions: Array<{
     type: string;
     timestamp: number;
-    data: any;
+    data: unknown;
   }>;
 }
 
@@ -19,7 +19,7 @@ interface _StorageSchema {
   organisms: OrganismState[];
   behaviors: BehaviorData[];
   mutations: OrganismMutation[];
-  settings: any;
+  settings: unknown;
 }
 
 export class SymbiontStorage {
@@ -253,7 +253,7 @@ export class SymbiontStorage {
       const transaction = this.db!.transaction(['invitations'], 'readonly');
       const store = transaction.objectStore('invitations');
       const request = store.openCursor();
-      const results: any[] = [];
+      const results: unknown[] = [];
       request.onsuccess = (event) => {
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {
@@ -305,7 +305,7 @@ export class SymbiontStorage {
       const transaction = this.db!.transaction(['behaviors'], 'readonly');
       const store = transaction.objectStore('behaviors');
       const request = store.openCursor();
-      const recent: any[] = [];
+      const recent: unknown[] = [];
       request.onsuccess = (event) => {
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {

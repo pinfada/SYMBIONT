@@ -5,7 +5,7 @@ import { logger } from '@shared/utils/secureLogger';
 export class AdvancedCaching {
   private cache: Map<string, any> = new Map()
 
-  set(key: string, value: any) {
+  set(key: string, value: unknown) {
     const compressed = this.compress(value)
     this.cache.set(key, compressed)
     logger.info(`[Cache] Donnée mise en cache (clé=${key})`)
@@ -29,12 +29,12 @@ export class AdvancedCaching {
     logger.info(`[Cache] Cache vidé`)
   }
 
-  private compress(data: any): any {
+  private compress(data: unknown): any {
     // Simulation de compression intelligente
     return JSON.stringify(data)
   }
 
-  private decompress(data: any): any {
+  private decompress(data: unknown): any {
     // Simulation de décompression
     try {
       return JSON.parse(data)

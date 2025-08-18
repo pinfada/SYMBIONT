@@ -1,3 +1,3 @@
 export const NeuronTypes = {
-  createType(name: string, config: any) { return { name, config }; }
+  createType(name: string, config: Record<string, unknown>) { return { name, config }; }
 }; 

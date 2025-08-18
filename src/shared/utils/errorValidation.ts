@@ -16,7 +16,7 @@ export function validateVariable(variable: any, variableName: string): void {
 /**
  * Vérifie si un objet a des propriétés length avant de les utiliser
  */
-export function validateLengthProperty(obj: any, objectName: string): boolean {
+export function validateLengthProperty(obj: Record<string, unknown>, objectName: string): boolean {
   if (!obj) {
     logger.warn(`⚠️ "${objectName}" est null/undefined, impossible d'accéder à .length`);
     return false;
@@ -110,7 +110,7 @@ export function runErrorTests(): void {
     } else {
       logger.info('✅ Test 1 réussi: className.split protégé');
     }
-  } catch (error) {
+  } catch (_error) {
     logger.error('❌ Test 1 échoué:', error);
   }
   
@@ -121,7 +121,7 @@ export function runErrorTests(): void {
       ? emptyArray.reduce((a, b) => a + b, 0) / emptyArray.length 
       : 0;
     logger.info('✅ Test 2 réussi: Division par zéro évitée, moyenne =', average);
-  } catch (error) {
+  } catch (_error) {
     logger.error('❌ Test 2 échoué:', error);
   }
   
@@ -130,7 +130,7 @@ export function runErrorTests(): void {
     const undefinedVar = undefined as any;
     const length = undefinedVar?.length || 0;
     logger.info('✅ Test 3 réussi: Propriété length protégée, length =', length);
-  } catch (error) {
+  } catch (_error) {
     logger.error('❌ Test 3 échoué:', error);
   }
   

@@ -105,7 +105,7 @@ export class PerformanceAnalytics {
       // Vérification du budget de performance
       this.checkPerformanceBudget()
       
-    } catch (error) {
+    } catch (_error) {
       logger.error('[PerfAnalytics] Erreur lors de la collecte:', error)
     }
   }
@@ -228,8 +228,8 @@ export class PerformanceAnalytics {
       avgFPS: number;
       anomalyCount: number;
     };
-    webVitals: any;
-    budgetStatus: any;
+    webVitals: unknown;
+    budgetStatus: unknown;
   } {
     if (this.metrics.length === 0) {
       return {

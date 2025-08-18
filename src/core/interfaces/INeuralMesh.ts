@@ -44,16 +44,16 @@ export interface INeuralMesh {
   getMemoryUsage(): Promise<number>;
   
   // Sérialisation
-  toJSON(): any;
+  toJSON(): unknown;
   suspend(): Promise<void>;
   
   // Pattern processing for service compatibility
-  processPattern?: (pattern: any) => Promise<any>;
-  learn?: (data: any) => Promise<void>;
+  processPattern?: (pattern: any) => Promise<unknown>;
+  learn?: (data: unknown) => Promise<void>;
   getPerformanceMetrics?: () => any;
 
   // Missing methods for service compatibility
-  saveState(): any;
+  saveState(): unknown;
   loadState(state: any): void;
   reset(): void;
   healthCheck(): { healthy: boolean; issues: string[] };

@@ -306,7 +306,7 @@ export class EnvironmentConfig {
       
       return { valid: this.isValidated, errors };
       
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = `Erreur validation configuration: ${error instanceof Error ? error.message : String(error)}`;
       errors.push(errorMsg);
       logger.error(errorMsg);

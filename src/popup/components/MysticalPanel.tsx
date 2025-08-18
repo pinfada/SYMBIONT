@@ -34,7 +34,7 @@ interface RitualSession {
 interface RitualHistory {
   ritualId: string;
   completedAt: number;
-  effects: any;
+  effects: unknown;
 }
 
 const AVAILABLE_RITUALS: Ritual[] = [
@@ -128,7 +128,7 @@ const MysticalPanel: React.FC = () => {
       if (savedCooldowns) {
         setRitualCooldowns(JSON.parse(savedCooldowns));
       }
-    } catch (e) {
+    } catch (_e) {
       logger.warn('Erreur lors du chargement de l\'historique des rituels');
     }
   }, []);

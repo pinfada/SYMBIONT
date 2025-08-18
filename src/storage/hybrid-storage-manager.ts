@@ -27,7 +27,7 @@ export class HybridStorageManager {
     this.setupIntegrityMonitoring()
   }
 
-  async store(key: string, data: any): Promise<void> {
+  async store(key: string, data: unknown): Promise<void> {
     // Évite de stocker les alertes de santé qui saturent le stockage
     if (key.includes('symbiont_health_alert_')) {
       logger.info('[HybridStorageManager] Skipping health alert storage to prevent quota issues');
@@ -59,7 +59,7 @@ export class HybridStorageManager {
         })
       })
       logger.info('[HybridStorageManager] store - chrome.storage.local OK', key)
-    } catch (e) {
+    } catch (_e) {
       logger.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', { key, error: String(e) })
     }
     try {
@@ -76,20 +76,20 @@ export class HybridStorageManager {
       } else {
         throw new Error('IndexedDB not ready')
       }
-    } catch (e) {
+    } catch (_e) {
       logger.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', { key, error: String(e) })
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(data))
       logger.info('[HybridStorageManager] store - localStorage d\'urgence OK', key)
     }
   }
 
-  async retrieve(key: string): Promise<any> {
+  async retrieve(key: string): Promise<unknown> {
     if (this.memoryCache.has(key)) {
       logger.info('[HybridStorageManager] retrieve - Mémoire HIT', key)
       return this.memoryCache.get(key)
     }
     try {
-      const result = await new Promise<any>((resolve, reject) => {
+      const result = await new Promise<unknown>((resolve, reject) => {
         this.persistentStorage.get([key], (res: any) => {
           if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
           else resolve(res[key])
@@ -100,7 +100,7 @@ export class HybridStorageManager {
         logger.info('[HybridStorageManager] retrieve - chrome.storage.local OK', key)
         return result
       }
-    } catch (e) {
+    } catch (_e) {
       logger.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', { key, error: String(e) })
     }
     try {
@@ -119,7 +119,7 @@ export class HybridStorageManager {
           return val
         }
       }
-    } catch (e) {
+    } catch (_e) {
       logger.warn('[HybridStorageManager] retrieve - IndexedDB failed', { key, error: String(e) })
     }
     try {
@@ -128,7 +128,7 @@ export class HybridStorageManager {
         logger.info('[HybridStorageManager] retrieve - localStorage d\'urgence OK', key)
         return JSON.parse(val)
       }
-    } catch (e) {
+    } catch (_e) {
       logger.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', { key, error: String(e) })
     }
     return null
@@ -171,7 +171,7 @@ export class HybridStorageManager {
             resolve(false);
           }
         };
-      } catch (e) {
+      } catch (_e) {
         this.indexedDB = null;
         if (!settled) {
           clearTimeout(timeout);
@@ -208,7 +208,7 @@ export class HybridStorageManager {
         });
         logger.info(`[HybridStorageManager] Cleaned ${keysToRemove.length} old storage items`);
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('[HybridStorageManager] Failed to clean old storage data:', error);
     }
   }
@@ -225,7 +225,7 @@ export class HybridStorageManager {
    * Synchronise une clé et sa valeur sur toutes les couches de stockage.
    * Utilisé lors de la réplication ou de l'auto-réparation.
    */
-  private async syncKeyAcrossLayers(key: string, value: any) {
+  private async syncKeyAcrossLayers(key: string, value: unknown) {
     this.memoryCache.set(key, value)
     try {
       await new Promise((resolve, reject) => {
@@ -234,7 +234,7 @@ export class HybridStorageManager {
           else resolve(true)
         })
       })
-    } catch (error) {
+    } catch (_error) {
       console.warn('Storage operation failed:', error);
     }
     try {
@@ -248,12 +248,12 @@ export class HybridStorageManager {
           req.onerror = () => reject(req.error)
         })
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Storage operation failed:', error);
     }
     try {
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(value))
-    } catch (error) {
+    } catch (_error) {
       console.warn('Storage operation failed:', error);
     }
   }
@@ -279,11 +279,11 @@ export class HybridStorageManager {
       for (const key of this.memoryCache.keys()) {
         try {
           const memVal = this.memoryCache.get(key)
-          const chromeVal = await new Promise<any>((resolve) => {
+          const chromeVal = await new Promise<unknown>((resolve) => {
             this.persistentStorage.get([key], (res: any) => resolve(res[key]))
           })
           await this.indexedDBReady
-          let idbVal: any = undefined
+          let idbVal: unknown = undefined
           if (this.indexedDB) {
             idbVal = await new Promise((resolve) => {
               const tx = this.indexedDB!.transaction(['symbiont'], 'readonly')
@@ -319,7 +319,7 @@ export class HybridStorageManager {
             this.emergencyLocalStorage.setItem(key, JSON.stringify(repaired))
             logger.info('[HybridStorageManager] IntegrityMonitoring - Auto-réparation appliquée pour', key)
           }
-        } catch (e) {
+        } catch (_e) {
           logger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', { key, error: String(e) })
         }
       }
