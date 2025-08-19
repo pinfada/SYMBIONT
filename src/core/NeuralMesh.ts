@@ -1,5 +1,5 @@
 import { INeuralMesh } from './interfaces/INeuralMesh';
-import { SecureRandom } from '../shared/utils/secureRandom';
+import { PerformanceOptimizedRandom } from '../shared/utils/PerformanceOptimizedRandom';
 import { logger } from '@/shared/utils/secureLogger';
 
 export class NeuralMesh implements INeuralMesh {
@@ -98,8 +98,8 @@ export class NeuralMesh implements INeuralMesh {
     // Mutate connection weights
     for (const connections of this.connections.values()) {
       for (const [toId, weight] of connections) {
-        if (SecureRandom.random() < rate) {
-          connections.set(toId, weight + (SecureRandom.random() - 0.5) * 0.2);
+        if (PerformanceOptimizedRandom.random() < rate) {
+          connections.set(toId, weight + (PerformanceOptimizedRandom.random() - 0.5) * 0.2);
           connections.set(toId, Math.max(-2, Math.min(2, connections.get(toId) || 0)));
         
     return undefined;}
@@ -108,8 +108,8 @@ export class NeuralMesh implements INeuralMesh {
 
     // Mutate node biases
     for (const node of this.nodes.values()) {
-      if (SecureRandom.random() < rate) {
-        node.bias += (SecureRandom.random() - 0.5) * 0.1;
+      if (PerformanceOptimizedRandom.random() < rate) {
+        node.bias += (PerformanceOptimizedRandom.random() - 0.5) * 0.1;
         node.bias = Math.max(-1, Math.min(1, node.bias));
       }
     }

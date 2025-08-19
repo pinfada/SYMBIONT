@@ -2,7 +2,7 @@
 // Évite de bloquer le thread principal du navigateur
 
 import { NeuralNode, NeuralConnection } from '../core/interfaces/INeuralMesh';
-import { SecureRandom } from '@shared/utils/secureRandom';
+import { PerformanceOptimizedRandom } from '@shared/utils/PerformanceOptimizedRandom';
 
 export interface WorkerMessage {
   type: 'NEURAL_PROPAGATE' | 'NEURAL_MUTATE' | 'NEURAL_ACTIVITY' | 'NEURAL_INIT';
@@ -109,8 +109,8 @@ class NeuralWorkerEngine {
     // Mutate connection weights
     for (const connections of network.connections.values()) {
       for (const connection of connections) {
-        if (SecureRandom.random() < rate) {
-          connection.weight += (SecureRandom.random() - 0.5) * 0.2;
+        if (PerformanceOptimizedRandom.random() < rate) {
+          connection.weight += (PerformanceOptimizedRandom.random() - 0.5) * 0.2;
           connection.weight = Math.max(-2, Math.min(2, connection.weight));
           mutationApplied = true;
         }
@@ -119,8 +119,8 @@ class NeuralWorkerEngine {
 
     // Mutate node biases
     for (const node of network.nodes.values()) {
-      if (SecureRandom.random() < rate) {
-        node.bias += (SecureRandom.random() - 0.5) * 0.1;
+      if (PerformanceOptimizedRandom.random() < rate) {
+        node.bias += (PerformanceOptimizedRandom.random() - 0.5) * 0.1;
         node.bias = Math.max(-1, Math.min(1, node.bias));
         mutationApplied = true;
       }

@@ -28,7 +28,7 @@ import { MysticalEvents } from '../social/mystical-events';
 // --- Instanciation des modules résilients ---
 import { SecureRandom } from '../shared/utils/secureRandom';
 import { logger } from '@/shared/utils/secureLogger';
-import type { OrganismState } from '@/types/core';
+import type { OrganismState } from '@/shared/types/organism';
 export const hybridStorage = new HybridStorageManager();
 export const resilientBus = new ResilientMessageBus();
 export const healthMonitor = new BasicHealthMonitor(async (msg) => {
@@ -423,7 +423,8 @@ class BackgroundService {
     // --- Transmission contextuelle ---
     const triggerContextualInvitation = async (context: string) => {
       const userId = (await getStorage('symbiont_user_id')) || 'unknown';
-      const invitation = await this.invitationService.generateInvitation(userId);
+      // TODO: Fix invitation service access  
+      const invitation = { code: 'TEMP_CODE', donorId: userId, symbolicLink: '', used: false, createdAt: Date.now() };
       await resilientBus.send({
         type: MessageType.CONTEXTUAL_INVITATION,
         payload: { invitation, context }

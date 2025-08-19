@@ -15,10 +15,9 @@ class ServiceWorkerStorage {
 
   async setItem(key: string, value: string): Promise<void> {
     try {
-      await chrome.storage.local.set({ [key]: value 
-    return undefined;});
+      await chrome.storage.local.set({ [key]: value });
     } catch (_error) {
-      logger._error('Storage _error:', _error);
+      logger.error('Storage error:', _error);
       throw _error;
     }
   }
@@ -28,7 +27,7 @@ class ServiceWorkerStorage {
       const result = await chrome.storage.local.get([key]);
       return result[key] || null;
     } catch (_error) {
-      logger._error('Storage retrieval _error:', _error);
+      logger.error('Storage retrieval error:', _error);
       return null;
     }
   }
@@ -36,9 +35,8 @@ class ServiceWorkerStorage {
   async removeItem(key: string): Promise<void> {
     try {
       await chrome.storage.local.remove([key]);
-    
-    return undefined;} catch (_error) {
-      logger._error('Storage removal _error:', _error);
+    } catch (_error) {
+      logger.error('Storage removal error:', _error);
     }
   }
 }
@@ -129,8 +127,7 @@ class ServiceWorkerMessageChannel {
     const cleanData = this.serializeMessageData(data);
     
     // Envoyer à tous les onglets
-    chrome.tabs.query({
-    return undefined;}, (tabs) => {
+    chrome.tabs.query({}, (tabs) => {
       tabs.forEach(tab => {
         if (tab.id) {
           chrome.tabs.sendMessage(tab.id, {
@@ -168,10 +165,9 @@ class ServiceWorkerMessageChannel {
     const handlers = this.handlers.get('message') || [];
     handlers.forEach(handler => {
       try {
-        handler({ data 
-    return undefined;});
+        handler({ data });
       } catch (_error) {
-        logger._error('Message handler _error:', _error);
+        logger.error('Message handler error:', _error);
       }
     });
   }
@@ -197,8 +193,7 @@ class ServiceWorkerCrypto {
       const key = await crypto.subtle.importKey(
         'raw',
         keyMaterial,
-        { name: 'AES-GCM' 
-    return undefined;},
+        { name: 'AES-GCM' },
         false,
         ['encrypt']
       );
@@ -218,7 +213,7 @@ class ServiceWorkerCrypto {
       
       return btoa(String.fromCharCode(...combined));
     } catch (_error) {
-      logger._error('Encryption failed, using fallback:', _error);
+      logger.error('Encryption failed, using fallback:', _error);
       // Fallback simple pour les cas d'urgence
       const jsonString = JSON.stringify(data);
       return btoa(unescape(encodeURIComponent(jsonString)));
@@ -237,8 +232,7 @@ class ServiceWorkerCrypto {
       const key = await crypto.subtle.importKey(
         'raw',
         keyMaterial,
-        { name: 'AES-GCM' 
-    return undefined;},
+        { name: 'AES-GCM' },
         false,
         ['decrypt']
       );
@@ -252,7 +246,7 @@ class ServiceWorkerCrypto {
       const decoder = new TextDecoder();
       return JSON.parse(decoder.decode(decryptedData));
     } catch (_error) {
-      logger._error('Decryption failed, trying fallback:', _error);
+      logger.error('Decryption failed, trying fallback:', _error);
       // Fallback pour les données non chiffrées
       try {
         const jsonString = decodeURIComponent(escape(atob(encryptedData)));

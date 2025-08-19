@@ -13,7 +13,7 @@ import { INeuralMesh } from './interfaces/INeuralMesh';
 import RealMetricsService from './services/RealMetricsService';
 import FeatureFlagService from './services/FeatureFlagService';
 import { generateSecureUUID } from '../shared/utils/uuid';
-import { SecureRandom } from '../shared/utils/secureRandom';
+import { PerformanceOptimizedRandom } from '../shared/utils/PerformanceOptimizedRandom';
 import { logger } from '@/shared/utils/secureLogger';
 
 export interface OrganismDependencies {
@@ -430,9 +430,9 @@ export class OrganismCore implements IOrganismCore {
     
     // Mutate each trait based on rate
     Object.keys(traits).forEach(traitName => {
-      if (SecureRandom.random() < rate) {
+      if (PerformanceOptimizedRandom.random() < rate) {
         const currentValue = traits[traitName as keyof OrganismTraits];
-        const mutation = (SecureRandom.random() - 0.5) * 0.1; // ±5% mutation
+        const mutation = (PerformanceOptimizedRandom.random() - 0.5) * 0.1; // ±5% mutation
         const newValue = Math.max(0, Math.min(1, currentValue + mutation));
         mutations[traitName] = newValue;
       }

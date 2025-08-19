@@ -1,10 +1,10 @@
 import { RitualCondition, SecretFunction, MysticalEvent, RitualTrigger, ExecutionContext, SecretResult } from '../shared/types/mystical'
-import { SecureRandom } from '@shared/utils/secureRandom';
+import { PerformanceOptimizedRandom } from '@shared/utils/PerformanceOptimizedRandom';
 
 // @ts-expect-error Fonction réservée pour usage futur
 function randomUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = SecureRandom.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    const r = PerformanceOptimizedRandom.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 }
@@ -59,7 +59,7 @@ export class SecretRitualSystem {
 
   detectRitualTrigger(interactions: unknown[]): RitualTrigger | null {
     for (const [name, ritual] of this.ritualTriggers.entries()) {
-      if (ritual.trigger(interactions) && SecureRandom.random() < ritual.rarity) {
+      if (ritual.trigger(interactions) && PerformanceOptimizedRandom.random() < ritual.rarity) {
         return {
           name,
           effect: ritual.effect(),
@@ -79,7 +79,7 @@ export class SecretRitualSystem {
   }
 
   generateMysticalEvent(probability: number): MysticalEvent | null {
-    if (SecureRandom.random() < probability) {
+    if (PerformanceOptimizedRandom.random() < probability) {
       const event: MysticalEvent = {
         name: 'Mystical Surge',
         description: "Une vague d'énergie traverse l'organisme.",

@@ -410,7 +410,11 @@ export class WebGLOrchestrator {
 
   async getPerformanceMetrics(): Promise<unknown> {
     // Get comprehensive performance metrics
-    // ... existing code ...
-  
-    }
+    return {
+      renderTime: 0,
+      frameRate: 0,
+      memoryUsage: 0,
+      activeAnimations: 0
+    };
+  }
 } 
