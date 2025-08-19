@@ -3,17 +3,49 @@
  */
 import { BehaviorPattern } from '../shared/types/organism'
 import { swCryptoAPI } from './service-worker-adapter'
-import { logger } from '@shared/utils/secureLogger';
+import { logger } from '@/shared/utils/secureLogger';
+import { bulkheadManager } from '@/shared/patterns/BulkheadManager';
 
 export class SecurityManager {
   private encryptionKey: CryptoKey | null = null
   private keyPromise: Promise<CryptoKey> | null = null
 
   constructor(skipAutoInit: boolean = false) {
+    // Configuration des bulkheads pour l'isolation des opérations critiques
+    this.setupBulkheads();
+    
     // Initialisation sécurisée avec génération de clé WebCrypto
     if (!skipAutoInit) {
       this.initializeSecureKey()
     }
+  }
+
+  private setupBulkheads(): void {
+    // Bulkhead pour les opérations cryptographiques
+    bulkheadManager.createBulkhead({
+      name: 'crypto-operations',
+      maxConcurrentRequests: 5,
+      timeout: 10000,
+      fallbackStrategy: 'circuit-breaker',
+      retryAttempts: 2
+    });
+
+    // Bulkhead pour les opérations de stockage sécurisé
+    bulkheadManager.createBulkhead({
+      name: 'secure-storage',
+      maxConcurrentRequests: 10,
+      timeout: 5000,
+      fallbackStrategy: 'fail-fast'
+    });
+
+    // Bulkhead pour l'anonymisation des données
+    bulkheadManager.createBulkhead({
+      name: 'data-anonymization',
+      maxConcurrentRequests: 3,
+      timeout: 3000,
+      fallbackStrategy: 'retry',
+      retryAttempts: 3
+    });
   }
 
   /**
@@ -24,7 +56,8 @@ export class SecurityManager {
     
     this.keyPromise = this.generateSecureKey()
     this.encryptionKey = await this.keyPromise
-  }
+  
+    }
 
   /**
    * Génère une clé AES-GCM 256 bits sécurisée
@@ -105,7 +138,8 @@ export class SecurityManager {
       if (!swCryptoAPI?.subtle) {
         logger.warn('Mode développement: pas de stockage de clé réel');
         return;
-      }
+      
+    }
       
       const keyData = await swCryptoAPI.subtle.exportKey('raw', key)
       const keyArray = Array.from(new Uint8Array(keyData))
@@ -114,8 +148,8 @@ export class SecurityManager {
         symbiont_key_v2: keyArray,
         symbiont_key_created: Date.now()
       })
-    } catch (_error) {
-      logger.error('Erreur lors du stockage de la clé:', _error)
+    } catch (error) {
+      logger.error('Erreur lors du stockage de la clé:', error)
     }
   }
 
@@ -125,6 +159,7 @@ export class SecurityManager {
   private async ensureKeyReady(): Promise<CryptoKey> {
     if (!this.encryptionKey) {
       await this.initializeSecureKey()
+    
     }
     
     if (!this.encryptionKey) {
@@ -138,6 +173,12 @@ export class SecurityManager {
    * Chiffre des données sensibles avec AES-GCM sécurisé
    */
   async encryptSensitiveData(data: unknown): Promise<string> {
+    return bulkheadManager.execute('crypto-operations', async () => {
+      return this._encryptSensitiveData(data);
+    }, 'encryptSensitiveData');
+  }
+
+  private async _encryptSensitiveData(data: unknown): Promise<string> {
     if (!swCryptoAPI?.subtle) {
       logger.warn('WebCrypto API non disponible - chiffrement factice pour développement');
       // Mode développement : pas de chiffrement réel mais évite les erreurs
@@ -161,8 +202,8 @@ export class SecurityManager {
       buf.set(iv, 0)
       buf.set(new Uint8Array(ciphertext), iv.length)
       return btoa(String.fromCharCode(...buf))
-    } catch (_error) {
-      logger.error('Erreur de chiffrement:', _error)
+    } catch (error) {
+      logger.error('Erreur de chiffrement:', error)
       throw new Error('Échec du chiffrement des données sensibles')
     }
   }
@@ -171,6 +212,12 @@ export class SecurityManager {
    * Déchiffre des données sensibles avec AES-GCM sécurisé
    */
   async decryptSensitiveData(data: unknown): Promise<unknown> {
+    return bulkheadManager.execute('crypto-operations', async () => {
+      return this._decryptSensitiveData(data);
+    }, 'decryptSensitiveData');
+  }
+
+  private async _decryptSensitiveData(data: unknown): Promise<unknown> {
     if (typeof data !== 'string') {
       throw new Error('decryptSensitiveData attend une chaîne de caractères.')
     }
@@ -180,8 +227,8 @@ export class SecurityManager {
       logger.warn('Déchiffrement en mode développement (non sécurisé)');
       try {
         return JSON.parse(atob(data.substring(9)));
-      } catch (_error) {
-        logger.error('Erreur déchiffrement mode développement:', _error);
+      } catch (error) {
+        logger.error('Erreur déchiffrement mode développement:', error);
         return null;
       }
     }
@@ -205,8 +252,8 @@ export class SecurityManager {
       
       const plainText = new TextDecoder().decode(plainBuffer)
       return JSON.parse(plainText)
-    } catch (_error) {
-      logger.error('Erreur de déchiffrement:', _error)
+    } catch (error) {
+      logger.error('Erreur de déchiffrement:', error)
       throw new Error('Échec du déchiffrement des données - données corrompues ou clé invalide')
     }
   }
@@ -215,7 +262,14 @@ export class SecurityManager {
    * Anonymise un pattern comportemental (suppression PII, hashage sécurisé)
    */
   async anonymizeForSharing(data: BehaviorPattern): Promise<unknown> {
-    const anonymized = { ...data }
+    return bulkheadManager.execute('data-anonymization', async () => {
+      return this._anonymizeForSharing(data);
+    }, 'anonymizeForSharing');
+  }
+
+  private async _anonymizeForSharing(data: BehaviorPattern): Promise<unknown> {
+    const anonymized = { ...data 
+    }
     
     // Suppression des URLs sensibles
     if ('url' in anonymized) {
@@ -256,7 +310,8 @@ export class SecurityManager {
    * Version synchrone pour compatibilité (utilise hashSync)
    */
   anonymizeForSharingSync(data: BehaviorPattern): any {
-    const anonymized = { ...data }
+    const anonymized = { ...data 
+    }
     if ('url' in anonymized) anonymized.url = 'anonymized'
     if ('userId' in anonymized && typeof anonymized.userId === 'string') anonymized.userId = this.hashSync(anonymized.userId)
     if ('id' in anonymized && typeof anonymized.id === 'string') anonymized.id = this.hashSync(anonymized.id)
@@ -282,7 +337,8 @@ export class SecurityManager {
       for (let i = 0; i < str.length; i++) {
         hash = ((hash << 5) - hash) + str.charCodeAt(i)
         hash |= 0
-      }
+      
+    }
       return btoa(hash.toString())
     }
 
@@ -294,7 +350,7 @@ export class SecurityManager {
       
       // Conversion en base64 pour un hash compact
       return btoa(String.fromCharCode(...hashArray))
-    } catch (_error) {
+    } catch (error) {
       logger.error('Erreur de hashage:', error)
       throw new Error('Échec du hashage sécurisé')
     }
@@ -308,6 +364,7 @@ export class SecurityManager {
     for (let i = 0; i < str.length; i++) {
       hash = ((hash << 5) - hash) + str.charCodeAt(i)
       hash |= 0
+    
     }
     return btoa(hash.toString())
   }

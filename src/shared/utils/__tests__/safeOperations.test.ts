@@ -116,8 +116,8 @@ describe('SafeOperations Tests', () => {
 
   describe('safeGet', () => {
     test('should return default for null/undefined object', () => {
-      expect(safeGet(null, 'path', 'default')).toBe('default');
-      expect(safeGet(undefined, 'path', 'default')).toBe('default');
+      expect(safeGet(null as any, 'path', 'default')).toBe('default');
+      expect(safeGet(undefined as any, 'path', 'default')).toBe('default');
     });
     
     test('should return default for non-existent path', () => {

@@ -4,19 +4,20 @@ import { MessageBus } from '../core/messaging/MessageBus';
 import { MessageType } from '../shared/messaging/MessageBus';
 import { SymbiontStorage } from '../core/storage/SymbiontStorage';
 // import { NavigationObserver } from '../content/observers/NavigationObserver'; // Déplacé vers content script
-import { OrganismState, OrganismMutation } from '../shared/types/organism';
+import { OrganismMutation } from '../shared/types/organism';
 import { InvitationService } from './services/InvitationService';
 import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
 import { OrganismFactory } from '../core/factories/OrganismFactory';
 import { generateUUID } from '../shared/utils/uuid';
-import { logger } from '@shared/utils/secureLogger';
 
 // --- Ajout des modules résilients ---
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
 import { HybridStorageManager } from '../storage/hybrid-storage-manager';
 import { BasicHealthMonitor } from '../monitoring/basic-health-monitor';
+import { healthCheckManager } from '../shared/monitoring/HealthCheckManager';
+import { bulkheadManager } from '../shared/patterns/BulkheadManager';
 
 // --- Instanciation des modules sociaux (Phase 3) ---
 import { DistributedOrganismNetwork } from '../social/distributed-organism-network';
@@ -26,6 +27,8 @@ import { MysticalEvents } from '../social/mystical-events';
 
 // --- Instanciation des modules résilients ---
 import { SecureRandom } from '../shared/utils/secureRandom';
+import { logger } from '@/shared/utils/secureLogger';
+import type { OrganismState } from '@/types/core';
 export const hybridStorage = new HybridStorageManager();
 export const resilientBus = new ResilientMessageBus();
 export const healthMonitor = new BasicHealthMonitor(async (msg) => {
@@ -54,7 +57,8 @@ async function getStorage(key: string): Promise<unknown> {
 async function setStorage(key: string, value: unknown): Promise<void> {
   // Utilise le stockage hybride pour la persistance
   await hybridStorage.store(key, value);
-}
+
+    }
 
 // --- Singleton pour accès global à BackgroundService ---
 let _backgroundServiceInstance: BackgroundService | null = null;
@@ -101,7 +105,8 @@ class BackgroundService {
         if (!this.organism) {
           this.organism = this.createNewOrganism();
           await this.storage.saveOrganism(this.organism);
-        }
+        
+    }
       } else {
         this.organism = null;
       }
@@ -112,8 +117,14 @@ class BackgroundService {
       // Start periodic tasks
       this.startPeriodicTasks();
       
-      logger.info('Background service initialized');
-    } catch (_error) {
+      // Démarrer les health checks automatiques
+      healthCheckManager.start();
+      
+      logger.info('Background service initialized', {
+        healthCheckActive: true,
+        bulkheadManagerActive: true
+      });
+    } catch (error) {
       logger.error('Failed to initialize background service:', error);
     }
   }
@@ -153,6 +164,7 @@ class BackgroundService {
     let result = '';
     for (let i = 0; i < 64; i++) {
       result += chars.charAt(Math.floor(SecureRandom.random() * chars.length));
+    
     }
     return result;
   }
@@ -160,7 +172,7 @@ class BackgroundService {
   private setupMessageHandlers(): void {
     // Handle page visits
     this.messageBus.on(MessageType.PAGE_VISIT, async (message: MessageEvent | unknown) => {
-      const { url, title } = message.payload;
+      const { url, title } = (message as any).payload;
       
       // Update behavior data
       const behavior = await this.storage.getBehavior(url) || {
@@ -187,7 +199,7 @@ class BackgroundService {
 
     // Handle scroll events
     this.messageBus.on(MessageType.SCROLL_EVENT, async (message: MessageEvent | unknown) => {
-      const { url, scrollDepth } = message.payload;
+      const { url, scrollDepth } = (message as any).payload;
       
       const behavior = await this.storage.getBehavior(url);
       if (behavior) {
@@ -202,14 +214,38 @@ class BackgroundService {
 
     // Handler pour interactions utilisateur (à brancher si non existant)
     this.messageBus.on(MessageType.INTERACTION_DETECTED, (message: MessageEvent | unknown) => {
-      const { type, timestamp, target, data } = message.payload;
+      const { type, timestamp, target, data } = (message as any).payload;
       this.events.push({ type, timestamp, target, ...data });
       this.analyzeContextualPatterns();
     });
 
+    // Handler pour récupérer les métriques de santé système
+    this.messageBus.on(MessageType.GET_HEALTH_METRICS, async (message: MessageEvent | unknown) => {
+      try {
+        const systemHealth = healthCheckManager.getSystemHealth();
+        const bulkheadMetrics = bulkheadManager.getMetrics();
+        
+        const response = {
+          systemHealth,
+          bulkheadMetrics,
+          timestamp: Date.now()
+        };
+        
+        // Répondre au sender si possible
+        if ((message as any).sender) {
+          this.messageBus.emit(MessageType.HEALTH_METRICS_RESPONSE, {
+            payload: response,
+            requestId: (message as any).requestId
+          });
+        }
+      } catch (error) {
+        logger.error('Erreur récupération métriques santé:', error);
+      }
+    });
+
     // Invitation: génération
     this.messageBus.on(MessageType.GENERATE_INVITATION, async (message: MessageEvent | unknown) => {
-      const { donorId } = message.payload;
+      const { donorId } = (message as any).payload;
       const rawInvitation = await this.invitationService.generateInvitation(donorId);
       // Adaptation à l'interface partagée
       const invitation: import('../shared/types/invitation').Invitation = {
@@ -235,7 +271,7 @@ class BackgroundService {
 
     // Invitation: validation/consommation
     this.messageBus.on(MessageType.CONSUME_INVITATION, async (message: MessageEvent | unknown) => {
-      const { code, receiverId, role } = message.payload;
+      const { code, receiverId, role } = (message as any).payload;
       // Contrôle d'accès : seul un utilisateur authentifié peut consommer une invitation
       if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
         resilientBus.send({
@@ -262,7 +298,7 @@ class BackgroundService {
 
     // Invitation: vérification
     this.messageBus.on(MessageType.CHECK_INVITATION, async (message: MessageEvent | unknown) => {
-      const { code } = message.payload;
+      const { code } = (message as any).payload;
       const valid = await this.invitationService.isValid(code);
       resilientBus.send({
         type: MessageType.INVITATION_CHECKED,
@@ -272,7 +308,7 @@ class BackgroundService {
 
     // --- Handlers pour la lignée et l'historique d'invitation ---
     this.messageBus.on(MessageType.GET_INVITER, async (message: MessageEvent | unknown) => {
-      const { userId } = message.payload;
+      const { userId } = (message as any).payload;
       // Recherche de l'invitation où receiverId === userId
       const all = await this.invitationService.getAllInvitations();
       const inviter = all.find(inv => inv.receiverId === userId);
@@ -283,7 +319,7 @@ class BackgroundService {
     });
 
     this.messageBus.on(MessageType.GET_INVITEES, async (message: MessageEvent | unknown) => {
-      const { userId } = message.payload;
+      const { userId } = (message as any).payload;
       // Recherche des invitations où donorId === userId
       const all = await this.invitationService.getAllInvitations();
       const invitees = all.filter(inv => inv.donorId === userId);
@@ -294,7 +330,7 @@ class BackgroundService {
     });
 
     this.messageBus.on(MessageType.GET_INVITATION_HISTORY, async (message: MessageEvent | unknown) => {
-      const { userId } = message.payload;
+      const { userId } = (message as any).payload;
       // Historique = invitations reçues ou envoyées
       const all = await this.invitationService.getAllInvitations();
       const history = [
@@ -311,7 +347,7 @@ class BackgroundService {
     const sharedMutationSessions: Map<string, { initiatorId: string; traits: Record<string, number>; expiresAt: number }> = new Map();
 
     this.messageBus.on(MessageType.REQUEST_SHARED_MUTATION, (message: MessageEvent | unknown) => {
-      const { initiatorId, traits } = message.payload;
+      const { initiatorId, traits } = (message as any).payload;
       const code = SecureRandom.random().toString(36).substr(2, 6).toUpperCase();
       const expiresAt = Date.now() + 1000 * 60 * 5; // 5 min
       sharedMutationSessions.set(code, { initiatorId, traits, expiresAt });
@@ -322,7 +358,7 @@ class BackgroundService {
     });
 
     this.messageBus.on(MessageType.ACCEPT_SHARED_MUTATION, async (message: MessageEvent | unknown) => {
-      const { code, receiverId, traits, role } = message.payload;
+      const { code, receiverId, traits, role } = (message as any).payload;
       // Contrôle d'accès : seul un utilisateur authentifié peut accepter une mutation partagée
       if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
         resilientBus.send({
@@ -367,7 +403,7 @@ class BackgroundService {
     let collectiveWakeTimeout: NodeJS.Timeout | null = null;
 
     this.messageBus.on(MessageType.COLLECTIVE_WAKE_REQUEST, (message: MessageEvent | unknown) => {
-      const { userId } = message.payload;
+      const { userId } = (message as any).payload;
       collectiveWakeParticipants.add(userId);
       if (!collectiveWakeTimeout) {
         collectiveWakeTimeout = setTimeout(() => {
@@ -426,7 +462,7 @@ class BackgroundService {
     // --- Rituels secrets ---
     const SECRET_CODES = ['SYMBIOSE', 'AWAKEN', 'ECHO'];
     this.messageBus.on(MessageType.SECRET_CODE_ENTERED, (message: MessageEvent | unknown) => {
-      const { code } = message.payload;
+      const { code } = (message as any).payload;
       if (SECRET_CODES.includes(code.toUpperCase())) {
         // Déclencher un effet spécial (ex : mutation unique)
         resilientBus.send({
@@ -448,6 +484,7 @@ class BackgroundService {
     if (urlLower.includes('github') || urlLower.includes('stackoverflow') || 
         urlLower.includes('codepen') || urlLower.includes('dribbble')) {
       this.organism.traits.creativity += 0.5;
+    
     }
     
     // Focus boost from documentation/learning sites
@@ -528,6 +565,7 @@ class BackgroundService {
       org.lastMutation = now;
       // Apply mutation effects
       this.applyMutation(mutation);
+    
     }
   }
 
@@ -547,6 +585,7 @@ class BackgroundService {
       visual: ['color_shift', 'pattern_change', 'size_fluctuation', 'opacity_variation'],
       behavioral: ['navigation_speed', 'content_preference', 'interaction_pattern'],
       cognitive: ['memory_retention', 'pattern_recognition', 'association_strength'],
+    
     };
     
     const typeTriggers = triggers[type];
@@ -566,7 +605,8 @@ class BackgroundService {
         const randomTrait = traitKeys[Math.floor(SecureRandom.random() * traitKeys.length)];
         this.organism.traits[randomTrait] += (SecureRandom.random() - 0.5) * mutation.magnitude * 20;
         break;
-      }
+      
+    }
       case 'cognitive': {
         // Affect multiple traits slightly
         if (!this.organism) return;
@@ -588,6 +628,7 @@ class BackgroundService {
     for (let i = 0; i < numChanges; i++) {
       const position = Math.floor(SecureRandom.random() * dna.length);
       newDNA[position] = chars.charAt(Math.floor(SecureRandom.random() * chars.length));
+    
     }
     
     return newDNA.join('');
@@ -599,7 +640,8 @@ class BackgroundService {
       if (this.organism && (this.organism.health ?? 0) > 0) {
         this.organism.health = Math.max(0, (this.organism.health ?? 0) - 0.1);
         this.organism.energy = Math.max(0, (this.organism.energy ?? 0) - 0.05);
-      }
+      
+    }
     }, 1000 * 60); // Every minute
 
     // Periodic sync
@@ -653,6 +695,7 @@ class BackgroundService {
     if (bursts.length > 0) {
       this.triggerContextualInvitation('burst_activity');
       return;
+    
     }
     // Détection de cycles temporels (ex: actions régulières)
     const cycles = PatternDetector.detectTemporalPattern(this.events, 60000, 0.15);
@@ -702,6 +745,23 @@ class BackgroundService {
       type: MessageType.CONTEXTUAL_INVITATION,
       payload: { invitation, context }
     });
+  }
+
+  /**
+   * Nettoyage des ressources lors de l'arrêt du service
+   */
+  public dispose(): void {
+    try {
+      // Arrêter les health checks
+      healthCheckManager.stop();
+      
+      // Nettoyer les événements stockés en mémoire
+      this.events = [];
+      
+      logger.info('BackgroundService disposed successfully');
+    } catch (error) {
+      logger.error('Erreur lors du dispose du BackgroundService:', error);
+    }
   }
 }
 

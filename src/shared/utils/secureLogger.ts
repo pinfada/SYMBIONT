@@ -94,7 +94,7 @@ export class SecureLogger {
         return data.map(item => this.sanitizeData(item));
       }
 
-      const sanitized: unknown = {};
+      const sanitized: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
         if (this.isSensitiveField(key)) {
           sanitized[key] = '[REDACTED]';

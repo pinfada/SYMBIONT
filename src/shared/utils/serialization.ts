@@ -51,7 +51,7 @@ export function sanitizeOrganismState(state: any): SerializableOrganismState | n
       memoryFragments: sanitizeMemoryFragments(state.memoryFragments)
     };
   } catch (_error) {
-    logger.error('Failed to sanitize organism state:', error);
+    logger.error('Failed to sanitize organism state:', _error);
     return null;
   }
 }
@@ -126,7 +126,7 @@ export function sanitizeMessage(message: MessageEvent | unknown): any {
   return deepCleanForSerialization(message);
 }
 
-function deepCleanForSerialization(obj: Record<string, unknown>, seen = new WeakSet()): any {
+function deepCleanForSerialization(obj: unknown, seen = new WeakSet()): unknown {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -179,22 +179,22 @@ function deepCleanForSerialization(obj: Record<string, unknown>, seen = new Weak
   }
   
   // Vérification des références circulaires AVANT la récursion
-  if (seen.has(obj)) {
+  if (seen.has(obj as object)) {
     return '[Circular Reference]';
   }
-  seen.add(obj);
+  seen.add(obj as object);
   
   if (Array.isArray(obj)) {
     return obj.map(item => deepCleanForSerialization(item, seen));
   }
   
   // Pour les objets, on nettoie récursivement
-  const cleaned: unknown = {};
+  const cleaned: Record<string, unknown> = {};
   
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+  for (const key in (obj as Record<string, unknown>)) {
+    if ((obj as Record<string, unknown>).hasOwnProperty(key)) {
       try {
-        cleaned[key] = deepCleanForSerialization(obj[key], seen);
+        cleaned[key] = deepCleanForSerialization((obj as Record<string, unknown>)[key], seen);
       } catch (_error) {
         cleaned[key] = '[Non-serializable]';
       }

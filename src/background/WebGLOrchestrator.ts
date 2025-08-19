@@ -1,6 +1,6 @@
 import { RenderQueue, WebGLContext, PerformanceMetrics, VisualMutation } from '../shared/types/organism'
 import { OrganismMemoryBank } from './OrganismMemoryBank'
-import { logger } from '@shared/utils/secureLogger';
+import { logger } from '@/shared/utils/secureLogger';
 
 interface ShaderProgram {
   program: WebGLProgram;
@@ -74,7 +74,7 @@ export class WebGLOrchestrator {
         gl: gl as WebGLRenderingContext,
         ready: true
       } as WebGLContext
-    } catch (_error) {
+    } catch (error) {
       logger.error('WebGL initialization failed:', error)
       throw error
     }
@@ -94,7 +94,8 @@ export class WebGLOrchestrator {
             organism.visualState = {
               ...organism.visualState,
               color: mutation.value as [number, number, number]
-            }
+            
+    }
             break
           case 'size':
             organism.visualState = {
@@ -122,7 +123,7 @@ export class WebGLOrchestrator {
       
       // Save updated organism state
       await this.memoryBank.saveOrganismHistory(id, history)
-    } catch (_error) {
+    } catch (error) {
       logger.error('Failed to update organism visuals:', error)
     }
   }
@@ -135,7 +136,8 @@ export class WebGLOrchestrator {
         this.contexts.forEach(context => {
           context.gl.disable(context.gl.DEPTH_TEST)
           // Reduce particle count, lower shader quality
-        })
+        
+    })
       }
       
       if (metrics.memoryUsage && metrics.memoryUsage > 100 * 1024 * 1024) { // 100MB
@@ -149,7 +151,7 @@ export class WebGLOrchestrator {
       }
       
       this.logPerformance('GPU optimization executed', metrics)
-    } catch (_error) {
+    } catch (error) {
       logger.error('Performance optimization failed:', error)
     }
   }
@@ -157,7 +159,8 @@ export class WebGLOrchestrator {
   // Méthode publique pour recevoir une mutation visuelle
   async receiveVisualMutation(id: string, mutation: VisualMutation): Promise<void> {
     await this.updateOrganismVisuals(id, [mutation])
-  }
+  
+    }
 
   private async initializeShaders(context: RenderContext): Promise<void> {
     for (const [name, sources] of this.shaderSources) {
@@ -176,7 +179,8 @@ export class WebGLOrchestrator {
       if (!context.gl.getProgramParameter(program, context.gl.LINK_STATUS)) {
         logger.error('Shader program link failed:', context.gl.getProgramInfoLog(program))
         continue
-      }
+      
+    }
       
       // Get uniform and attribute locations
       const uniforms: Record<string, WebGLUniformLocation> = {}
@@ -232,6 +236,7 @@ export class WebGLOrchestrator {
       context.gl.bindBuffer(context.gl.ARRAY_BUFFER, vertexBuffer)
       context.gl.bufferData(context.gl.ARRAY_BUFFER, vertices, context.gl.STATIC_DRAW)
       context.buffers.set('vertices', vertexBuffer)
+    
     }
   }
   
@@ -250,7 +255,8 @@ export class WebGLOrchestrator {
           vec3 pos = position;
           pos.x += sin(time + position.y * 2.0) * 0.1;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        }
+        
+    }
       `,
       fragment: `
         precision mediump float;
@@ -272,7 +278,8 @@ export class WebGLOrchestrator {
       this.renderFrame()
       if (this.isRendering) {
         this.animationFrameId = requestAnimationFrame(render)
-      }
+      
+    }
     }
     render()
   }
@@ -294,7 +301,8 @@ export class WebGLOrchestrator {
       
       queueItems.forEach(item => {
         this.renderOrganism(context, item.id, currentTime)
-      })
+      
+    })
     })
     
     // Clean old queue items
@@ -320,6 +328,7 @@ export class WebGLOrchestrator {
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
       gl.enableVertexAttribArray(shader.attributes['position'])
       gl.vertexAttribPointer(shader.attributes['position'], 3, gl.FLOAT, false, 0, 0)
+    
     }
     
     // Draw
@@ -330,6 +339,7 @@ export class WebGLOrchestrator {
     this.contexts.forEach(context => {
       // Clean up unused textures and buffers
       context.textures.clear()
+    
     })
   }
   
@@ -337,6 +347,7 @@ export class WebGLOrchestrator {
     this.contexts.forEach(context => {
       context.gl.enable(context.gl.CULL_FACE)
       context.gl.enable(context.gl.DEPTH_TEST)
+    
     })
   }
 
@@ -358,6 +369,7 @@ export class WebGLOrchestrator {
     this.isRendering = false
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId)
+    
     }
     
     this.contexts.forEach(context => {
@@ -387,15 +399,18 @@ export class WebGLOrchestrator {
   async activateForTab(): Promise<void> {
     // Activate WebGL orchestration for specific tab
     // ... existing code ...
-  }
+  
+    }
 
   async processMutation(): Promise<void> {
     // Process organism mutation with WebGL updates
     // ... existing code ...
-  }
+  
+    }
 
   async getPerformanceMetrics(): Promise<unknown> {
     // Get comprehensive performance metrics
     // ... existing code ...
-  }
+  
+    }
 } 

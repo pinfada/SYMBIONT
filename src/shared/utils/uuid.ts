@@ -10,7 +10,7 @@ export function generateUUID(): string {
     try {
       return crypto.randomUUID();
     } catch (_error) {
-      logger.warn('crypto.randomUUID failed, using fallback', { error });
+      logger.warn('crypto.randomUUID failed, using fallback', { error: _error });
     }
   }
 

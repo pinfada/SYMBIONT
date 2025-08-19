@@ -1,6 +1,6 @@
 import { OrganismState, OrganismHistory, TimeSpan, ConsolidationResult } from '../shared/types/organism'
 import { SecurityManager } from './SecurityManager'
-import { logger } from '@shared/utils/secureLogger';
+import { logger } from '@/shared/utils/secureLogger';
 
 export class OrganismMemoryBank {
   private security: SecurityManager
@@ -31,9 +31,9 @@ export class OrganismMemoryBank {
           const encrypted = result[this.getKey(id)] as string | undefined
           let state: OrganismState | undefined = undefined
           if (encrypted) {
-            state = await this.security.decryptSensitiveData(encrypted)
+            state = await this.security.decryptSensitiveData(encrypted) as OrganismState
           }
-          resolve({ states: state ? [state] : [], mutations: state?.mutations || [] })
+          resolve({ states: state ? [state] : [], mutations: (state as any)?.mutations || [] })
         }
       })
     })
@@ -59,7 +59,8 @@ export class OrganismMemoryBank {
     // Compression, cache, nettoyage, etc.
     // (À implémenter selon la volumétrie réelle)
     this.logPerformance('Optimisation stockage exécutée')
-  }
+  
+    }
 
   // --- Monitoring ---
   logPerformance(msg: string) {
@@ -70,5 +71,6 @@ export class OrganismMemoryBank {
 
   public cleanup(): void {
     // ... existing code ...
-  }
+  
+    }
 } 

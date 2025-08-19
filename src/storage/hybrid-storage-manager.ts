@@ -1,8 +1,17 @@
 // storage/hybrid-storage-manager.ts
 // Système de stockage hybride multi-niveaux (Phase 1)
 
-import { swLocalStorage, swIndexedDB } from '../background/service-worker-adapter'
-import { logger } from '@shared/utils/secureLogger';
+import { logger } from '@/shared/utils/secureLogger';
+
+// Fallback pour les APIs manquantes dans le service worker
+const swLocalStorage = {
+  getItem: (key: string) => localStorage?.getItem(key) || null,
+  setItem: (key: string, value: string) => localStorage?.setItem(key, value),
+  removeItem: (key: string) => localStorage?.removeItem(key),
+  clear: () => localStorage?.clear()
+};
+
+const swIndexedDB = typeof indexedDB !== 'undefined' ? indexedDB : null;
 
 /**
  * HybridStorageManager
@@ -32,9 +41,10 @@ export class HybridStorageManager {
     if (key.includes('symbiont_health_alert_')) {
       logger.info('[HybridStorageManager] Skipping health alert storage to prevent quota issues');
       return;
+    
     }
     
-    logger.info('[HybridStorageManager] store - Mémoire', key, data)
+    logger.info('[HybridStorageManager] store - Mémoire', { key, data })
     this.memoryCache.set(key, data)
     try {
       await new Promise((resolve, reject) => {
@@ -60,7 +70,7 @@ export class HybridStorageManager {
       })
       logger.info('[HybridStorageManager] store - chrome.storage.local OK', key)
     } catch (_e) {
-      logger.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', { key, error: String(e) })
+      logger.warn('[HybridStorageManager] store - chrome.storage.local failed, fallback IndexedDB', { key, error: String(_e) })
     }
     try {
       await this.indexedDBReady
@@ -77,7 +87,7 @@ export class HybridStorageManager {
         throw new Error('IndexedDB not ready')
       }
     } catch (_e) {
-      logger.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', { key, error: String(e) })
+      logger.warn('[HybridStorageManager] store - IndexedDB failed, fallback localStorage', { key, error: String(_e) })
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(data))
       logger.info('[HybridStorageManager] store - localStorage d\'urgence OK', key)
     }
@@ -101,7 +111,7 @@ export class HybridStorageManager {
         return result
       }
     } catch (_e) {
-      logger.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', { key, error: String(e) })
+      logger.warn('[HybridStorageManager] retrieve - chrome.storage.local failed', { key, error: String(_e) })
     }
     try {
       await this.indexedDBReady
@@ -120,7 +130,7 @@ export class HybridStorageManager {
         }
       }
     } catch (_e) {
-      logger.warn('[HybridStorageManager] retrieve - IndexedDB failed', { key, error: String(e) })
+      logger.warn('[HybridStorageManager] retrieve - IndexedDB failed', { key, error: String(_e) })
     }
     try {
       const val = await this.emergencyLocalStorage.getItem(key)
@@ -129,7 +139,7 @@ export class HybridStorageManager {
         return JSON.parse(val)
       }
     } catch (_e) {
-      logger.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', { key, error: String(e) })
+      logger.warn('[HybridStorageManager] retrieve - localStorage d\'urgence failed', { key, error: String(_e) })
     }
     return null
   }
@@ -146,7 +156,10 @@ export class HybridStorageManager {
         }
       }, 5000);
       try {
-        const req = swIndexedDB.open('symbiont-db', 1);
+        const req = swIndexedDB?.open('symbiont-db', 1);
+        if (!req) {
+          throw new Error('IndexedDB not available');
+        }
         req.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result;
           if (!db.objectStoreNames.contains('symbiont')) {
@@ -176,7 +189,7 @@ export class HybridStorageManager {
         if (!settled) {
           clearTimeout(timeout);
           settled = true;
-          logger.warn('[HybridStorageManager] IndexedDB exception', e);
+          logger.warn('[HybridStorageManager] IndexedDB exception', _e);
           resolve(false);
         }
       }
@@ -190,7 +203,8 @@ export class HybridStorageManager {
         this.persistentStorage.get(null, (items) => {
           if (chrome.runtime.lastError) reject(chrome.runtime.lastError)
           else resolve(Object.keys(items))
-        })
+        
+    })
       });
       
       const keysToRemove = allKeys.filter(key => 
@@ -208,7 +222,7 @@ export class HybridStorageManager {
         });
         logger.info(`[HybridStorageManager] Cleaned ${keysToRemove.length} old storage items`);
       }
-    } catch (_error) {
+    } catch (error) {
       logger.error('[HybridStorageManager] Failed to clean old storage data:', error);
     }
   }
@@ -234,7 +248,7 @@ export class HybridStorageManager {
           else resolve(true)
         })
       })
-    } catch (_error) {
+    } catch (error) {
       console.warn('Storage operation failed:', error);
     }
     try {
@@ -248,12 +262,12 @@ export class HybridStorageManager {
           req.onerror = () => reject(req.error)
         })
       }
-    } catch (_error) {
+    } catch (error) {
       console.warn('Storage operation failed:', error);
     }
     try {
       await this.emergencyLocalStorage.setItem(key, JSON.stringify(value))
-    } catch (_error) {
+    } catch (error) {
       console.warn('Storage operation failed:', error);
     }
   }
@@ -261,7 +275,7 @@ export class HybridStorageManager {
   private setupDataReplication() {
     // Synchronisation automatique sur changement chrome.storage
     if (chrome.storage && chrome.storage.onChanged) {
-      chrome.storage.onChanged.addListener((changes, areaName) => {
+      chrome.storage.onChanged.addListener((changes: any, areaName: string) => {
         if (areaName === 'local') {
           for (const key in changes) {
             const { newValue } = changes[key]
@@ -320,7 +334,7 @@ export class HybridStorageManager {
             logger.info('[HybridStorageManager] IntegrityMonitoring - Auto-réparation appliquée pour', key)
           }
         } catch (_e) {
-          logger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', { key, error: String(e) })
+          logger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', { key, error: String(_e) })
         }
       }
     }, 60000) // toutes les 60 secondes

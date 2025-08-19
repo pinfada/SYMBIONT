@@ -14,6 +14,7 @@ import RealMetricsService from './services/RealMetricsService';
 import FeatureFlagService from './services/FeatureFlagService';
 import { generateSecureUUID } from '../shared/utils/uuid';
 import { SecureRandom } from '../shared/utils/secureRandom';
+import { logger } from '@/shared/utils/secureLogger';
 
 export interface OrganismDependencies {
   neuralMesh: INeuralMesh;
@@ -78,7 +79,8 @@ export class OrganismCore implements IOrganismCore {
     // Écoute les changements de traits pour ajuster l'énergie
     this.traitService.addTraitChangeListener((event: TraitUpdateEvent) => {
       this.onTraitChanged(event);
-    });
+    
+    return undefined;});
 
     // Écoute les événements d'énergie pour log
     this.energyService.addEnergyListener((event: EnergyEvent) => {
@@ -175,7 +177,8 @@ export class OrganismCore implements IOrganismCore {
     if (!this.energyService.consumeEnergy(energyCost, 'evolution')) {
       this.logger?.debug('Evolution skipped: insufficient energy');
       return;
-    }
+    
+    return undefined;}
 
     try {
       const currentTraits = this.traitService.getAllTraits();
@@ -191,8 +194,8 @@ export class OrganismCore implements IOrganismCore {
         });
       }
     } catch (_error) {
-      this.logger?.error('Evolution failed', error);
-      errorHandler.logSimpleError('OrganismCore', 'evolve', error, 'error');
+      this.logger?._error('Evolution failed', _error);
+      errorHandler.logSimpleError('OrganismCore', 'evolve', _error, '_error');
     }
   }
 
@@ -203,7 +206,8 @@ export class OrganismCore implements IOrganismCore {
     const energyCost = 2;
     if (!this.energyService.consumeEnergy(energyCost, 'learning')) {
       return;
-    }
+    
+    return undefined;}
 
     const success = await this.neuralService.learn(behaviorData);
     if (success) {
@@ -222,7 +226,8 @@ export class OrganismCore implements IOrganismCore {
     const energyCost = 1;
     if (!this.energyService.consumeEnergy(energyCost, 'stimulus_processing')) {
       return;
-    }
+    
+    return undefined;}
 
     // Traitement simplifié en arrière-plan
     this.neuralService.queuePattern({
@@ -299,7 +304,8 @@ export class OrganismCore implements IOrganismCore {
   fromJSON(data: OrganismJSON): void {
     if (data.traits) {
       this.traitService.fromJSON(data.traits);
-    }
+    
+    return undefined;}
     
     if (data.energy) {
       this.energyService.fromJSON(data.energy);
@@ -362,10 +368,11 @@ export class OrganismCore implements IOrganismCore {
     // Initialize neural mesh if needed
     try {
       await this.neuralService.initialize();
-      this.logger?.debug('Organism booted successfully', { id: this.id });
+      this.logger?.debug('Organism booted successfully', { id: this.id 
+    return undefined;});
     } catch (_error) {
-      this.logger?.error('Failed to boot organism', { id: this.id, error });
-      throw error;
+      this.logger?._error('Failed to boot organism', { id: this.id, _error: _error });
+      throw _error;
     }
   }
 
@@ -376,10 +383,11 @@ export class OrganismCore implements IOrganismCore {
     try {
       this.energyService.setEfficiency(0.1); // Reduce energy consumption
       await this.neuralService.suspend();
-      this.logger?.debug('Organism hibernated', { id: this.id });
+      this.logger?.debug('Organism hibernated', { id: this.id 
+    return undefined;});
     } catch (_error) {
-      this.logger?.error('Failed to hibernate organism', { id: this.id, error });
-      throw error;
+      this.logger?._error('Failed to hibernate organism', { id: this.id, _error: _error });
+      throw _error;
     }
   }
 
@@ -399,7 +407,8 @@ export class OrganismCore implements IOrganismCore {
     // Health regeneration if high energy
     if (this.energyService.getEnergyLevel() > 80) {
       this.health = Math.min(100, this.health + (0.1 * timeFactor));
-    }
+    
+    return undefined;}
   }
 
   /**
@@ -442,7 +451,8 @@ export class OrganismCore implements IOrganismCore {
    */
   feed(amount: number = 10): void {
     this.energyService.addEnergy(amount);
-    this.logger?.debug('Organism fed', { id: this.id, amount });
+    this.logger?.debug('Organism fed', { id: this.id, amount 
+    return undefined;});
   }
 
   /**
@@ -450,7 +460,8 @@ export class OrganismCore implements IOrganismCore {
    */
   setTraits(traits: Partial<OrganismTraits>): void {
     this.traitService.updateTraits(traits, 'external_update');
-  }
+  
+    return undefined;}
 
   /**
    * Get performance metrics

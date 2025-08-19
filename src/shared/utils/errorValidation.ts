@@ -131,7 +131,7 @@ export function runErrorTests(): void {
     const length = undefinedVar?.length || 0;
     logger.info('✅ Test 3 réussi: Propriété length protégée, length =', length);
   } catch (_error) {
-    logger.error('❌ Test 3 échoué:', error);
+    logger.error('❌ Test 3 échoué:', _error);
   }
   
   logger.info('✅ Tests terminés');

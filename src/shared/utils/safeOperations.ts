@@ -132,13 +132,13 @@ export function safeGet<T>(obj: Record<string, unknown>, path: string, defaultVa
     
     for (const key of keys) {
       if (current && typeof current === 'object' && key in current) {
-        current = current[key];
+        current = (current as Record<string, unknown>)[key];
       } else {
         return defaultValue;
       }
     }
     
-    return current !== undefined ? current : defaultValue;
+    return current !== undefined ? current as T : defaultValue;
   } catch {
     return defaultValue;
   }

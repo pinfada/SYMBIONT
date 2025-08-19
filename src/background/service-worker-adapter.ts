@@ -1,4 +1,4 @@
-import { logger } from '@shared/utils/secureLogger';
+import { logger } from '@/shared/utils/secureLogger';
 // background/service-worker-adapter.ts
 // Adaptation du background script SYMBIONT pour Service Worker
 
@@ -15,10 +15,11 @@ class ServiceWorkerStorage {
 
   async setItem(key: string, value: string): Promise<void> {
     try {
-      await chrome.storage.local.set({ [key]: value });
+      await chrome.storage.local.set({ [key]: value 
+    return undefined;});
     } catch (_error) {
-      logger.error('Storage error:', error);
-      throw error;
+      logger._error('Storage _error:', _error);
+      throw _error;
     }
   }
 
@@ -27,7 +28,7 @@ class ServiceWorkerStorage {
       const result = await chrome.storage.local.get([key]);
       return result[key] || null;
     } catch (_error) {
-      logger.error('Storage retrieval error:', error);
+      logger._error('Storage retrieval _error:', _error);
       return null;
     }
   }
@@ -35,8 +36,9 @@ class ServiceWorkerStorage {
   async removeItem(key: string): Promise<void> {
     try {
       await chrome.storage.local.remove([key]);
-    } catch (_error) {
-      logger.error('Storage removal error:', error);
+    
+    return undefined;} catch (_error) {
+      logger._error('Storage removal _error:', _error);
     }
   }
 }
@@ -54,13 +56,13 @@ class ServiceWorkerMessageChannel {
   private setupMessageListener(): void {
     // Écouter les messages du runtime (depuis content scripts)
     chrome.runtime.onMessage.addListener((message) => {
-      if (message.type === 'CRYPTO_OPERATION') {
+      if ((message as any).type === 'CRYPTO_OPERATION') {
         // Traitement spécial pour les opérations crypto
         return true;
       }
       
-      if (message.channel === this.channelName) {
-        this.handleMessage(message.data);
+      if ((message as any).channel === this.channelName) {
+        this.handleMessage((message as any).data);
         return true;
       }
       
@@ -73,7 +75,7 @@ class ServiceWorkerMessageChannel {
     try {
       return JSON.parse(JSON.stringify(data));
     } catch (_error) {
-      logger.warn('Message serialization issue, cleaning object:', error);
+      logger.warn('Message serialization issue, cleaning object:', _error);
       return this.cleanObjectForSerialization(data);
     }
   }
@@ -127,7 +129,8 @@ class ServiceWorkerMessageChannel {
     const cleanData = this.serializeMessageData(data);
     
     // Envoyer à tous les onglets
-    chrome.tabs.query({}, (tabs) => {
+    chrome.tabs.query({
+    return undefined;}, (tabs) => {
       tabs.forEach(tab => {
         if (tab.id) {
           chrome.tabs.sendMessage(tab.id, {
@@ -165,9 +168,10 @@ class ServiceWorkerMessageChannel {
     const handlers = this.handlers.get('message') || [];
     handlers.forEach(handler => {
       try {
-        handler({ data });
+        handler({ data 
+    return undefined;});
       } catch (_error) {
-        logger.error('Message handler error:', error);
+        logger._error('Message handler _error:', _error);
       }
     });
   }
@@ -193,7 +197,8 @@ class ServiceWorkerCrypto {
       const key = await crypto.subtle.importKey(
         'raw',
         keyMaterial,
-        { name: 'AES-GCM' },
+        { name: 'AES-GCM' 
+    return undefined;},
         false,
         ['encrypt']
       );
@@ -213,7 +218,7 @@ class ServiceWorkerCrypto {
       
       return btoa(String.fromCharCode(...combined));
     } catch (_error) {
-      logger.error('Encryption failed, using fallback:', error);
+      logger._error('Encryption failed, using fallback:', _error);
       // Fallback simple pour les cas d'urgence
       const jsonString = JSON.stringify(data);
       return btoa(unescape(encodeURIComponent(jsonString)));
@@ -232,7 +237,8 @@ class ServiceWorkerCrypto {
       const key = await crypto.subtle.importKey(
         'raw',
         keyMaterial,
-        { name: 'AES-GCM' },
+        { name: 'AES-GCM' 
+    return undefined;},
         false,
         ['decrypt']
       );
@@ -246,7 +252,7 @@ class ServiceWorkerCrypto {
       const decoder = new TextDecoder();
       return JSON.parse(decoder.decode(decryptedData));
     } catch (_error) {
-      logger.error('Decryption failed, trying fallback:', error);
+      logger._error('Decryption failed, trying fallback:', _error);
       // Fallback pour les données non chiffrées
       try {
         const jsonString = decodeURIComponent(escape(atob(encryptedData)));

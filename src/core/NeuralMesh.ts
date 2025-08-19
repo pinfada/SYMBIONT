@@ -1,6 +1,6 @@
 import { INeuralMesh } from './interfaces/INeuralMesh';
 import { SecureRandom } from '../shared/utils/secureRandom';
-import { logger } from '@shared/utils/secureLogger';
+import { logger } from '@/shared/utils/secureLogger';
 
 export class NeuralMesh implements INeuralMesh {
   private nodes: Map<string, { type: string; activation: number; bias: number }> = new Map();
@@ -61,7 +61,8 @@ export class NeuralMesh implements INeuralMesh {
     for (const [nodeId, node] of this.nodes) {
       if (node.type !== 'input') {
         this.activations.set(nodeId, node.bias);
-      }
+      
+    return undefined;}
     }
 
     // Propagate through connections
@@ -100,7 +101,8 @@ export class NeuralMesh implements INeuralMesh {
         if (SecureRandom.random() < rate) {
           connections.set(toId, weight + (SecureRandom.random() - 0.5) * 0.2);
           connections.set(toId, Math.max(-2, Math.min(2, connections.get(toId) || 0)));
-        }
+        
+    return undefined;}
       }
     }
 
@@ -123,7 +125,8 @@ export class NeuralMesh implements INeuralMesh {
     for (const activation of this.activations.values()) {
       totalActivity += Math.abs(activation);
       nodeCount++;
-    }
+    
+    return undefined;}
 
     return nodeCount > 0 ? totalActivity / nodeCount : 0;
   }
@@ -139,7 +142,8 @@ export class NeuralMesh implements INeuralMesh {
       for (const weight of connections.values()) {
         totalWeight += Math.abs(weight);
         connectionCount++;
-      }
+      
+    return undefined;}
     }
 
     return connectionCount > 0 ? totalWeight / connectionCount : 0;
@@ -163,7 +167,8 @@ export class NeuralMesh implements INeuralMesh {
     // Setup default network if empty
     if (this.nodes.size === 0) {
       this.setupDefaultNetwork();
-    }
+    
+    return undefined;}
     
     // Perform initial propagation
     this.propagate();
@@ -191,7 +196,8 @@ export class NeuralMesh implements INeuralMesh {
     this.addConnection('processing_1', 'motor_output', 0.9);
     this.addConnection('processing_2', 'emotion_output', 0.7);
     this.addConnection('processing_1', 'processing_2', 0.3);
-  }
+  
+    return undefined;}
 
   /**
    * Suspend neural processing
@@ -200,7 +206,8 @@ export class NeuralMesh implements INeuralMesh {
     // Clear activations but keep structure
     this.activations.clear();
     logger.info('Neural mesh suspended');
-  }
+  
+    return undefined;}
 
   /**
    * Get CPU usage estimation
@@ -244,7 +251,8 @@ export class NeuralMesh implements INeuralMesh {
       this.nodes.clear();
       for (const [id, node] of Object.entries(state.nodes)) {
         this.nodes.set(id, node as any);
-      }
+      
+    return undefined;}
     }
     
     if (state.connections) {
@@ -270,7 +278,8 @@ export class NeuralMesh implements INeuralMesh {
     this.connections.clear();
     this.activations.clear();
     this.setupDefaultNetwork();
-  }
+  
+    return undefined;}
 
   /**
    * Health check for neural mesh
@@ -316,7 +325,8 @@ export class NeuralMesh implements INeuralMesh {
     this.nodes.clear();
     this.connections.clear();
     this.activations.clear();
-  }
+  
+    return undefined;}
 
   /**
    * Process a pattern through the neural mesh (optional)
@@ -332,7 +342,8 @@ export class NeuralMesh implements INeuralMesh {
       Object.entries(pattern).forEach(([, value], index) => {
         if (index < inputNodes.length && typeof value === 'number') {
           this.stimulate(inputNodes[index], value);
-        }
+        
+    return undefined;}
       });
 
       // Propagate and return output activations
@@ -358,7 +369,8 @@ export class NeuralMesh implements INeuralMesh {
       // Apply small mutations based on feedback
       const learningRate = Math.abs(data.feedback) * 0.01;
       this.mutate(learningRate);
-    }
+    
+    return undefined;}
   }
 
   /**

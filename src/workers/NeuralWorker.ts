@@ -227,29 +227,29 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
     switch (type) {
       case 'NEURAL_INIT':
         neuralEngine.initializeNetwork(
-          payload.networkId,
-          payload.nodes,
-          payload.connections
+          (payload as any).networkId,
+          (payload as any).nodes,
+          (payload as any).connections
         );
         result = { success: true };
         break;
 
       case 'NEURAL_PROPAGATE':
         result = neuralEngine.propagateNetwork(
-          payload.networkId,
-          payload.inputs
+          (payload as any).networkId,
+          (payload as any).inputs
         );
         break;
 
       case 'NEURAL_MUTATE':
         result = neuralEngine.mutateNetwork(
-          payload.networkId,
-          payload.rate
+          (payload as any).networkId,
+          (payload as any).rate
         );
         break;
 
       case 'NEURAL_ACTIVITY':
-        result = neuralEngine.calculateNeuralActivity(payload.networkId);
+        result = neuralEngine.calculateNeuralActivity((payload as any).networkId);
         break;
 
       default:
@@ -274,8 +274,8 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       type: 'NEURAL_ERROR',
       id,
       payload: {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        message: _error instanceof Error ? _error.message : String(_error),
+        stack: _error instanceof Error ? _error.stack : undefined
       },
       processingTime
     };
