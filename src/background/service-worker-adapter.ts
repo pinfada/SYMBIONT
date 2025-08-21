@@ -53,14 +53,14 @@ class ServiceWorkerMessageChannel {
 
   private setupMessageListener(): void {
     // Écouter les messages du runtime (depuis content scripts)
-    chrome.runtime.onMessage.addListener((message) => {
-      if ((message as any).type === 'CRYPTO_OPERATION') {
+    chrome.runtime.onMessage.addListener((message: any, _sender: chrome.runtime.MessageSender, _sendResponse: (response?: any) => void) => {
+      if (message.type === 'CRYPTO_OPERATION') {
         // Traitement spécial pour les opérations crypto
         return true;
       }
       
-      if ((message as any).channel === this.channelName) {
-        this.handleMessage((message as any).data);
+      if (message.channel === this.channelName) {
+        this.handleMessage(message.data);
         return true;
       }
       
@@ -91,9 +91,9 @@ class ServiceWorkerMessageChannel {
         obj instanceof WebGLProgram ||
         obj instanceof WebGLBuffer ||
         obj instanceof WebGLTexture ||
-        (obj && obj.$$typeof) || // React elements
-        (obj && obj.__reactFiber) || // React fiber
-        (obj && obj._owner) // React internal
+        (obj && (obj as any).$$typeof) || // React elements
+        (obj && (obj as any).__reactFiber) || // React fiber
+        (obj && (obj as any)._owner) // React internal
     ) {
       return '[Non-serializable Object]';
     }
@@ -172,11 +172,11 @@ class ServiceWorkerMessageChannel {
     });
   }
 
-  set onmessage(handler: (event: { data: unknown }) => void) {
+  set onmessage(handler: (data: unknown) => void) {
     if (!this.handlers.has('message')) {
       this.handlers.set('message', []);
     }
-    this.handlers.get('message')!.push(handler);
+    this.handlers.get('message')!.push((data: unknown) => handler(data));
   }
 }
 

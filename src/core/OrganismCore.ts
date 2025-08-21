@@ -14,7 +14,6 @@ import RealMetricsService from './services/RealMetricsService';
 import FeatureFlagService from './services/FeatureFlagService';
 import { generateSecureUUID } from '../shared/utils/uuid';
 import { PerformanceOptimizedRandom } from '../shared/utils/PerformanceOptimizedRandom';
-import { logger } from '@/shared/utils/secureLogger';
 
 export interface OrganismDependencies {
   neuralMesh: INeuralMesh;
@@ -194,8 +193,8 @@ export class OrganismCore implements IOrganismCore {
         });
       }
     } catch (_error) {
-      this.logger?._error('Evolution failed', _error);
-      errorHandler.logSimpleError('OrganismCore', 'evolve', _error, '_error');
+      this.logger?.error('Evolution failed', _error);
+      errorHandler.logSimpleError('OrganismCore', 'evolve', _error, 'error');
     }
   }
 
@@ -287,12 +286,12 @@ export class OrganismCore implements IOrganismCore {
    */
   toJSON(): OrganismJSON {
     return {
-      mesh: {},
+      mesh: this.neuralService.saveState() || {},
       dna: this.dna,
       health: this.health,
       lastMutation: this.lastMutation,
-      traits: this.traitService.toJSON(),
-      energy: this.energyService.toJSON(),
+      traits: this.traitService.toJSON() || { traits: this.traitService.getAllTraits(), history: [] },
+      energy: this.energyService.toJSON() || { energy: 100, maxEnergy: 100, metabolismRate: 1, config: { efficiency: 1, baseConsumption: 0.1 }, history: [] },
       neural: this.neuralService.saveState(),
       timestamp: Date.now()
     };
@@ -302,13 +301,12 @@ export class OrganismCore implements IOrganismCore {
    * Restauration depuis JSON
    */
   fromJSON(data: OrganismJSON): void {
-    if (data.traits) {
-      this.traitService.fromJSON(data.traits);
+    if (data.traits && typeof data.traits === 'object') {
+      this.traitService.fromJSON(data.traits as any);
+    }
     
-    return undefined;}
-    
-    if (data.energy) {
-      this.energyService.fromJSON(data.energy);
+    if (data.energy && typeof data.energy === 'object') {
+      this.energyService.fromJSON(data.energy as any);
     }
     
     if (data.neural) {
@@ -368,10 +366,9 @@ export class OrganismCore implements IOrganismCore {
     // Initialize neural mesh if needed
     try {
       await this.neuralService.initialize();
-      this.logger?.debug('Organism booted successfully', { id: this.id 
-    return undefined;});
+      this.logger?.debug('Organism booted successfully', { id: this.id });
     } catch (_error) {
-      this.logger?._error('Failed to boot organism', { id: this.id, _error: _error });
+      this.logger?.error('Failed to boot organism', { id: this.id, _error: _error });
       throw _error;
     }
   }
@@ -383,10 +380,9 @@ export class OrganismCore implements IOrganismCore {
     try {
       this.energyService.setEfficiency(0.1); // Reduce energy consumption
       await this.neuralService.suspend();
-      this.logger?.debug('Organism hibernated', { id: this.id 
-    return undefined;});
+      this.logger?.debug('Organism hibernated', { id: this.id });
     } catch (_error) {
-      this.logger?._error('Failed to hibernate organism', { id: this.id, _error: _error });
+      this.logger?.error('Failed to hibernate organism', { id: this.id, _error: _error });
       throw _error;
     }
   }
@@ -407,8 +403,7 @@ export class OrganismCore implements IOrganismCore {
     // Health regeneration if high energy
     if (this.energyService.getEnergyLevel() > 80) {
       this.health = Math.min(100, this.health + (0.1 * timeFactor));
-    
-    return undefined;}
+    }
   }
 
   /**
@@ -451,8 +446,7 @@ export class OrganismCore implements IOrganismCore {
    */
   feed(amount: number = 10): void {
     this.energyService.addEnergy(amount);
-    this.logger?.debug('Organism fed', { id: this.id, amount 
-    return undefined;});
+    this.logger?.debug('Organism fed', { id: this.id, amount });
   }
 
   /**
@@ -460,8 +454,7 @@ export class OrganismCore implements IOrganismCore {
    */
   setTraits(traits: Partial<OrganismTraits>): void {
     this.traitService.updateTraits(traits, 'external_update');
-  
-    return undefined;}
+  }
 
   /**
    * Get performance metrics

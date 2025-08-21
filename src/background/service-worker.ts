@@ -14,14 +14,18 @@ class ServiceWorkerManager {
     this.isInitialized = true;
   }
 
-  private handleMessage(message: MessageEvent | unknown, sendResponse: (response: any) => void): void {
+  private handleMessage(message: any, sendResponse: (response: any) => void): void {
     // Handle different message types
-    switch (message.type) {
-      case 'HEALTH_CHECK':
-        sendResponse({ status: 'ok' });
-        break;
-      default:
-        sendResponse({ error: 'Unknown message type' });
+    if (message && typeof message === 'object' && 'type' in message) {
+      switch (message.type) {
+        case 'HEALTH_CHECK':
+          sendResponse({ status: 'ok' });
+          break;
+        default:
+          sendResponse({ error: 'Unknown message type' });
+      }
+    } else {
+      sendResponse({ error: 'Invalid message format' });
     }
   }
 

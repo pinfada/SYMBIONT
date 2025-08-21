@@ -72,7 +72,7 @@ function serializeMessage(message: MessageEvent | unknown): any {
   try {
     // Test de sérialisation avec JSON.parse/stringify
     return JSON.parse(JSON.stringify(message));
-  } catch (_error) {
+  } catch (error) {
     logger.warn('Message serialization issue, cleaning object:', error);
     
     // Nettoyage manuel pour les cas problématiques
@@ -140,7 +140,7 @@ function cleanObjectForSerialization(obj: Record<string, unknown>, seen = new We
     if (obj.hasOwnProperty(key)) {
       try {
         cleaned[key] = cleanObjectForSerialization(obj[key], seen);
-      } catch (_error) {
+      } catch (error) {
         // Supprime les logs verbeux pour éviter le spam
         cleaned[key] = '[Non-serializable]';
       }
@@ -206,7 +206,7 @@ export class MessageBus {
     for (const handler of this.globalHandlers) {
       try {
         await handler(message);
-      } catch (_error) {
+      } catch (error) {
         logger.error(`Error in global handler:`, error);
       }
     }
@@ -217,7 +217,7 @@ export class MessageBus {
       for (const handler of handlers) {
         try {
           await handler(message);
-        } catch (_error) {
+        } catch (error) {
           logger.error(`Error in handler for ${message.type}:`, error);
         }
       }
@@ -282,7 +282,7 @@ export class MessageBus {
         // Also send to runtime for popup/background
         chrome.runtime.sendMessage(cleanMessage).catch(() => {});
       }
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error sending message:', error);
     }
   }

@@ -156,9 +156,9 @@ function deepCleanForSerialization(obj: unknown, seen = new WeakSet()): unknown 
       obj instanceof WebGLProgram ||
       obj instanceof WebGLBuffer ||
       obj instanceof WebGLTexture ||
-      (obj && obj.$$typeof) || // React elements
-      (obj && obj.__reactFiber) || // React fiber
-      (obj && obj._owner) || // React internal
+      (obj && (obj as any).$$typeof) || // React elements
+      (obj && (obj as any).__reactFiber) || // React fiber
+      (obj && (obj as any)._owner) || // React internal
       (obj && typeof obj === 'object' && obj.constructor && obj.constructor.name && obj.constructor.name.includes('Fiber')) // React Fiber variants
   ) {
     // Pour les canvas, on extrait juste les propriétés utiles

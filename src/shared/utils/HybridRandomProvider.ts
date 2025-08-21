@@ -118,7 +118,7 @@ class RandomPool {
         this.totalGenerated += batchSize;
       }
     } catch (_error) {
-      logger.error('RandomPool: Erreur génération batch', { error });
+      logger.error('RandomPool: Erreur génération batch', { error: _error });
     } finally {
       this.isRefilling = false;
     }

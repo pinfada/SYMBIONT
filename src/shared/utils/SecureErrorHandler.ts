@@ -242,8 +242,8 @@ export class SecureErrorHandler {
 
     // En développement, inclure plus de détails
     if (process.env.NODE_ENV === 'development') {
-      logData.originalMessage = originalError instanceof Error ? originalError.message : String(originalError);
-      logData.stack = originalError instanceof Error ? this.sanitizeStack(originalError.stack) : undefined;
+      (logData as any).originalMessage = originalError instanceof Error ? originalError.message : String(originalError);
+      (logData as any).stack = originalError instanceof Error ? this.sanitizeStack(originalError.stack) : undefined;
     }
 
     // Logger selon la sévérité
@@ -347,7 +347,7 @@ export class SecureErrorHandler {
   ): Promise<T | null> {
     try {
       return await operation();
-    } catch (_error) {
+    } catch (error) {
       this.handleError(error, category, context);
       return null;
     }
@@ -373,7 +373,7 @@ export class SecureErrorHandler {
         }
         
         return result;
-      } catch (_error) {
+      } catch (error) {
         throw this.handleError(error, category, context);
       }
     }) as T;
@@ -388,7 +388,7 @@ export class SecureErrorHandler {
   ): ApiErrorResponse {
     const response: ApiErrorResponse = {
       success: false,
-      message: error.getSafeMessage(),
+      message: error.toSafeObject().message,
       timestamp: error.timestamp
     };
 
@@ -453,7 +453,7 @@ export function HandleErrors(category: ErrorCategory = 'GENERAL', context?: stri
         }
         
         return result;
-      } catch (_error) {
+      } catch (error) {
         throw SecureErrorHandler.handleError(error, category, context || `${target.constructor.name}.${propertyKey}`);
       }
     };

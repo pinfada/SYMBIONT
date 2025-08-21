@@ -111,7 +111,7 @@ export function runErrorTests(): void {
       logger.info('✅ Test 1 réussi: className.split protégé');
     }
   } catch (_error) {
-    logger.error('❌ Test 1 échoué:', error);
+    logger.error('❌ Test 1 échoué:', _error);
   }
   
   // Test 2: Division par zéro
@@ -122,7 +122,7 @@ export function runErrorTests(): void {
       : 0;
     logger.info('✅ Test 2 réussi: Division par zéro évitée, moyenne =', average);
   } catch (_error) {
-    logger.error('❌ Test 2 échoué:', error);
+    logger.error('❌ Test 2 échoué:', _error);
   }
   
   // Test 3: Propriété length sur undefined

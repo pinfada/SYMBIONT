@@ -24,8 +24,8 @@ export class WebGLBridge {
   private setupMessageHandlers(): void {
     // Écouter les réponses du moteur WebGL
     const handler = (message: Message) => {
-      if (message.payload?.state) {
-        this.updateState(message.payload.state);
+      if (message.payload && typeof message.payload === 'object' && 'state' in message.payload) {
+        this.updateState((message.payload as any).state);
       }
     };
     this.messageBus.on(MessageType.ORGANISM_UPDATE, handler);

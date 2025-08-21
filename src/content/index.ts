@@ -93,13 +93,17 @@ class ContentScript {
     });
     
     // Tracking du scroll
-    this.scrollTracker.on('scroll', (data) => {
-      this.updateScrollData(data);
+    this.scrollTracker.on('scroll', (data: any) => {
+      if (data && typeof data === 'object' && 'timestamp' in data) {
+        this.updateScrollData(data as ScrollEvent);
+      }
     });
     
     // Monitoring de l'attention
-    this.attentionMonitor.on('attentionChange', (state) => {
-      this.handleAttentionChange(state);
+    this.attentionMonitor.on('attentionChange', (state: any) => {
+      if (state && typeof state === 'object' && 'isActive' in state) {
+        this.handleAttentionChange(state as AttentionState);
+      }
     });
   }
 
@@ -119,7 +123,7 @@ class ContentScript {
     }
     
     // Communication avec background
-    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.messageBus.emit(message.type, {
         message,
         sender,

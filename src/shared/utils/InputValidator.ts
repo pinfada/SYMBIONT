@@ -416,7 +416,7 @@ export class InputValidator {
       
       return true;
     } catch (_error) {
-      logger.error('Invalid regex pattern', { pattern, error }, 'input-validation');
+      logger.error('Invalid regex pattern', { pattern, error: _error }, 'input-validation');
       return false;
     }
   }

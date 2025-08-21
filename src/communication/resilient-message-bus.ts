@@ -125,7 +125,7 @@ export class ResilientMessageBus {
         if (retries > maxRetries) {
           if (strategy) await strategy.fallbackAction.call(this, message)
           await this.messageQueue.enqueue(message)
-          return { success: false, queued: true, error }
+          return { success: false, queued: true, error: _error }
         }
         await this.wait(this.getBackoff(strategy?.backoffStrategy, retries))
       }

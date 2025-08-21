@@ -80,7 +80,7 @@ export const SystemStatusDashboard: React.FC = () => {
         setNetworkStats(networkData);
       }
     } catch (_error) {
-      logger.error('Failed to fetch system status:', error);
+      logger.error('Failed to fetch system status:', _error);
       setHealth(prev => ({ ...prev, api: 'down' }));
     }
   };

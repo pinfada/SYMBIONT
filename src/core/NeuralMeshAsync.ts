@@ -83,7 +83,7 @@ export class NeuralMeshAsync implements INeuralMesh {
       this.worker.onmessage = this.handleWorkerMessage.bind(this);
       this.worker.onerror = this.handleWorkerError.bind(this);
       
-    } catch (_error) {
+    } catch (error) {
       errorHandler.logSimpleError('NeuralMeshAsync', 'initializeWorker', error, 'warning');
       // Fallback : mode synchrone
       this.worker = null;
@@ -113,7 +113,7 @@ export class NeuralMeshAsync implements INeuralMesh {
     if (type === 'NEURAL_RESULT') {
       operation.resolve(payload);
     } else if (type === 'NEURAL_ERROR') {
-      operation.reject(new Error(payload.message));
+      operation.reject(new Error((payload as { message: string }).message));
     }
   }
 
@@ -153,7 +153,11 @@ export class NeuralMeshAsync implements INeuralMesh {
         reject(new Error(`Worker operation timeout: ${type}`));
       }, timeoutMs);
 
-      this.pendingOperations.set(id, { resolve, reject, timeout });
+      this.pendingOperations.set(id, { 
+        resolve: resolve as (value: unknown) => void, 
+        reject, 
+        timeout 
+      });
 
       const message: WorkerMessage = { type, id, payload };
       this.worker.postMessage(message);
@@ -300,7 +304,7 @@ export class NeuralMeshAsync implements INeuralMesh {
       } else {
         this.mutateSync(rate);
       }
-    } catch (_error) {
+    } catch (error) {
       errorHandler.logSimpleError('NeuralMeshAsync', 'mutate', error, 'warning');
       this.mutateSync(rate);
     }
@@ -368,7 +372,7 @@ export class NeuralMeshAsync implements INeuralMesh {
         
         return result.activity;
       }
-    } catch (_error) {
+    } catch (error) {
       errorHandler.logSimpleError('NeuralMeshAsync', 'getNeuralActivityAsync', error, 'warning');
     }
 
@@ -430,7 +434,7 @@ export class NeuralMeshAsync implements INeuralMesh {
           connections: Array.from(this.connections.values()).flat()
         });
         this.workerReady = true;
-      } catch (_error) {
+      } catch (error) {
         errorHandler.logSimpleError('NeuralMeshAsync', 'initialize', error, 'warning');
         this.workerReady = false;
       }

@@ -343,14 +343,14 @@ export class ProductionAPIService {
 
       return await response.json();
     } catch (_error) {
-      logger.error(`API Error [${method} ${endpoint}]`, { error }, 'ProductionAPIService');
+      logger.error(`API Error [${method} ${endpoint}]`, { error: _error }, 'ProductionAPIService');
       
       // Fallback vers données mock en cas d'erreur
       if (process.env.NODE_ENV === 'development') {
         return this.getFallbackData<T>(endpoint, method);
       }
       
-      throw error;
+      throw _error;
     }
   }
 

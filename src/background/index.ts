@@ -88,7 +88,7 @@ class BackgroundService {
     this._organismFactory = new OrganismFactory();
     // Récupère les seuils déjà atteints (persistance locale)
     getStorage('symbiont_collective_thresholds').then((saved) => {
-      this.reachedThresholds = saved ? JSON.parse(saved) : [];
+      this.reachedThresholds = saved ? JSON.parse(saved as string) : [];
       this.initialize();
     });
   }
@@ -740,7 +740,7 @@ class BackgroundService {
    * Déclenche une invitation contextuelle avancée
    */
   private async triggerContextualInvitation(context: string) {
-    const userId = (await getStorage('symbiont_user_id')) || 'unknown';
+    const userId = (await getStorage('symbiont_user_id') as string) || 'unknown';
     const invitation = await this.invitationService.generateInvitation(userId);
     await resilientBus.send({
       type: MessageType.CONTEXTUAL_INVITATION,

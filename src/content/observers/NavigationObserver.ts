@@ -109,7 +109,7 @@ export class NavigationObserver extends EventTarget {
       
       observer.observe({ entryTypes: ['navigation'] });
     } catch (_error) {
-      logger.warn('Performance Observer not available:', error);
+      logger.warn('Performance Observer not available:', _error);
     }
   }
 

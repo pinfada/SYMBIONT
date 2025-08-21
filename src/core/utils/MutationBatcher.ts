@@ -161,7 +161,7 @@ export class MutationBatcher {
       this.lastBatchTime = Date.now();
 
     } catch (_error) {
-      errorHandler.logSimpleError('MutationBatcher', 'processPendingMutations', error);
+      errorHandler.logSimpleError('MutationBatcher', 'processPendingMutations', _error);
       
       // Re-add mutations if processing failed
       mutations.forEach(mutation => {

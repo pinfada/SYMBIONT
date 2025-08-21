@@ -451,8 +451,8 @@ export class RealDataService {
       
       logger.info('✅ Migration réussie:', realDNA);
     } catch (_error) {
-      logger.error('❌ Erreur migration:', error);
-      throw error;
+      logger.error('❌ Erreur migration:', _error);
+      throw _error;
     }
   }
 }
