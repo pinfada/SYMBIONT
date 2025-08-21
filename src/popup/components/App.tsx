@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import MetricsPanel from './MetricsPanel';
 import SettingsPanel from './SettingsPanel';
 import OrganismDashboard from './OrganismDashboard';
@@ -7,6 +7,8 @@ import MysticalPanel from './MysticalPanel';
 import SocialPanel from './SocialPanel';
 import { GlobalNetworkGraph } from './GlobalNetworkGraph';
 import { OrganismViewer } from './OrganismViewer';
+import ErrorBoundary from './ErrorBoundary';
+import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { logger } from '@shared/utils/secureLogger';
 
 const NAV_ITEMS = [
@@ -21,6 +23,43 @@ const NAV_ITEMS = [
 const App: React.FC = () => {
   const [active, setActive] = useState('dashboard');
   const [toast, setToast] = useState<{message: string, type?: 'success'|'error'|'info'}|null>(null);
+  
+  // Nom descriptif pour le panel actuel (pour screen readers)
+  const getActivePageTitle = (): string => {
+    const activeItem = NAV_ITEMS.find(item => item.key === active);
+    return activeItem ? `${activeItem.label} - ${activeItem.description}` : 'Contenu principal';
+  };
+
+  // Index actuel pour la navigation clavier
+  const activeIndex = NAV_ITEMS.findIndex(item => item.key === active);
+
+  // Gestion de la navigation clavier
+  const handleTabChange = useCallback((newIndex: number) => {
+    const newTab = NAV_ITEMS[newIndex];
+    if (newTab) {
+      setActive(newTab.key);
+      // Annoncer le changement aux lecteurs d'écran
+      const announcement = `Navigation vers ${newTab.label}: ${newTab.description}`;
+      // Utiliser une région live pour annoncer le changement
+      const liveRegion = document.getElementById('navigation-announcer');
+      if (liveRegion) {
+        liveRegion.textContent = announcement;
+      }
+    }
+  }, []);
+
+  const handleTabActivate = useCallback((index: number) => {
+    handleTabChange(index);
+  }, [handleTabChange]);
+
+  // Configuration de la navigation clavier
+  const { containerProps, getItemProps } = useKeyboardNavigation({
+    items: NAV_ITEMS.map((_, index) => `#tab-${NAV_ITEMS[index].key}`),
+    activeIndex,
+    onActiveIndexChange: handleTabChange,
+    onActivate: handleTabActivate,
+    circular: true
+  });
 
   // Ouvrir en fenêtre redimensionnable
   const openInWindow = () => {
@@ -59,12 +98,16 @@ const App: React.FC = () => {
               <h2>🧬 Votre Organisme</h2>
               <p>Explorez votre créature digitale en évolution</p>
             </div>
-            <div className="organism-display">
-              <OrganismViewer />
-            </div>
-            <div className="organism-details">
-              <OrganismDashboard />
-            </div>
+            <ErrorBoundary>
+              <div className="organism-display">
+                <OrganismViewer />
+              </div>
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <div className="organism-details">
+                <OrganismDashboard />
+              </div>
+            </ErrorBoundary>
           </div>
         );
       case 'network':
@@ -74,9 +117,11 @@ const App: React.FC = () => {
               <h2>🌐 Réseau Global</h2>
               <p>Explorez la constellation SYMBIONT</p>
             </div>
-            <div className="network-container">
-              <GlobalNetworkGraph />
-            </div>
+            <ErrorBoundary>
+              <div className="network-container">
+                <GlobalNetworkGraph />
+              </div>
+            </ErrorBoundary>
           </div>
         );
       case 'metrics':
@@ -86,7 +131,9 @@ const App: React.FC = () => {
               <h2>📊 Statistiques</h2>
               <p>Analytics de votre organisme</p>
             </div>
-            <MetricsPanel />
+            <ErrorBoundary>
+              <MetricsPanel />
+            </ErrorBoundary>
           </div>
         );
       case 'mystical':
@@ -96,7 +143,9 @@ const App: React.FC = () => {
               <h2>✨ Rituels</h2>
               <p>Fonctions mystiques et évolution</p>
             </div>
-            <MysticalPanel />
+            <ErrorBoundary>
+              <MysticalPanel />
+            </ErrorBoundary>
           </div>
         );
       case 'social':
@@ -106,7 +155,9 @@ const App: React.FC = () => {
               <h2>👥 Social</h2>
               <p>Partagez et invitez</p>
             </div>
-            <SocialPanel />
+            <ErrorBoundary>
+              <SocialPanel />
+            </ErrorBoundary>
           </div>
         );
       case 'settings':
@@ -116,7 +167,9 @@ const App: React.FC = () => {
               <h2>⚙️ Paramètres</h2>
               <p>Personnalisez votre expérience</p>
             </div>
-            <SettingsPanel />
+            <ErrorBoundary>
+              <SettingsPanel />
+            </ErrorBoundary>
           </div>
         );
       default:
@@ -125,46 +178,92 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="symbiont-app">
+    <div className="symbiont-app" role="application" aria-label="SYMBIONT - Extension de bureau">
+      {/* Skip to main content link */}
+      <a href="#main-content" className="skip-link">
+        Aller au contenu principal
+      </a>
+      
       {/* Header avec logo et titre */}
-      <header className="app-header">
+      <header className="app-header" role="banner">
         <div className="logo-section">
-          <img src="../assets/icons/icon48.png" alt="SYMBIONT" width={24} height={24} />
-          <span className="app-title">SYMBIONT</span>
+          <img 
+            src="../assets/icons/icon48.png" 
+            alt="Logo SYMBIONT - Organisme digital évolutif" 
+            width={24} 
+            height={24} 
+          />
+          <h1 className="app-title">SYMBIONT</h1>
         </div>
         <div className="header-controls">
-          <div className="connection-status">
-            <span className="status-dot"></span>
+          <div 
+            className="connection-status" 
+            role="status" 
+            aria-live="polite"
+            aria-label="État de connexion"
+          >
+            <span 
+              className="status-dot" 
+              aria-hidden="true"
+            ></span>
             <span className="status-text">Connecté</span>
           </div>
           <button 
             onClick={openInWindow}
             className="expand-button"
-            title="Ouvrir en fenêtre redimensionnable (accessibilité)"
+            aria-label="Ouvrir en fenêtre redimensionnable pour une meilleure accessibilité"
+            type="button"
           >
-            🔍
+            <span aria-hidden="true">🔍</span>
+            <span className="sr-only">Agrandir</span>
           </button>
         </div>
       </header>
 
-      {/* Navigation par onglets */}
-      <nav className="tab-navigation">
-        {NAV_ITEMS.map(item => (
+      {/* Navigation par onglets avec navigation clavier améliorée */}
+      <nav 
+        {...containerProps}
+        className="tab-navigation" 
+        aria-label="Navigation principale de l'application"
+      >
+        {NAV_ITEMS.map((item, index) => (
           <button
             key={item.key}
-            onClick={() => setActive(item.key)}
+            onClick={() => handleTabChange(index)}
             className={`nav-tab ${active === item.key ? 'active' : ''}`}
-            title={item.description}
+            {...getItemProps(index)}
+            type="button"
           >
-            <span className="tab-icon">{item.icon}</span>
+            <span className="tab-icon" aria-hidden="true">{item.icon}</span>
             <span className="tab-label">{item.label}</span>
+            <span className="sr-only"> - {item.description}</span>
           </button>
         ))}
       </nav>
 
+      {/* Région live pour les annonces de navigation */}
+      <div 
+        id="navigation-announcer"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      ></div>
+
       {/* Contenu principal */}
-      <main className="main-content">
-        {renderContent()}
+      <main 
+        className="main-content" 
+        id="main-content"
+        role="main"
+        aria-label={getActivePageTitle()}
+        tabIndex={-1}
+      >
+        <div 
+          role="tabpanel" 
+          id={`panel-${active}`}
+          aria-labelledby={`tab-${active}`}
+        >
+          {renderContent()}
+        </div>
       </main>
 
       {/* Toast notifications */}
