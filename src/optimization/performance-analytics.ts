@@ -106,7 +106,7 @@ export class PerformanceAnalytics {
       this.checkPerformanceBudget()
       
     } catch (_error) {
-      logger.error('[PerfAnalytics] Erreur lors de la collecte:', error)
+      logger.error('[PerfAnalytics] Erreur lors de la collecte:', _error)
     }
   }
 

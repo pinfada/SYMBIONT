@@ -1,7 +1,7 @@
 import { Invitation, InvitationStatus } from '../../shared/types/invitation';
 export declare const MockInvitationService: {
     getUserCode: () => Promise<string>;
-    getInviter: () => Promise<Invitation>;
+    getInviter: () => Promise<null>;
     getInvitees: () => Promise<Invitation[]>;
     getHistory: () => Promise<(Invitation & {
         status: InvitationStatus;

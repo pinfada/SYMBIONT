@@ -33,7 +33,7 @@ export declare function safeJsonParse<T>(jsonString: string, defaultValue: T): T
 /**
  * Récupère une propriété d'objet de manière sécurisée
  */
-export declare function safeGet<T>(obj: any, path: string, defaultValue: T): T;
+export declare function safeGet<T>(obj: Record<string, unknown>, path: string, defaultValue: T): T;
 /**
  * Limite un tableau à une taille maximale de manière sécurisée
  */

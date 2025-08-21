@@ -62,7 +62,7 @@ export declare class ScrollTracker extends EventTarget {
     start(): void;
     stop(): void;
     getMetrics(): ScrollMetrics;
-    on(event: string, handler: (event: any) => void): void;
+    on(event: string, handler: (_event: Event) => void): void;
     getReadingAnalysis(): any;
     getScrollPattern(): any;
 }

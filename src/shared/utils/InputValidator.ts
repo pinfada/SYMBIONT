@@ -186,7 +186,7 @@ export class InputValidator {
     return {
       type: mutation.type,
       strength: mutation.strength,
-      target
+      target: target || ''
     };
   }
 
@@ -386,8 +386,8 @@ export class InputValidator {
               throw new ValidationError('NoSQL injection pattern detected in value', 'value', value);
             }
           }
-        } else if (typeof value === 'object') {
-          this.validateObjectForInjection(value, depth + 1);
+        } else if (typeof value === 'object' && value !== null) {
+          this.validateObjectForInjection(value as Record<string, unknown>, depth + 1);
         }
       }
     }

@@ -10,7 +10,7 @@ export declare class BehavioralEngine {
     static getInstance(): BehavioralEngine;
     analyzeBehavior(event: NavigationEvent): Promise<BehaviorAnalysis>;
     analyzeNavigation(event: NavigationEvent): BehaviorAnalysis;
-    processBehavior(data: any): any;
+    processBehavior(data: unknown): any;
     analyze(): BehaviorAnalysis;
 }
 //# sourceMappingURL=BehavioralEngine.d.ts.map

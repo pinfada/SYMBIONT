@@ -10,13 +10,13 @@ export class SecureError extends Error {
   public readonly timestamp: number;
   public readonly category: ErrorCategory;
   public readonly severity: ErrorSeverity;
-  public readonly context?: string;
+  public readonly context: string | undefined;
 
   constructor(
     message: string,
     category: ErrorCategory = 'GENERAL',
     severity: ErrorSeverity = 'MEDIUM',
-    context?: string,
+    context: string | undefined,
     public readonly cause?: Error
   ) {
     super(message);
@@ -36,14 +36,19 @@ export class SecureError extends Error {
   }
 
   toSafeObject(): SafeErrorObject {
-    return {
+    const result: SafeErrorObject = {
       errorId: this.errorId,
       timestamp: this.timestamp,
       category: this.category,
       severity: this.severity,
-      message: this.getSafeMessage(),
-      context: this.context
+      message: this.getSafeMessage()
     };
+    
+    if (this.context !== undefined) {
+      result.context = this.context;
+    }
+    
+    return result;
   }
 
   private getSafeMessage(): string {

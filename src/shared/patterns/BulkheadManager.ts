@@ -62,7 +62,7 @@ export class BulkheadManager {
   async execute<T>(
     bulkheadName: string, 
     operation: () => Promise<T>,
-    context?: string
+    _context?: string
   ): Promise<T> {
     const bulkhead = this.bulkheads.get(bulkheadName);
     if (!bulkhead) {

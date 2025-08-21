@@ -54,7 +54,7 @@ export const SettingsPanel: React.FC = () => {
       const flags = RealDataService.getFeatureStatus();
       setFeatureFlags(flags);
     } catch (_error) {
-      logger.warn('Impossible de charger les feature flags:', error);
+      logger.warn('Impossible de charger les feature flags:', _error);
       // Garder les valeurs par défaut
     }
   };
@@ -110,7 +110,7 @@ export const SettingsPanel: React.FC = () => {
       await realDataService.migrateToRealData(userId);
       alert('✅ Migration vers vraies données réussie ! Rechargez l\'extension.');
     } catch (_error) {
-      logger.error('Erreur migration:', error);
+      logger.error('Erreur migration:', _error);
       alert('❌ Erreur lors de la migration. Voir console.');
     }
   };

@@ -19,8 +19,8 @@ export class SecretRitualSystem {
     this.ritualTriggers.set('sacred_pattern', {
       trigger: (interactions: unknown[]) => {
         const now = Date.now()
-        const recent = interactions.filter(i => now - i.timestamp < 5 * 60 * 1000)
-        const cats = recent.map(i => i.category).filter((v: string, i: number, arr: string[]) => arr.indexOf(v) === i)
+        const recent = interactions.filter(i => now - (i as any).timestamp < 5 * 60 * 1000)
+        const cats = recent.map(i => (i as any).category).filter((v: string, i: number, arr: string[]) => arr.indexOf(v) === i)
         return ['news', 'social', 'creativity'].every(cat => cats.includes(cat))
       },
       effect: async () => ({

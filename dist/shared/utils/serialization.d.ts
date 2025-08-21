@@ -27,5 +27,5 @@ export interface SerializableOrganismState {
     }>;
 }
 export declare function sanitizeOrganismState(state: any): SerializableOrganismState | null;
-export declare function sanitizeMessage(message: any): any;
+export declare function sanitizeMessage(message: MessageEvent | unknown): any;
 //# sourceMappingURL=serialization.d.ts.map

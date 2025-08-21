@@ -3,7 +3,7 @@ interface TimelineEvent {
     type: 'mutation' | 'transmission' | 'activation';
     date: number;
     description: string;
-    details?: any;
+    details?: unknown;
 }
 interface OrganismTimelineProps {
     events: TimelineEvent[];

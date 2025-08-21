@@ -16,8 +16,7 @@ export class SynapticRouter {
   async connect(): Promise<void> {
     if (this.isConnected) return;
     
-    // @ts-expect-error Paramètre réservé pour usage futur
-    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       this.handleMessage(message).then(sendResponse);
       return true;
     });
@@ -49,9 +48,11 @@ export class SynapticRouter {
    * @returns {Promise<void>}
    */
   private async handleMessage(message: MessageEvent | unknown): Promise<void> {
-    const handler = this.connections.get(message.route);
-    if (handler) {
-      await handler(message.payload);
+    if (message && typeof message === 'object' && 'route' in message) {
+      const handler = this.connections.get((message as any).route);
+      if (handler) {
+        await handler((message as any).payload);
+      }
     }
   }
 

@@ -12,7 +12,7 @@ export interface NavigationEvent {
 export interface Pattern {
     type: string;
     score: number;
-    details?: any;
+    details?: unknown;
 }
 export type PatternDetector = (events: NavigationEvent[]) => Pattern[];
 export declare class NavigationCortex {

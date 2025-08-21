@@ -4,7 +4,7 @@ export declare class SecretRitualSystem {
     private secretCodes;
     private mysticalEvents;
     constructor();
-    detectRitualTrigger(interactions: any[]): RitualTrigger | null;
+    detectRitualTrigger(interactions: unknown[]): RitualTrigger | null;
     executeSecret(code: string, context: ExecutionContext): SecretResult | null;
     generateMysticalEvent(probability: number): MysticalEvent | null;
 }

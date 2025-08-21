@@ -2,12 +2,12 @@ import { NeuralNode, NeuralConnection } from '../core/interfaces/INeuralMesh';
 export interface WorkerMessage {
     type: 'NEURAL_PROPAGATE' | 'NEURAL_MUTATE' | 'NEURAL_ACTIVITY' | 'NEURAL_INIT';
     id: string;
-    payload: any;
+    payload: unknown;
 }
 export interface WorkerResponse {
     type: 'NEURAL_RESULT' | 'NEURAL_ERROR';
     id: string;
-    payload: any;
+    payload: unknown;
     processingTime: number;
 }
 export interface NeuralNetworkState {

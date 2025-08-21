@@ -56,7 +56,7 @@ export interface RitualSession {
     duration: number;
     intensity: number;
     participants: string[];
-    effects: any;
+    effects: unknown;
     startedAt: Date;
     completedAt?: Date;
 }
@@ -65,7 +65,7 @@ export interface MemoryFragment {
     content: string;
     type: 'navigation' | 'interaction' | 'emotion' | 'learning';
     strength: number;
-    context?: any;
+    context?: unknown;
     createdAt: Date;
 }
 export interface EmotionalState {
@@ -79,7 +79,7 @@ export interface NetworkEvent {
     type: 'mutation' | 'connection' | 'ritual' | 'synchronization' | 'evolution';
     userId: string;
     organismId: string;
-    data: any;
+    data: unknown;
     timestamp: Date;
 }
 export interface SystemMetrics {
@@ -110,7 +110,7 @@ export interface UserProfile {
     avatar?: string;
     timezone?: string;
     language: string;
-    preferences: any;
+    preferences: unknown;
     createdAt: Date;
 }
 export interface FeatureFlags {
@@ -129,7 +129,7 @@ export interface SymbiontConfig {
 export type WebSocketEventType = 'network_event' | 'mutation' | 'ritual_invitation' | 'sync_request' | 'connection' | 'disconnection';
 export interface WebSocketMessage {
     type: WebSocketEventType;
-    data: any;
+    data: unknown;
     timestamp: Date;
 }
 export interface BehaviorAnalytics {
@@ -180,7 +180,7 @@ export interface APIResponse<T> {
 export interface APIError {
     error: string;
     code?: string;
-    details?: any;
+    details?: unknown;
 }
 export interface SymbiontContextType {
     organism: OrganismState | null;

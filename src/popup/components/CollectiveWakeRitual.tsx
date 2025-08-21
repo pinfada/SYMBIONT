@@ -16,8 +16,8 @@ export const CollectiveWakeRitual: React.FC<{ userId: string }> = ({ userId }) =
       // Récupérer tous les participants du jour
       const rituals = await getRituals();
       const today = new Date().toISOString().slice(0, 10);
-      const wakes = rituals.filter(r => r.type === 'collective-wake' && new Date(r.timestamp).toISOString().slice(0, 10) === today);
-      setParticipants(wakes.map(w => w.userId));
+      const wakes = rituals.filter(r => r.type === 'collective-wake' && new Date(r.timestamp as string | number | Date).toISOString().slice(0, 10) === today);
+      setParticipants(wakes.map(w => w.userId as string).filter(Boolean));
       setTriggeredAt(Date.now());
       setStatus('done');
     } catch {

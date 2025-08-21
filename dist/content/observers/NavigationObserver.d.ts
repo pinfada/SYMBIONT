@@ -72,7 +72,7 @@ export declare class NavigationObserver extends EventTarget {
     start(): void;
     stop(): void;
     getMetrics(): NavigationMetrics;
-    on(event: string, handler: (event: any) => void): void;
+    on(event: string, handler: (_event: Event) => void): void;
     getNavigationHistory(): any;
     getCurrentPageInfo(): any;
 }

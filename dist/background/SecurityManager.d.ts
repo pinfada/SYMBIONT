@@ -6,6 +6,7 @@ export declare class SecurityManager {
     private encryptionKey;
     private keyPromise;
     constructor(skipAutoInit?: boolean);
+    private setupBulkheads;
     /**
      * Initialise une clé de chiffrement sécurisée avec WebCrypto
      */
@@ -33,15 +34,18 @@ export declare class SecurityManager {
     /**
      * Chiffre des données sensibles avec AES-GCM sécurisé
      */
-    encryptSensitiveData(data: any): Promise<string>;
+    encryptSensitiveData(data: unknown): Promise<string>;
+    private _encryptSensitiveData;
     /**
      * Déchiffre des données sensibles avec AES-GCM sécurisé
      */
-    decryptSensitiveData(data: unknown): Promise<any>;
+    decryptSensitiveData(data: unknown): Promise<unknown>;
+    private _decryptSensitiveData;
     /**
      * Anonymise un pattern comportemental (suppression PII, hashage sécurisé)
      */
-    anonymizeForSharing(data: BehaviorPattern): Promise<any>;
+    anonymizeForSharing(data: BehaviorPattern): Promise<unknown>;
+    private _anonymizeForSharing;
     /**
      * Version synchrone pour compatibilité (utilise hashSync)
      */

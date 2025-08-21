@@ -13,7 +13,7 @@ export interface NeuralProcessingResult {
 export interface NeuralPattern {
     id: string;
     type: 'behavioral' | 'environmental' | 'social';
-    data: any;
+    data: unknown;
     timestamp: number;
     confidence: number;
 }

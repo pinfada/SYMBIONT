@@ -80,7 +80,7 @@ declare class FeatureFlagService {
     /**
      * Log conditionnel selon les feature flags
      */
-    debugLog(message: string, ...args: any[]): void;
+    debugLog(message: string, ...args: unknown[]): void;
     /**
      * Performance profiling conditionnel
      */

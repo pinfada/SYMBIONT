@@ -1,18 +1,18 @@
 import { ReactNode } from 'react';
 interface Network {
-    nodes: any[];
-    links: any[];
+    nodes: unknown[];
+    links: unknown[];
 }
 interface InviteParams {
     source: string;
     target: string;
-    traits: any;
+    traits: unknown;
 }
 interface FusionParams {
     type: string;
     participants: string[];
     result: string;
-    traits: any;
+    traits: unknown;
 }
 interface NetworkContextType {
     network: Network;

@@ -54,11 +54,11 @@ export class NeuralService {
       return {
         success: true,
         adaptations,
-        confidence: result.confidence || 0.8,
+        confidence: (result as {confidence?: number}).confidence || 0.8,
         processingTime
       };
     } catch (_error) {
-      logger.error('Erreur de traitement neural:', error);
+      logger.error('Erreur de traitement neural:', _error);
       
       return {
         success: false,
@@ -96,7 +96,7 @@ export class NeuralService {
             await this.mesh.learn(pattern.data);
           }
         } catch (_error) {
-          logger.error('Erreur apprentissage neural:', error);
+          logger.error('Erreur apprentissage neural:', _error);
         }
       }
     }
@@ -190,7 +190,7 @@ export class NeuralService {
       }
       return true;
     } catch (_error) {
-      logger.error('Erreur apprentissage:', error);
+      logger.error('Erreur apprentissage:', _error);
       return false;
     }
   }
@@ -204,7 +204,7 @@ export class NeuralService {
         ? this.mesh.getPerformanceMetrics()
         : { nodeCount: 0, connectionCount: 0, neuralActivity: 0, connectionStrength: 0 };
     } catch (_error) {
-      logger.error('Erreur métriques:', error);
+      logger.error('Erreur métriques:', _error);
       return {
         processingTime: 0,
         accuracy: 0,
@@ -220,7 +220,7 @@ export class NeuralService {
     try {
       return this.mesh.saveState();
     } catch (_error) {
-      logger.error('Erreur sauvegarde état neural:', error);
+      logger.error('Erreur sauvegarde état neural:', _error);
       return null;
     }
   }
@@ -233,7 +233,7 @@ export class NeuralService {
       this.mesh.loadState(state);
       return true;
     } catch (_error) {
-      logger.error('Erreur chargement état neural:', error);
+      logger.error('Erreur chargement état neural:', _error);
       return false;
     }
   }
@@ -247,7 +247,7 @@ export class NeuralService {
       this.processingQueue = [];
       this.isProcessing = false;
     } catch (_error) {
-      logger.error('Erreur reset neural:', error);
+      logger.error('Erreur reset neural:', _error);
     }
   }
 
@@ -322,8 +322,8 @@ export class NeuralService {
     for (let i = 0; i < patternsToProcess && this.processingQueue.length > 0; i++) {
       const pattern = this.processingQueue.shift();
       if (pattern && this.mesh.learn) {
-        this.mesh.learn(pattern.data).catch(error => {
-          logger.error('Neural processing error:', error);
+        this.mesh.learn(pattern.data).catch((_error: unknown) => {
+          logger.error('Neural processing error:', _error);
         });
       }
     }

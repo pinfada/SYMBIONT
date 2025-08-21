@@ -121,7 +121,7 @@ export class RealDataService {
       const behaviors = await this.collectUserBehaviors(userId);
       return this.buildDNAFromBehaviors(behaviors);
     } catch (_error) {
-      logger.warn('Erreur génération ADN réel, fallback mock:', error);
+      logger.warn('Erreur génération ADN réel, fallback mock:', _error);
       return 'MOCKDNA123456789ABCDEF';
     }
   }
@@ -251,7 +251,7 @@ export class RealDataService {
       
       return await response.json();
     } catch (_error) {
-      logger.warn('Erreur API invitations, fallback mock:', error);
+      logger.warn('Erreur API invitations, fallback mock:', _error);
       // Fallback vers données mock
       const { MockInvitationService } = await import('./MockInvitationService');
       return {
@@ -287,7 +287,7 @@ export class RealDataService {
 
       return { cpu, memory, latency };
     } catch (_error) {
-      logger.warn('Erreur métriques réelles, fallback mock:', error);
+      logger.warn('Erreur métriques réelles, fallback mock:', _error);
       return {
         cpu: SecureRandom.random() * 0.2,
         memory: SecureRandom.random() * 20,
@@ -360,7 +360,8 @@ export class RealDataService {
 
   private processBehaviorData(data: unknown): void {
     // Traiter les données comportementales du content script
-    const domain = new URL(data.url).hostname;
+    const behaviorData = data as { url: string; timeSpent?: number; interactions?: InteractionData[] };
+    const domain = new URL(behaviorData.url).hostname;
     const existing = this.behaviorMetrics.domains.get(domain) || {
       visits: 0,
       totalTime: 0,
@@ -369,12 +370,12 @@ export class RealDataService {
       interactions: []
     };
 
-    existing.totalTime += data.timeSpent || 0;
-    existing.interactions.push(...(data.interactions || []));
+    existing.totalTime += behaviorData.timeSpent || 0;
+    existing.interactions.push(...(behaviorData.interactions || []));
     existing.lastVisit = Date.now();
 
     this.behaviorMetrics.domains.set(domain, existing);
-    this.behaviorMetrics.totalInteractions += data.interactions?.length || 0;
+    this.behaviorMetrics.totalInteractions += behaviorData.interactions?.length || 0;
   }
 
   private trackTabChange(tabId: number): void {

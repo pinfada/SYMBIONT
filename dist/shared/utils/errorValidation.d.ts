@@ -5,7 +5,7 @@ export declare function validateVariable(variable: any, variableName: string): v
 /**
  * Vérifie si un objet a des propriétés length avant de les utiliser
  */
-export declare function validateLengthProperty(obj: any, objectName: string): boolean;
+export declare function validateLengthProperty(obj: Record<string, unknown>, objectName: string): boolean;
 /**
  * Vérifie si une string peut être splitée
  */

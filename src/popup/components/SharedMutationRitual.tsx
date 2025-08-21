@@ -40,7 +40,7 @@ export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<str
         return;
       }
       // Fusionner les traits (exemple simple)
-      const mergedTraits = { ...ritual.traits };
+      const mergedTraits = { ...(ritual.traits as Record<string, number>) };
       Object.keys(traits).forEach(k => {
         mergedTraits[k] = ((mergedTraits[k] || 0) + (traits[k] || 0)) / 2;
       });

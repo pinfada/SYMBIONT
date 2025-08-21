@@ -48,8 +48,8 @@ export declare class PerformanceAnalytics {
             avgFPS: number;
             anomalyCount: number;
         };
-        webVitals: any;
-        budgetStatus: any;
+        webVitals: unknown;
+        budgetStatus: unknown;
     };
     /**
      * Réinitialise les métriques et anomalies

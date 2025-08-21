@@ -22,6 +22,8 @@ export declare enum MessageType {
     GET_INVITATION_HISTORY = "GET_INVITATION_HISTORY",
     INVITATION_HISTORY_RESULT = "INVITATION_HISTORY_RESULT",
     INTERACTION_DETECTED = "INTERACTION_DETECTED",
+    GET_HEALTH_METRICS = "GET_HEALTH_METRICS",
+    HEALTH_METRICS_RESPONSE = "HEALTH_METRICS_RESPONSE",
     REQUEST_SHARED_MUTATION = "REQUEST_SHARED_MUTATION",
     SHARED_MUTATION_CODE = "SHARED_MUTATION_CODE",
     ACCEPT_SHARED_MUTATION = "ACCEPT_SHARED_MUTATION",
@@ -34,7 +36,7 @@ export declare enum MessageType {
 }
 export interface Message {
     type: MessageType;
-    payload?: any;
+    payload?: unknown;
     target?: string;
     timestamp?: number;
     source?: string;
@@ -42,9 +44,9 @@ export interface Message {
 }
 export declare class MessageBus {
     constructor(_channel?: string);
-    on(_type: MessageType, _handler: (message: any) => void): void;
-    send(_message: any): void;
-    subscribe(_type: MessageType, _handler: (message: any) => void): void;
+    on(_type: MessageType, _handler: (message: MessageEvent | unknown) => void): void;
+    send(_message: MessageEvent | unknown): void;
+    subscribe(_type: MessageType, _handler: (message: MessageEvent | unknown) => void): void;
 }
 export default MessageBus;
 //# sourceMappingURL=MessageBus.d.ts.map

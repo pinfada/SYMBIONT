@@ -39,16 +39,16 @@ export class SynapticRouter extends EventEmitter {
     // Tentative prédictive
     const optimizedRoute = await this.findOptimalRoute(impulse);
     
-    if (optimizedRoute.predicted) {
+    if ((optimizedRoute as {predicted?: boolean})?.predicted) {
       logger.info(`🧠 Predicted route for ${impulse.type}`);
-      return optimizedRoute.predictedResponse;
+      return (optimizedRoute as {predictedResponse?: unknown})?.predictedResponse;
     }
 
     // Route standard
-    const response = await this.performRouting(impulse, optimizedRoute.route);
+    const response = await this.performRouting(impulse, (optimizedRoute as {route?: string})?.route);
     
     // Apprentissage
-    this.learnFromRouting(routeKey, optimizedRoute.route, response);
+    this.learnFromRouting(routeKey, (optimizedRoute as {route?: string})?.route, response);
     
     return response;
   }
@@ -57,7 +57,7 @@ export class SynapticRouter extends EventEmitter {
   // @ts-expect-error Paramètre réservé pour usage futur
   private getRouteKey(impulse: NeuralImpulse): string { return '' }
   // @ts-expect-error Paramètre réservé pour usage futur
-  private async findOptimalRoute(impulse: NeuralImpulse): Promise<unknown> { return {}; }
+  private async findOptimalRoute(impulse: NeuralImpulse): Promise<{predicted?: boolean; predictedResponse?: unknown; route?: string}> { return {}; }
   // @ts-expect-error Paramètres réservés pour usage futur
   private async performRouting(impulse: NeuralImpulse, route: any): Promise<unknown> { return {}; }
   // @ts-expect-error Paramètres réservés pour usage futur

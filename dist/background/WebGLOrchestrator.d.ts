@@ -25,6 +25,6 @@ export declare class WebGLOrchestrator {
     dispose(): void;
     activateForTab(): Promise<void>;
     processMutation(): Promise<void>;
-    getPerformanceMetrics(): Promise<any>;
+    getPerformanceMetrics(): Promise<unknown>;
 }
 //# sourceMappingURL=WebGLOrchestrator.d.ts.map

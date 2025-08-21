@@ -8,7 +8,7 @@ interface BehaviorData {
     interactions: Array<{
         type: string;
         timestamp: number;
-        data: any;
+        data: unknown;
     }>;
 }
 export declare class SymbiontStorage {

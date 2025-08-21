@@ -28,12 +28,12 @@ export interface INeuralMesh {
     getConnectionStrength(): number;
     getCPUUsage(): Promise<number>;
     getMemoryUsage(): Promise<number>;
-    toJSON(): any;
+    toJSON(): unknown;
     suspend(): Promise<void>;
-    processPattern?: (pattern: any) => Promise<any>;
-    learn?: (data: any) => Promise<void>;
+    processPattern?: (pattern: any) => Promise<unknown>;
+    learn?: (data: unknown) => Promise<void>;
     getPerformanceMetrics?: () => any;
-    saveState(): any;
+    saveState(): unknown;
     loadState(state: any): void;
     reset(): void;
     healthCheck(): {

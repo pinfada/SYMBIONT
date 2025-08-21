@@ -37,7 +37,7 @@ export class AdvancedCaching {
   private decompress(data: unknown): any {
     // Simulation de décompression
     try {
-      return JSON.parse(data)
+      return JSON.parse(data as string)
     } catch {
       return data
     }

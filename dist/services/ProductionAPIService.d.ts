@@ -10,13 +10,13 @@ export interface DNAMutation {
 export interface PredictionResult {
     prediction: string;
     confidence: number;
-    details?: any;
+    details?: unknown;
 }
 export interface APIResponse<T> {
     success: boolean;
     data: T;
     message?: string;
-    meta?: any;
+    meta?: unknown;
 }
 export interface Organism {
     id: string;
@@ -50,9 +50,9 @@ export declare class ProductionAPIService {
     authenticate(email: string, password: string): Promise<{
         token: string;
         refreshToken: string;
-        user: any;
+        user: unknown;
     }>;
-    register(email: string, username: string, password: string): Promise<any>;
+    register(email: string, username: string, password: string): Promise<unknown>;
     /**
      * Gestion des organismes
      */
@@ -76,13 +76,13 @@ export declare class ProductionAPIService {
      * Données comportementales et analytics
      */
     saveBehaviorData(data: BehaviorData[]): Promise<void>;
-    getBehaviorAnalytics(timeframe?: string): Promise<any>;
-    generatePersonalizedDNA(behaviorData: any[]): Promise<string>;
+    getBehaviorAnalytics(timeframe?: string): Promise<unknown>;
+    generatePersonalizedDNA(behaviorData: unknown[]): Promise<string>;
     /**
      * Prédictions et IA
      */
     getPredictions(organismId: string): Promise<PredictionResult[]>;
-    analyzeEmotionalState(behaviorData: any[]): Promise<{
+    analyzeEmotionalState(behaviorData: unknown[]): Promise<{
         mood: string;
         intensity: number;
         triggers: string[];
@@ -94,7 +94,7 @@ export declare class ProductionAPIService {
     createInvitation(): Promise<{
         code: string;
     }>;
-    useInvitation(code: string): Promise<any>;
+    useInvitation(code: string): Promise<unknown>;
     getSocialConnections(): Promise<any[]>;
     /**
      * Rituels
@@ -103,7 +103,7 @@ export declare class ProductionAPIService {
         ritualType: string;
         duration?: number;
         intensity?: number;
-    }): Promise<any>;
+    }): Promise<unknown>;
     getRitualHistory(organismId: string): Promise<any[]>;
     /**
      * Mémoires
@@ -113,8 +113,8 @@ export declare class ProductionAPIService {
         content: string;
         type: string;
         strength?: number;
-        context?: any;
-    }): Promise<any>;
+        context?: unknown;
+    }): Promise<unknown>;
     /**
      * WebSocket pour temps réel
      */

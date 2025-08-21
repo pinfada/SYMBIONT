@@ -1,7 +1,7 @@
 export interface Ritual {
     _id: string;
     type: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 export declare function getRituals(): Promise<Ritual[]>;
 export declare function addRitual(ritual: Ritual): Promise<any>;

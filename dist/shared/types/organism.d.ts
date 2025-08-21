@@ -24,11 +24,11 @@ export interface OrganismState {
     /** Timestamp de la dernière mutation */
     lastMutation: number | null;
     /** Historique des mutations */
-    mutations?: any[];
+    mutations?: unknown[];
     /** Connexions sociales */
     socialConnections?: string[];
     /** Fragments de mémoire */
-    memoryFragments?: any[];
+    memoryFragments?: unknown[];
     health?: number;
     energy?: number;
     maxEnergy?: number;
@@ -84,7 +84,7 @@ export interface ActionPrediction {
 }
 export interface Message {
     type: string;
-    payload: any;
+    payload: unknown;
 }
 export type MessageType = string;
 export interface RoutingResult {

@@ -1,4 +1,3 @@
-import { OrganismState } from '../shared/types/organism';
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
 import { HybridStorageManager } from '../storage/hybrid-storage-manager';
 import { BasicHealthMonitor } from '../monitoring/basic-health-monitor';
@@ -6,6 +5,7 @@ import { DistributedOrganismNetwork } from '../social/distributed-organism-netwo
 import { CollectiveIntelligence } from '../social/collective-intelligence';
 import { SocialResilience } from '../social/social-resilience';
 import { MysticalEvents } from '../social/mystical-events';
+import type { OrganismState } from '@/shared/types/organism';
 export declare const hybridStorage: HybridStorageManager;
 export declare const resilientBus: ResilientMessageBus;
 export declare const healthMonitor: BasicHealthMonitor;
@@ -50,6 +50,10 @@ declare class BackgroundService {
      * Déclenche une invitation contextuelle avancée
      */
     private triggerContextualInvitation;
+    /**
+     * Nettoyage des ressources lors de l'arrêt du service
+     */
+    dispose(): void;
 }
 export { BackgroundService };
 export declare const distributedNetwork: DistributedOrganismNetwork;

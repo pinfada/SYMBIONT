@@ -128,7 +128,7 @@ export function safeJsonParse<T>(jsonString: string, defaultValue: T): T {
 export function safeGet<T>(obj: Record<string, unknown>, path: string, defaultValue: T): T {
   try {
     const keys = path.split('.');
-    let current = obj;
+    let current: unknown = obj;
     
     for (const key of keys) {
       if (current && typeof current === 'object' && key in current) {

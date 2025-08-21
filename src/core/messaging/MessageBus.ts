@@ -9,33 +9,40 @@ import { logger } from '@shared/utils/secureLogger';
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
 
-function isOrganismState(obj: Record<string, unknown>): obj is OrganismState {
-  return obj &&
-    typeof obj.id === 'string' &&
-    typeof obj.generation === 'number' &&
-    typeof obj.health === 'number' &&
-    typeof obj.energy === 'number' &&
-    obj.traits && typeof obj.traits === 'object';
+function isOrganismState(obj: unknown): obj is OrganismState {
+  return typeof obj === 'object' && obj !== null &&
+    'id' in obj && typeof (obj as any).id === 'string' &&
+    'generation' in obj && typeof (obj as any).generation === 'number' &&
+    'health' in obj && typeof (obj as any).health === 'number' &&
+    'energy' in obj && typeof (obj as any).energy === 'number' &&
+    'traits' in obj && typeof (obj as any).traits === 'object';
 }
 
-function isOrganismMutation(obj: Record<string, unknown>): obj is OrganismMutation {
-  return obj && typeof obj.type === 'string' && typeof obj.trigger === 'string';
+function isOrganismMutation(obj: unknown): obj is OrganismMutation {
+  return typeof obj === 'object' && obj !== null &&
+    'type' in obj && typeof (obj as any).type === 'string' &&
+    'trigger' in obj && typeof (obj as any).trigger === 'string';
 }
 
 function isBehaviorData(obj: Record<string, unknown>): boolean {
   return obj && typeof obj.url === 'string' && typeof obj.visitCount === 'number';
 }
 
-function isMurmur(obj: Record<string, unknown>): obj is Murmur {
-  return obj && typeof obj.text === 'string' && typeof obj.timestamp === 'number';
+function isMurmur(obj: unknown): obj is Murmur {
+  return typeof obj === 'object' && obj !== null &&
+    'text' in obj && typeof (obj as any).text === 'string' &&
+    'timestamp' in obj && typeof (obj as any).timestamp === 'number';
 }
 
-function isInvitationPayload(obj: Record<string, unknown>): obj is InvitationPayload {
-  return obj && typeof obj.code === 'string';
+function isInvitationPayload(obj: unknown): obj is InvitationPayload {
+  return typeof obj === 'object' && obj !== null &&
+    'code' in obj && typeof (obj as any).code === 'string';
 }
 
-function isInvitationResult(obj: Record<string, unknown>): obj is InvitationResult {
-  return obj && typeof obj.code === 'string' && typeof obj.status === 'string';
+function isInvitationResult(obj: unknown): obj is InvitationResult {
+  return typeof obj === 'object' && obj !== null &&
+    'code' in obj && typeof (obj as any).code === 'string' &&
+    'status' in obj && typeof (obj as any).status === 'string';
 }
 
 function validatePayload(type: MessageType, payload: any): boolean {
@@ -76,7 +83,7 @@ function serializeMessage(message: MessageEvent | unknown): any {
     logger.warn('Message serialization issue, cleaning object:', error);
     
     // Nettoyage manuel pour les cas problématiques
-    const cleanMessage = cleanObjectForSerialization(message);
+    const cleanMessage = cleanObjectForSerialization(message as Record<string, unknown>);
     return cleanMessage;
   }
 }
@@ -139,10 +146,10 @@ function cleanObjectForSerialization(obj: Record<string, unknown>, seen = new We
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       try {
-        cleaned[key] = cleanObjectForSerialization(obj[key], seen);
+        (cleaned as any)[key] = cleanObjectForSerialization(obj[key] as Record<string, unknown>, seen);
       } catch (error) {
         // Supprime les logs verbeux pour éviter le spam
-        cleaned[key] = '[Non-serializable]';
+        (cleaned as Record<string, unknown>)[key] = '[Non-serializable]';
       }
     }
   }
@@ -289,7 +296,7 @@ export class MessageBus {
 
   // Ajout pour compatibilité content script
   public sendToBackground(message: MessageEvent | unknown): void {
-    this.send(message);
+    this.send(message as Omit<Message, "timestamp" | "id" | "source">);
   }
 
   public emit(type: any, payload: any): void {

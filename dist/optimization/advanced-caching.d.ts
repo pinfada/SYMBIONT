@@ -1,6 +1,6 @@
 export declare class AdvancedCaching {
     private cache;
-    set(key: string, value: any): void;
+    set(key: string, value: unknown): void;
     get(key: string): any;
     invalidate(key: string): void;
     clear(): void;

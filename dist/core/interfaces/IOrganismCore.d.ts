@@ -14,13 +14,13 @@ export interface ShaderParameters {
     animation?: number;
 }
 export interface OrganismJSON {
-    mesh: any;
-    traits: any;
-    energy: any;
+    mesh: unknown;
+    traits: unknown;
+    energy: unknown;
     health: number;
     dna: string;
     timestamp: number;
-    neural?: any;
+    neural?: unknown;
     lastMutation?: number;
 }
 export interface IOrganismCore {

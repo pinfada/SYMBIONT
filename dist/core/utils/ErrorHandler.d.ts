@@ -33,7 +33,7 @@ export declare class ErrorHandler {
     /**
      * Enregistre une erreur avec informations minimales
      */
-    logSimpleError(component: string, method: string, error: any, level?: 'debug' | 'info' | 'warning' | 'error', context?: any): void;
+    logSimpleError(component: string, method: string, error: Error | unknown, level?: 'debug' | 'info' | 'warning' | 'error', context?: any): void;
     /**
      * Validation avec retour structuré
      */

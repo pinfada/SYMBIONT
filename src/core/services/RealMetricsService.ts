@@ -83,7 +83,7 @@ class RealMetricsService {
         percentage: 50
       };
     } catch (_error) {
-      logger.warn('Erreur collecte mémoire, fallback estimation:', error);
+      logger.warn('Erreur collecte mémoire, fallback estimation:', _error);
       return this.getFallbackMemoryMetrics();
     }
   }
@@ -106,7 +106,7 @@ class RealMetricsService {
         firstContentfulPaint
       };
     } catch (_error) {
-      logger.warn('Erreur collecte timing, fallback estimation:', error);
+      logger.warn('Erreur collecte timing, fallback estimation:', _error);
       return this.getFallbackTimingMetrics();
     }
   }
@@ -127,7 +127,7 @@ class RealMetricsService {
         connectionType: connection?.effectiveType || 'unknown'
       };
     } catch (_error) {
-      logger.warn('Erreur collecte réseau, fallback estimation:', error);
+      logger.warn('Erreur collecte réseau, fallback estimation:', _error);
       return this.getFallbackNetworkMetrics();
     }
   }
@@ -142,7 +142,7 @@ class RealMetricsService {
       
       return { usage, cores };
     } catch (_error) {
-      logger.warn('Erreur collecte CPU, fallback estimation:', error);
+      logger.warn('Erreur collecte CPU, fallback estimation:', _error);
       return this.getFallbackCPUMetrics();
     }
   }
@@ -156,7 +156,7 @@ class RealMetricsService {
     
     // Cache 30 secondes pour éviter overhead
     if (cached && Date.now() - cached.timestamp < 30000) {
-      return cached.value;
+      return cached.value as SystemMetrics;
     }
 
     try {
@@ -179,7 +179,7 @@ class RealMetricsService {
       this.metricsCache.set(cacheKey, { value: metrics, timestamp: Date.now() });
       return metrics;
     } catch (_error) {
-      logger.error('Erreur collecte métriques système:', error);
+      logger.error('Erreur collecte métriques système:', _error);
       return this.getFallbackSystemMetrics();
     }
   }
@@ -199,7 +199,7 @@ class RealMetricsService {
 
       return { lcp, fid, cls, fcp, ttfb };
     } catch (_error) {
-      logger.warn('Erreur Web Vitals, fallback defaults:', error);
+      logger.warn('Erreur Web Vitals, fallback defaults:', _error);
       return this.getFallbackWebVitals();
     }
   }

@@ -5,7 +5,7 @@ export interface Plugin {
     name: string;
     description?: string;
     component?: any;
-    run?: (...args: any[]) => any;
+    run?: (...args: unknown[]) => any;
 }
 export declare class PluginManager {
     private static plugins;

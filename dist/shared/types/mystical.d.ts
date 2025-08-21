@@ -1,6 +1,6 @@
 export interface RitualCondition {
-    trigger: (interactions: any[]) => boolean;
-    effect: () => Promise<any>;
+    trigger: (interactions: unknown[]) => boolean;
+    effect: () => Promise<unknown>;
     rarity: number;
 }
 export type SecretFunction = (context: ExecutionContext) => Promise<SecretResult>;

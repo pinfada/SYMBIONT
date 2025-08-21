@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-// @ts-expect-error Import réservé pour usage futur
 import { GlobalNetworkGraph } from './GlobalNetworkGraph';
 // @ts-expect-error Import réservé pour usage futur
 import { PluginManager, Plugin } from '../../core/PluginManager';

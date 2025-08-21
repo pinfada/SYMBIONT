@@ -91,11 +91,11 @@ export declare class NeuralMesh implements INeuralMesh {
     /**
      * Process a pattern through the neural mesh (optional)
      */
-    processPattern(pattern: any): Promise<any>;
+    processPattern(pattern: any): Promise<unknown>;
     /**
      * Learn from data (optional)
      */
-    learn(data: any): Promise<void>;
+    learn(data: unknown): Promise<void>;
     /**
      * Get performance metrics (optional)
      */

@@ -110,7 +110,7 @@ export class RealTimePerformanceMonitor {
       try {
         this.performanceObserver!.observe({ entryTypes: [type] });
       } catch (_e) {
-        logger.warn(`Type d'entrée ${type} non supporté:`, e);
+        logger.warn(`Type d'entrée ${type} non supporté:`, _e);
       }
     });
   }

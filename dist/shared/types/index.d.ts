@@ -29,7 +29,7 @@ export interface Geometry {
 export interface WebGLState {
     initialized: boolean;
     error: string | null;
-    metrics: any;
+    metrics: unknown;
 }
 export interface ShaderParameters {
     primaryColor: Float32Array;

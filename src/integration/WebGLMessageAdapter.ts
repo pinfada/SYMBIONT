@@ -26,20 +26,20 @@ export class WebGLMessageAdapter {
       // Écoute des mutations
     this.messageBus.on(MessageType.ORGANISM_MUTATE, (message: MessageEvent | unknown) => {
       try {
-        const { mutation } = message.payload;
+        const { mutation } = (message as any).payload;
         this.engine.mutate(mutation as OrganismMutation);
       } catch (_err) {
-        logger.error('Erreur lors de l’application de la mutation WebGL :', err);
+        logger.error('Erreur lors de l\'application de la mutation WebGL :', _err);
       }
       });
       
       // Écoute des changements d'état
     this.messageBus.on(MessageType.ORGANISM_STATE_CHANGE, (message: MessageEvent | unknown) => {
       try {
-        const { state } = message.payload;
+        const { state } = (message as any).payload;
         this.engine.render(state as OrganismState);
       } catch (_err) {
-        logger.error('Erreur lors du rendu WebGL :', err);
+        logger.error('Erreur lors du rendu WebGL :', _err);
       }
       });
       

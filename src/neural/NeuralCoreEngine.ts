@@ -31,7 +31,7 @@ export class NeuralCoreEngine {
       this.initialized = true
       logger.info(`🧠 NeuralCoreEngine initialisé`)
     } catch (_error) {
-      errorHandler.logSimpleError('NeuralCoreEngine', 'initialize', error, 'warning')
+      errorHandler.logSimpleError('NeuralCoreEngine', 'initialize', _error, 'warning')
       this.initialized = true // Continue même en cas d'erreur
     }
   }
@@ -75,8 +75,8 @@ export class NeuralCoreEngine {
       logger.info(`🌱 Nouvel organisme créé pour ${userId}`)
       return organism
     } catch (_error) {
-      errorHandler.logSimpleError('NeuralCoreEngine', 'createOrganism', error, 'error')
-      throw error
+      errorHandler.logSimpleError('NeuralCoreEngine', 'createOrganism', _error, 'error')
+      throw _error
     }
   }
 
@@ -145,7 +145,7 @@ export class NeuralCoreEngine {
       logger.info(`🧬 ${mutations.length} mutations appliquées à l'organisme ${id}`)
       return mutations
     } catch (_error) {
-      errorHandler.logSimpleError('NeuralCoreEngine', 'evolveOrganism', error, 'error')
+      errorHandler.logSimpleError('NeuralCoreEngine', 'evolveOrganism', _error, 'error')
       return []
     }
   }
@@ -171,7 +171,7 @@ export class NeuralCoreEngine {
       logger.info(`🔮 Prédiction générée pour ${id}: ${enrichedPrediction.action}`)
       return enrichedPrediction
     } catch (_error) {
-      errorHandler.logSimpleError('NeuralCoreEngine', 'predictNextAction', error, 'error')
+      errorHandler.logSimpleError('NeuralCoreEngine', 'predictNextAction', _error, 'error')
       
       // Prédiction fallback
       return {
@@ -261,7 +261,7 @@ export class NeuralCoreEngine {
       }
       return null
     } catch (_error) {
-      errorHandler.logSimpleError('NeuralCoreEngine', 'loadOrganism', error, 'error')
+      errorHandler.logSimpleError('NeuralCoreEngine', 'loadOrganism', _error, 'error')
       return null
     }
   }

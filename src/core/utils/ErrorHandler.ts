@@ -238,7 +238,7 @@ export class ErrorHandler {
         }
         return result;
       } catch (_error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
+        lastError = _error instanceof Error ? _error : new Error(String(_error));
         
         this.logSimpleError(
           context.component, 
@@ -281,7 +281,7 @@ export class ErrorHandler {
     try {
       return operation();
     } catch (_error) {
-      this.logSimpleError(context.component, context.method, error, 'error');
+      this.logSimpleError(context.component, context.method, _error, 'error');
       return fallbackValue;
     }
   }
@@ -297,7 +297,7 @@ export class ErrorHandler {
     try {
       return await operation();
     } catch (_error) {
-      this.logSimpleError(context.component, context.method, error, 'error');
+      this.logSimpleError(context.component, context.method, _error, 'error');
       return fallbackValue;
     }
   }

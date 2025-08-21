@@ -13,7 +13,7 @@ export declare class SynapticRouter extends EventEmitter {
     private routes;
     private constructor();
     static getInstance(): SynapticRouter;
-    routeImpulse(impulse: NeuralImpulse): Promise<any>;
+    routeImpulse(impulse: NeuralImpulse): Promise<unknown>;
     private setupLearningLoop;
     private getRouteKey;
     private findOptimalRoute;

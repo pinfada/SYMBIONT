@@ -38,6 +38,7 @@ export declare class RealDataService {
     private trackNavigation;
     static enableFeature(feature: keyof typeof FEATURE_FLAGS): void;
     static disableFeature(feature: keyof typeof FEATURE_FLAGS): void;
+    private static getFeatureKey;
     static getFeatureStatus(): typeof FEATURE_FLAGS;
     migrateToRealData(userId: string): Promise<void>;
 }

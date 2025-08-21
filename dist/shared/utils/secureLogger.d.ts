@@ -22,7 +22,7 @@ interface LogEntry {
     timestamp: number;
     level: LogLevel;
     message: string;
-    data?: any;
+    data?: unknown;
     context?: string | undefined;
     sanitized: boolean;
 }

@@ -19,7 +19,7 @@ export class PatternAnalyzer {
   detectPatterns(events: unknown[]): unknown[] {
     // Pattern detection logic
     return events.map(event => ({
-      ...event,
+      ...(event && typeof event === 'object' ? event : {}),
       patternType: 'detected'
     }));
   }

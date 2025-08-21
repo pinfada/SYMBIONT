@@ -1,4 +1,4 @@
-type MessageHandler = (message: any) => Promise<void>;
+type MessageHandler = (message: MessageEvent | unknown) => Promise<void>;
 export declare class SynapticRouter {
     private connections;
     private isConnected;
@@ -25,7 +25,7 @@ export declare class SynapticRouter {
      * @returns {Promise<void>}
      */
     private handleMessage;
-    route(message: Message, sender?: MessagePort): Promise<any>;
+    route(message: Message, sender?: MessagePort): Promise<unknown>;
 }
 export {};
 //# sourceMappingURL=SynapticRouter.d.ts.map

@@ -78,13 +78,13 @@ export class ProductionAPIService {
       password
     });
 
-    this.token = response.data.token;
+    this.token = (response.data as {token: string}).token;
     localStorage.setItem('symbiont_token', this.token || '');
     
     // Établir connexion WebSocket
     this.connectWebSocket();
 
-    return response.data;
+    return response.data as { token: string; refreshToken: string; user: unknown; };
   }
 
   async register(email: string, username: string, password: string): Promise<unknown> {
@@ -173,7 +173,7 @@ export class ProductionAPIService {
     const response = await this.request<unknown>('POST', '/analytics/emotional-state', {
       behaviorData
     });
-    return response.data;
+    return response.data as { mood: string; intensity: number; triggers: string[]; };
   }
 
   /**
@@ -270,18 +270,19 @@ export class ProductionAPIService {
   }
 
   private handleWebSocketMessage(data: unknown): void {
-    switch (data.type) {
+    const messageData = data as { type: string; event?: Event; [key: string]: unknown };
+    switch (messageData.type) {
       case 'network_event':
-        this.handleNetworkEvent(data.event);
+        this.handleNetworkEvent(messageData.event as Event);
         break;
       case 'mutation':
-        this.handleMutationEvent(data);
+        this.handleMutationEvent(messageData);
         break;
       case 'ritual_invitation':
-        this.handleRitualInvitation(data);
+        this.handleRitualInvitation(messageData);
         break;
       case 'sync_request':
-        this.handleSyncRequest(data);
+        this.handleSyncRequest(messageData);
         break;
     }
   }
@@ -385,7 +386,7 @@ export class ProductionAPIService {
       }
     };
 
-    return fallbackData[endpoint] || { success: true, data: [] as T };
+    return (fallbackData as Record<string, APIResponse<T>>)[endpoint] || { success: true, data: [] as unknown as T };
   }
 
   /**

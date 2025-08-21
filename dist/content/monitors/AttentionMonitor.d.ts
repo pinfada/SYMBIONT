@@ -68,7 +68,7 @@ export declare class AttentionMonitor extends EventTarget {
     start(): void;
     stop(): void;
     getMetrics(): AttentionMetrics;
-    on(event: string, handler: (event: any) => void): void;
+    on(event: string, handler: (_event: Event) => void): void;
     getStats(): any;
 }
 //# sourceMappingURL=AttentionMonitor.d.ts.map

@@ -12,24 +12,22 @@ declare class ServiceWorkerMessageChannel {
     private setupMessageListener;
     private serializeMessageData;
     private cleanObjectForSerialization;
-    postMessage(data: any): void;
+    postMessage(data: unknown): void;
     private broadcastViaStorage;
     private handleMessage;
-    set onmessage(handler: (event: {
-        data: any;
-    }) => void);
+    set onmessage(handler: (data: unknown) => void);
 }
 declare class ServiceWorkerCrypto {
     private encryptionKey;
-    encryptSensitiveData(data: any): Promise<string>;
-    decryptSensitiveData(encryptedData: string): Promise<any>;
+    encryptSensitiveData(data: unknown): Promise<string>;
+    decryptSensitiveData(encryptedData: string): Promise<unknown>;
 }
 declare class ServiceWorkerIndexedDB {
     private db;
     private readonly DB_NAME;
     private readonly DB_VERSION;
     initialize(): Promise<void>;
-    getOrganism(): Promise<any>;
+    getOrganism(): Promise<unknown>;
     saveOrganism(organism: any): Promise<void>;
 }
 declare class ServiceWorkerGlobals {
@@ -45,11 +43,11 @@ declare class ServiceWorkerGlobals {
     static get swCryptoAPI(): {
         subtle: null;
         getRandomValues: (array: Uint8Array) => Uint8Array<ArrayBufferLike>;
-        encryptSensitiveData: (data: any) => Promise<string>;
-        decryptSensitiveData: (encryptedData: string) => Promise<any>;
+        encryptSensitiveData: (data: unknown) => Promise<string>;
+        decryptSensitiveData: (encryptedData: string) => Promise<unknown>;
     } | {
-        encryptSensitiveData: (data: any) => Promise<string>;
-        decryptSensitiveData: (encryptedData: string) => Promise<any>;
+        encryptSensitiveData: (data: unknown) => Promise<string>;
+        decryptSensitiveData: (encryptedData: string) => Promise<unknown>;
         subtle: SubtleCrypto;
         getRandomValues<T extends ArrayBufferView | null>(array: T): T;
         randomUUID(): `${string}-${string}-${string}-${string}-${string}`;
@@ -64,11 +62,11 @@ export declare const swBroadcastChannel: typeof ServiceWorkerMessageChannel;
 export declare const swCryptoAPI: {
     subtle: null;
     getRandomValues: (array: Uint8Array) => Uint8Array<ArrayBufferLike>;
-    encryptSensitiveData: (data: any) => Promise<string>;
-    decryptSensitiveData: (encryptedData: string) => Promise<any>;
+    encryptSensitiveData: (data: unknown) => Promise<string>;
+    decryptSensitiveData: (encryptedData: string) => Promise<unknown>;
 } | {
-    encryptSensitiveData: (data: any) => Promise<string>;
-    decryptSensitiveData: (encryptedData: string) => Promise<any>;
+    encryptSensitiveData: (data: unknown) => Promise<string>;
+    decryptSensitiveData: (encryptedData: string) => Promise<unknown>;
     subtle: SubtleCrypto;
     getRandomValues<T extends ArrayBufferView | null>(array: T): T;
     randomUUID(): `${string}-${string}-${string}-${string}-${string}`;

@@ -318,7 +318,7 @@ export class SymbiontStorage {
           cursor.continue();
         } else {
           // Tri par timestamp décroissant
-          recent.sort((a, b) => b.timestamp - a.timestamp);
+          recent.sort((a, b) => (b as any).timestamp - (a as any).timestamp);
           resolve(recent);
         }
       };

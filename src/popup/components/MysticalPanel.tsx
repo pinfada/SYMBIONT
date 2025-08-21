@@ -476,7 +476,7 @@ const MysticalPanel: React.FC = () => {
                   </span>
                 </div>
                 <div className="entry-effects">
-                                     {Object.entries(entry.effects).map(([key, value]) => (
+                                     {Object.entries(entry.effects as Record<string, unknown>).map(([key, value]) => (
                      <span key={key} className="effect-tag">
                        {key}: {typeof value === 'number' ? (value > 0 ? '+' : '') + (value * 100).toFixed(0) + '%' : String(value)}
                      </span>

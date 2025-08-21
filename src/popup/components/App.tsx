@@ -36,7 +36,7 @@ const App: React.FC = () => {
         // Fermer le popup actuel
         window.close();
       } catch (_error) {
-        logger.warn('Impossible d\'ouvrir en fenêtre:', error);
+        logger.warn('Impossible d\'ouvrir en fenêtre:', _error);
         setToast({ 
           message: 'Ouverture en fenêtre non disponible dans ce contexte', 
           type: 'info' 
