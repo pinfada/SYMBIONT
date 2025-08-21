@@ -1,0 +1,280 @@
+/* Consciousness Gauge Component */
+.consciousness-gauge {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+}
+
+.consciousness-gauge svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.consciousness-gauge__value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.consciousness-gauge__number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-consciousness, #00c9db);
+  text-shadow: 0 0 8px rgba(0, 201, 219, 0.3);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.consciousness-gauge__label {
+  font-size: 0.7rem;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Variables CSS personnalis�es */
+:root {
+  --color-consciousness: #00c9db;
+  --color-surface-light: rgba(255, 255, 255, 0.1);
+}
+
+/* Animations */
+.consciousness-gauge__number {
+  animation: pulse-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% {
+    text-shadow: 0 0 8px rgba(0, 201, 219, 0.3);
+  }
+  100% {
+    text-shadow: 
+      0 0 8px rgba(0, 201, 219, 0.6),
+      0 0 16px rgba(0, 201, 219, 0.3);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .consciousness-gauge {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .consciousness-gauge__number {
+    font-size: 1.2rem;
+  }
+  
+  .consciousness-gauge__label {
+    font-size: 0.6rem;
+  }
+}
+
+/* Th�me sombre */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-consciousness: #00e5ff;
+    --color-surface-light: rgba(255, 255, 255, 0.08);
+  }
+  
+  .consciousness-gauge__label {
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* ===== TRAITS RADAR CHART ===== */
+.traits-radar {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+}
+
+.radar-chart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.radar-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text-primary, #333);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* ===== ORGANISM VIEWER ===== */
+.organism-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.organism-loading-content {
+  text-align: center;
+  z-index: 2;
+}
+
+.quantum-loader {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+}
+
+.quantum-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  animation: quantum-spin 3s linear infinite;
+}
+
+.quantum-ring:nth-child(1) {
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-top-color: #00c9db;
+  animation-delay: 0s;
+}
+
+.quantum-ring:nth-child(2) {
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-right-color: #ff6b6b;
+  animation-delay: -1s;
+  animation-direction: reverse;
+}
+
+.quantum-ring:nth-child(3) {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-bottom-color: #4ecdc4;
+  animation-delay: -2s;
+}
+
+.quantum-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  background: radial-gradient(circle, #fff 0%, #00c9db 100%);
+  border-radius: 50%;
+  animation: quantum-pulse 2s ease-in-out infinite;
+}
+
+.loading-text {
+  color: #00c9db;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px rgba(0, 201, 219, 0.3);
+}
+
+.loading-progress {
+  width: 200px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00c9db, #4ecdc4);
+  width: 0%;
+  animation: loading-fill 3s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+.organism-viewer-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.organism-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+}
+
+/* ===== ORGANISM DASHBOARD ===== */
+.organism-dashboard--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-size: 18px;
+  color: var(--text-muted, #666);
+}
+
+.organism-dashboard--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted, #666);
+  text-align: center;
+}
+
+.dashboard-section {
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.dashboard-section--info {
+  background: var(--bg-surface, #f8f9fa);
+  border: 1px solid var(--border-light, #e9ecef);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes quantum-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes quantum-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+@keyframes loading-fill {
+  0% { width: 0%; }
+  50% { width: 100%; }
+  100% { width: 0%; }
+}

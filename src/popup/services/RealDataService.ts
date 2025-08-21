@@ -403,13 +403,23 @@ export class RealDataService {
   // === FEATURE FLAGS MANAGEMENT ===
 
   static enableFeature(feature: keyof typeof FEATURE_FLAGS): void {
-    localStorage.setItem(`symbiont_feature_${feature.toLowerCase()}`, 'true');
-    location.reload(); // Recharger pour appliquer
+    const key = this.getFeatureKey(feature);
+    localStorage.setItem(key, 'true');
+    // Mettre à jour le cache local
+    (FEATURE_FLAGS as any)[feature] = true;
   }
 
   static disableFeature(feature: keyof typeof FEATURE_FLAGS): void {
-    localStorage.setItem(`symbiont_feature_${feature.toLowerCase()}`, 'false');
-    location.reload();
+    const key = this.getFeatureKey(feature);
+    localStorage.setItem(key, 'false');
+    // Mettre à jour le cache local
+    (FEATURE_FLAGS as any)[feature] = false;
+  }
+
+  private static getFeatureKey(feature: keyof typeof FEATURE_FLAGS): string {
+    // Convertir USE_BACKEND_API -> symbiont_feature_backend_api
+    const normalizedFeature = feature.replace('USE_', '').toLowerCase();
+    return `symbiont_feature_${normalizedFeature}`;
   }
 
   static getFeatureStatus(): typeof FEATURE_FLAGS {

@@ -91,8 +91,14 @@ export const SettingsPanel: React.FC = () => {
         ...prev,
         [feature]: !currentValue
       }));
+      
+      // Notifier les autres composants du changement si nécessaire
+      if (feature === 'USE_BACKEND_API') {
+        // Refresh data when backend API status changes
+        setTimeout(() => window.location.reload(), 100);
+      }
     } catch (_error) {
-      logger.error('Erreur toggle feature flag:', error);
+      logger.error('Erreur toggle feature flag:', _error);
     }
   };
 
