@@ -5,10 +5,40 @@ import { logger } from '@/shared/utils/secureLogger';
 
 // Fallback pour les APIs manquantes dans le service worker
 const swLocalStorage = {
-  getItem: (key: string) => localStorage?.getItem(key) || null,
-  setItem: (key: string, value: string) => localStorage?.setItem(key, value),
-  removeItem: (key: string) => localStorage?.removeItem(key),
-  clear: () => localStorage?.clear()
+  getItem: (key: string) => {
+    try {
+      return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, value);
+      }
+    } catch {
+      // Silently fail in service worker context
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+    } catch {
+      // Silently fail in service worker context
+    }
+  },
+  clear: () => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.clear();
+      }
+    } catch {
+      // Silently fail in service worker context
+    }
+  }
 };
 
 const swIndexedDB = typeof indexedDB !== 'undefined' ? indexedDB : null;
