@@ -70,16 +70,16 @@ export class NeuralMeshAsync implements INeuralMesh {
    */
   private initializeWorker(): void {
     try {
-      // Dans un environnement de navigateur, nous devons créer le worker différemment
-      const workerBlob = new Blob([
-        // Contenu du worker en tant que string (pour contourner les limitations)
-        `
-        // Worker code sera injecté ici lors du build
-        importScripts('./workers/NeuralWorker.js');
-        `
-      ], { type: 'application/javascript' });
+      // For Chrome extension environment, try to use the built worker directly
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        // In Chrome extension context, use the pre-built worker
+        const workerUrl = chrome.runtime.getURL('neural-worker.js');
+        this.worker = new Worker(workerUrl);
+      } else {
+        // Fallback for non-extension environments
+        this.worker = new Worker('./neural-worker.js');
+      }
       
-      this.worker = new Worker(URL.createObjectURL(workerBlob));
       this.worker.onmessage = this.handleWorkerMessage.bind(this);
       this.worker.onerror = this.handleWorkerError.bind(this);
       

@@ -1,5 +1,5 @@
 // src/popup/components/OrganismDashboard.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { OrganismViewer } from './OrganismViewer';
 import { ConsciousnessGauge } from './ConsciousnessGauge';
 import { TraitsRadarChart } from './TraitsRadarChart';
@@ -8,11 +8,86 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
 import { OrganismTimeline } from './OrganismTimeline';
 import { TransmissionGraph } from './TransmissionGraph';
 import { useInvitationData } from '../hooks/useInvitationData';
+import { UserIdentityService } from '../../core/services/UserIdentityService';
+import { OrganismEventService, OrganismEvent } from '../../core/services/OrganismEventService';
 
 export const OrganismDashboard: React.FC = () => {
   const { organism, isLoading } = useOrganism();
+  const [userId, setUserId] = useState<string>('');
+  const [events, setEvents] = useState<OrganismEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const { inviter, invitees } = useInvitationData(userId);
   
-  if (isLoading) {
+  // Initialiser l'identité utilisateur et charger les événements
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        setEventsLoading(true);
+        
+        // Obtenir l'identité utilisateur sécurisée
+        const userIdentity = await UserIdentityService.getUserIdentity();
+        setUserId(userIdentity.id);
+        
+        // Charger les événements réels de l'organisme
+        const organismEvents = await OrganismEventService.getEvents();
+        setEvents(organismEvents);
+        
+        // Nettoyer les anciens événements pour optimiser le stockage
+        await OrganismEventService.cleanOldEvents();
+        
+      } catch (error) {
+        console.error('Failed to initialize dashboard data:', error);
+        // Fallback avec un événement d'activation de base
+        setEvents([{
+          id: 'fallback-activation',
+          type: 'activation',
+          date: Date.now(),
+          description: 'Organisme digital activé avec succès'
+        }]);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    initializeData();
+  }, []);
+
+  // Détecter et ajouter des événements basés sur l'état de l'organisme
+  useEffect(() => {
+    if (!organism || !userId) return;
+
+    const checkForNewEvents = async () => {
+      try {
+        // Événement de conscience si niveau élevé détecté
+        if (organism.consciousness && organism.consciousness > 0.8) {
+          await OrganismEventService.addConsciousnessEvent(organism.consciousness);
+        }
+
+        // Événements de mutation récente
+        if (organism.mutations && organism.mutations.length > 0) {
+          const recentMutation = organism.mutations[organism.mutations.length - 1];
+          if (recentMutation && typeof recentMutation === 'object' && 'timestamp' in recentMutation) {
+            const timestamp = (recentMutation as any).timestamp;
+            if (timestamp && Date.now() - timestamp < 300000) { // 5 minutes
+              await OrganismEventService.addMutationEvent('visual', 'minor');
+            }
+          }
+        }
+
+        // Recharger les événements mis à jour
+        const updatedEvents = await OrganismEventService.getEvents();
+        setEvents(updatedEvents);
+      } catch (error) {
+        console.error('Failed to check for new events:', error);
+      }
+    };
+
+    // Déclencher la vérification avec un délai pour éviter les appels excessifs
+    const timeoutId = setTimeout(checkForNewEvents, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [organism, userId]);
+  
+  if (isLoading || eventsLoading) {
     return (
       <div className="organism-dashboard--loading">
         <LoadingSpinner size="large" />
@@ -29,21 +104,6 @@ export const OrganismDashboard: React.FC = () => {
       </div>
     );
   }
-  
-  // Pour la démo, on génère des événements mockés
-  const now = Date.now();
-  const events = [
-    { type: 'activation' as const, date: now - 1000 * 60 * 60 * 24 * 7, description: "L'organisme a été activé." },
-    { type: 'mutation' as const, date: now - 1000 * 60 * 60 * 24 * 6, description: 'Mutation visuelle : variation de couleur.' },
-    { type: 'mutation' as const, date: now - 1000 * 60 * 60 * 24 * 4, description: 'Mutation cognitive rare : éveil de la conscience.' },
-    { type: 'transmission' as const, date: now - 1000 * 60 * 60 * 24 * 3, description: 'Invitation transmise à un autre utilisateur.' },
-    { type: 'mutation' as const, date: now - 1000 * 60 * 60 * 24 * 2, description: 'Mutation comportementale : curiosité accrue.' },
-    { type: 'mutation' as const, date: now - 1000 * 60 * 60 * 24 * 1, description: 'Mutation visuelle : motif fractal généré.' },
-  ];
-  
-  // Données de transmission (mock/demo)
-  const userId = localStorage.getItem('symbiont_user_id') || 'ABC123';
-  const { inviter, invitees } = useInvitationData(userId);
 
   return (
     <div className="organism-dashboard max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
