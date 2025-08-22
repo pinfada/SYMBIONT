@@ -3,7 +3,7 @@ import path from 'path';
 import { waitForReactToLoad, debugPageState } from './utils';
 
 test.describe('Résilience et monitoring SYMBIONT', () => {
-  const popupPath = path.resolve(__dirname, '../../dist/popup.html');
+  const popupPath = path.resolve(__dirname, '../../dist/popup/index.html');
 
   test('Affichage des logs de résilience', async ({ page }) => {
     await page.goto('file://' + popupPath);

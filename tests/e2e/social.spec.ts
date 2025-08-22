@@ -3,7 +3,7 @@ import path from 'path';
 import { waitForReactToLoad, debugPageState } from './utils';
 
 test.describe('Fonctionnalites sociales SYMBIONT', () => {
-  const popupPath = path.resolve(__dirname, '../../dist/popup.html');
+  const popupPath = path.resolve(__dirname, '../../dist/popup/index.html');
 
   test('Generation et partage d\'une invitation', async ({ page }) => {
     await page.goto('file://' + popupPath);

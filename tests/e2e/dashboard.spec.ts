@@ -4,7 +4,7 @@ import path from 'path';
 import { waitForReactToLoad, debugPageState, capturePageErrors, waitForElementReady } from './utils';
 
 test.describe('Dashboard SYMBIONT', () => {
-  const dashboardPath = path.resolve(__dirname, '../../dist/popup.html');
+  const dashboardPath = path.resolve(__dirname, '../../dist/popup/index.html');
 
   test('Affichage des visualisations et des traits', async ({ page }) => {
     const errors = capturePageErrors(page);

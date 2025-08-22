@@ -3,7 +3,7 @@ import path from 'path';
 import { waitForReactToLoad, debugPageState } from './utils';
 
 test.describe('Intelligence adaptative et ML SYMBIONT', () => {
-  const popupPath = path.resolve(__dirname, '../../dist/popup.html');
+  const popupPath = path.resolve(__dirname, '../../dist/popup/index.html');
 
   test('Prédiction d’action et adaptation', async ({ page }) => {
     await page.goto('file://' + popupPath);

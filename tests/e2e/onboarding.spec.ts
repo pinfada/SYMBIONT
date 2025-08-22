@@ -3,7 +3,7 @@ import path from 'path';
 import { waitForReactToLoad, debugPageState, capturePageErrors, waitForElementReady } from './utils';
 
 test.describe('Onboarding SYMBIONT', () => {
-  const popupPath = path.resolve(__dirname, '../../dist/popup.html');
+  const popupPath = path.resolve(__dirname, '../../dist/popup/index.html');
 
   test('L\'utilisateur réalise un onboarding interactif complet', async ({ page }) => {
     const errors = capturePageErrors(page);

@@ -27,7 +27,7 @@ Call log:
    2 | import path from 'path';
    3 |
    4 | test.describe('Simple Popup Test', () => {
-   5 |   const popupPath = path.resolve(__dirname, '../../dist/popup.html');
+   5 |   const popupPath = path.resolve(__dirname, '../../dist/popup/index.html');
    6 |   test('popup loads correctly', async ({ page }) => {
    7 |     // Enable console logging
    8 |     page.on('console', msg => console.log('Console:', msg.text()));

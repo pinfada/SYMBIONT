@@ -1,0 +1,125 @@
+2ce16504a1b17c66a557da7024dc485e
+"use strict";
+
+// SYMBIONT Types - Complete Type Definitions
+/* istanbul ignore next */
+function cov_1zaz05x2ck() {
+  var path = "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/types/SymbiontTypes.ts";
+  var hash = "7dd084ad27f14b9af0f91779fbfa56d6a5168582";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/types/SymbiontTypes.ts",
+    statementMap: {
+      "0": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 62
+        }
+      },
+      "1": {
+        start: {
+          line: 4,
+          column: 0
+        },
+        end: {
+          line: 4,
+          column: 73
+        }
+      },
+      "2": {
+        start: {
+          line: 6,
+          column: 0
+        },
+        end: {
+          line: 13,
+          column: 2
+        }
+      },
+      "3": {
+        start: {
+          line: 14,
+          column: 0
+        },
+        end: {
+          line: 14,
+          column: 41
+        }
+      },
+      "4": {
+        start: {
+          line: 15,
+          column: 0
+        },
+        end: {
+          line: 23,
+          column: 2
+        }
+      }
+    },
+    fnMap: {},
+    branchMap: {},
+    s: {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0
+    },
+    f: {},
+    b: {},
+    inputSourceMap: {
+      file: "/mnt/c/Users/m_oli/Projets/SYMBIONT/src/types/SymbiontTypes.ts",
+      mappings: ";AAAA,6CAA6C;;;AAwO7C,aAAa;AACA,QAAA,cAAc,GAAsB;IAC/C,SAAS,EAAE,GAAG;IACd,KAAK,EAAE,GAAG;IACV,MAAM,EAAE,GAAG;IACX,UAAU,EAAE,GAAG;IACf,UAAU,EAAE,GAAG;IACf,YAAY,EAAE,GAAG;CAClB,CAAC;AAEW,QAAA,SAAS,GAAG,CAAC,GAAG,EAAE,GAAG,EAAE,GAAG,EAAE,GAAG,CAAU,CAAC;AAG1C,QAAA,UAAU,GAAG;IACxB,MAAM;IACN,QAAQ;IACR,eAAe;IACf,WAAW;IACX,UAAU;IACV,MAAM;IACN,OAAO;CACC,CAAC",
+      names: [],
+      sources: ["/mnt/c/Users/m_oli/Projets/SYMBIONT/src/types/SymbiontTypes.ts"],
+      sourcesContent: ["// SYMBIONT Types - Complete Type Definitions\r\n\r\nexport interface PersonalityTraits {\r\n  curiosity: number;        // 0-1: Exploration vs Exploitation\r\n  focus: number;           // 0-1: Deep vs Surface engagement\r\n  social: number;          // 0-1: Social vs Individual\r\n  creativity: number;      // 0-1: Creative vs Practical\r\n  analytical: number;      // 0-1: Data-driven vs Intuitive\r\n  adaptability: number;    // 0-1: Change-seeking vs Routine\r\n}\r\n\r\nexport interface DNAMutation {\r\n  id: string;\r\n  type: 'behavioral' | 'cognitive' | 'social' | 'emotional';\r\n  trigger: string;\r\n  magnitude: number;\r\n  description: string;\r\n  effects: PersonalityTraits;\r\n  timestamp: Date;\r\n}\r\n\r\nexport interface PredictionResult {\r\n  action: string;\r\n  probability: number;\r\n  confidence: number;\r\n  reasoning: string[];\r\n}\r\n\r\nexport interface OrganismState {\r\n  id: string;\r\n  name?: string;\r\n  dna: string;\r\n  visualDNA: string;\r\n  generation: number;\r\n  health: number;\r\n  energy: number;\r\n  consciousness: number;\r\n  traits: PersonalityTraits;\r\n  birthTime: Date;\r\n  lastMutation?: Date;\r\n}\r\n\r\nexport interface BehaviorPattern {\r\n  id: string;\r\n  pattern: string;\r\n  frequency: number;\r\n  timeSpent: number;\r\n  category: 'work' | 'social' | 'entertainment' | 'education' | 'shopping' | 'news' | 'other';\r\n  domains: string[];\r\n  timestamp: Date;\r\n}\r\n\r\nexport interface NetworkConnection {\r\n  fromUserId: string;\r\n  toUserId: string;\r\n  strength: number;\r\n  type: 'invitation' | 'mutual' | 'following';\r\n  organism?: OrganismState;\r\n}\r\n\r\nexport interface RitualSession {\r\n  id: string;\r\n  type: 'meditation' | 'synchronization' | 'revelation' | 'evolution';\r\n  duration: number;\r\n  intensity: number;\r\n  participants: string[];\r\n  effects: unknown;\r\n  startedAt: Date;\r\n  completedAt?: Date;\r\n}\r\n\r\nexport interface MemoryFragment {\r\n  id: string;\r\n  content: string;\r\n  type: 'navigation' | 'interaction' | 'emotion' | 'learning';\r\n  strength: number;\r\n  context?: unknown;\r\n  createdAt: Date;\r\n}\r\n\r\nexport interface EmotionalState {\r\n  mood: 'excited' | 'focused' | 'stressed' | 'relaxed' | 'curious' | 'frustrated';\r\n  intensity: number;\r\n  triggers: string[];\r\n  timestamp: Date;\r\n}\r\n\r\nexport interface NetworkEvent {\r\n  id: string;\r\n  type: 'mutation' | 'connection' | 'ritual' | 'synchronization' | 'evolution';\r\n  userId: string;\r\n  organismId: string;\r\n  data: unknown;\r\n  timestamp: Date;\r\n}\r\n\r\nexport interface SystemMetrics {\r\n  cpu: number;\r\n  memory: number;\r\n  latency: number;\r\n  userAgent?: string;\r\n  platform?: string;\r\n  timestamp: Date;\r\n}\r\n\r\nexport interface InvitationCode {\r\n  id: string;\r\n  code: string;\r\n  inviterId?: string;\r\n  inviteeId?: string;\r\n  isConsumed: boolean;\r\n  consumedAt?: Date;\r\n  createdAt: Date;\r\n  expiresAt: Date;\r\n}\r\n\r\nexport interface UserProfile {\r\n  id: string;\r\n  username: string;\r\n  email: string;\r\n  firstName?: string;\r\n  lastName?: string;\r\n  bio?: string;\r\n  avatar?: string;\r\n  timezone?: string;\r\n  language: string;\r\n  preferences: unknown;\r\n  createdAt: Date;\r\n}\r\n\r\n// Feature Flags pour migration progressive\r\nexport interface FeatureFlags {\r\n  USE_REAL_DNA: boolean;\r\n  USE_REAL_BEHAVIOR: boolean;\r\n  USE_REAL_NETWORK: boolean;\r\n  USE_BACKEND_API: boolean;\r\n}\r\n\r\n// Configuration globale\r\nexport interface SymbiontConfig {\r\n  apiUrl: string;\r\n  wsUrl: string;\r\n  features: FeatureFlags;\r\n  version: string;\r\n  environment: 'development' | 'staging' | 'production';\r\n}\r\n\r\n// \xC9v\xE9nements temps r\xE9el\r\nexport type WebSocketEventType = \r\n  | 'network_event'\r\n  | 'mutation'\r\n  | 'ritual_invitation'\r\n  | 'sync_request'\r\n  | 'connection'\r\n  | 'disconnection';\r\n\r\nexport interface WebSocketMessage {\r\n  type: WebSocketEventType;\r\n  data: unknown;\r\n  timestamp: Date;\r\n}\r\n\r\n// Analytics\r\nexport interface BehaviorAnalytics {\r\n  dominantCategories: string[];\r\n  timeDistribution: Record<string, number>;\r\n  patterns: string[];\r\n  anomalies: string[];\r\n  emotionalProfile: EmotionalState[];\r\n}\r\n\r\n// \xC9volution & Lign\xE9e\r\nexport interface EvolutionHistory {\r\n  id: string;\r\n  organismId: string;\r\n  generation: number;\r\n  mutations: DNAMutation[];\r\n  parentId?: string;\r\n  children: string[];\r\n  milestones: {\r\n    type: string;\r\n    timestamp: Date;\r\n    description: string;\r\n  }[];\r\n}\r\n\r\n// \xC9tats d'UI\r\nexport interface UIState {\r\n  currentView: 'main' | 'network' | 'evolution' | 'rituals' | 'settings';\r\n  isLoading: boolean;\r\n  error?: string;\r\n  notifications: Notification[];\r\n}\r\n\r\nexport interface Notification {\r\n  id: string;\r\n  type: 'info' | 'success' | 'warning' | 'error';\r\n  title: string;\r\n  message: string;\r\n  timestamp: Date;\r\n  read: boolean;\r\n}\r\n\r\n// API Responses\r\nexport interface APIResponse<T> {\r\n  success: boolean;\r\n  data: T;\r\n  message?: string;\r\n  meta?: {\r\n    count?: number;\r\n    page?: number;\r\n    totalPages?: number;\r\n    timestamp?: string;\r\n  };\r\n}\r\n\r\nexport interface APIError {\r\n  error: string;\r\n  code?: string;\r\n  details?: unknown;\r\n}\r\n\r\n// Hooks et Context\r\nexport interface SymbiontContextType {\r\n  organism: OrganismState | null;\r\n  isLoading: boolean;\r\n  error: string | null;\r\n  updateOrganism: (updates: Partial<OrganismState>) => void;\r\n  applyMutation: (mutation: Omit<DNAMutation, 'id' | 'timestamp'>) => void;\r\n  refreshData: () => Promise<void>;\r\n}\r\n\r\n// Constantes\r\nexport const DEFAULT_TRAITS: PersonalityTraits = {\r\n  curiosity: 0.5,\r\n  focus: 0.5,\r\n  social: 0.5,\r\n  creativity: 0.5,\r\n  analytical: 0.5,\r\n  adaptability: 0.5\r\n};\r\n\r\nexport const DNA_BASES = ['A', 'T', 'G', 'C'] as const;\r\nexport type DNABase = typeof DNA_BASES[number];\r\n\r\nexport const CATEGORIES = [\r\n  'work',\r\n  'social', \r\n  'entertainment',\r\n  'education',\r\n  'shopping',\r\n  'news',\r\n  'other'\r\n] as const;\r\n\r\nexport type BehaviorCategory = typeof CATEGORIES[number];\r\n\r\n// Utilitaires de type\r\nexport type DeepPartial<T> = {\r\n  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];\r\n};\r\n\r\nexport type Timestamp = string | Date; "],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "7dd084ad27f14b9af0f91779fbfa56d6a5168582"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_1zaz05x2ck = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_1zaz05x2ck();
+cov_1zaz05x2ck().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/* istanbul ignore next */
+cov_1zaz05x2ck().s[1]++;
+exports.CATEGORIES = exports.DNA_BASES = exports.DEFAULT_TRAITS = void 0;
+// Constantes
+/* istanbul ignore next */
+cov_1zaz05x2ck().s[2]++;
+exports.DEFAULT_TRAITS = {
+  curiosity: 0.5,
+  focus: 0.5,
+  social: 0.5,
+  creativity: 0.5,
+  analytical: 0.5,
+  adaptability: 0.5
+};
+/* istanbul ignore next */
+cov_1zaz05x2ck().s[3]++;
+exports.DNA_BASES = ['A', 'T', 'G', 'C'];
+/* istanbul ignore next */
+cov_1zaz05x2ck().s[4]++;
+exports.CATEGORIES = ['work', 'social', 'entertainment', 'education', 'shopping', 'news', 'other'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJjb3ZfMXphejA1eDJjayIsInBhdGgiLCJoYXNoIiwiZ2xvYmFsIiwiRnVuY3Rpb24iLCJnY3YiLCJjb3ZlcmFnZURhdGEiLCJzdGF0ZW1lbnRNYXAiLCJzdGFydCIsImxpbmUiLCJjb2x1bW4iLCJlbmQiLCJmbk1hcCIsImJyYW5jaE1hcCIsInMiLCJmIiwiYiIsImlucHV0U291cmNlTWFwIiwiZmlsZSIsIm1hcHBpbmdzIiwibmFtZXMiLCJzb3VyY2VzIiwic291cmNlc0NvbnRlbnQiLCJ2ZXJzaW9uIiwiX2NvdmVyYWdlU2NoZW1hIiwiY292ZXJhZ2UiLCJhY3R1YWxDb3ZlcmFnZSIsImV4cG9ydHMiLCJERUZBVUxUX1RSQUlUUyIsImN1cmlvc2l0eSIsImZvY3VzIiwic29jaWFsIiwiY3JlYXRpdml0eSIsImFuYWx5dGljYWwiLCJhZGFwdGFiaWxpdHkiLCJETkFfQkFTRVMiLCJDQVRFR09SSUVTIl0sInNvdXJjZXMiOlsiL21udC9jL1VzZXJzL21fb2xpL1Byb2pldHMvU1lNQklPTlQvc3JjL3R5cGVzL1N5bWJpb250VHlwZXMudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gU1lNQklPTlQgVHlwZXMgLSBDb21wbGV0ZSBUeXBlIERlZmluaXRpb25zXHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIFBlcnNvbmFsaXR5VHJhaXRzIHtcclxuICBjdXJpb3NpdHk6IG51bWJlcjsgICAgICAgIC8vIDAtMTogRXhwbG9yYXRpb24gdnMgRXhwbG9pdGF0aW9uXHJcbiAgZm9jdXM6IG51bWJlcjsgICAgICAgICAgIC8vIDAtMTogRGVlcCB2cyBTdXJmYWNlIGVuZ2FnZW1lbnRcclxuICBzb2NpYWw6IG51bWJlcjsgICAgICAgICAgLy8gMC0xOiBTb2NpYWwgdnMgSW5kaXZpZHVhbFxyXG4gIGNyZWF0aXZpdHk6IG51bWJlcjsgICAgICAvLyAwLTE6IENyZWF0aXZlIHZzIFByYWN0aWNhbFxyXG4gIGFuYWx5dGljYWw6IG51bWJlcjsgICAgICAvLyAwLTE6IERhdGEtZHJpdmVuIHZzIEludHVpdGl2ZVxyXG4gIGFkYXB0YWJpbGl0eTogbnVtYmVyOyAgICAvLyAwLTE6IENoYW5nZS1zZWVraW5nIHZzIFJvdXRpbmVcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBETkFNdXRhdGlvbiB7XHJcbiAgaWQ6IHN0cmluZztcclxuICB0eXBlOiAnYmVoYXZpb3JhbCcgfCAnY29nbml0aXZlJyB8ICdzb2NpYWwnIHwgJ2Vtb3Rpb25hbCc7XHJcbiAgdHJpZ2dlcjogc3RyaW5nO1xyXG4gIG1hZ25pdHVkZTogbnVtYmVyO1xyXG4gIGRlc2NyaXB0aW9uOiBzdHJpbmc7XHJcbiAgZWZmZWN0czogUGVyc29uYWxpdHlUcmFpdHM7XHJcbiAgdGltZXN0YW1wOiBEYXRlO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIFByZWRpY3Rpb25SZXN1bHQge1xyXG4gIGFjdGlvbjogc3RyaW5nO1xyXG4gIHByb2JhYmlsaXR5OiBudW1iZXI7XHJcbiAgY29uZmlkZW5jZTogbnVtYmVyO1xyXG4gIHJlYXNvbmluZzogc3RyaW5nW107XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgT3JnYW5pc21TdGF0ZSB7XHJcbiAgaWQ6IHN0cmluZztcclxuICBuYW1lPzogc3RyaW5nO1xyXG4gIGRuYTogc3RyaW5nO1xyXG4gIHZpc3VhbEROQTogc3RyaW5nO1xyXG4gIGdlbmVyYXRpb246IG51bWJlcjtcclxuICBoZWFsdGg6IG51bWJlcjtcclxuICBlbmVyZ3k6IG51bWJlcjtcclxuICBjb25zY2lvdXNuZXNzOiBudW1iZXI7XHJcbiAgdHJhaXRzOiBQZXJzb25hbGl0eVRyYWl0cztcclxuICBiaXJ0aFRpbWU6IERhdGU7XHJcbiAgbGFzdE11dGF0aW9uPzogRGF0ZTtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBCZWhhdmlvclBhdHRlcm4ge1xyXG4gIGlkOiBzdHJpbmc7XHJcbiAgcGF0dGVybjogc3RyaW5nO1xyXG4gIGZyZXF1ZW5jeTogbnVtYmVyO1xyXG4gIHRpbWVTcGVudDogbnVtYmVyO1xyXG4gIGNhdGVnb3J5OiAnd29yaycgfCAnc29jaWFsJyB8ICdlbnRlcnRhaW5tZW50JyB8ICdlZHVjYXRpb24nIHwgJ3Nob3BwaW5nJyB8ICduZXdzJyB8ICdvdGhlcic7XHJcbiAgZG9tYWluczogc3RyaW5nW107XHJcbiAgdGltZXN0YW1wOiBEYXRlO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIE5ldHdvcmtDb25uZWN0aW9uIHtcclxuICBmcm9tVXNlcklkOiBzdHJpbmc7XHJcbiAgdG9Vc2VySWQ6IHN0cmluZztcclxuICBzdHJlbmd0aDogbnVtYmVyO1xyXG4gIHR5cGU6ICdpbnZpdGF0aW9uJyB8ICdtdXR1YWwnIHwgJ2ZvbGxvd2luZyc7XHJcbiAgb3JnYW5pc20/OiBPcmdhbmlzbVN0YXRlO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIFJpdHVhbFNlc3Npb24ge1xyXG4gIGlkOiBzdHJpbmc7XHJcbiAgdHlwZTogJ21lZGl0YXRpb24nIHwgJ3N5bmNocm9uaXphdGlvbicgfCAncmV2ZWxhdGlvbicgfCAnZXZvbHV0aW9uJztcclxuICBkdXJhdGlvbjogbnVtYmVyO1xyXG4gIGludGVuc2l0eTogbnVtYmVyO1xyXG4gIHBhcnRpY2lwYW50czogc3RyaW5nW107XHJcbiAgZWZmZWN0czogdW5rbm93bjtcclxuICBzdGFydGVkQXQ6IERhdGU7XHJcbiAgY29tcGxldGVkQXQ/OiBEYXRlO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIE1lbW9yeUZyYWdtZW50IHtcclxuICBpZDogc3RyaW5nO1xyXG4gIGNvbnRlbnQ6IHN0cmluZztcclxuICB0eXBlOiAnbmF2aWdhdGlvbicgfCAnaW50ZXJhY3Rpb24nIHwgJ2Vtb3Rpb24nIHwgJ2xlYXJuaW5nJztcclxuICBzdHJlbmd0aDogbnVtYmVyO1xyXG4gIGNvbnRleHQ/OiB1bmtub3duO1xyXG4gIGNyZWF0ZWRBdDogRGF0ZTtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBFbW90aW9uYWxTdGF0ZSB7XHJcbiAgbW9vZDogJ2V4Y2l0ZWQnIHwgJ2ZvY3VzZWQnIHwgJ3N0cmVzc2VkJyB8ICdyZWxheGVkJyB8ICdjdXJpb3VzJyB8ICdmcnVzdHJhdGVkJztcclxuICBpbnRlbnNpdHk6IG51bWJlcjtcclxuICB0cmlnZ2Vyczogc3RyaW5nW107XHJcbiAgdGltZXN0YW1wOiBEYXRlO1xyXG59XHJcblxyXG5leHBvcnQgaW50ZXJmYWNlIE5ldHdvcmtFdmVudCB7XHJcbiAgaWQ6IHN0cmluZztcclxuICB0eXBlOiAnbXV0YXRpb24nIHwgJ2Nvbm5lY3Rpb24nIHwgJ3JpdHVhbCcgfCAnc3luY2hyb25pemF0aW9uJyB8ICdldm9sdXRpb24nO1xyXG4gIHVzZXJJZDogc3RyaW5nO1xyXG4gIG9yZ2FuaXNtSWQ6IHN0cmluZztcclxuICBkYXRhOiB1bmtub3duO1xyXG4gIHRpbWVzdGFtcDogRGF0ZTtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBTeXN0ZW1NZXRyaWNzIHtcclxuICBjcHU6IG51bWJlcjtcclxuICBtZW1vcnk6IG51bWJlcjtcclxuICBsYXRlbmN5OiBudW1iZXI7XHJcbiAgdXNlckFnZW50Pzogc3RyaW5nO1xyXG4gIHBsYXRmb3JtPzogc3RyaW5nO1xyXG4gIHRpbWVzdGFtcDogRGF0ZTtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBJbnZpdGF0aW9uQ29kZSB7XHJcbiAgaWQ6IHN0cmluZztcclxuICBjb2RlOiBzdHJpbmc7XHJcbiAgaW52aXRlcklkPzogc3RyaW5nO1xyXG4gIGludml0ZWVJZD86IHN0cmluZztcclxuICBpc0NvbnN1bWVkOiBib29sZWFuO1xyXG4gIGNvbnN1bWVkQXQ/OiBEYXRlO1xyXG4gIGNyZWF0ZWRBdDogRGF0ZTtcclxuICBleHBpcmVzQXQ6IERhdGU7XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgVXNlclByb2ZpbGUge1xyXG4gIGlkOiBzdHJpbmc7XHJcbiAgdXNlcm5hbWU6IHN0cmluZztcclxuICBlbWFpbDogc3RyaW5nO1xyXG4gIGZpcnN0TmFtZT86IHN0cmluZztcclxuICBsYXN0TmFtZT86IHN0cmluZztcclxuICBiaW8/OiBzdHJpbmc7XHJcbiAgYXZhdGFyPzogc3RyaW5nO1xyXG4gIHRpbWV6b25lPzogc3RyaW5nO1xyXG4gIGxhbmd1YWdlOiBzdHJpbmc7XHJcbiAgcHJlZmVyZW5jZXM6IHVua25vd247XHJcbiAgY3JlYXRlZEF0OiBEYXRlO1xyXG59XHJcblxyXG4vLyBGZWF0dXJlIEZsYWdzIHBvdXIgbWlncmF0aW9uIHByb2dyZXNzaXZlXHJcbmV4cG9ydCBpbnRlcmZhY2UgRmVhdHVyZUZsYWdzIHtcclxuICBVU0VfUkVBTF9ETkE6IGJvb2xlYW47XHJcbiAgVVNFX1JFQUxfQkVIQVZJT1I6IGJvb2xlYW47XHJcbiAgVVNFX1JFQUxfTkVUV09SSzogYm9vbGVhbjtcclxuICBVU0VfQkFDS0VORF9BUEk6IGJvb2xlYW47XHJcbn1cclxuXHJcbi8vIENvbmZpZ3VyYXRpb24gZ2xvYmFsZVxyXG5leHBvcnQgaW50ZXJmYWNlIFN5bWJpb250Q29uZmlnIHtcclxuICBhcGlVcmw6IHN0cmluZztcclxuICB3c1VybDogc3RyaW5nO1xyXG4gIGZlYXR1cmVzOiBGZWF0dXJlRmxhZ3M7XHJcbiAgdmVyc2lvbjogc3RyaW5nO1xyXG4gIGVudmlyb25tZW50OiAnZGV2ZWxvcG1lbnQnIHwgJ3N0YWdpbmcnIHwgJ3Byb2R1Y3Rpb24nO1xyXG59XHJcblxyXG4vLyDDiXbDqW5lbWVudHMgdGVtcHMgcsOpZWxcclxuZXhwb3J0IHR5cGUgV2ViU29ja2V0RXZlbnRUeXBlID0gXHJcbiAgfCAnbmV0d29ya19ldmVudCdcclxuICB8ICdtdXRhdGlvbidcclxuICB8ICdyaXR1YWxfaW52aXRhdGlvbidcclxuICB8ICdzeW5jX3JlcXVlc3QnXHJcbiAgfCAnY29ubmVjdGlvbidcclxuICB8ICdkaXNjb25uZWN0aW9uJztcclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgV2ViU29ja2V0TWVzc2FnZSB7XHJcbiAgdHlwZTogV2ViU29ja2V0RXZlbnRUeXBlO1xyXG4gIGRhdGE6IHVua25vd247XHJcbiAgdGltZXN0YW1wOiBEYXRlO1xyXG59XHJcblxyXG4vLyBBbmFseXRpY3NcclxuZXhwb3J0IGludGVyZmFjZSBCZWhhdmlvckFuYWx5dGljcyB7XHJcbiAgZG9taW5hbnRDYXRlZ29yaWVzOiBzdHJpbmdbXTtcclxuICB0aW1lRGlzdHJpYnV0aW9uOiBSZWNvcmQ8c3RyaW5nLCBudW1iZXI+O1xyXG4gIHBhdHRlcm5zOiBzdHJpbmdbXTtcclxuICBhbm9tYWxpZXM6IHN0cmluZ1tdO1xyXG4gIGVtb3Rpb25hbFByb2ZpbGU6IEVtb3Rpb25hbFN0YXRlW107XHJcbn1cclxuXHJcbi8vIMOJdm9sdXRpb24gJiBMaWduw6llXHJcbmV4cG9ydCBpbnRlcmZhY2UgRXZvbHV0aW9uSGlzdG9yeSB7XHJcbiAgaWQ6IHN0cmluZztcclxuICBvcmdhbmlzbUlkOiBzdHJpbmc7XHJcbiAgZ2VuZXJhdGlvbjogbnVtYmVyO1xyXG4gIG11dGF0aW9uczogRE5BTXV0YXRpb25bXTtcclxuICBwYXJlbnRJZD86IHN0cmluZztcclxuICBjaGlsZHJlbjogc3RyaW5nW107XHJcbiAgbWlsZXN0b25lczoge1xyXG4gICAgdHlwZTogc3RyaW5nO1xyXG4gICAgdGltZXN0YW1wOiBEYXRlO1xyXG4gICAgZGVzY3JpcHRpb246IHN0cmluZztcclxuICB9W107XHJcbn1cclxuXHJcbi8vIMOJdGF0cyBkJ1VJXHJcbmV4cG9ydCBpbnRlcmZhY2UgVUlTdGF0ZSB7XHJcbiAgY3VycmVudFZpZXc6ICdtYWluJyB8ICduZXR3b3JrJyB8ICdldm9sdXRpb24nIHwgJ3JpdHVhbHMnIHwgJ3NldHRpbmdzJztcclxuICBpc0xvYWRpbmc6IGJvb2xlYW47XHJcbiAgZXJyb3I/OiBzdHJpbmc7XHJcbiAgbm90aWZpY2F0aW9uczogTm90aWZpY2F0aW9uW107XHJcbn1cclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgTm90aWZpY2F0aW9uIHtcclxuICBpZDogc3RyaW5nO1xyXG4gIHR5cGU6ICdpbmZvJyB8ICdzdWNjZXNzJyB8ICd3YXJuaW5nJyB8ICdlcnJvcic7XHJcbiAgdGl0bGU6IHN0cmluZztcclxuICBtZXNzYWdlOiBzdHJpbmc7XHJcbiAgdGltZXN0YW1wOiBEYXRlO1xyXG4gIHJlYWQ6IGJvb2xlYW47XHJcbn1cclxuXHJcbi8vIEFQSSBSZXNwb25zZXNcclxuZXhwb3J0IGludGVyZmFjZSBBUElSZXNwb25zZTxUPiB7XHJcbiAgc3VjY2VzczogYm9vbGVhbjtcclxuICBkYXRhOiBUO1xyXG4gIG1lc3NhZ2U/OiBzdHJpbmc7XHJcbiAgbWV0YT86IHtcclxuICAgIGNvdW50PzogbnVtYmVyO1xyXG4gICAgcGFnZT86IG51bWJlcjtcclxuICAgIHRvdGFsUGFnZXM/OiBudW1iZXI7XHJcbiAgICB0aW1lc3RhbXA/OiBzdHJpbmc7XHJcbiAgfTtcclxufVxyXG5cclxuZXhwb3J0IGludGVyZmFjZSBBUElFcnJvciB7XHJcbiAgZXJyb3I6IHN0cmluZztcclxuICBjb2RlPzogc3RyaW5nO1xyXG4gIGRldGFpbHM/OiB1bmtub3duO1xyXG59XHJcblxyXG4vLyBIb29rcyBldCBDb250ZXh0XHJcbmV4cG9ydCBpbnRlcmZhY2UgU3ltYmlvbnRDb250ZXh0VHlwZSB7XHJcbiAgb3JnYW5pc206IE9yZ2FuaXNtU3RhdGUgfCBudWxsO1xyXG4gIGlzTG9hZGluZzogYm9vbGVhbjtcclxuICBlcnJvcjogc3RyaW5nIHwgbnVsbDtcclxuICB1cGRhdGVPcmdhbmlzbTogKHVwZGF0ZXM6IFBhcnRpYWw8T3JnYW5pc21TdGF0ZT4pID0+IHZvaWQ7XHJcbiAgYXBwbHlNdXRhdGlvbjogKG11dGF0aW9uOiBPbWl0PEROQU11dGF0aW9uLCAnaWQnIHwgJ3RpbWVzdGFtcCc+KSA9PiB2b2lkO1xyXG4gIHJlZnJlc2hEYXRhOiAoKSA9PiBQcm9taXNlPHZvaWQ+O1xyXG59XHJcblxyXG4vLyBDb25zdGFudGVzXHJcbmV4cG9ydCBjb25zdCBERUZBVUxUX1RSQUlUUzogUGVyc29uYWxpdHlUcmFpdHMgPSB7XHJcbiAgY3VyaW9zaXR5OiAwLjUsXHJcbiAgZm9jdXM6IDAuNSxcclxuICBzb2NpYWw6IDAuNSxcclxuICBjcmVhdGl2aXR5OiAwLjUsXHJcbiAgYW5hbHl0aWNhbDogMC41LFxyXG4gIGFkYXB0YWJpbGl0eTogMC41XHJcbn07XHJcblxyXG5leHBvcnQgY29uc3QgRE5BX0JBU0VTID0gWydBJywgJ1QnLCAnRycsICdDJ10gYXMgY29uc3Q7XHJcbmV4cG9ydCB0eXBlIEROQUJhc2UgPSB0eXBlb2YgRE5BX0JBU0VTW251bWJlcl07XHJcblxyXG5leHBvcnQgY29uc3QgQ0FURUdPUklFUyA9IFtcclxuICAnd29yaycsXHJcbiAgJ3NvY2lhbCcsIFxyXG4gICdlbnRlcnRhaW5tZW50JyxcclxuICAnZWR1Y2F0aW9uJyxcclxuICAnc2hvcHBpbmcnLFxyXG4gICduZXdzJyxcclxuICAnb3RoZXInXHJcbl0gYXMgY29uc3Q7XHJcblxyXG5leHBvcnQgdHlwZSBCZWhhdmlvckNhdGVnb3J5ID0gdHlwZW9mIENBVEVHT1JJRVNbbnVtYmVyXTtcclxuXHJcbi8vIFV0aWxpdGFpcmVzIGRlIHR5cGVcclxuZXhwb3J0IHR5cGUgRGVlcFBhcnRpYWw8VD4gPSB7XHJcbiAgW1AgaW4ga2V5b2YgVF0/OiBUW1BdIGV4dGVuZHMgb2JqZWN0ID8gRGVlcFBhcnRpYWw8VFtQXT4gOiBUW1BdO1xyXG59O1xyXG5cclxuZXhwb3J0IHR5cGUgVGltZXN0YW1wID0gc3RyaW5nIHwgRGF0ZTsgIl0sIm1hcHBpbmdzIjoiOztBQUFBO0FBQUE7QUFBQSxTQUFBQSxlQUFBO0VBQUEsSUFBQUMsSUFBQTtFQUFBLElBQUFDLElBQUE7RUFBQSxJQUFBQyxNQUFBLE9BQUFDLFFBQUE7RUFBQSxJQUFBQyxHQUFBO0VBQUEsSUFBQUMsWUFBQTtJQUFBTCxJQUFBO0lBQUFNLFlBQUE7TUFBQTtRQUFBQyxLQUFBO1VBQUFDLElBQUE7VUFBQUMsTUFBQTtRQUFBO1FBQUFDLEdBQUE7VUFBQUYsSUFBQTtVQUFBQyxNQUFBO1FBQUE7TUFBQTtNQUFBO1FBQUFGLEtBQUE7VUFBQUMsSUFBQTtVQUFBQyxNQUFBO1FBQUE7UUFBQUMsR0FBQTtVQUFBRixJQUFBO1VBQUFDLE1BQUE7UUFBQTtNQUFBO01BQUE7UUFBQUYsS0FBQTtVQUFBQyxJQUFBO1VBQUFDLE1BQUE7UUFBQTtRQUFBQyxHQUFBO1VBQUFGLElBQUE7VUFBQUMsTUFBQTtRQUFBO01BQUE7TUFBQTtRQUFBRixLQUFBO1VBQUFDLElBQUE7VUFBQUMsTUFBQTtRQUFBO1FBQUFDLEdBQUE7VUFBQUYsSUFBQTtVQUFBQyxNQUFBO1FBQUE7TUFBQTtNQUFBO1FBQUFGLEtBQUE7VUFBQUMsSUFBQTtVQUFBQyxNQUFBO1FBQUE7UUFBQUMsR0FBQTtVQUFBRixJQUFBO1VBQUFDLE1BQUE7UUFBQTtNQUFBO0lBQUE7SUFBQUUsS0FBQTtJQUFBQyxTQUFBO0lBQUFDLENBQUE7TUFBQTtNQUFBO01BQUE7TUFBQTtNQUFBO0lBQUE7SUFBQUMsQ0FBQTtJQUFBQyxDQUFBO0lBQUFDLGNBQUE7TUFBQUMsSUFBQTtNQUFBQyxRQUFBO01BQUFDLEtBQUE7TUFBQUMsT0FBQTtNQUFBQyxjQUFBO01BQUFDLE9BQUE7SUFBQTtJQUFBQyxlQUFBO0lBQUF0QixJQUFBO0VBQUE7RUFBQSxJQUFBdUIsUUFBQSxHQUFBdEIsTUFBQSxDQUFBRSxHQUFBLE1BQUFGLE1BQUEsQ0FBQUUsR0FBQTtFQUFBLEtBQUFvQixRQUFBLENBQUF4QixJQUFBLEtBQUF3QixRQUFBLENBQUF4QixJQUFBLEVBQUFDLElBQUEsS0FBQUEsSUFBQTtJQUFBdUIsUUFBQSxDQUFBeEIsSUFBQSxJQUFBSyxZQUFBO0VBQUE7RUFBQSxJQUFBb0IsY0FBQSxHQUFBRCxRQUFBLENBQUF4QixJQUFBO0VBQUE7SUFzUFE7SUFBQUQsY0FBQSxZQUFBQSxDQUFBO01BQUEsT0FBQTBCLGNBQUE7SUFBQTtFQUFBO0VBQUEsT0FBQUEsY0FBQTtBQUFBO0FBQUExQixjQUFBO0FBQUFBLGNBQUEsR0FBQWMsQ0FBQTs7Ozs7OztBQWRSO0FBQUE7QUFBQWQsY0FBQSxHQUFBYyxDQUFBO0FBQ2FhLE9BQUEsQ0FBQUMsY0FBYyxHQUFzQjtFQUMvQ0MsU0FBUyxFQUFFLEdBQUc7RUFDZEMsS0FBSyxFQUFFLEdBQUc7RUFDVkMsTUFBTSxFQUFFLEdBQUc7RUFDWEMsVUFBVSxFQUFFLEdBQUc7RUFDZkMsVUFBVSxFQUFFLEdBQUc7RUFDZkMsWUFBWSxFQUFFO0NBQ2Y7QUFBQztBQUFBbEMsY0FBQSxHQUFBYyxDQUFBO0FBRVdhLE9BQUEsQ0FBQVEsU0FBUyxHQUFHLENBQUMsR0FBRyxFQUFFLEdBQUcsRUFBRSxHQUFHLEVBQUUsR0FBRyxDQUFVO0FBQUM7QUFBQW5DLGNBQUEsR0FBQWMsQ0FBQTtBQUcxQ2EsT0FBQSxDQUFBUyxVQUFVLEdBQUcsQ0FDeEIsTUFBTSxFQUNOLFFBQVEsRUFDUixlQUFlLEVBQ2YsV0FBVyxFQUNYLFVBQVUsRUFDVixNQUFNLEVBQ04sT0FBTyxDQUNDIiwiaWdub3JlTGlzdCI6W119

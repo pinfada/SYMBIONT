@@ -3,6 +3,8 @@
  * Part du refactoring d'OrganismCore selon l'architecture hexagonale
  */
 
+import { BoundedArray } from '../../shared/utils/BoundedCollection';
+
 export interface EnergyEvent {
   type: 'consumption' | 'regeneration' | 'boost' | 'drain';
   amount: number;
@@ -24,7 +26,7 @@ export class EnergyService {
   private maxEnergy: number;
   private metabolismRate: number;
   private config: MetabolismConfig;
-  private history: EnergyEvent[] = [];
+  private history: BoundedArray<EnergyEvent>;
   private listeners: ((event: EnergyEvent) => void)[] = [];
   private regenerationTimer: NodeJS.Timeout | null = null;
 
@@ -40,6 +42,9 @@ export class EnergyService {
     this.maxEnergy = this.config.maxEnergy;
     this.energy = Math.min(initialEnergy, this.maxEnergy);
     this.metabolismRate = this.config.baseRegenRate;
+    
+    // Historique limité à 100 événements pour éviter les fuites mémoire
+    this.history = new BoundedArray<EnergyEvent>(100, 'EnergyHistory');
     
     this.startMetabolism();
   }
@@ -235,12 +240,8 @@ export class EnergyService {
    * Enregistre un événement d'énergie
    */
   private recordEvent(event: EnergyEvent): void {
-    this.history.push(event);
-    
-    // Limite l'historique pour éviter la consommation mémoire
-    if (this.history.length > 1000) {
-      this.history.splice(0, 100); // Supprime les 100 plus anciens
-    }
+    // BoundedArray gère automatiquement la limitation
+    this.history.add(event);
 
     // Notifie les listeners
     this.listeners.forEach(listener => listener(event));
@@ -304,7 +305,9 @@ export class EnergyService {
    */
   cleanup(maxAge = 24 * 60 * 60 * 1000): void {
     const cutoff = Date.now() - maxAge;
-    this.history = this.history.filter(event => event.timestamp > cutoff);
+    const filteredEvents = this.history.filter((event: EnergyEvent) => event.timestamp > cutoff);
+    this.history.clear();
+    this.history.addBatch(filteredEvents);
   }
 
   /**
@@ -340,7 +343,8 @@ export class EnergyService {
     this.maxEnergy = data.maxEnergy;
     this.metabolismRate = data.metabolismRate;
     this.config = { ...data.config };
-    this.history = [...data.history];
+    this.history.clear();
+    this.history.addBatch(data.history);
   }
 
   /**
@@ -349,6 +353,6 @@ export class EnergyService {
   destroy(): void {
     this.stopMetabolism();
     this.listeners = [];
-    this.history = [];
+    this.history.clear();
   }
 }

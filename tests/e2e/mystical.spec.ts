@@ -3,7 +3,7 @@ import path from 'path';
 import { waitForReactToLoad, debugPageState } from './utils';
 
 test.describe('Événements mystiques et rituels SYMBIONT', () => {
-  const popupPath = path.resolve(__dirname, '../../dist/popup.html');
+  const popupPath = path.resolve(__dirname, '../../dist/popup/index.html');
 
   test('Déclenchement d’un rituel secret', async ({ page }) => {
     await page.goto('file://' + popupPath);

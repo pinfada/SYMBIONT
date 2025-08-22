@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 
 test.describe('Simple Popup Test', () => {
-  const popupPath = path.resolve(__dirname, '../../dist/popup.html');
+  const popupPath = path.resolve(__dirname, '../../dist/popup/index.html');
   test('popup loads correctly', async ({ page }) => {
     // Enable console logging
     page.on('console', msg => console.log('Console:', msg.text()));
