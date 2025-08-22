@@ -142,9 +142,6 @@
 .text-\[\#ff4b6e\] {
   color: #ff4b6e;
 }
-.text-\[\#ffb700\] {
-  color: #ffb700;
-}
 .capitalize {
   text-transform: capitalize;
 }
@@ -3529,13 +3526,100 @@ button:disabled:hover::after, button[aria-disabled="true"]:hover::after {
   color: var(--text-muted, #666);
   text-align: center;
 }
+.organism-dashboard {
+  background: var(--bg-glass);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 16px auto;
+  max-width: 800px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border-primary);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
+  color: var(--text-primary);
+  animation: fadeIn 0.6s ease-out;
+}
+.dashboard-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 24px;
+  color: var(--accent-cyan);
+  text-shadow: 0 0 20px rgba(0, 224, 255, 0.3);
+  letter-spacing: 0.02em;
+}
+.dashboard-subtitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 32px 0 16px;
+  color: var(--warning-orange);
+  text-shadow: 0 0 15px rgba(255, 183, 0, 0.3);
+}
 .dashboard-section {
-  border-radius: 8px;
-  padding: 16px;
+  margin-bottom: 24px;
 }
 .dashboard-section--info {
-  background: var(--bg-surface, #f8f9fa);
-  border: 1px solid var(--border-light, #e9ecef);
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px;
+  padding: 20px;
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+}
+.organism-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+}
+.info-label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.info-value {
+  color: var(--text-primary);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.info-value--mono {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+.dashboard-components {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  align-items: center;
+}
+.dashboard-gauges {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+}
+@media (min-width: 768px) {
+  .dashboard-components {
+    flex-direction: row;
+    justify-content: center;
+  }
+  .organism-info {
+    gap: 32px;
+  }
+  .info-item {
+    min-width: 140px;
+  }
 }
 @keyframes quantum-spin {
   0% {

@@ -107,34 +107,34 @@ export const OrganismDashboard: React.FC = () => {
   }
 
   return (
-    <div className="organism-dashboard max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
-      <h2 className="text-2xl font-bold text-center text-[#00e0ff] mb-6" data-testid="organism-dashboard-title">Tableau de bord de l'organisme</h2>
-      <section className="dashboard-section dashboard-section--info mb-6 p-4 bg-[#eaf6fa] rounded-lg">
-        <div className="organism-info flex flex-wrap gap-6 justify-center">
-          <div className="info-item flex flex-col items-center">
-            <span className="info-label text-[#888] text-sm">Génération</span>
-            <span className="info-value text-lg font-bold">{organism.generation}</span>
+    <div className="organism-dashboard">
+      <h2 className="dashboard-title" data-testid="organism-dashboard-title">Tableau de bord de l'organisme</h2>
+      <section className="dashboard-section dashboard-section--info">
+        <div className="organism-info">
+          <div className="info-item">
+            <span className="info-label">Génération</span>
+            <span className="info-value">{organism.generation}</span>
           </div>
-          <div className="info-item flex flex-col items-center">
-            <span className="info-label text-[#888] text-sm">Signature ADN</span>
-            <span className="info-value text-lg font-mono" title={organism.dna}>
+          <div className="info-item">
+            <span className="info-label">Signature ADN</span>
+            <span className="info-value info-value--mono" title={organism.dna}>
               {organism.dna.substring(0, 8)}...
             </span>
           </div>
-          <div className="info-item flex flex-col items-center">
-            <span className="info-label text-[#888] text-sm">Mutations</span>
-            <span className="info-value text-lg font-bold">{organism.mutations?.length || 0}</span>
+          <div className="info-item">
+            <span className="info-label">Mutations</span>
+            <span className="info-value">{organism.mutations?.length || 0}</span>
           </div>
-          <div className="info-item flex flex-col items-center">
-            <span className="info-label text-[#888] text-sm">Énergie</span>
-            <span className="info-value text-lg font-bold">
+          <div className="info-item">
+            <span className="info-label">Énergie</span>
+            <span className="info-value">
               {organism.energy || 0}/{organism.maxEnergy || 100}
             </span>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row gap-8 justify-center items-center mt-8">
+        <div className="dashboard-components">
           <OrganismViewer />
-          <div className="flex flex-col gap-6 items-center">
+          <div className="dashboard-gauges">
             <ConsciousnessGauge value={organism.consciousness ?? 0.5} />
             <EnergyGauge 
               currentEnergy={organism.energy || 0}
@@ -146,7 +146,7 @@ export const OrganismDashboard: React.FC = () => {
         </div>
       </section>
       <OrganismTimeline events={events} />
-      <h3 className="text-center text-[#ffb700] text-xl font-semibold my-8">Carte de transmission</h3>
+      <h3 className="dashboard-subtitle">Carte de transmission</h3>
       <TransmissionGraph inviter={inviter} invitees={invitees} userCode={userId} />
     </div>
   );
