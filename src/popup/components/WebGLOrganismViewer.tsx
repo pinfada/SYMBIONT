@@ -221,10 +221,54 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
   const startTimeRef = useRef<number>(Date.now());
   const lastFrameTimeRef = useRef<number>(Date.now());
   const contextLostRef = useRef<boolean>(false);
+  const targetFPSRef = useRef<number>(60);
+  const frameIntervalRef = useRef<number>(16.67); // 60 FPS par défaut
   
   const { organism } = useOrganism();
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // FPS adaptatif basé sur l'état de l'organisme et la visibilité
+  const getAdaptiveFPS = (): number => {
+    // Page cachée: FPS très bas
+    if (document.hidden) return 10;
+    
+    // Organisme sans énergie: FPS réduit
+    if (organism && organism.energy && organism.energy < 30) return 30;
+    
+    // Performance dégradée: FPS moyen
+    if (organism && organism.energy && organism.energy < 60) return 45;
+    
+    // Pleine énergie: FPS maximum
+    return 60;
+  };
+
+  // Mise à jour du FPS adaptatif
+  useEffect(() => {
+    const updateFPS = () => {
+      const newFPS = getAdaptiveFPS();
+      if (newFPS !== targetFPSRef.current) {
+        targetFPSRef.current = newFPS;
+        frameIntervalRef.current = 1000 / newFPS;
+        logger.info(`WebGL FPS adaptatif: ${newFPS} FPS`);
+      }
+    };
+
+    // Vérifie le FPS toutes les 2 secondes
+    const fpsUpdateInterval = setInterval(updateFPS, 2000);
+    
+    // Écoute les changements de visibilité
+    const handleVisibilityChange = () => {
+      updateFPS();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(fpsUpdateInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [organism?.energy]);
 
   // Initialisation WebGL
   useEffect(() => {
@@ -351,6 +395,13 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
 
       const currentTime = Date.now();
       const deltaTime = (currentTime - lastFrameTimeRef.current) / 1000;
+      
+      // Limite le FPS selon le target adaptatif
+      if (deltaTime < frameIntervalRef.current / 1000) {
+        animationIdRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      
       lastFrameTimeRef.current = currentTime;
 
       // Resize canvas with device pixel ratio

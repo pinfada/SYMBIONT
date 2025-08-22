@@ -1,16 +1,18 @@
 // src/popup/components/OrganismDashboard.tsx
-import React, { useEffect, useState } from 'react';
-import { WebGLOrganismViewer } from './WebGLOrganismViewer';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { ConsciousnessGauge } from './ConsciousnessGauge';
 import { TraitsRadarChart } from './TraitsRadarChart';
 import { useOrganism } from '../hooks/useOrganism';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { OrganismTimeline } from './OrganismTimeline';
-import { TransmissionGraph } from './TransmissionGraph';
 import { useInvitationData } from '../hooks/useInvitationData';
 import { UserIdentityService } from '../../core/services/UserIdentityService';
 import { OrganismEventService, OrganismEvent } from '../../core/services/OrganismEventService';
 import { EnergyGauge } from './EnergyGauge';
+
+// Lazy loading des composants lourds pour optimiser le bundle
+const WebGLOrganismViewer = lazy(() => import('./WebGLOrganismViewer').then(module => ({ default: module.WebGLOrganismViewer })));
+const TransmissionGraph = lazy(() => import('./TransmissionGraph').then(module => ({ default: module.TransmissionGraph })));
 
 export const OrganismDashboard: React.FC = () => {
   const { organism, isLoading } = useOrganism();
@@ -133,7 +135,9 @@ export const OrganismDashboard: React.FC = () => {
           </div>
         </div>
         <div className="dashboard-components">
-          <WebGLOrganismViewer />
+          <Suspense fallback={<div className="webgl-loading"><LoadingSpinner />Chargement du rendu 3D...</div>}>
+            <WebGLOrganismViewer />
+          </Suspense>
           <div className="dashboard-gauges">
             <ConsciousnessGauge value={organism.consciousness ?? 0.5} />
             <EnergyGauge 
@@ -147,7 +151,9 @@ export const OrganismDashboard: React.FC = () => {
       </section>
       <OrganismTimeline events={events} />
       <h3 className="dashboard-subtitle">Carte de transmission</h3>
-      <TransmissionGraph inviter={inviter} invitees={invitees} userCode={userId} />
+      <Suspense fallback={<div className="graph-loading"><LoadingSpinner />Chargement de la carte réseau...</div>}>
+        <TransmissionGraph inviter={inviter} invitees={invitees} userCode={userId} />
+      </Suspense>
     </div>
   );
 };

@@ -1,15 +1,17 @@
-import React, { useState, useCallback } from 'react';
-import MetricsPanel from './MetricsPanel';
-import SettingsPanel from './SettingsPanel';
+import React, { useState, useCallback, Suspense, lazy } from 'react';
 import OrganismDashboard from './OrganismDashboard';
 import Toast from './Toast';
-import MysticalPanel from './MysticalPanel';
-import SocialPanel from './SocialPanel';
-import { GlobalNetworkGraph } from './GlobalNetworkGraph';
-import { OrganismViewer } from './OrganismViewer';
 import ErrorBoundary from './ErrorBoundary';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { logger } from '@shared/utils/secureLogger';
+
+// Lazy loading des panneaux lourds pour optimiser le bundle
+const MetricsPanel = lazy(() => import('./MetricsPanel'));
+const SettingsPanel = lazy(() => import('./SettingsPanel'));
+const MysticalPanel = lazy(() => import('./MysticalPanel'));
+const SocialPanel = lazy(() => import('./SocialPanel'));
+const GlobalNetworkGraph = lazy(() => import('./GlobalNetworkGraph').then(module => ({ default: module.GlobalNetworkGraph })));
+const OrganismViewer = lazy(() => import('./OrganismViewer').then(module => ({ default: module.OrganismViewer })));
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Organisme', icon: '🧬', description: 'Votre organisme digital' },
@@ -118,9 +120,11 @@ const App: React.FC = () => {
               <p>Explorez la constellation SYMBIONT</p>
             </div>
             <ErrorBoundary>
-              <div className="network-container">
-                <GlobalNetworkGraph />
-              </div>
+              <Suspense fallback={<div className="panel-loading">🌐 Chargement du réseau global...</div>}>
+                <div className="network-container">
+                  <GlobalNetworkGraph />
+                </div>
+              </Suspense>
             </ErrorBoundary>
           </div>
         );
@@ -132,7 +136,9 @@ const App: React.FC = () => {
               <p>Analytics de votre organisme</p>
             </div>
             <ErrorBoundary>
-              <MetricsPanel />
+              <Suspense fallback={<div className="panel-loading">📊 Chargement des statistiques...</div>}>
+                <MetricsPanel />
+              </Suspense>
             </ErrorBoundary>
           </div>
         );
@@ -144,7 +150,9 @@ const App: React.FC = () => {
               <p>Fonctions mystiques et évolution</p>
             </div>
             <ErrorBoundary>
-              <MysticalPanel />
+              <Suspense fallback={<div className="panel-loading">🔮 Chargement des rituels...</div>}>
+                <MysticalPanel />
+              </Suspense>
             </ErrorBoundary>
           </div>
         );
@@ -156,7 +164,9 @@ const App: React.FC = () => {
               <p>Partagez et invitez</p>
             </div>
             <ErrorBoundary>
-              <SocialPanel />
+              <Suspense fallback={<div className="panel-loading">👥 Chargement du panneau social...</div>}>
+                <SocialPanel />
+              </Suspense>
             </ErrorBoundary>
           </div>
         );
@@ -168,7 +178,9 @@ const App: React.FC = () => {
               <p>Personnalisez votre expérience</p>
             </div>
             <ErrorBoundary>
-              <SettingsPanel />
+              <Suspense fallback={<div className="panel-loading">⚙️ Chargement des paramètres...</div>}>
+                <SettingsPanel />
+              </Suspense>
             </ErrorBoundary>
           </div>
         );
