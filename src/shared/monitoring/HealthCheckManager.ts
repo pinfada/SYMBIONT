@@ -92,6 +92,7 @@ export class HealthCheckManager {
         const testValue = { timestamp: Date.now() };
         
         if (typeof chrome !== 'undefined' && chrome.storage) {
+          // Test d'écriture
           await new Promise<void>((resolve, reject) => {
             chrome.storage.local.set({ [testKey]: testValue }, () => {
               if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
@@ -99,6 +100,20 @@ export class HealthCheckManager {
             });
           });
           
+          // Test de lecture pour vérifier l'écriture
+          await new Promise<void>((resolve, reject) => {
+            chrome.storage.local.get([testKey], (result) => {
+              if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+              } else if (!result || !result[testKey]) {
+                reject(new Error('Failed to read test value from storage'));
+              } else {
+                resolve();
+              }
+            });
+          });
+          
+          // Nettoyage
           await new Promise<void>((resolve, reject) => {
             chrome.storage.local.remove(testKey, () => {
               if (chrome.runtime.lastError) reject(chrome.runtime.lastError);

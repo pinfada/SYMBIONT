@@ -85,6 +85,9 @@ void main() {
 const FRAGMENT_SHADER = `
 precision highp float;
 
+// Macro pour compatibilité WebGL1
+#define TEX texture2D
+
 varying vec2 v_texCoord;
 varying vec2 v_position;
 varying float v_pattern;
@@ -98,6 +101,7 @@ uniform vec3 u_primaryColor;
 uniform vec3 u_secondaryColor;
 uniform vec3 u_accentColor;
 uniform sampler2D u_noiseTexture;
+uniform vec2 u_resolution;
 
 // Traits pour influencer l'apparence
 uniform float u_curiosity;
@@ -105,8 +109,6 @@ uniform float u_focus;
 uniform float u_rhythm;
 uniform float u_empathy;
 uniform float u_creativity;
-
-// No explicit out declaration for WebGL 1.0 - uses gl_FragColor
 
 // Conversion HSV vers RGB
 vec3 hsv2rgb(vec3 c) {
@@ -149,7 +151,7 @@ void main() {
     
     // Pattern organique complexe
     vec2 noiseCoord = v_texCoord + u_time * 0.05;
-    float noise1 = texture(u_noiseTexture, noiseCoord).r;
+    float noise1 = TEX(u_noiseTexture, noiseCoord).r;
     
     float organicPattern = v_pattern + noise1 * 0.3;
     organicPattern += sin(distanceFromCenter * 8.0 + u_time * 2.0) * 0.1;
@@ -210,7 +212,7 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
   className = ""
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const glRef = useRef<WebGLRenderingContext | WebGL2RenderingContext | null>(null);
   const programRef = useRef<ShaderProgram | null>(null);
   const meshRef = useRef<WebGLMesh | null>(null);
   const noiseTextureRef = useRef<WebGLTexture | null>(null);
@@ -218,6 +220,7 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
   const animationIdRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const lastFrameTimeRef = useRef<number>(Date.now());
+  const contextLostRef = useRef<boolean>(false);
   
   const { organism } = useOrganism();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -228,17 +231,58 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    try {
-      // Get WebGL context with fallback
-      let gl = canvas.getContext('webgl2') as WebGLRenderingContext | null;
-      if (!gl) {
-        gl = canvas.getContext('webgl') as WebGLRenderingContext | null;
-      }
-      if (!gl) {
-        throw new Error('WebGL not supported in this browser');
-      }
-      
-      glRef.current = gl as WebGLRenderingContext;
+    // Gestion du contexte perdu
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      contextLostRef.current = true;
+      setError('WebGL context lost - attempting recovery...');
+      logger.warn('WebGL context lost');
+    };
+
+    const handleContextRestored = () => {
+      contextLostRef.current = false;
+      setError(null);
+      logger.info('WebGL context restored');
+      // Réinitialiser les ressources
+      initializeWebGL();
+    };
+
+    canvas.addEventListener('webglcontextlost', handleContextLost as EventListener);
+    canvas.addEventListener('webglcontextrestored', handleContextRestored as EventListener);
+
+    const initializeWebGL = () => {
+      try {
+        // Test de support WebGL plus robuste
+        if (!window.WebGLRenderingContext) {
+          throw new Error('WebGL not available in this browser');
+        }
+
+        // Get WebGL context avec options optimisées
+        const contextOptions = {
+          alpha: true,
+          depth: false,
+          stencil: false,
+          antialias: true,
+          premultipliedAlpha: false,
+          preserveDrawingBuffer: false,
+          powerPreference: 'default' as WebGLPowerPreference,
+          failIfMajorPerformanceCaveat: false
+        };
+
+        let gl: WebGLRenderingContext | WebGL2RenderingContext | null = canvas.getContext('webgl2', contextOptions) as WebGL2RenderingContext | null;
+        if (!gl) {
+          gl = canvas.getContext('webgl', contextOptions) as WebGLRenderingContext | null;
+        }
+        if (!gl) {
+          // Test final avec contexte expérimental
+          gl = canvas.getContext('experimental-webgl', contextOptions) as WebGLRenderingContext | null;
+        }
+        
+        if (!gl) {
+          throw new Error('WebGL not supported in this browser');
+        }
+        
+        glRef.current = gl;
 
       // Create shader program
       const program = WebGLUtils.createProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
@@ -273,13 +317,21 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
-      setIsInitialized(true);
-      logger.info('WebGL Organism Viewer initialized successfully');
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown WebGL error';
-      setError(errorMsg);
-      logger.error('WebGL initialization failed:', errorMsg);
-    }
+        setIsInitialized(true);
+        logger.info('WebGL Organism Viewer initialized successfully');
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Unknown WebGL error';
+        setError(errorMsg);
+        logger.error('WebGL initialization failed:', errorMsg);
+      }
+    };
+
+    initializeWebGL();
+
+    return () => {
+      canvas.removeEventListener('webglcontextlost', handleContextLost as EventListener);
+      canvas.removeEventListener('webglcontextrestored', handleContextRestored as EventListener);
+    };
   }, []);
 
   // Animation loop
@@ -301,8 +353,20 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
       const deltaTime = (currentTime - lastFrameTimeRef.current) / 1000;
       lastFrameTimeRef.current = currentTime;
 
-      // Resize canvas if needed
-      WebGLUtils.resizeCanvas(canvas, width, height);
+      // Resize canvas with device pixel ratio
+      const dpr = window.devicePixelRatio || 1;
+      const displayWidth = width;
+      const displayHeight = height;
+      const realWidth = Math.floor(displayWidth * dpr);
+      const realHeight = Math.floor(displayHeight * dpr);
+      
+      if (canvas.width !== realWidth || canvas.height !== realHeight) {
+        canvas.width = realWidth;
+        canvas.height = realHeight;
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = displayHeight + 'px';
+      }
+      
       gl.viewport(0, 0, canvas.width, canvas.height);
 
       // Clear
@@ -329,7 +393,7 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
         gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 16, 8);
       }
 
-      // Set uniforms
+      // Set uniforms (avec vérifications sécurisées)
       const time = (Date.now() - startTimeRef.current) / 1000;
       const traits = organism.traits || {
         curiosity: 0.5,
@@ -339,27 +403,33 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
         creativity: 0.5
       };
 
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_time'], time);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_complexity'], 0.8);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_fluidity'], 0.6);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_consciousness'], organism.consciousness || 0.5);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_energy'], (organism.energy || 50) / 100);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_mutation'], 0.2);
+      // Uniformes de base (seulement si locations valides)
+      if (program.uniforms['u_time']) WebGLUtils.setUniform1f(gl, program.uniforms['u_time'], time);
+      if (program.uniforms['u_complexity']) WebGLUtils.setUniform1f(gl, program.uniforms['u_complexity'], 0.8);
+      if (program.uniforms['u_fluidity']) WebGLUtils.setUniform1f(gl, program.uniforms['u_fluidity'], 0.6);
+      if (program.uniforms['u_consciousness']) WebGLUtils.setUniform1f(gl, program.uniforms['u_consciousness'], organism.consciousness || 0.5);
+      if (program.uniforms['u_energy']) WebGLUtils.setUniform1f(gl, program.uniforms['u_energy'], (organism.energy || 50) / 100);
+      if (program.uniforms['u_mutation']) WebGLUtils.setUniform1f(gl, program.uniforms['u_mutation'], 0.2);
+      
+      // Résolution du canvas
+      if (program.uniforms['u_resolution']) {
+        gl.uniform2f(program.uniforms['u_resolution'], canvas.width, canvas.height);
+      }
 
-      // Traits
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_curiosity'], traits.curiosity);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_focus'], traits.focus);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_rhythm'], traits.rhythm);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_empathy'], traits.empathy);
-      WebGLUtils.setUniform1f(gl, program.uniforms['u_creativity'], traits.creativity);
+      // Traits (avec vérifications)
+      if (program.uniforms['u_curiosity']) WebGLUtils.setUniform1f(gl, program.uniforms['u_curiosity'], traits.curiosity);
+      if (program.uniforms['u_focus']) WebGLUtils.setUniform1f(gl, program.uniforms['u_focus'], traits.focus);
+      if (program.uniforms['u_rhythm']) WebGLUtils.setUniform1f(gl, program.uniforms['u_rhythm'], traits.rhythm);
+      if (program.uniforms['u_empathy']) WebGLUtils.setUniform1f(gl, program.uniforms['u_empathy'], traits.empathy);
+      if (program.uniforms['u_creativity']) WebGLUtils.setUniform1f(gl, program.uniforms['u_creativity'], traits.creativity);
 
-      // Colors based on SYMBIONT palette
-      WebGLUtils.setUniform3f(gl, program.uniforms['u_primaryColor'], 0.0, 0.878, 1.0);   // #00e0ff
-      WebGLUtils.setUniform3f(gl, program.uniforms['u_secondaryColor'], 0.373, 0.765, 0.969); // #5fc3f7
-      WebGLUtils.setUniform3f(gl, program.uniforms['u_accentColor'], 0.612, 0.416, 0.875);    // #9c6ade
+      // Colors (avec vérifications)
+      if (program.uniforms['u_primaryColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_primaryColor'], 0.0, 0.878, 1.0);   // #00e0ff
+      if (program.uniforms['u_secondaryColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_secondaryColor'], 0.373, 0.765, 0.969); // #5fc3f7
+      if (program.uniforms['u_accentColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_accentColor'], 0.612, 0.416, 0.875);    // #9c6ade
 
-      // Bind noise texture
-      if (noiseTextureRef.current) {
+      // Bind noise texture (avec vérification sécurisée)
+      if (noiseTextureRef.current && program.uniforms['u_noiseTexture']) {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, noiseTextureRef.current);
         gl.uniform1i(program.uniforms['u_noiseTexture'], 0);

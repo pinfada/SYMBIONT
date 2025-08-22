@@ -14,7 +14,7 @@ export interface WebGLMesh {
 }
 
 export class WebGLUtils {
-  static createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+  static createShader(gl: WebGLRenderingContext | WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
     const shader = gl.createShader(type);
     if (!shader) {
       logger.error('Failed to create shader');
@@ -35,7 +35,7 @@ export class WebGLUtils {
   }
 
   static createProgram(
-    gl: WebGLRenderingContext,
+    gl: WebGLRenderingContext | WebGL2RenderingContext,
     vertexSource: string,
     fragmentSource: string
   ): ShaderProgram | null {
@@ -94,7 +94,7 @@ export class WebGLUtils {
     };
   }
 
-  static createBuffer(gl: WebGLRenderingContext, data: Float32Array, usage = gl.STATIC_DRAW): WebGLBuffer | null {
+  static createBuffer(gl: WebGLRenderingContext | WebGL2RenderingContext, data: Float32Array, usage = gl.STATIC_DRAW): WebGLBuffer | null {
     const buffer = gl.createBuffer();
     if (!buffer) {
       logger.error('Failed to create buffer');
@@ -108,7 +108,7 @@ export class WebGLUtils {
     return buffer;
   }
 
-  static createIndexBuffer(gl: WebGLRenderingContext, data: Uint16Array, usage = gl.STATIC_DRAW): WebGLBuffer | null {
+  static createIndexBuffer(gl: WebGLRenderingContext | WebGL2RenderingContext, data: Uint16Array, usage = gl.STATIC_DRAW): WebGLBuffer | null {
     const buffer = gl.createBuffer();
     if (!buffer) {
       logger.error('Failed to create index buffer');
@@ -122,7 +122,7 @@ export class WebGLUtils {
     return buffer;
   }
 
-  static createQuadMesh(gl: WebGLRenderingContext): WebGLMesh | null {
+  static createQuadMesh(gl: WebGLRenderingContext | WebGL2RenderingContext): WebGLMesh | null {
     // Quad vertices: position (x, y) and texture coordinates (u, v)
     const vertices = new Float32Array([
       -1.0, -1.0,  0.0, 0.0,  // Bottom-left
@@ -150,7 +150,7 @@ export class WebGLUtils {
     };
   }
 
-  static createCircleMesh(gl: WebGLRenderingContext, segments = 32): WebGLMesh | null {
+  static createCircleMesh(gl: WebGLRenderingContext | WebGL2RenderingContext, segments = 32): WebGLMesh | null {
     const vertices: number[] = [];
     const indices: number[] = [];
 
@@ -188,25 +188,25 @@ export class WebGLUtils {
     };
   }
 
-  static setUniform1f(gl: WebGLRenderingContext, location: WebGLUniformLocation | null, value: number): void {
-    if (location !== null) {
+  static setUniform1f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, value: number): void {
+    if (location !== null && location !== undefined) {
       gl.uniform1f(location, value);
     }
   }
 
-  static setUniform3f(gl: WebGLRenderingContext, location: WebGLUniformLocation | null, x: number, y: number, z: number): void {
-    if (location !== null) {
+  static setUniform3f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, x: number, y: number, z: number): void {
+    if (location !== null && location !== undefined) {
       gl.uniform3f(location, x, y, z);
     }
   }
 
-  static setUniformMatrix3(gl: WebGLRenderingContext, location: WebGLUniformLocation | null, matrix: Float32Array): void {
-    if (location !== null) {
+  static setUniformMatrix3(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, matrix: Float32Array): void {
+    if (location !== null && location !== undefined) {
       gl.uniformMatrix3fv(location, false, matrix);
     }
   }
 
-  static createTexture(gl: WebGLRenderingContext, width: number, height: number, data?: Uint8Array): WebGLTexture | null {
+  static createTexture(gl: WebGLRenderingContext | WebGL2RenderingContext, width: number, height: number, data?: Uint8Array): WebGLTexture | null {
     const texture = gl.createTexture();
     if (!texture) {
       logger.error('Failed to create texture');
@@ -231,7 +231,7 @@ export class WebGLUtils {
     return texture;
   }
 
-  static generateNoiseTexture(gl: WebGLRenderingContext, size = 256): WebGLTexture | null {
+  static generateNoiseTexture(gl: WebGLRenderingContext | WebGL2RenderingContext, size = 256): WebGLTexture | null {
     const data = new Uint8Array(size * size * 4);
     
     for (let i = 0; i < size * size; i++) {

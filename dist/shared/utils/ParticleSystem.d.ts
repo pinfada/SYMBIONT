@@ -6,7 +6,7 @@ export declare class ParticleSystem {
     private maxParticles;
     private emissionRate;
     private lastEmission;
-    constructor(gl: WebGLRenderingContext, maxParticles?: number);
+    constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, maxParticles?: number);
     private initializeShaders;
     private createBuffers;
     emitParticle(x: number, y: number, energy: number): void;

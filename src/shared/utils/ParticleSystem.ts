@@ -13,7 +13,7 @@ interface Particle {
 }
 
 export class ParticleSystem {
-  private gl: WebGLRenderingContext;
+  private gl: WebGLRenderingContext | WebGL2RenderingContext;
   private program: ShaderProgram | null = null;
   private particles: Particle[] = [];
   private particleBuffer: WebGLBuffer | null = null;
@@ -21,7 +21,7 @@ export class ParticleSystem {
   private emissionRate: number;
   private lastEmission: number = 0;
 
-  constructor(gl: WebGLRenderingContext, maxParticles = 100) {
+  constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, maxParticles = 100) {
     this.gl = gl;
     this.maxParticles = maxParticles;
     this.emissionRate = 20; // particules par seconde
@@ -30,21 +30,20 @@ export class ParticleSystem {
   }
 
   private initializeShaders(): void {
-    const vertexShader = `#version 300 es
-precision highp float;
+    const vertexShader = `precision highp float;
 
-in vec2 a_position;
-in float a_age;
-in float a_energy;
-in vec2 a_velocity;
+attribute vec2 a_position;
+attribute float a_age;
+attribute float a_energy;
+attribute vec2 a_velocity;
 
 uniform float u_time;
 uniform float u_globalEnergy;
 uniform vec2 u_resolution;
 
-out float v_age;
-out float v_energy;
-out float v_alpha;
+varying float v_age;
+varying float v_energy;
+varying float v_alpha;
 
 float noise(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -78,18 +77,15 @@ void main() {
     gl_PointSize = size;
 }`;
 
-    const fragmentShader = `#version 300 es
-precision highp float;
+    const fragmentShader = `precision highp float;
 
-in float v_age;
-in float v_energy;
-in float v_alpha;
+varying float v_age;
+varying float v_energy;
+varying float v_alpha;
 
 uniform float u_time;
 uniform vec3 u_energyColor;
 uniform vec3 u_coreColor;
-
-out vec4 fragColor;
 
 void main() {
     vec2 coord = gl_PointCoord - vec2(0.5);
@@ -109,7 +105,7 @@ void main() {
     
     float alpha = circle * v_alpha * (0.8 + halo * 0.2);
     
-    fragColor = vec4(color, alpha);
+    gl_FragColor = vec4(color, alpha);
 }`;
 
     this.program = WebGLUtils.createProgram(this.gl, vertexShader, fragmentShader);
