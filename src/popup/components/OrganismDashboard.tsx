@@ -1,6 +1,6 @@
 // src/popup/components/OrganismDashboard.tsx
 import React, { useEffect, useState } from 'react';
-import { OrganismViewer } from './OrganismViewer';
+import { WebGLOrganismViewer } from './WebGLOrganismViewer';
 import { ConsciousnessGauge } from './ConsciousnessGauge';
 import { TraitsRadarChart } from './TraitsRadarChart';
 import { useOrganism } from '../hooks/useOrganism';
@@ -133,7 +133,7 @@ export const OrganismDashboard: React.FC = () => {
           </div>
         </div>
         <div className="dashboard-components">
-          <OrganismViewer />
+          <WebGLOrganismViewer />
           <div className="dashboard-gauges">
             <ConsciousnessGauge value={organism.consciousness ?? 0.5} />
             <EnergyGauge 

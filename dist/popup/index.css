@@ -3650,6 +3650,111 @@ button:disabled:hover::after, button[aria-disabled="true"]:hover::after {
     width: 0%;
   }
 }
+.webgl-organism-viewer {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(135deg, #000000 0%, #0a0d15 100%);
+  border-radius: 16px;
+  border: 1px solid var(--border-primary);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 224, 255, 0.1);
+}
+.webgl-organism-viewer canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  transition: filter 0.3s ease;
+}
+.webgl-organism-viewer:hover canvas {
+  filter: brightness(1.1) saturate(1.2);
+}
+.organism-info-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(10, 13, 21, 0.85);
+  -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: blur(12px);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+  font-size: 0.75rem;
+}
+.organism-info-overlay .info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-secondary);
+}
+.organism-info-overlay .info-item span:first-child {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.organism-info-overlay .info-item span:last-child {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+.webgl-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 300px;
+  background: var(--bg-glass);
+  border-radius: 16px;
+  border: 1px solid var(--error-red);
+  color: var(--error-red);
+}
+.error-content {
+  text-align: center;
+  padding: 24px;
+}
+.error-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+.error-message {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.error-hint {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+.organism-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 300px;
+  background: var(--bg-glass);
+  border-radius: 16px;
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+}
+.organism-loading .loading-spinner {
+  font-size: 2rem;
+  animation: spin 2s linear infinite;
+  margin-bottom: 12px;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 .energy-gauge-container {
   display: flex;
   flex-direction: column;

@@ -1,17 +1,19 @@
 // shaders/organism.vert
-#version 300 es
-in vec2 a_position;
-in vec2 a_texCoord;
-in float a_instanceId;
+precision highp float;
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+attribute float a_instanceId;
 
 uniform mat3 u_transform;
 uniform float u_time;
 uniform float u_complexity;
 uniform float u_symmetry;
+uniform float u_fluidity;
 
-out vec2 v_texCoord;
-out float v_pattern;
-out vec3 v_position;
+varying vec2 v_texCoord;
+varying float v_pattern;
+varying vec3 v_position;
 
 // Noise function optimisée
 float noise(vec2 p) {
