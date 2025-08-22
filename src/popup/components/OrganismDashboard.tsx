@@ -10,6 +10,7 @@ import { TransmissionGraph } from './TransmissionGraph';
 import { useInvitationData } from '../hooks/useInvitationData';
 import { UserIdentityService } from '../../core/services/UserIdentityService';
 import { OrganismEventService, OrganismEvent } from '../../core/services/OrganismEventService';
+import { EnergyGauge } from './EnergyGauge';
 
 export const OrganismDashboard: React.FC = () => {
   const { organism, isLoading } = useOrganism();
@@ -124,11 +125,22 @@ export const OrganismDashboard: React.FC = () => {
             <span className="info-label text-[#888] text-sm">Mutations</span>
             <span className="info-value text-lg font-bold">{organism.mutations?.length || 0}</span>
           </div>
+          <div className="info-item flex flex-col items-center">
+            <span className="info-label text-[#888] text-sm">Énergie</span>
+            <span className="info-value text-lg font-bold">
+              {organism.energy || 0}/{organism.maxEnergy || 100}
+            </span>
+          </div>
         </div>
         <div className="flex flex-col md:flex-row gap-8 justify-center items-center mt-8">
           <OrganismViewer />
           <div className="flex flex-col gap-6 items-center">
             <ConsciousnessGauge value={organism.consciousness ?? 0.5} />
+            <EnergyGauge 
+              currentEnergy={organism.energy || 0}
+              maxEnergy={organism.maxEnergy || 100}
+              {...(organism.metabolismRate !== undefined && { metabolismRate: organism.metabolismRate })}
+            />
             <TraitsRadarChart traits={organism.traits} />
           </div>
         </div>

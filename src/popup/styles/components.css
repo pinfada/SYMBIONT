@@ -801,3 +801,191 @@
   50% { width: 100%; }
   100% { width: 0%; }
 }
+
+/* ===== ENERGY GAUGE COMPONENT ===== */
+.energy-gauge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #181c22;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  color: #e0e6f0;
+  min-width: 200px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.energy-gauge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.energy-icon {
+  font-size: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.energy-label {
+  font-weight: 600;
+  font-size: 1em;
+  color: var(--text-primary);
+  flex: 1;
+  text-align: left;
+  margin-left: 8px;
+}
+
+.energy-value {
+  font-weight: 700;
+  font-size: 0.95em;
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+.energy-gauge-bar-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.energy-percentage {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 4px;
+}
+
+.energy-metabolism-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metabolism-rate {
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.energy-status-text {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.energy-status {
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid currentColor;
+  opacity: 0.9;
+}
+
+.energy-status--low {
+  background: rgba(255, 75, 110, 0.1);
+  border-color: #ff4b6e;
+  color: #ff4b6e;
+}
+
+.energy-status--normal {
+  background: rgba(255, 183, 0, 0.1);
+  border-color: #ffb700;
+  color: #ffb700;
+}
+
+.energy-status--high {
+  background: rgba(46, 173, 51, 0.1);
+  border-color: #2ead33;
+  color: #2ead33;
+}
+
+.energy-icon {
+  font-size: 1.2em;
+  margin-right: 8px;
+}
+
+.energy-label {
+  font-weight: 600;
+  color: #00e0ff;
+  font-size: 0.95em;
+  flex: 1;
+  text-align: center;
+}
+
+.energy-value {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.9em;
+  font-family: 'Courier New', monospace;
+}
+
+.energy-gauge-bar-container {
+  width: 100%;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.energy-percentage {
+  text-align: center;
+  font-size: 0.85em;
+  color: #00e0ff;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.energy-metabolism-info {
+  margin-top: 8px;
+  font-size: 0.8em;
+  color: #888;
+  text-align: center;
+}
+
+.metabolism-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.energy-status-text {
+  margin-top: 6px;
+  text-align: center;
+}
+
+.energy-status {
+  font-style: italic;
+  transition: color 0.3s ease;
+}
+
+.energy-status--low {
+  animation: energyPulse 2s infinite;
+}
+
+.energy-status--high {
+  text-shadow: 0 0 8px currentColor;
+}
+
+@keyframes energyPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
