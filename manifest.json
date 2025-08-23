@@ -5,10 +5,11 @@
     "description": "A living digital organism that evolves with your browsing patterns",
     "permissions": [
       "storage",
-      "alarms",
+      "alarms", 
       "idle",
       "activeTab",
-      "scripting"
+      "scripting",
+      "offscreen"
     ],
     "optional_permissions": [
       "tabs",
@@ -55,7 +56,7 @@
     },
     "web_accessible_resources": [
       {
-        "resources": ["assets/*", "neural-worker.js"],
+        "resources": ["assets/*", "neural-worker.js", "offscreen.html"],
         "matches": ["https://*/*"]
       }
     ]

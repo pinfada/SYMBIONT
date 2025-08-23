@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SYMBIONT Offscreen WebGL Renderer</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; }
+        canvas { display: block; }
+        #status { color: #fff; font-family: monospace; position: absolute; top: 10px; left: 10px; }
+    </style>
+</head>
+<body>
+    <div id="status">Initializing WebGL...</div>
+    <canvas id="webgl-canvas" width="800" height="600"></canvas>
+    
+    <script type="module">
+        // Offscreen WebGL Renderer
+        class OffscreenWebGLRenderer {
+            constructor() {
+                this.canvas = document.getElementById('webgl-canvas');
+                this.status = document.getElementById('status');
+                this.gl = null;
+                this.programs = new Map();
+                this.buffers = new Map();
+                this.textures = new Map();
+                this.initialized = false;
+            }
+
+            async initialize() {
+                try {
+                    // Get WebGL2 context
+                    this.gl = this.canvas.getContext('webgl2') || 
+                             this.canvas.getContext('webgl') ||
+                             this.canvas.getContext('experimental-webgl');
+                    
+                    if (!this.gl) {
+                        throw new Error('WebGL not supported');
+                    }
+
+                    this.status.textContent = 'WebGL context acquired';
+                    
+                    // Load shaders and initialize resources
+                    await this.loadShaders();
+                    this.createBuffers();
+                    
+                    // Setup message handling
+                    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                        this.handleMessage(message, sender, sendResponse);
+                        return false; // Synchronous response
+                    });
+
+                    this.initialized = true;
+                    this.status.textContent = 'WebGL renderer ready';
+                    
+                    console.log('Offscreen WebGL renderer initialized');
+                } catch (error) {
+                    this.status.textContent = `Error: ${error.message}`;
+                    console.error('WebGL initialization failed:', error);
+                }
+            }
+
+            async loadShaders() {
+                // Default organism shader
+                const vertexShaderSource = `#version 300 es
+                precision highp float;
+                
+                in vec2 a_position;
+                in vec2 a_texCoord;
+                
+                uniform float u_time;
+                uniform vec2 u_resolution;
+                uniform float u_traits[5]; // curiosity, focus, rhythm, empathy, creativity
+                
+                out vec2 v_texCoord;
+                out vec2 v_position;
+                
+                void main() {
+                    v_texCoord = a_texCoord;
+                    v_position = a_position;
+                    
+                    // Trait-based vertex deformation
+                    vec2 pos = a_position;
+                    pos.x += sin(u_time * u_traits[2] + pos.y * 5.0) * u_traits[0] * 0.1; // rhythm + curiosity
+                    pos.y += cos(u_time * u_traits[3] + pos.x * 3.0) * u_traits[4] * 0.08; // empathy + creativity
+                    
+                    gl_Position = vec4(pos, 0.0, 1.0);
+                }`;
+
+                const fragmentShaderSource = `#version 300 es
+                precision highp float;
+                
+                in vec2 v_texCoord;
+                in vec2 v_position;
+                
+                uniform float u_time;
+                uniform vec3 u_primaryColor;
+                uniform vec3 u_secondaryColor;
+                uniform float u_energy;
+                uniform float u_traits[5];
+                
+                out vec4 fragColor;
+                
+                void main() {
+                    float dist = length(v_position);
+                    
+                    // Organic pattern based on traits
+                    float pattern = sin(dist * 8.0 + u_time * 2.0) * 0.5 + 0.5;
+                    pattern += sin(v_position.x * u_traits[0] * 10.0) * u_traits[1] * 0.3; // curiosity + focus
+                    
+                    // Color mixing based on creativity
+                    vec3 color = mix(u_primaryColor, u_secondaryColor, pattern * u_traits[4]);
+                    
+                    // Energy pulse effect
+                    float pulse = sin(u_time * 4.0) * 0.2 + 0.8;
+                    color *= pulse * u_energy;
+                    
+                    // Fade at edges
+                    float alpha = smoothstep(1.0, 0.7, dist);
+                    
+                    fragColor = vec4(color, alpha);
+                }`;
+
+                const program = this.createShaderProgram(vertexShaderSource, fragmentShaderSource);
+                if (program) {
+                    this.programs.set('organism', program);
+                }
+            }
+
+            createShaderProgram(vertexSource, fragmentSource) {
+                const gl = this.gl;
+                
+                const vertexShader = this.compileShader(gl.VERTEX_SHADER, vertexSource);
+                const fragmentShader = this.compileShader(gl.FRAGMENT_SHADER, fragmentSource);
+                
+                if (!vertexShader || !fragmentShader) return null;
+                
+                const program = gl.createProgram();
+                gl.attachShader(program, vertexShader);
+                gl.attachShader(program, fragmentShader);
+                gl.linkProgram(program);
+                
+                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                    console.error('Program linking error:', gl.getProgramInfoLog(program));
+                    return null;
+                }
+                
+                return program;
+            }
+
+            compileShader(type, source) {
+                const gl = this.gl;
+                const shader = gl.createShader(type);
+                
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+                    gl.deleteShader(shader);
+                    return null;
+                }
+                
+                return shader;
+            }
+
+            createBuffers() {
+                const gl = this.gl;
+                
+                // Circle geometry for organism
+                const segments = 32;
+                const vertices = [];
+                const indices = [];
+                
+                // Center vertex
+                vertices.push(0, 0, 0.5, 0.5); // pos + texCoord
+                
+                // Circle vertices
+                for (let i = 0; i <= segments; i++) {
+                    const angle = (i / segments) * Math.PI * 2;
+                    const x = Math.cos(angle);
+                    const y = Math.sin(angle);
+                    const u = (x + 1) * 0.5;
+                    const v = (y + 1) * 0.5;
+                    
+                    vertices.push(x, y, u, v);
+                }
+                
+                // Triangles
+                for (let i = 1; i <= segments; i++) {
+                    indices.push(0, i, i + 1);
+                }
+                indices.push(0, segments + 1, 1);
+                
+                // Create buffers
+                const vertexBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+                
+                const indexBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+                
+                this.buffers.set('organism', { 
+                    vertex: vertexBuffer, 
+                    index: indexBuffer, 
+                    indexCount: indices.length 
+                });
+            }
+
+            handleMessage(message, sender, sendResponse) {
+                if (message.target !== 'offscreen') return;
+                
+                switch (message.type) {
+                    case 'RENDER_ORGANISM':
+                        this.renderOrganism(message).then(response => {
+                            chrome.runtime.sendMessage({
+                                type: 'OFFSCREEN_WEBGL_RESPONSE',
+                                requestId: message.requestId,
+                                response
+                            });
+                        });
+                        break;
+                        
+                    case 'UPDATE_SHADERS':
+                        this.updateShaders(message.shaders).then(success => {
+                            chrome.runtime.sendMessage({
+                                type: 'OFFSCREEN_WEBGL_RESPONSE', 
+                                requestId: message.requestId,
+                                response: { success }
+                            });
+                        });
+                        break;
+                }
+            }
+
+            async renderOrganism(request) {
+                if (!this.initialized) {
+                    return { error: 'Renderer not initialized' };
+                }
+
+                try {
+                    const { data, options } = request;
+                    const gl = this.gl;
+                    
+                    // Setup viewport
+                    const width = options.width || 400;
+                    const height = options.height || 300;
+                    this.canvas.width = width;
+                    this.canvas.height = height;
+                    gl.viewport(0, 0, width, height);
+                    
+                    // Clear
+                    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                    
+                    // Use organism shader
+                    const program = this.programs.get('organism');
+                    const buffers = this.buffers.get('organism');
+                    
+                    if (!program || !buffers) {
+                        throw new Error('Shader program or buffers not available');
+                    }
+                    
+                    gl.useProgram(program);
+                    
+                    // Set uniforms
+                    const timeLocation = gl.getUniformLocation(program, 'u_time');
+                    const traitsLocation = gl.getUniformLocation(program, 'u_traits');
+                    const energyLocation = gl.getUniformLocation(program, 'u_energy');
+                    const primaryColorLocation = gl.getUniformLocation(program, 'u_primaryColor');
+                    const secondaryColorLocation = gl.getUniformLocation(program, 'u_secondaryColor');
+                    
+                    gl.uniform1f(timeLocation, Date.now() / 1000);
+                    gl.uniform1f(energyLocation, data.energy || 0.5);
+                    
+                    // Traits array
+                    const traits = data.traits || { curiosity: 0.5, focus: 0.5, rhythm: 0.5, empathy: 0.5, creativity: 0.5 };
+                    const traitsArray = [traits.curiosity, traits.focus, traits.rhythm, traits.empathy, traits.creativity];
+                    gl.uniform1fv(traitsLocation, traitsArray);
+                    
+                    // Colors
+                    gl.uniform3f(primaryColorLocation, 0.0, 0.878, 1.0);
+                    gl.uniform3f(secondaryColorLocation, 0.373, 0.765, 0.969);
+                    
+                    // Setup geometry
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertex);
+                    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
+                    
+                    const positionLocation = gl.getAttribLocation(program, 'a_position');
+                    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
+                    
+                    gl.enableVertexAttribArray(positionLocation);
+                    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 16, 0);
+                    
+                    gl.enableVertexAttribArray(texCoordLocation);
+                    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 16, 8);
+                    
+                    // Render
+                    gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                    gl.drawElements(gl.TRIANGLES, buffers.indexCount, gl.UNSIGNED_SHORT, 0);
+                    
+                    // Extract image data
+                    const imageData = gl.getImageData ? gl.getImageData(0, 0, width, height) : 
+                                     this.extractImageData(width, height);
+                    
+                    this.status.textContent = `Rendered organism ${data.id || 'unknown'}`;
+                    
+                    return { 
+                        success: true, 
+                        imageData: imageData,
+                        width, 
+                        height 
+                    };
+                    
+                } catch (error) {
+                    console.error('Render error:', error);
+                    return { error: error.message };
+                }
+            }
+
+            extractImageData(width, height) {
+                // Fallback image data extraction from canvas
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(this.canvas, 0, 0);
+                return tempCtx.getImageData(0, 0, width, height);
+            }
+
+            async updateShaders(shaderCode) {
+                try {
+                    const program = this.createShaderProgram(shaderCode.vertex, shaderCode.fragment);
+                    if (program) {
+                        this.programs.set('organism', program);
+                        this.status.textContent = 'Shaders updated successfully';
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Shader update failed:', error);
+                    return false;
+                }
+            }
+        }
+
+        // Initialize renderer
+        const renderer = new OffscreenWebGLRenderer();
+        renderer.initialize();
+    </script>
+</body>
+</html>

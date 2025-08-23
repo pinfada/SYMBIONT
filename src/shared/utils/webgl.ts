@@ -13,6 +13,20 @@ export interface WebGLMesh {
   vertexCount: number;
 }
 
+export interface InstancedMesh extends WebGLMesh {
+  instanceBuffer: WebGLBuffer;
+  instanceCount: number;
+  maxInstances: number;
+}
+
+export interface InstanceData {
+  position: [number, number];
+  scale: number;
+  rotation: number;
+  color: [number, number, number, number];
+  traits: [number, number, number, number, number]; // curiosity, focus, rhythm, empathy, creativity
+}
+
 export class WebGLUtils {
   static createShader(gl: WebGLRenderingContext | WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
     const shader = gl.createShader(type);
@@ -206,6 +220,18 @@ export class WebGLUtils {
     }
   }
 
+  static setUniform2f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, x: number, y: number): void {
+    if (location !== null && location !== undefined) {
+      gl.uniform2f(location, x, y);
+    }
+  }
+
+  static setUniform4f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, x: number, y: number, z: number, w: number): void {
+    if (location !== null && location !== undefined) {
+      gl.uniform4f(location, x, y, z, w);
+    }
+  }
+
   static createTexture(gl: WebGLRenderingContext | WebGL2RenderingContext, width: number, height: number, data?: Uint8Array): WebGLTexture | null {
     const texture = gl.createTexture();
     if (!texture) {
@@ -255,6 +281,123 @@ export class WebGLUtils {
       return true;
     }
     return false;
+  }
+
+  static createInstancedMesh(gl: WebGL2RenderingContext, baseMesh: WebGLMesh, maxInstances: number): InstancedMesh | null {
+    // Create instance buffer for per-instance data
+    // Data layout: position(2) + scale(1) + rotation(1) + color(4) + traits(5) = 13 floats per instance
+    const instanceBuffer = gl.createBuffer();
+    if (!instanceBuffer) {
+      logger.error('Failed to create instance buffer');
+      return null;
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, maxInstances * 13 * 4, gl.DYNAMIC_DRAW); // 13 floats * 4 bytes
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    return {
+      ...baseMesh,
+      instanceBuffer,
+      instanceCount: 0,
+      maxInstances
+    };
+  }
+
+  static updateInstanceData(gl: WebGL2RenderingContext, mesh: InstancedMesh, instances: InstanceData[]): void {
+    if (instances.length > mesh.maxInstances) {
+      logger.warn(`Instance count ${instances.length} exceeds max ${mesh.maxInstances}`);
+      instances = instances.slice(0, mesh.maxInstances);
+    }
+
+    // Pack instance data into buffer
+    const data = new Float32Array(instances.length * 13);
+    for (let i = 0; i < instances.length; i++) {
+      const instance = instances[i];
+      const offset = i * 13;
+      
+      // Position (2 floats)
+      data[offset] = instance.position[0];
+      data[offset + 1] = instance.position[1];
+      
+      // Scale (1 float)
+      data[offset + 2] = instance.scale;
+      
+      // Rotation (1 float)
+      data[offset + 3] = instance.rotation;
+      
+      // Color (4 floats)
+      data[offset + 4] = instance.color[0];
+      data[offset + 5] = instance.color[1];
+      data[offset + 6] = instance.color[2];
+      data[offset + 7] = instance.color[3];
+      
+      // Traits (5 floats)
+      data[offset + 8] = instance.traits[0];  // curiosity
+      data[offset + 9] = instance.traits[1];  // focus
+      data[offset + 10] = instance.traits[2]; // rhythm
+      data[offset + 11] = instance.traits[3]; // empathy
+      data[offset + 12] = instance.traits[4]; // creativity
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.instanceBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    mesh.instanceCount = instances.length;
+  }
+
+  static setupInstancedAttributes(gl: WebGL2RenderingContext, program: ShaderProgram, mesh: InstancedMesh): void {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.instanceBuffer);
+
+    // Instance position attribute
+    const positionAttrib = program.attributes['a_instancePosition'];
+    if (positionAttrib !== undefined && positionAttrib >= 0) {
+      gl.enableVertexAttribArray(positionAttrib);
+      gl.vertexAttribPointer(positionAttrib, 2, gl.FLOAT, false, 13 * 4, 0);
+      gl.vertexAttribDivisor(positionAttrib, 1); // One per instance
+    }
+
+    // Instance scale attribute
+    const scaleAttrib = program.attributes['a_instanceScale'];
+    if (scaleAttrib !== undefined && scaleAttrib >= 0) {
+      gl.enableVertexAttribArray(scaleAttrib);
+      gl.vertexAttribPointer(scaleAttrib, 1, gl.FLOAT, false, 13 * 4, 2 * 4);
+      gl.vertexAttribDivisor(scaleAttrib, 1);
+    }
+
+    // Instance rotation attribute
+    const rotationAttrib = program.attributes['a_instanceRotation'];
+    if (rotationAttrib !== undefined && rotationAttrib >= 0) {
+      gl.enableVertexAttribArray(rotationAttrib);
+      gl.vertexAttribPointer(rotationAttrib, 1, gl.FLOAT, false, 13 * 4, 3 * 4);
+      gl.vertexAttribDivisor(rotationAttrib, 1);
+    }
+
+    // Instance color attribute
+    const colorAttrib = program.attributes['a_instanceColor'];
+    if (colorAttrib !== undefined && colorAttrib >= 0) {
+      gl.enableVertexAttribArray(colorAttrib);
+      gl.vertexAttribPointer(colorAttrib, 4, gl.FLOAT, false, 13 * 4, 4 * 4);
+      gl.vertexAttribDivisor(colorAttrib, 1);
+    }
+
+    // Instance traits attribute
+    const traitsAttrib = program.attributes['a_instanceTraits'];
+    if (traitsAttrib !== undefined && traitsAttrib >= 0) {
+      gl.enableVertexAttribArray(traitsAttrib);
+      gl.vertexAttribPointer(traitsAttrib, 5, gl.FLOAT, false, 13 * 4, 8 * 4);
+      gl.vertexAttribDivisor(traitsAttrib, 1);
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  }
+
+  static drawInstanced(gl: WebGL2RenderingContext, mesh: InstancedMesh): void {
+    if (mesh.instanceCount === 0) return;
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+    gl.drawElementsInstanced(gl.TRIANGLES, mesh.vertexCount, gl.UNSIGNED_SHORT, 0, mesh.instanceCount);
   }
 }
 

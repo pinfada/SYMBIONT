@@ -1,82 +1,109 @@
 import { RenderQueue, WebGLContext, PerformanceMetrics, VisualMutation } from '../shared/types/organism'
 import { OrganismMemoryBank } from './OrganismMemoryBank'
 import { logger } from '@/shared/utils/secureLogger';
+import { WebGLBridgeManager } from './OffscreenWebGL';
 
-interface ShaderProgram {
-  program: WebGLProgram;
-  uniforms: Record<string, WebGLUniformLocation>;
-  attributes: Record<string, number>;
+// MV3-Compatible WebGL Orchestrator
+// Routes WebGL operations to appropriate rendering contexts
+
+interface RenderRequest {
+  id: string;
+  type: 'organism' | 'evolution' | 'neural_activity';
+  data: any;
+  priority: 'high' | 'medium' | 'low';
+  timestamp: number;
 }
 
-interface RenderContext {
-  gl: WebGLRenderingContext;
-  canvas: HTMLCanvasElement;
-  shaders: Map<string, ShaderProgram>;
-  buffers: Map<string, WebGLBuffer>;
-  textures: Map<string, WebGLTexture>;
+interface RenderTarget {
+  type: 'offscreen' | 'popup' | 'content_script';
+  available: boolean;
+  performance: number; // 0-1 score
 }
 
 export class WebGLOrchestrator {
-  private renderQueue: RenderQueue
+  private renderQueue: RenderQueue = []
   private memoryBank: OrganismMemoryBank
-  private contexts: Map<number, RenderContext> = new Map()
-  private shaderSources: Map<string, { vertex: string, fragment: string }> = new Map()
-  private animationFrameId: number | null = null
-  private isRendering = false
-
-  constructor(memoryBank: OrganismMemoryBank) {
-    this.renderQueue = []
-    this.memoryBank = memoryBank
-    this.loadShaderSources()
+  private webglBridge: WebGLBridgeManager
+  private renderTargets: Map<string, RenderTarget> = new Map()
+  private isInitialized = false
+  private performanceMetrics = {
+    avgRenderTime: 0,
+    successRate: 0,
+    queueLength: 0
   }
 
-  async initializeRenderer(tabId: number): Promise<WebGLContext> {
+  constructor(memoryBank: OrganismMemoryBank) {
+    this.memoryBank = memoryBank
+    this.webglBridge = new WebGLBridgeManager()
+    this.initializeRenderTargets()
+  }
+
+  async initialize(): Promise<void> {
     try {
-      // Create canvas element
-      const canvas = document.createElement('canvas')
-      canvas.width = 800
-      canvas.height = 600
-      canvas.style.display = 'none'
-      document.body.appendChild(canvas)
-
-      // Get WebGL context
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
-      if (!gl) {
-        throw new Error('WebGL not supported')
-      }
-
-      // Initialize context
-      const context: RenderContext = {
-        gl: gl as WebGLRenderingContext,
-        canvas,
-        shaders: new Map(),
-        buffers: new Map(),
-        textures: new Map()
-      }
-
-      // Load and compile shaders
-      await this.initializeShaders(context)
+      // Initialize WebGL bridge (Offscreen API + fallbacks)
+      await this.webglBridge.initialize()
       
-      // Create buffers
-      this.createBuffers(context)
+      // Setup render target monitoring
+      this.monitorRenderTargets()
       
-      // Store context
-      this.contexts.set(tabId, context)
+      // Start processing queue
+      this.startQueueProcessor()
       
-      // Start render loop
-      if (!this.isRendering) {
-        this.startRenderLoop()
-      }
-
-      return {
-        tabId,
-        canvas: canvas,
-        gl: gl as WebGLRenderingContext,
-        ready: true
-      } as WebGLContext
+      this.isInitialized = true
+      logger.info('WebGL Orchestrator initialized with MV3 compatibility')
+      
     } catch (error) {
-      logger.error('WebGL initialization failed:', error)
+      logger.error('WebGL Orchestrator initialization failed:', error)
       throw error
+    }
+  }
+
+  private initializeRenderTargets(): void {
+    // Register available render targets
+    this.renderTargets.set('offscreen', {
+      type: 'offscreen',
+      available: false, // Will be detected during init
+      performance: 1.0 // Highest performance
+    })
+    
+    this.renderTargets.set('popup', {
+      type: 'popup', 
+      available: false,
+      performance: 0.8
+    })
+    
+    this.renderTargets.set('content_script', {
+      type: 'content_script',
+      available: false,
+      performance: 0.6
+    })
+  }
+
+  private async monitorRenderTargets(): Promise<void> {
+    // Check Offscreen API availability
+    const offscreenTarget = this.renderTargets.get('offscreen')!
+    if (chrome.offscreen && chrome.offscreen.createDocument) {
+      offscreenTarget.available = true
+      logger.info('Offscreen API available for WebGL rendering')
+    }
+    
+    // Monitor popup state
+    chrome.action && chrome.action.onClicked && chrome.action.onClicked.addListener(() => {
+      const popupTarget = this.renderTargets.get('popup')!
+      popupTarget.available = true
+    })
+    
+    // Monitor content script availability
+    this.checkContentScriptAvailability()
+  }
+
+  private async checkContentScriptAvailability(): Promise<void> {
+    try {
+      const tabs = await chrome.tabs.query({ active: true })
+      const contentTarget = this.renderTargets.get('content_script')!
+      contentTarget.available = tabs.length > 0
+    } catch (error) {
+      logger.warn('Content script availability check failed:', error)
     }
   }
 
@@ -94,8 +121,7 @@ export class WebGLOrchestrator {
             organism.visualState = {
               ...organism.visualState,
               color: mutation.value as [number, number, number]
-            
-    }
+            }
             break
           case 'size':
             organism.visualState = {
@@ -118,8 +144,16 @@ export class WebGLOrchestrator {
         }
       })
 
-      // Add to render queue
-      this.renderQueue.push({ id, mutations, timestamp: Date.now() })
+      // Queue render request with priority
+      const renderRequest: RenderRequest = {
+        id,
+        type: 'organism',
+        data: { organism, mutations },
+        priority: 'medium',
+        timestamp: Date.now()
+      }
+      
+      await this.queueRenderRequest(renderRequest)
       
       // Save updated organism state
       await this.memoryBank.saveOrganismHistory(id, history)
@@ -128,293 +162,283 @@ export class WebGLOrchestrator {
     }
   }
 
+  async queueRenderRequest(request: RenderRequest): Promise<void> {
+    // Add to queue with priority sorting
+    this.renderQueue.push(request)
+    this.renderQueue.sort((a, b) => {
+      const priorityOrder = { high: 3, medium: 2, low: 1 }
+      return priorityOrder[b.priority] - priorityOrder[a.priority]
+    })
+    
+    // Update metrics
+    this.performanceMetrics.queueLength = this.renderQueue.length
+    
+    logger.info(`Queued render request ${request.id} (${request.priority} priority)`)
+  }
+
+  private async processRenderQueue(): Promise<void> {
+    if (this.renderQueue.length === 0) return
+    
+    // Get best available render target
+    const renderTarget = this.selectBestRenderTarget()
+    if (!renderTarget) {
+      logger.warn('No render targets available, queuing requests')
+      return
+    }
+    
+    // Process up to 3 requests per cycle to avoid blocking
+    const requestsToProcess = this.renderQueue.splice(0, 3)
+    
+    for (const request of requestsToProcess) {
+      try {
+        const startTime = Date.now()
+        
+        await this.executeRenderRequest(request, renderTarget)
+        
+        // Update performance metrics
+        const renderTime = Date.now() - startTime
+        this.performanceMetrics.avgRenderTime = 
+          (this.performanceMetrics.avgRenderTime + renderTime) / 2
+        this.performanceMetrics.successRate = 
+          (this.performanceMetrics.successRate + 1) / 2
+          
+        logger.debug(`Rendered ${request.id} in ${renderTime}ms via ${renderTarget.type}`)
+        
+      } catch (error) {
+        logger.error(`Render failed for ${request.id}:`, error)
+        this.performanceMetrics.successRate = 
+          this.performanceMetrics.successRate * 0.9 // Decay success rate
+      }
+    }
+  }
+
+  private selectBestRenderTarget(): RenderTarget | null {
+    // Find available target with highest performance score
+    let bestTarget: RenderTarget | null = null
+    let bestScore = 0
+    
+    for (const target of this.renderTargets.values()) {
+      if (target.available && target.performance > bestScore) {
+        bestTarget = target
+        bestScore = target.performance
+      }
+    }
+    
+    return bestTarget
+  }
+
+  private async executeRenderRequest(request: RenderRequest, target: RenderTarget): Promise<void> {
+    switch (target.type) {
+      case 'offscreen':
+        await this.webglBridge.renderOrganism(request.data.organism)
+        break
+        
+      case 'popup':
+        // Send to popup via messaging
+        await chrome.runtime.sendMessage({
+          type: 'POPUP_RENDER_REQUEST',
+          request
+        })
+        break
+        
+      case 'content_script':
+        // Send to active tab's content script
+        const tabs = await chrome.tabs.query({ active: true })
+        if (tabs[0]?.id) {
+          await chrome.tabs.sendMessage(tabs[0].id, {
+            type: 'CONTENT_RENDER_REQUEST', 
+            request
+          })
+        }
+        break
+    }
+  }
+
+  private startQueueProcessor(): void {
+    // Process queue every 100ms
+    setInterval(() => {
+      if (this.isInitialized) {
+        this.processRenderQueue()
+      }
+    }, 100)
+    
+    logger.info('Render queue processor started')
+  }
+
   async optimizePerformance(metrics: PerformanceMetrics): Promise<void> {
     try {
-      // GPU optimization based on performance metrics
+      // Adaptive performance optimization for MV3 architecture
       if (metrics.fps && metrics.fps < 30) {
-        // Reduce quality
-        this.contexts.forEach(context => {
-          context.gl.disable(context.gl.DEPTH_TEST)
-          // Reduce particle count, lower shader quality
-        
-    })
+        // Reduce render target performance expectations
+        this.adjustRenderTargetPerformance(0.8)
+        logger.info('Reduced render quality due to low FPS')
       }
       
       if (metrics.memoryUsage && metrics.memoryUsage > 100 * 1024 * 1024) { // 100MB
-        // Clean up unused resources
-        this.cleanupResources()
+        // Trigger cleanup across all render targets
+        await this.cleanupRenderTargets()
       }
       
       if (metrics.renderTime && metrics.renderTime > 16) { // >16ms per frame
-        // Enable batching and culling
-        this.enableOptimizations()
+        // Prioritize offscreen rendering over content script
+        this.adjustTargetPriorities()
       }
       
-      this.logPerformance('GPU optimization executed', metrics)
+      // Update performance metrics
+      this.performanceMetrics = {
+        ...this.performanceMetrics,
+        avgRenderTime: metrics.renderTime || this.performanceMetrics.avgRenderTime
+      }
+      
+      this.logPerformance('Performance optimization executed', metrics)
     } catch (error) {
       logger.error('Performance optimization failed:', error)
     }
   }
 
-  // Méthode publique pour recevoir une mutation visuelle
+  private adjustRenderTargetPerformance(factor: number): void {
+    for (const target of this.renderTargets.values()) {
+      target.performance *= factor
+    }
+  }
+
+  private async cleanupRenderTargets(): Promise<void> {
+    // Request cleanup from offscreen context
+    await chrome.runtime.sendMessage({
+      type: 'OFFSCREEN_CLEANUP_REQUEST'
+    })
+    
+    // Request cleanup from popup
+    await chrome.runtime.sendMessage({
+      type: 'POPUP_CLEANUP_REQUEST'
+    })
+    
+    logger.info('Cleanup requested from all render targets')
+  }
+
+  private adjustTargetPriorities(): void {
+    // Boost offscreen performance score
+    const offscreenTarget = this.renderTargets.get('offscreen')
+    if (offscreenTarget) {
+      offscreenTarget.performance = Math.min(1.0, offscreenTarget.performance * 1.1)
+    }
+    
+    // Reduce content script priority
+    const contentTarget = this.renderTargets.get('content_script')
+    if (contentTarget) {
+      contentTarget.performance *= 0.9
+    }
+  }
+
+  // Public API methods
+  
   async receiveVisualMutation(id: string, mutation: VisualMutation): Promise<void> {
     await this.updateOrganismVisuals(id, [mutation])
-  
-    }
+  }
 
-  private async initializeShaders(context: RenderContext): Promise<void> {
-    for (const [name, sources] of this.shaderSources) {
-      const vertexShader = this.createShader(context.gl, context.gl.VERTEX_SHADER, sources.vertex)
-      const fragmentShader = this.createShader(context.gl, context.gl.FRAGMENT_SHADER, sources.fragment)
-      
-      if (!vertexShader || !fragmentShader) continue
-      
-      const program = context.gl.createProgram()
-      if (!program) continue
-      
-      context.gl.attachShader(program, vertexShader)
-      context.gl.attachShader(program, fragmentShader)
-      context.gl.linkProgram(program)
-      
-      if (!context.gl.getProgramParameter(program, context.gl.LINK_STATUS)) {
-        logger.error('Shader program link failed:', context.gl.getProgramInfoLog(program))
-        continue
-      
+  async requestHighPriorityRender(organismId: string, data: any): Promise<void> {
+    const request: RenderRequest = {
+      id: organismId,
+      type: 'organism',
+      data,
+      priority: 'high',
+      timestamp: Date.now()
     }
-      
-      // Get uniform and attribute locations
-      const uniforms: Record<string, WebGLUniformLocation> = {}
-      const attributes: Record<string, number> = {}
-      
-      const numUniforms = context.gl.getProgramParameter(program, context.gl.ACTIVE_UNIFORMS)
-      for (let i = 0; i < numUniforms; i++) {
-        const info = context.gl.getActiveUniform(program, i)
-        if (info) {
-          const location = context.gl.getUniformLocation(program, info.name)
-          if (location) uniforms[info.name] = location
-        }
-      }
-      
-      const numAttributes = context.gl.getProgramParameter(program, context.gl.ACTIVE_ATTRIBUTES)
-      for (let i = 0; i < numAttributes; i++) {
-        const info = context.gl.getActiveAttrib(program, i)
-        if (info) {
-          attributes[info.name] = context.gl.getAttribLocation(program, info.name)
-        }
-      }
-      
-      context.shaders.set(name, { program, uniforms, attributes })
-    }
+    
+    await this.queueRenderRequest(request)
   }
-  
-  private createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
-    const shader = gl.createShader(type)
-    if (!shader) return null
-    
-    gl.shaderSource(shader, source)
-    gl.compileShader(shader)
-    
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      logger.error('Shader compilation failed:', gl.getShaderInfoLog(shader))
-      gl.deleteShader(shader)
-      return null
-    }
-    
-    return shader
-  }
-  
-  private createBuffers(context: RenderContext): void {
-    // Create vertex buffer for organism geometry
-    const vertices = new Float32Array([
-      -1, -1, 0,
-       1, -1, 0,
-       0,  1, 0
-    ])
-    
-    const vertexBuffer = context.gl.createBuffer()
-    if (vertexBuffer) {
-      context.gl.bindBuffer(context.gl.ARRAY_BUFFER, vertexBuffer)
-      context.gl.bufferData(context.gl.ARRAY_BUFFER, vertices, context.gl.STATIC_DRAW)
-      context.buffers.set('vertices', vertexBuffer)
-    
-    }
-  }
-  
-  private loadShaderSources(): void {
-    // Load shader sources (these would typically be loaded from files)
-    this.shaderSources.set('organism', {
-      vertex: `
-        attribute vec3 position;
-        uniform mat4 modelViewMatrix;
-        uniform mat4 projectionMatrix;
-        uniform float time;
-        varying vec3 vPosition;
-        
-        void main() {
-          vPosition = position;
-          vec3 pos = position;
-          pos.x += sin(time + position.y * 2.0) * 0.1;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        
-    }
-      `,
-      fragment: `
-        precision mediump float;
-        uniform vec3 color;
-        uniform float time;
-        varying vec3 vPosition;
-        
-        void main() {
-          float intensity = sin(time + vPosition.x * 5.0) * 0.5 + 0.5;
-          gl_FragColor = vec4(color * intensity, 1.0);
-        }
-      `
-    })
-  }
-  
-  private startRenderLoop(): void {
-    this.isRendering = true
-    const render = () => {
-      this.renderFrame()
-      if (this.isRendering) {
-        this.animationFrameId = requestAnimationFrame(render)
-      
-    }
-    }
-    render()
-  }
-  
-  private renderFrame(): void {
-    const currentTime = Date.now()
-    
-    this.contexts.forEach((context) => {
-      const gl = context.gl
-      
-      // Clear canvas
-      gl.clearColor(0.1, 0.1, 0.2, 1.0)
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-      
-      // Process render queue for this tab
-      const queueItems = this.renderQueue.filter(item => 
-        currentTime - item.timestamp < 1000 // Keep items for 1 second
+
+  async getPerformanceMetrics(): Promise<typeof this.performanceMetrics> {
+    return {
+      ...this.performanceMetrics,
+      renderTargetStatus: Object.fromEntries(
+        Array.from(this.renderTargets.entries()).map(([key, target]) => [
+          key, 
+          { available: target.available, performance: target.performance }
+        ])
       )
-      
-      queueItems.forEach(item => {
-        this.renderOrganism(context, item.id, currentTime)
-      
-    })
-    })
-    
-    // Clean old queue items
-    this.renderQueue = this.renderQueue.filter(item => 
-      currentTime - item.timestamp < 1000
-    )
-  }
-  
-  private renderOrganism(context: RenderContext, _organismId: string, time: number): void {
-    const shader = context.shaders.get('organism')
-    if (!shader) return
-    
-    const gl = context.gl
-    gl.useProgram(shader.program)
-    
-    // Set uniforms
-    gl.uniform1f(shader.uniforms['time'], time * 0.001)
-    gl.uniform3f(shader.uniforms['color'], 0.5, 0.8, 1.0)
-    
-    // Bind vertex buffer
-    const vertexBuffer = context.buffers.get('vertices')
-    if (vertexBuffer) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-      gl.enableVertexAttribArray(shader.attributes['position'])
-      gl.vertexAttribPointer(shader.attributes['position'], 3, gl.FLOAT, false, 0, 0)
-    
     }
-    
-    // Draw
-    gl.drawArrays(gl.TRIANGLES, 0, 3)
-  }
-  
-  private cleanupResources(): void {
-    this.contexts.forEach(context => {
-      // Clean up unused textures and buffers
-      context.textures.clear()
-    
-    })
-  }
-  
-  private enableOptimizations(): void {
-    this.contexts.forEach(context => {
-      context.gl.enable(context.gl.CULL_FACE)
-      context.gl.enable(context.gl.DEPTH_TEST)
-    
-    })
   }
 
-  // --- Monitoring ---
-  logPerformance(msg: string, metrics?: PerformanceMetrics) {
+  async activateForTab(tabId: number): Promise<void> {
+    // Update content script availability for specific tab
+    try {
+      await chrome.tabs.sendMessage(tabId, { type: 'WEBGL_ACTIVATION_PING' })
+      const contentTarget = this.renderTargets.get('content_script')!
+      contentTarget.available = true
+      logger.info(`Activated WebGL for tab ${tabId}`)
+    } catch (error) {
+      logger.warn(`Failed to activate WebGL for tab ${tabId}:`, error)
+    }
+  }
+
+  async processMutation(organismId: string, mutationData: any): Promise<void> {
+    const request: RenderRequest = {
+      id: organismId,
+      type: 'evolution',
+      data: mutationData,
+      priority: 'medium',
+      timestamp: Date.now()
+    }
+    
+    await this.queueRenderRequest(request)
+  }
+
+  // Monitoring and cleanup
+  
+  logPerformance(msg: string, metrics?: PerformanceMetrics): void {
     if (metrics) {
-      logger.info(`[WebGL] ${msg}`, {
+      logger.info(`[WebGL Orchestrator] ${msg}`, {
         fps: metrics.fps,
         renderTime: metrics.renderTime,
-        memoryUsage: metrics.memoryUsage
+        memoryUsage: metrics.memoryUsage,
+        queueLength: this.performanceMetrics.queueLength
       })
     } else {
-      logger.info(`[WebGL] ${msg}`)
+      logger.info(`[WebGL Orchestrator] ${msg}`)
     }
   }
   
-  // Public cleanup method
-  dispose(): void {
-    this.isRendering = false
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId)
-    
+  async dispose(): Promise<void> {
+    try {
+      // Stop queue processor
+      this.isInitialized = false
+      
+      // Cleanup WebGL bridge
+      await this.webglBridge.cleanup()
+      
+      // Clear render queue
+      this.renderQueue = []
+      
+      // Reset render targets
+      this.renderTargets.clear()
+      
+      logger.info('WebGL Orchestrator disposed successfully')
+    } catch (error) {
+      logger.error('WebGL Orchestrator disposal failed:', error)
     }
+  }
+
+  // Status methods
+  
+  isReady(): boolean {
+    return this.isInitialized && this.renderTargets.size > 0
+  }
+
+  getQueueLength(): number {
+    return this.renderQueue.length
+  }
+
+  getRenderTargetStatus(): Record<string, { available: boolean; performance: number }> {
+    const status: Record<string, { available: boolean; performance: number }> = {}
     
-    this.contexts.forEach(context => {
-      // Cleanup WebGL resources
-      context.shaders.forEach(shader => {
-        context.gl.deleteProgram(shader.program)
-      })
-      
-      context.buffers.forEach(buffer => {
-        context.gl.deleteBuffer(buffer)
-      })
-      
-      context.textures.forEach(texture => {
-        context.gl.deleteTexture(texture)
-      })
-      
-      // Remove canvas
-      if (context.canvas.parentNode) {
-        context.canvas.parentNode.removeChild(context.canvas)
+    for (const [key, target] of this.renderTargets.entries()) {
+      status[key] = {
+        available: target.available,
+        performance: target.performance
       }
-    })
+    }
     
-    this.contexts.clear()
-    this.renderQueue = []
-  }
-
-  async activateForTab(): Promise<void> {
-    // Activate WebGL orchestration for specific tab
-    // ... existing code ...
-  
-    }
-
-  async processMutation(): Promise<void> {
-    // Process organism mutation with WebGL updates
-    // ... existing code ...
-  
-    }
-
-  async getPerformanceMetrics(): Promise<unknown> {
-    // Get comprehensive performance metrics
-    return {
-      renderTime: 0,
-      frameRate: 0,
-      memoryUsage: 0,
-      activeAnimations: 0
-    };
+    return status
   }
 } 
