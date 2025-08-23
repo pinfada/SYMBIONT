@@ -364,7 +364,7 @@ void main() {
   }
 
   public emitTraitParticles(x: number, y: number, traits: Record<string, number>): void {
-    for (const [traitName, value] of Object.entries(traits)) {
+    for (const [_traitName, value] of Object.entries(traits)) {
       if (value > 0.3 && SecureRandom.random() < value) {
         this.emitParticle(x, y, value, ParticleType.TRAIT);
       }

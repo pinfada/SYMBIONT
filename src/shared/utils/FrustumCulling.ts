@@ -301,7 +301,7 @@ export class FrustumCuller {
   // Spatial partitioning for efficient culling
   public spatialCull(objects: CullableObject[], gridSize: number = 100): CullableObject[] {
     // Create a simple grid-based spatial partitioning
-    const grid = new Map<string, CullableObject[]>();
+    // const _grid = new Map<string, CullableObject[]>(); // Removed unused
     
     // Determine which grid cells the frustum overlaps
     const minGridX = Math.floor(this.frustum.left / gridSize);

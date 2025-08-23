@@ -1,6 +1,6 @@
 // src/shared/utils/ProceduralTextures.ts
 import { logger } from './secureLogger';
-import { SecureRandom } from './secureRandom';
+// import { SecureRandom } from './secureRandom'; // Removed unused import
 import WebGLUtils from './webgl';
 
 export interface OrganismTraits {
@@ -171,7 +171,7 @@ export class ProceduralTextureGenerator {
   }
 
   // Generate reaction-diffusion pattern for organic textures
-  private generateReactionDiffusion(width: number, height: number, traits: OrganismTraits, seed: number): Uint8Array {
+  private generateReactionDiffusion(width: number, height: number, traits: OrganismTraits, _seed: number): Uint8Array {
     const data = new Uint8Array(width * height * 4);
     const gridA = new Float32Array(width * height);
     const gridB = new Float32Array(width * height);

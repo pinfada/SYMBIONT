@@ -309,7 +309,7 @@ export class PostProcessingManager {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.quadMesh.indexBuffer);
 
     // Apply each enabled effect
-    for (const [name, effect] of this.effects) {
+    for (const [_name, effect] of this.effects) {
       if (!effect.enabled) continue;
 
       const sourceIndex = this.currentFramebufferIndex;

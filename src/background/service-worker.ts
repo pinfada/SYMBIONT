@@ -6,6 +6,12 @@ class ServiceWorkerManager {
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
     
+    // Vérifier que chrome API est disponible
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      console.warn('Chrome APIs not available in this context');
+      return;
+    }
+    
     // Setup message handling
     chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       this.handleMessage(request, sendResponse);

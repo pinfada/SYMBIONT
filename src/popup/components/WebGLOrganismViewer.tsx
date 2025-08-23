@@ -184,11 +184,18 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
     canvas.addEventListener('webglcontextrestored', handleContextRestored as EventListener);
 
     const initializeWebGL = async () => {
+      let initTimeout: NodeJS.Timeout | null = null;
       try {
         // Test de support WebGL plus robuste
         if (!window.WebGLRenderingContext) {
           throw new Error('WebGL not available in this browser');
         }
+
+        // Timeout pour éviter le freeze
+        initTimeout = setTimeout(() => {
+          setError('WebGL initialization timeout - switching to 2D fallback');
+          logger.warn('WebGL initialization timeout');
+        }, 5000);
 
         // Feature detection robuste + fallback cascade
         const contextOptions = {
@@ -211,7 +218,7 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
           gl = canvas.getContext('webgl2', contextOptions) as WebGL2RenderingContext | null;
           if (gl) {
             // Vérifier les extensions critiques
-            const requiredExtensions = ['EXT_color_buffer_float'];
+            // const _requiredExtensions = ['EXT_color_buffer_float']; // Removed unused
             const supportedExtensions = gl.getSupportedExtensions() || [];
             
             isWebGL2 = true;
@@ -258,8 +265,13 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
         try {
           if (isWebGL2) {
             logger.info('Loading WebGL2 enhanced shaders');
-            vertexShaderSource = await loadShader('/src/shaders/enhanced-organism.vert');
-            fragmentShaderSource = await loadShader('/src/shaders/enhanced-organism.frag');
+            // Utiliser des chemins relatifs à l'extension
+            vertexShaderSource = await loadShader(chrome?.runtime?.getURL ? 
+              chrome.runtime.getURL('shaders/enhanced-organism.vert') : 
+              '/src/shaders/enhanced-organism.vert');
+            fragmentShaderSource = await loadShader(chrome?.runtime?.getURL ? 
+              chrome.runtime.getURL('shaders/enhanced-organism.frag') : 
+              '/src/shaders/enhanced-organism.frag');
           } else {
             logger.info('Using WebGL1 fallback shaders');
             vertexShaderSource = FALLBACK_VERTEX_SHADER;
@@ -304,9 +316,11 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
+        if (initTimeout) clearTimeout(initTimeout);
         setIsInitialized(true);
         logger.info('WebGL Organism Viewer initialized successfully');
       } catch (err) {
+        if (initTimeout) clearTimeout(initTimeout);
         const errorMsg = err instanceof Error ? err.message : 'Unknown WebGL error';
         setError(errorMsg);
         logger.error('WebGL initialization failed:', errorMsg);
@@ -321,9 +335,9 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
     };
   }, []);
 
-  // Animation loop
+  // Animation loop with safety checks
   useEffect(() => {
-    if (!isInitialized || !organism || !glRef.current || !programRef.current || !meshRef.current) {
+    if (!isInitialized || !organism || !glRef.current || !programRef.current || !meshRef.current || contextLostRef.current) {
       return;
     }
 
@@ -460,9 +474,9 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
       ];
 
       // Colors (avec vérifications)
-      if (program.uniforms['u_primaryColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_primaryColor'], ...primaryColor);
-      if (program.uniforms['u_secondaryColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_secondaryColor'], ...secondaryColor);
-      if (program.uniforms['u_accentColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_accentColor'], ...accentColor);
+      if (program.uniforms['u_primaryColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_primaryColor'], primaryColor[0], primaryColor[1], primaryColor[2]);
+      if (program.uniforms['u_secondaryColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_secondaryColor'], secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+      if (program.uniforms['u_accentColor']) WebGLUtils.setUniform3f(gl, program.uniforms['u_accentColor'], accentColor[0], accentColor[1], accentColor[2]);
 
       // Bind noise texture (avec vérification sécurisée)
       if (noiseTextureRef.current && program.uniforms['u_noiseTexture']) {

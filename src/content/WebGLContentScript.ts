@@ -112,7 +112,7 @@ export class WebGLContentScriptRenderer {
   }
 
   private setupMessageListener(): void {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message.type === 'CONTENT_WEBGL_RENDER') {
         this.handleRenderRequest(message.data)
           .then(result => {

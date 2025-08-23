@@ -89,14 +89,14 @@ export class LODManager {
         distance,
         detail,
         vertexCount: Math.max(8, vertexCount), // Minimum 8 vertices
-        mesh: this.createLODMesh(vertexCount, detail, traits)
+        mesh: this.createLODMesh(vertexCount, detail, traits) as WebGLMesh
       });
     }
     
     return levels;
   }
 
-  private createLODMesh(vertexCount: number, detail: number, traits: any): WebGLMesh | undefined {
+  private createLODMesh(vertexCount: number, detail: number, _traits: any): WebGLMesh | undefined {
     // Create a circle mesh with varying detail
     const segments = Math.max(6, Math.floor(vertexCount / 2));
     

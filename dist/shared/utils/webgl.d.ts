@@ -8,6 +8,18 @@ export interface WebGLMesh {
     indexBuffer: WebGLBuffer;
     vertexCount: number;
 }
+export interface InstancedMesh extends WebGLMesh {
+    instanceBuffer: WebGLBuffer;
+    instanceCount: number;
+    maxInstances: number;
+}
+export interface InstanceData {
+    position: [number, number];
+    scale: number;
+    rotation: number;
+    color: [number, number, number, number];
+    traits: [number, number, number, number, number];
+}
 export declare class WebGLUtils {
     static createShader(gl: WebGLRenderingContext | WebGL2RenderingContext, type: number, source: string): WebGLShader | null;
     static createProgram(gl: WebGLRenderingContext | WebGL2RenderingContext, vertexSource: string, fragmentSource: string): ShaderProgram | null;
@@ -18,9 +30,15 @@ export declare class WebGLUtils {
     static setUniform1f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, value: number): void;
     static setUniform3f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, x: number, y: number, z: number): void;
     static setUniformMatrix3(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, matrix: Float32Array): void;
+    static setUniform2f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, x: number, y: number): void;
+    static setUniform4f(gl: WebGLRenderingContext | WebGL2RenderingContext, location: WebGLUniformLocation | null, x: number, y: number, z: number, w: number): void;
     static createTexture(gl: WebGLRenderingContext | WebGL2RenderingContext, width: number, height: number, data?: Uint8Array): WebGLTexture | null;
     static generateNoiseTexture(gl: WebGLRenderingContext | WebGL2RenderingContext, size?: number): WebGLTexture | null;
     static resizeCanvas(canvas: HTMLCanvasElement, displayWidth?: number, displayHeight?: number): boolean;
+    static createInstancedMesh(gl: WebGL2RenderingContext, baseMesh: WebGLMesh, maxInstances: number): InstancedMesh | null;
+    static updateInstanceData(gl: WebGL2RenderingContext, mesh: InstancedMesh, instances: InstanceData[]): void;
+    static setupInstancedAttributes(gl: WebGL2RenderingContext, program: ShaderProgram, mesh: InstancedMesh): void;
+    static drawInstanced(gl: WebGL2RenderingContext, mesh: InstancedMesh): void;
 }
 export default WebGLUtils;
 //# sourceMappingURL=webgl.d.ts.map

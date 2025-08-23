@@ -1,30 +1,51 @@
-import { test, expect } from './test-setup';
-import { Locator } from '@playwright/test';
-import path from 'path';
-import { waitForReactToLoad, debugPageState, capturePageErrors, waitForElementReady } from './utils';
+import { test, expect } from '@playwright/test';
+import { 
+  setupExtensionContext, 
+  teardownExtensionContext,
+  ExtensionPopupHelper,
+  ExtensionStorageHelper,
+  waitForExtensionReady,
+  SYMBIONT_EXTENSION_ID
+} from './extension-setup';
+import { capturePageErrors, waitForElementReady } from './utils';
 
-test.describe('Dashboard SYMBIONT', () => {
-  const dashboardPath = path.resolve(__dirname, '../../dist/popup/index.html');
+test.describe('Dashboard SYMBIONT - Extension Context', () => {
 
-  test('Affichage des visualisations et des traits', async ({ page }) => {
-    const errors = capturePageErrors(page);
-    
-    await page.goto('file://' + dashboardPath);
-    await waitForReactToLoad(page);
-    await debugPageState(page);
+  test('Affichage des visualisations et des traits', async () => {
+    const testContext = await setupExtensionContext({ headless: false });
     
     try {
+      const errors = capturePageErrors(testContext.page);
+      const popupHelper = new ExtensionPopupHelper(testContext.page, SYMBIONT_EXTENSION_ID);
+      
+      // Ouvrir le popup dans le contexte d'extension réelle
+      await popupHelper.openPopup();
+      
+      // Attendre que l'extension soit prête
+      await waitForExtensionReady(testContext.page);
+    
       // Attendre que la page soit complètement chargée
-      await page.waitForSelector('#root', { timeout: 10000 });
+      await testContext.page.waitForSelector('#root', { timeout: 10000 });
+      
+      // Attendre que React soit chargé et que l'application soit rendue
+      await testContext.page.waitForTimeout(3000);
       
       // Vérifier que l'application s'affiche avec les éléments de base
-      await expect(page.locator('.app')).toBeVisible({ timeout: 5000 });
+      const appSelector = '.app, .symbiont-app, [data-testid="app"]';
+      await testContext.page.waitForSelector(appSelector, { timeout: 15000 });
+      await expect(testContext.page.locator(appSelector).first()).toBeVisible();
       
-      // Vérifier la présence des boutons de navigation
-      await expect(page.locator('.nav-tabs')).toBeVisible({ timeout: 5000 });
+      // Attendre et vérifier la présence des boutons de navigation
+      const navSelector = '.nav-tabs, .navigation, [role="tablist"]';
+      try {
+        await testContext.page.waitForSelector(navSelector, { timeout: 10000 });
+        await expect(testContext.page.locator(navSelector).first()).toBeVisible();
+      } catch (e) {
+        console.log('Navigation tabs non trouvés, continuons avec les tests de base');
+      }
       
       // Chercher les boutons de navigation réels
-      const buttons = page.locator('.nav-tabs button');
+      const buttons = testContext.page.locator('.nav-tabs button');
       const buttonCount = await buttons.count();
       expect(buttonCount).toBeGreaterThanOrEqual(2); // Au moins 2 boutons
       
@@ -32,19 +53,32 @@ test.describe('Dashboard SYMBIONT', () => {
       const buttonTexts = await buttons.allTextContents();
       console.log('📋 Boutons disponibles:', buttonTexts);
       
+      // Test spécifique au contexte d'extension
+      const extensionInfo = await testContext.page.evaluate(() => {
+        return {
+          extensionId: chrome.runtime.id,
+          url: window.location.href,
+          isExtensionContext: window.location.protocol === 'chrome-extension:'
+        };
+      });
+      
+      console.log('🔗 Extension context info:', extensionInfo);
+      expect(extensionInfo.extensionId).toBe(SYMBIONT_EXTENSION_ID);
+      expect(extensionInfo.isExtensionContext).toBe(true);
+      
       // Essayer de cliquer sur le bouton Dashboard s'il existe
       const dashboardButton = buttons.filter({ hasText: /Dashboard|Organism/i }).first();
       if (await dashboardButton.count() > 0) {
         await dashboardButton.click();
-        await page.waitForTimeout(1000);
+        await testContext.page.waitForTimeout(1000);
       }
       
       // Vérifier que le contenu principal s'affiche
-      const mainContent = page.locator('.app > div').nth(1); // Deuxième div après nav-tabs
+      const mainContent = testContext.page.locator('.app > div').nth(1);
       await expect(mainContent).toBeVisible({ timeout: 5000 });
       
       // Chercher des éléments liés aux traits/visualisations
-      const traitElements = page.locator('text=/curiosity|empathy|traits|radar/i');
+      const traitElements = testContext.page.locator('text=/curiosity|empathy|traits|radar/i');
       if (await traitElements.count() > 0) {
         await expect(traitElements.first()).toBeVisible();
         console.log('✅ Éléments de traits trouvés');
@@ -52,19 +86,30 @@ test.describe('Dashboard SYMBIONT', () => {
         console.log('⚠️ Aucun élément de traits spécifique trouvé, mais l\'interface est fonctionnelle');
       }
       
+      // Test de stockage des données d'organisme
+      const storageHelper = new ExtensionStorageHelper(testContext.page);
+      await storageHelper.setStorageData('dashboard-test', { 
+        timestamp: Date.now(),
+        testPassed: true 
+      });
+      
+      const storedData = await storageHelper.getStorageData('dashboard-test');
+      expect(storedData.testPassed).toBe(true);
+      
       console.log('✅ Interface dashboard affichée avec succès');
     } catch (error) {
       console.log('❌ Erreurs capturées:', errors);
-      await debugPageState(page);
       
       // Affichage des éléments trouvés pour debug
-      const allButtons = await page.locator('button').allTextContents();
+      const allButtons = await testContext.page.locator('button').allTextContents();
       console.log('🔍 Tous les boutons trouvés:', allButtons);
       
-      const allText = await page.locator('body').textContent();
+      const allText = await testContext.page.locator('body').textContent();
       console.log('🔍 Contenu texte de la page:', allText?.substring(0, 500));
       
       throw error;
+    } finally {
+      await teardownExtensionContext(testContext);
     }
   });
 

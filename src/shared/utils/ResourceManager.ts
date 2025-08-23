@@ -31,7 +31,7 @@ export class ResourceManager {
   private detectMemoryLimits(): void {
     try {
       // Try to detect mobile/desktop and adjust limits
-      const canvas = this.gl.canvas as HTMLCanvasElement;
+      // const _canvas = this.gl.canvas as HTMLCanvasElement; // Removed unused
       const isHighDPI = window.devicePixelRatio > 1.5;
       const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       

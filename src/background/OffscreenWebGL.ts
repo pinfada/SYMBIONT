@@ -56,7 +56,7 @@ export class ServiceWorkerWebGLBridge {
 
   private setupMessageHandling(): void {
     // Écouter les réponses du document offscreen
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
       if (message.type === 'OFFSCREEN_WEBGL_RESPONSE' && message.requestId) {
         const callback = this.pendingRequests.get(message.requestId);
         if (callback) {
@@ -118,7 +118,7 @@ export class ServiceWorkerWebGLBridge {
     }
   }
 
-  async renderEvolutionSteps(organisms: OrganismData[]): Promise<ImageData[]> {
+  async renderEvolutionSteps(organisms: any[]): Promise<ImageData[]> {
     const results: ImageData[] = [];
     
     // Rendu par batch pour éviter surcharge

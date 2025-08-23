@@ -27,13 +27,31 @@ export const waitForReactToLoad = async (page, panelSelector = '.app-container, 
   }, { timeout: 15000 });
   
   // Attendre un peu pour que les composants se stabilisent
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(2000);
   
-  // Optionnel : attendre un sélecteur spécifique
-  try {
-    await page.waitForSelector(panelSelector, { timeout: 5000 });
-  } catch (error) {
-    console.log(`⚠️ Panel selector "${panelSelector}" non trouvé, mais React semble chargé`);
+  // Utiliser des sélecteurs plus génériques comme fallback
+  const fallbackSelectors = [
+    panelSelector,
+    '.app, .symbiont-app',
+    '.nav-tabs, .navigation',
+    '[data-testid]',
+    '.panel, .component'
+  ];
+  
+  let foundSelector = null;
+  for (const selector of fallbackSelectors) {
+    try {
+      await page.waitForSelector(selector, { timeout: 3000 });
+      foundSelector = selector;
+      console.log(`✅ Found UI element: ${selector}`);
+      break;
+    } catch (error) {
+      // Continue to next selector
+    }
+  }
+  
+  if (!foundSelector) {
+    console.log(`⚠️ Aucun sélecteur UI trouvé, mais React semble chargé`);
   }
 };
 
