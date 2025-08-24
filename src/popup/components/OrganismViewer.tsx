@@ -213,7 +213,9 @@ export const OrganismViewer: React.FC = () => {
       ctx.fillStyle = '#00e0ff';
       ctx.font = '12px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(`ADN: ${organism.dna.substring(0, 8)}...`, centerX, canvas.height - 20);
+      // Sanitiser l'ADN avant affichage pour prévenir les injections
+      const safeDNA = organism.dna ? organism.dna.replace(/[<>'"&]/g, '') : 'UNKNOWN';
+      ctx.fillText(`ADN: ${safeDNA.substring(0, 8)}...`, centerX, canvas.height - 20);
       ctx.shadowBlur = 0;
       
       animationId = requestAnimationFrame(animate);

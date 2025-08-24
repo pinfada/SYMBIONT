@@ -1,9 +1,11 @@
-import React, { useState, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useCallback, Suspense, lazy, useEffect } from 'react';
 import OrganismDashboard from './OrganismDashboard';
 import Toast from './Toast';
 import ErrorBoundary from './ErrorBoundary';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { logger } from '@shared/utils/secureLogger';
+import { FastOrganismPreview } from './FastOrganismPreview';
+import { SecurityMonitor } from '@shared/security/SecurityMonitor';
 
 // Lazy loading des panneaux lourds pour optimiser le bundle
 const MetricsPanel = lazy(() => import('./MetricsPanel'));
@@ -25,6 +27,28 @@ const NAV_ITEMS = [
 const App: React.FC = () => {
   const [active, setActive] = useState('dashboard');
   const [toast, setToast] = useState<{message: string, type?: 'success'|'error'|'info'}|null>(null);
+  const [fastMode, setFastMode] = useState(false);
+  
+  // Activer le mode rapide immédiatement par défaut + vérifications sécurité
+  useEffect(() => {
+    // Vérifier le mode verrouillage sécuritaire
+    if (SecurityMonitor.isInLockdown()) {
+      setToast({
+        message: 'Extension en mode sécurisé - Fonctionnalités limitées',
+        type: 'error'
+      });
+      return;
+    }
+    
+    setFastMode(true); // Mode rapide par défaut
+    
+    // Permettre le passage au mode complet après 1 seconde
+    const enableFullModeTimer = setTimeout(() => {
+      // L'utilisateur peut maintenant choisir le mode complet
+    }, 1000);
+    
+    return () => clearTimeout(enableFullModeTimer);
+  }, []);
   
   // Nom descriptif pour le panel actuel (pour screen readers)
   const getActivePageTitle = (): string => {
@@ -99,11 +123,15 @@ const App: React.FC = () => {
             <div className="panel-header">
               <h2>🧬 Votre Organisme</h2>
               <p>Explorez votre créature digitale en évolution</p>
+              {fastMode && <div className="fast-mode-indicator">⚡ Mode rapide activé</div>}
             </div>
             <ErrorBoundary>
               <div className="organism-display">
                 <Suspense fallback={<div className="panel-loading">🧬 Chargement de l'organisme...</div>}>
-                  <OrganismViewer />
+                  {fastMode ? 
+                    <FastOrganismPreview onLoadFull={() => setFastMode(false)} />
+                    : <OrganismViewer />
+                  }
                 </Suspense>
               </div>
             </ErrorBoundary>

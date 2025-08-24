@@ -1,0 +1,52 @@
+/* Styles WebGL - Conformité CSP */
+
+.webgl-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.webgl-canvas-resized {
+  /* Canvas size handled programmatically via width/height attributes */
+}
+
+.webgl-organism-viewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.organism-info-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(10, 13, 21, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 160px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.webgl-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  color: #ff6b6b;
+  text-align: center;
+}
+
+.organism-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  color: #00e0ff;
+  text-align: center;
+}

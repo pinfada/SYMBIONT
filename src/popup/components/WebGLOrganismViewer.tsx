@@ -4,6 +4,7 @@ import { useOrganism } from '../hooks/useOrganism';
 import WebGLUtils, { ShaderProgram, WebGLMesh } from '../../shared/utils/webgl';
 import ParticleSystem from '../../shared/utils/ParticleSystem';
 import { logger } from '../../shared/utils/secureLogger';
+import './WebGLOrganismViewer.css';
 
 // Shader loader utility
 async function loadShader(path: string): Promise<string> {
@@ -371,8 +372,8 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
       if (canvas.width !== realWidth || canvas.height !== realHeight) {
         canvas.width = realWidth;
         canvas.height = realHeight;
-        canvas.style.width = displayWidth + 'px';
-        canvas.style.height = displayHeight + 'px';
+        // Utiliser des classes CSS au lieu de styles inline pour conformité CSP
+        canvas.className = 'webgl-canvas webgl-canvas-resized';
       }
       
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -562,11 +563,7 @@ export const WebGLOrganismViewer: React.FC<WebGLOrganismViewerProps> = ({
         ref={canvasRef}
         width={width}
         height={height}
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block'
-        }}
+        className="webgl-canvas"
       />
       
       {/* Organism info overlay */}

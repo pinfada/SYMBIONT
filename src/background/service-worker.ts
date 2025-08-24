@@ -1,4 +1,6 @@
 // Service Worker principal pour SYMBIONT
+import { SecurityMonitor } from '../shared/security/SecurityMonitor';
+import { SecureMessageBus } from '../shared/messaging/SecureMessageBus';
 
 class ServiceWorkerManager {
   private isInitialized = false;
@@ -12,28 +14,22 @@ class ServiceWorkerManager {
       return;
     }
     
-    // Setup message handling
-    chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-      this.handleMessage(request, sendResponse);
-    });
+    // Initialiser le monitoring de sécurité
+    SecurityMonitor.initialize();
+    
+    // Vérifier si l'extension est en mode verrouillage
+    if (SecurityMonitor.isInLockdown()) {
+      console.warn('Extension in security lockdown - limited functionality');
+      return;
+    }
+    
+    // Setup secure message handling
+    SecureMessageBus.initializeSecureListeners();
 
     this.isInitialized = true;
   }
 
-  private handleMessage(message: any, sendResponse: (response: any) => void): void {
-    // Handle different message types
-    if (message && typeof message === 'object' && 'type' in message) {
-      switch (message.type) {
-        case 'HEALTH_CHECK':
-          sendResponse({ status: 'ok' });
-          break;
-        default:
-          sendResponse({ error: 'Unknown message type' });
-      }
-    } else {
-      sendResponse({ error: 'Invalid message format' });
-    }
-  }
+  // handleMessage now handled by SecureMessageBus
 
   dispose(): void {
     this.isInitialized = false;

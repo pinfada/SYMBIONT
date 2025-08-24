@@ -3,6 +3,8 @@ export { validateVariable, validateLengthProperty, validateSplitOperation, enabl
 export { SecureRandom, secureRandom, secureRandomInt, secureRandomFloat } from './secureRandom';
 export { SecureLogger, LogLevel, logger, secureLog, secureWarn, secureError, secureDebug } from './secureLogger';
 export { generateUUID, generateSecureUUID, isCryptoUUIDAvailable } from './uuid';
+export { SecuritySanitizer } from './sanitizer';
+export { SymbiontEncryption } from './encryption';
 export type SafeOperationConfig = {
     isDevelopment?: boolean;
     enableLogging?: boolean;

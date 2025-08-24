@@ -50,6 +50,10 @@ export {
   isCryptoUUIDAvailable
 } from './uuid';
 
+// Nouveaux utilitaires de sécurité
+export { SecuritySanitizer } from './sanitizer';
+export { SymbiontEncryption } from './encryption';
+
 // Imports pour utilisation interne
 import { enableErrorValidation, runErrorTests } from './errorValidation';
 import { logger } from './secureLogger';

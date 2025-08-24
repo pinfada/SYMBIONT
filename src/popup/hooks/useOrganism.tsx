@@ -23,16 +23,32 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const load = async () => {
       try {
-        // Prévoir l'utilisation de SymbiontStorage si besoin
-        // const storage = new SymbiontStorage();
-        // await storage.initialize();
-        const raw = localStorage.getItem('symbiont_organism');
-        if (raw) {
-          setOrganism(JSON.parse(raw));
-        } else {
-          // Créer un organisme par défaut plus complet
-          const now = Date.now();
-          const defaultOrganism = {
+        // Chargement différé pour éviter le blocage initial
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Utiliser le stockage chiffré sécurisé
+        try {
+          const { SymbiontEncryption } = await import('@shared/utils/encryption');
+          const encryptedData = localStorage.getItem('symbiont_organism_encrypted');
+          
+          if (encryptedData) {
+            const decrypted = await SymbiontEncryption.decryptObject(encryptedData);
+            setOrganism(decrypted as OrganismState);
+          } else {
+            // Fallback vers ancien format non chiffré (migration)
+            const raw = localStorage.getItem('symbiont_organism');
+            if (raw) {
+              const organismData = JSON.parse(raw);
+              setOrganism(organismData);
+              
+              // Migrer vers format chiffré
+              const encrypted = await SymbiontEncryption.encryptObject(organismData);
+              localStorage.setItem('symbiont_organism_encrypted', encrypted);
+              localStorage.removeItem('symbiont_organism'); // Supprimer ancien format
+            } else {
+              // Créer un organisme par défaut plus complet
+              const now = Date.now();
+              const defaultOrganism = {
             // Propriétés requises par OrganismState
             id: 'default-organism',
             generation: 1,
@@ -61,9 +77,35 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
             visualDNA: 'MOCKDNA123456789ABCDEF'
           };
           
-          // Sauvegarder l'organisme par défaut
-          localStorage.setItem('symbiont_organism', JSON.stringify(defaultOrganism));
-          setOrganism(defaultOrganism);
+              // Sauvegarder l'organisme par défaut de façon chiffrée
+              const encrypted = await SymbiontEncryption.encryptObject(defaultOrganism);
+              localStorage.setItem('symbiont_organism_encrypted', encrypted);
+              setOrganism(defaultOrganism);
+            }
+          }
+        } catch (encryptionError) {
+          console.error('Encryption error during organism loading:', encryptionError);
+          // Fallback vers un organisme par défaut si le déchiffrement échoue
+          const fallbackOrganism = {
+            id: 'fallback-organism',
+            generation: 1,
+            dna: 'FALLBACK123456789ABCDEF',
+            traits: { 
+              curiosity: 0.5, focus: 0.5, rhythm: 0.5, empathy: 0.5, creativity: 0.5,
+              resilience: 0.5, adaptability: 0.5, memory: 0.5, intuition: 0.5
+            },
+            birthTime: Date.now(),
+            lastMutation: null,
+            mutations: [],
+            socialConnections: [],
+            memoryFragments: [],
+            health: 1,
+            energy: 80,
+            consciousness: 0.5,
+            createdAt: Date.now(),
+            visualDNA: 'FALLBACK123456789ABCDEF'
+          };
+          setOrganism(fallbackOrganism);
         }
       } catch {
         setOrganism(null);

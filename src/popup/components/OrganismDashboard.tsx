@@ -21,22 +21,36 @@ export const OrganismDashboard: React.FC = () => {
   const [eventsLoading, setEventsLoading] = useState(true);
   const { inviter, invitees } = useInvitationData(userId);
   
-  // Initialiser l'identité utilisateur et charger les événements
+  // Initialiser l'identité utilisateur et charger les événements (différé)
   useEffect(() => {
     const initializeData = async () => {
       try {
         setEventsLoading(true);
         
+        // Délai pour éviter le blocage initial
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Obtenir l'identité utilisateur sécurisée
         const userIdentity = await UserIdentityService.getUserIdentity();
         setUserId(userIdentity.id);
         
-        // Charger les événements réels de l'organisme
-        const organismEvents = await OrganismEventService.getEvents();
-        setEvents(organismEvents);
+        // Charger les événements réels de l'organisme (avec timeout)
+        const eventsPromise = OrganismEventService.getEvents();
+        const timeoutPromise = new Promise<OrganismEvent[]>((_, reject) => 
+          setTimeout(() => reject(new Error('Events timeout')), 3000)
+        );
         
-        // Nettoyer les anciens événements pour optimiser le stockage
-        await OrganismEventService.cleanOldEvents();
+        try {
+          const organismEvents = await Promise.race([eventsPromise, timeoutPromise]);
+          setEvents(organismEvents);
+          
+          // Nettoyer les anciens événements pour optimiser le stockage (async)
+          OrganismEventService.cleanOldEvents().catch(err => 
+            console.warn('Failed to clean old events:', err)
+          );
+        } catch (timeoutError) {
+          throw timeoutError;
+        }
         
       } catch (error) {
         console.error('Failed to initialize dashboard data:', error);

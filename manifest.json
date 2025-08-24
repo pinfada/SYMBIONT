@@ -16,15 +16,13 @@
       "webNavigation",
       "windows"
     ],
-    "host_permissions": [
-      "https://*/"
-    ],
+    "host_permissions": [],
     "optional_host_permissions": [
       "http://localhost/*",
       "http://127.0.0.1/*"
     ],
     "content_security_policy": {
-      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests; connect-src 'self'; img-src 'self' data:; media-src 'self'"
     },
     "background": {
       "service_worker": "background/index.js",
@@ -32,7 +30,7 @@
     },
     "content_scripts": [
       {
-        "matches": ["https://*/*"],
+        "matches": ["<all_urls>"],
         "js": ["content/index.js"],
         "run_at": "document_idle",
         "all_frames": false
