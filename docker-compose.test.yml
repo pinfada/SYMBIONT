@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  chrome-test:
+    image: kasmweb/chromium:1.15.0
+    container_name: symbiont-chrome-test
+    ports:
+      - "6901:6901"  # VNC Web Interface (noVNC)
+      - "5901:5901"  # VNC Direct Connection
+    volumes:
+      # Mount the extension directory
+      - ./dist:/extension/dist:ro
+      - ./manifest.json:/extension/manifest.json:ro
+      - ./public:/extension/public:ro
+      # Mount test data directory
+      - ./tests/e2e:/tests:ro
+    environment:
+      # VNC password (change for production)
+      - VNC_PW=symbiont123
+      # Screen resolution
+      - VNC_RESOLUTION=1920x1080
+      # User settings
+      - KASM_USER=kasm_user
+      - KASM_UID=1000
+      - KASM_GID=1000
+    shm_size: '2gb'  # Increase shared memory for Chrome
+    restart: unless-stopped
+    networks:
+      - symbiont-test
+
+networks:
+  symbiont-test:
+    driver: bridge

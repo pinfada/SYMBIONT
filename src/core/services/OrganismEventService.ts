@@ -1,6 +1,7 @@
 // src/core/services/OrganismEventService.ts
 import { generateSecureUUID } from '@/shared/utils/uuid';
 import { logger } from '@/shared/utils/secureLogger';
+import { SecureRandom } from '@/shared/utils/secureRandom';
 
 export interface OrganismEvent {
   id: string;
@@ -22,6 +23,42 @@ export interface TransmissionEvent extends OrganismEvent {
   invitationCode?: string;
 }
 
+/**
+ * Storage adapter that works in both browser and service worker contexts
+ */
+class StorageAdapter {
+  private static isServiceWorker(): boolean {
+    return typeof window === 'undefined' && typeof chrome !== 'undefined' && !!chrome.storage;
+  }
+
+  static async getItem(key: string): Promise<string | null> {
+    if (this.isServiceWorker()) {
+      try {
+        const result = await chrome.storage.local.get([key]);
+        return result[key] || null;
+      } catch (error) {
+        logger.error('Service worker storage get failed:', error);
+        return null;
+      }
+    } else {
+      return localStorage.getItem(key);
+    }
+  }
+
+  static async setItem(key: string, value: string): Promise<void> {
+    if (this.isServiceWorker()) {
+      try {
+        await chrome.storage.local.set({ [key]: value });
+      } catch (error) {
+        logger.error('Service worker storage set failed:', error);
+        throw error;
+      }
+    } else {
+      localStorage.setItem(key, value);
+    }
+  }
+}
+
 export class OrganismEventService {
   private static readonly STORAGE_KEY = 'symbiont_organism_events';
   private static readonly MAX_EVENTS = 100;
@@ -31,7 +68,7 @@ export class OrganismEventService {
    */
   static async getEvents(): Promise<OrganismEvent[]> {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
+      const stored = await StorageAdapter.getItem(this.STORAGE_KEY);
       if (!stored) {
         // Initialiser avec l'événement d'activation
         const activationEvent = this.createActivationEvent();
@@ -86,7 +123,7 @@ export class OrganismEventService {
     const severityDescriptions = typeDescriptions[severity] || typeDescriptions.minor;
     
     const description = customDescription || 
-      severityDescriptions[Math.floor(Math.random() * severityDescriptions.length)];
+      severityDescriptions[Math.floor(SecureRandom.random() * severityDescriptions.length)];
 
     await this.addEvent({
       type: 'mutation',
@@ -122,7 +159,7 @@ export class OrganismEventService {
       'Transition vers un niveau de conscience supérieur'
     ];
 
-    const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+    const description = descriptions[Math.floor(SecureRandom.random() * descriptions.length)];
 
     await this.addEvent({
       type: 'consciousness',
@@ -148,7 +185,7 @@ export class OrganismEventService {
    */
   private static async saveEvents(events: OrganismEvent[]): Promise<void> {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(events));
+      await StorageAdapter.setItem(this.STORAGE_KEY, JSON.stringify(events));
     } catch (error) {
       logger.error('Failed to save organism events:', error);
       throw error;

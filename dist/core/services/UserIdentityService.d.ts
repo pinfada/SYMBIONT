@@ -25,7 +25,7 @@ export declare class UserIdentityService {
      */
     static updateLastActive(userId: string): Promise<void>;
     /**
-     * Génère un code d'invitation unique et mémorable
+     * Génère un code d'invitation unique et mémorable (cryptographically secure)
      */
     private static generateInvitationCode;
     /**

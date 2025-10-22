@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '@shared/utils/secureLogger';
+import { SecureRandom } from '@shared/utils/secureRandom';
 
 interface Props {
   children: ReactNode;
@@ -24,8 +25,8 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    // Génère un ID unique pour tracer l'erreur
-    const errorId = `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Génère un ID unique pour tracer l'erreur (cryptographically secure)
+    const errorId = `err_${Date.now()}_${SecureRandom.random().toString(36).substr(2, 9)}`;
     return {
       hasError: true,
       error,

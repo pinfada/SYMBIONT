@@ -1,0 +1,35 @@
+# Dockerfile for Chrome Extension Testing
+# Uses Chromium with VNC for visual testing
+
+FROM kasmweb/chromium:1.15.0
+
+USER root
+
+# Install additional tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    git \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create extension directory
+RUN mkdir -p /extension
+WORKDIR /extension
+
+# Copy extension files (will be mounted as volume)
+# COPY dist/ /extension/dist/
+# COPY manifest.json /extension/
+
+# Set permissions
+RUN chown -R 1000:1000 /extension
+
+# Switch back to kasm user
+USER 1000
+
+# Expose VNC port
+EXPOSE 6901
+
+# Default command (starts VNC server with Chromium)
+CMD ["/dockerstartup/kasm_default_profile.sh", "/dockerstartup/vnc_startup.sh", "/dockerstartup/kasm_startup.sh"]

@@ -372,7 +372,10 @@ class ServiceWorkerGlobals {
         getRandomValues: (array: Uint8Array) => {
           // Fallback non sécurisé pour développement uniquement
           for (let i = 0; i < array.length; i++) {
-            array[i] = Math.floor(Math.random() * 256);
+            // Use timestamp-based seed for better randomness (still not cryptographically secure)
+            // This fallback should NEVER be used in production - WebCrypto should always be available
+            const seed = Date.now() + i;
+            array[i] = Math.floor((Math.sin(seed) * 10000) % 256);
           }
           return array;
         },

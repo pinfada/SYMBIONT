@@ -2,6 +2,7 @@
 // Solution Chrome Offscreen API pour WebGL dans Service Worker MV3
 
 import { logger } from '@/shared/utils/secureLogger';
+import { SecureRandom } from '@/shared/utils/secureRandom';
 
 // Types pour le rendu Offscreen
 interface RenderRequest {
@@ -74,7 +75,7 @@ export class ServiceWorkerWebGLBridge {
       return null;
     }
 
-    const requestId = `render_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = `render_${Date.now()}_${SecureRandom.random().toString(36).substr(2, 9)}`;
     
     try {
       // Envoyer requête de rendu au document offscreen

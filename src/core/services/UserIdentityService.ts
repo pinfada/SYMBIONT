@@ -1,6 +1,7 @@
 // src/core/services/UserIdentityService.ts
 import { generateSecureUUID } from '@/shared/utils/uuid';
 import { logger } from '@/shared/utils/secureLogger';
+import { SecureRandom } from '@/shared/utils/secureRandom';
 
 export interface UserIdentity {
   id: string;
@@ -8,6 +9,54 @@ export interface UserIdentity {
   lastActive: number;
   invitationCode: string;
   generation: number;
+}
+
+/**
+ * Storage adapter that works in both browser and service worker contexts
+ */
+class StorageAdapter {
+  private static isServiceWorker(): boolean {
+    return typeof window === 'undefined' && typeof chrome !== 'undefined' && !!chrome.storage;
+  }
+
+  static async getItem(key: string): Promise<string | null> {
+    if (this.isServiceWorker()) {
+      try {
+        const result = await chrome.storage.local.get([key]);
+        return result[key] || null;
+      } catch (error) {
+        logger.error('Service worker storage get failed:', error);
+        return null;
+      }
+    } else {
+      return localStorage.getItem(key);
+    }
+  }
+
+  static async setItem(key: string, value: string): Promise<void> {
+    if (this.isServiceWorker()) {
+      try {
+        await chrome.storage.local.set({ [key]: value });
+      } catch (error) {
+        logger.error('Service worker storage set failed:', error);
+        throw error;
+      }
+    } else {
+      localStorage.setItem(key, value);
+    }
+  }
+
+  static async removeItem(key: string): Promise<void> {
+    if (this.isServiceWorker()) {
+      try {
+        await chrome.storage.local.remove([key]);
+      } catch (error) {
+        logger.error('Service worker storage remove failed:', error);
+      }
+    } else {
+      localStorage.removeItem(key);
+    }
+  }
 }
 
 export class UserIdentityService {
@@ -19,11 +68,11 @@ export class UserIdentityService {
    */
   static async getUserId(): Promise<string> {
     try {
-      let userId = localStorage.getItem(this.USER_ID_KEY);
+      let userId = await StorageAdapter.getItem(this.USER_ID_KEY);
       
       if (!userId) {
         userId = generateSecureUUID();
-        localStorage.setItem(this.USER_ID_KEY, userId);
+        await StorageAdapter.setItem(this.USER_ID_KEY, userId);
         
         // Créer l'identité complète
         await this.createUserIdentity(userId);
@@ -48,7 +97,7 @@ export class UserIdentityService {
   static async getUserIdentity(): Promise<UserIdentity> {
     try {
       const userId = await this.getUserId();
-      const stored = localStorage.getItem(this.USER_IDENTITY_KEY);
+      const stored = await StorageAdapter.getItem(this.USER_IDENTITY_KEY);
       
       if (stored) {
         const identity: UserIdentity = JSON.parse(stored);
@@ -83,7 +132,7 @@ export class UserIdentityService {
     };
 
     try {
-      localStorage.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
+      await StorageAdapter.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
       logger.info('User identity created:', { 
         id: identity.id.substring(0, 8) + '...',
         invitationCode: identity.invitationCode
@@ -103,7 +152,7 @@ export class UserIdentityService {
       const identity = await this.getUserIdentity();
       if (identity.id === userId) {
         identity.lastActive = Date.now();
-        localStorage.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
+        await StorageAdapter.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
       }
     } catch (error) {
       logger.error('Failed to update last active:', error);
@@ -111,15 +160,15 @@ export class UserIdentityService {
   }
 
   /**
-   * Génère un code d'invitation unique et mémorable
+   * Génère un code d'invitation unique et mémorable (cryptographically secure)
    */
   private static generateInvitationCode(): string {
-    // Génère un code de 6 caractères alphanumériques
+    // Génère un code de 6 caractères alphanumériques avec SecureRandom
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
     
     for (let i = 0; i < 6; i++) {
-      const randomIndex = Math.floor(Math.random() * chars.length);
+      const randomIndex = Math.floor(SecureRandom.random() * chars.length);
       code += chars[randomIndex];
     }
     
@@ -133,7 +182,7 @@ export class UserIdentityService {
     try {
       const identity = await this.getUserIdentity();
       identity.invitationCode = this.generateInvitationCode();
-      localStorage.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
+      await StorageAdapter.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
       
       logger.info('Invitation code regenerated:', { 
         userId: identity.id.substring(0, 8) + '...',
@@ -154,7 +203,7 @@ export class UserIdentityService {
     try {
       const identity = await this.getUserIdentity();
       identity.generation += 1;
-      localStorage.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
+      await StorageAdapter.setItem(this.USER_IDENTITY_KEY, JSON.stringify(identity));
       
       logger.info('User generation incremented:', { 
         userId: identity.id.substring(0, 8) + '...',
@@ -214,8 +263,8 @@ export class UserIdentityService {
    */
   static async resetUserIdentity(): Promise<UserIdentity> {
     try {
-      localStorage.removeItem(this.USER_ID_KEY);
-      localStorage.removeItem(this.USER_IDENTITY_KEY);
+      await StorageAdapter.removeItem(this.USER_ID_KEY);
+      await StorageAdapter.removeItem(this.USER_IDENTITY_KEY);
       
       const newIdentity = await this.getUserIdentity();
       
@@ -256,8 +305,8 @@ export class UserIdentityService {
         throw new Error('Invalid identity data structure');
       }
       
-      localStorage.setItem(this.USER_ID_KEY, identity.id);
-      localStorage.setItem(this.USER_IDENTITY_KEY, identityData);
+      await StorageAdapter.setItem(this.USER_ID_KEY, identity.id);
+      await StorageAdapter.setItem(this.USER_IDENTITY_KEY, identityData);
       
       logger.info('User identity imported:', { 
         id: identity.id.substring(0, 8) + '...',
