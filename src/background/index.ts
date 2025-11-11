@@ -95,13 +95,40 @@ class BackgroundService {
 
   private async initialize(): Promise<void> {
     try {
-      // Initialize storage with timeout handling
+      // Initialize storage with timeout handling and detailed error tracking
       logger.info('Initializing storage...');
       try {
         await this.storage.initialize();
         logger.info('Storage initialized successfully');
       } catch (storageError) {
-        logger.error('Storage initialization failed, using fallback mode:', storageError);
+        // Log detailed error information for debugging
+        const errorDetails = {
+          errorType: storageError instanceof Error ? storageError.constructor.name : typeof storageError,
+          errorMessage: storageError instanceof Error ? storageError.message : String(storageError),
+          errorStack: storageError instanceof Error ? storageError.stack : undefined,
+          timestamp: Date.now()
+        };
+
+        logger.error('CRITICAL: Storage initialization failed, entering degraded mode', errorDetails);
+
+        // Try to store the error in hybrid storage for later review
+        try {
+          await hybridStorage.store('symbiont_init_error_' + Date.now(), errorDetails);
+        } catch (hybridError) {
+          logger.error('Failed to log error to hybrid storage:', hybridError);
+        }
+
+        // Alert user via notification if possible
+        if (typeof chrome !== 'undefined' && chrome.notifications) {
+          chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icons/icon48.png',
+            title: 'SYMBIONT Storage Error',
+            message: 'Failed to initialize storage. Running in limited mode.',
+            priority: 2
+          });
+        }
+
         // Continue without storage - degraded mode
         this.organism = null;
         this.setupMessageHandlers();

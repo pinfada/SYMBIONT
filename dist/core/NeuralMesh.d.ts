@@ -18,11 +18,11 @@ export declare class NeuralMesh implements INeuralMesh {
      */
     stimulate(nodeId: string, value: number): void;
     /**
-     * Propage l'activation à travers le réseau
+     * Propage l'activation à travers le réseau avec protection contre NaN/Infinity
      */
     propagate(): void;
     /**
-     * Fonction d'activation sigmoïde
+     * Fonction d'activation sigmoïde avec protection contre NaN/Infinity
      */
     private sigmoid;
     /**

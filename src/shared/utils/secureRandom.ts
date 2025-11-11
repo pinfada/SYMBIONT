@@ -16,12 +16,22 @@ export class SecureRandom {
       crypto.getRandomValues(array);
       return array[0] / (this.MAX_UINT32 + 1);
     }
-    
-    // Fallback pour les environnements sans crypto (NON RECOMMANDÉ EN PRODUCTION)
-    logger.warn('SecureRandom: crypto.getRandomValues non disponible, fallback non-sécurisé utilisé');
-    // Utilisation temporaire pour développement uniquement
-    const insecureValue = globalThis.Math?.random?.() || 0.5;
-    return insecureValue;
+
+    // CRITICAL: Crypto API not available - this should never happen in production
+    const error = new Error('SECURITY CRITICAL: crypto.getRandomValues not available. Cannot generate secure random numbers.');
+    logger.error('SecureRandom: CRITICAL SECURITY FAILURE', error);
+
+    // In development/test only: use deterministic fallback instead of Math.random()
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+      logger.warn('SecureRandom: Using deterministic fallback for development/testing ONLY');
+      // Use a simple counter-based approach for testing (NOT secure)
+      const timestamp = Date.now();
+      const seed = (timestamp * 9301 + 49297) % 233280;
+      return seed / 233280;
+    }
+
+    // In production: throw error instead of using insecure fallback
+    throw error;
   }
 
   /**
@@ -56,15 +66,26 @@ export class SecureRandom {
       crypto.getRandomValues(array);
       return array;
     }
-    
-    // Fallback pour les environnements sans crypto (NON RECOMMANDÉ EN PRODUCTION)
-    logger.warn('SecureRandom: crypto.getRandomValues non disponible, génération fallback non-sécurisée');
-    const array = new Uint8Array(length);
-    for (let i = 0; i < length; i++) {
-      const insecureValue = globalThis.Math?.random?.() || 0.5;
-      array[i] = Math.floor(insecureValue * 256);
+
+    // CRITICAL: Crypto API not available
+    const error = new Error('SECURITY CRITICAL: crypto.getRandomValues not available. Cannot generate secure random bytes.');
+    logger.error('SecureRandom: CRITICAL SECURITY FAILURE in randomBytes', error);
+
+    // In development/test only: use deterministic fallback
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+      logger.warn('SecureRandom: Using deterministic fallback for development/testing ONLY');
+      const array = new Uint8Array(length);
+      const timestamp = Date.now();
+      for (let i = 0; i < length; i++) {
+        // Deterministic pattern based on timestamp and index
+        const seed = ((timestamp + i) * 9301 + 49297) % 233280;
+        array[i] = (seed % 256);
+      }
+      return array;
     }
-    return array;
+
+    // In production: throw error instead of using insecure fallback
+    throw error;
   }
 
   /**
@@ -86,7 +107,7 @@ export class SecureRandom {
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       const bytes = new Uint8Array(16);
       crypto.getRandomValues(bytes);
-      
+
       // Version 4 UUID format
       bytes[6] = (bytes[6] & 0x0f) | 0x40; // Version 4
       bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 10
@@ -100,15 +121,22 @@ export class SecureRandom {
         hex.slice(20, 32)
       ].join('-');
     }
-    
-    // Fallback UUID generation (NON RECOMMANDÉ EN PRODUCTION)
-    logger.warn('SecureRandom: crypto.getRandomValues non disponible, UUID fallback non-sécurisé');
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const insecureValue = globalThis.Math?.random?.() || 0.5;
-      const r = insecureValue * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
+
+    // CRITICAL: Crypto API not available
+    const error = new Error('SECURITY CRITICAL: crypto.getRandomValues not available. Cannot generate secure UUID.');
+    logger.error('SecureRandom: CRITICAL SECURITY FAILURE in uuid', error);
+
+    // In development/test only: use timestamp-based UUID (NOT secure but deterministic)
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+      logger.warn('SecureRandom: Using timestamp-based UUID for development/testing ONLY');
+      const timestamp = Date.now();
+      const timestampHex = timestamp.toString(16).padStart(12, '0');
+      const counter = (Math.floor(timestamp / 1000) % 65536).toString(16).padStart(4, '0');
+      return `${timestampHex.slice(0, 8)}-${timestampHex.slice(8, 12)}-4${counter.slice(0, 3)}-8${counter.slice(3, 4)}00-${timestampHex}`;
+    }
+
+    // In production: throw error instead of using insecure fallback
+    throw error;
   }
 
   /**
