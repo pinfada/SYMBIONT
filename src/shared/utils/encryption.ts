@@ -3,6 +3,8 @@
  * Utilise WebCrypto API pour un chiffrement AES-GCM robuste
  */
 
+import { logger } from './secureLogger';
+
 export class SymbiontEncryption {
   private static readonly ALGORITHM = 'AES-GCM';
   private static readonly KEY_LENGTH = 256;
@@ -84,7 +86,7 @@ export class SymbiontEncryption {
       return btoa(String.fromCharCode(...combined));
 
     } catch (error) {
-      console.error('Encryption failed:', error);
+      logger.error('Encryption failed', error);
       throw new Error('Failed to encrypt data');
     }
   }
@@ -122,7 +124,7 @@ export class SymbiontEncryption {
       return decoder.decode(decryptedBuffer);
 
     } catch (error) {
-      console.error('Decryption failed:', error);
+      logger.error('Decryption failed', error);
       throw new Error('Failed to decrypt data - data may be corrupted');
     }
   }
