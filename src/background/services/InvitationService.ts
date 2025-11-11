@@ -1,5 +1,6 @@
 import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
 import { SecureRandom } from '../../shared/utils/secureRandom';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Invitation {
   code: string;
@@ -20,7 +21,7 @@ export class InvitationService {
 
   // Génère un code d'invitation unique et un motif/couleur symbolique
   async generateInvitation(donorId: string): Promise<Invitation> {
-    const code = (await import('uuid')).v4().slice(0, 8).toUpperCase();
+    const code = uuidv4().slice(0, 8).toUpperCase();
     const symbolicLink = this.generateSymbolicLink();
     const invitation: Invitation = {
       code,

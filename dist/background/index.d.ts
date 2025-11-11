@@ -25,6 +25,7 @@ declare class BackgroundService {
     private initialize;
     private createNewOrganism;
     private generateVisualDNA;
+    private isStorageReady;
     private setupMessageHandlers;
     private updateOrganismTraits;
     private hasVisitedDomain;

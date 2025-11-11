@@ -94,11 +94,13 @@ class BackgroundService {
   }
 
   private async initialize(): Promise<void> {
+    let storageInitialized = false;
     try {
       // Initialize storage with timeout handling and detailed error tracking
       logger.info('Initializing storage...');
       try {
         await this.storage.initialize();
+        storageInitialized = true;
         logger.info('Storage initialized successfully');
       } catch (storageError) {
         // Log detailed error information for debugging
@@ -131,16 +133,16 @@ class BackgroundService {
 
         // Continue without storage - degraded mode
         this.organism = null;
-        this.setupMessageHandlers();
-        this.startPeriodicTasks();
-        return;
+        storageInitialized = false;
+        // IMPORTANT: Don't setup message handlers until we're sure about storage state
+        // They will be set up after this block
       }
 
       // Vérifier l'état d'activation (stocké en localStorage ou IndexedDB si besoin)
       this.activated = (await getStorage('symbiont_activated')) === 'true';
 
-      // Load or create organism UNIQUEMENT si activé
-      if (this.activated) {
+      // Load or create organism UNIQUEMENT si activé ET si storage initialized
+      if (this.activated && storageInitialized) {
         try {
           logger.info('Loading organism from storage...');
           this.organism = await this.storage.getOrganism();
@@ -159,16 +161,20 @@ class BackgroundService {
           this.organism = this.createNewOrganism();
           logger.warn('Created organism in memory only (storage unavailable)');
         }
+      } else if (this.activated && !storageInitialized) {
+        // Activated but storage failed - create in-memory organism
+        this.organism = this.createNewOrganism();
+        logger.warn('Storage unavailable - organism created in memory only');
       } else {
         this.organism = null;
         logger.info('Symbiont not activated, skipping organism creation');
       }
 
-      // Setup message handlers
-      this.setupMessageHandlers();
+      // Setup message handlers - ALWAYS do this, but they will have defensive checks
+      this.setupMessageHandlers(storageInitialized);
 
       // Start periodic tasks
-      this.startPeriodicTasks();
+      this.startPeriodicTasks(storageInitialized);
 
       // Démarrer les health checks automatiques
       healthCheckManager.start();
@@ -230,29 +236,40 @@ class BackgroundService {
     return result;
   }
 
-  private setupMessageHandlers(): void {
+  private isStorageReady(): boolean {
+    // Check if storage has been initialized by checking if db property exists
+    return (this.storage as any).db !== null && (this.storage as any).db !== undefined;
+  }
+
+  private setupMessageHandlers(_storageInitialized: boolean = false): void {
     // Handle page visits
     this.messageBus.on(MessageType.PAGE_VISIT, async (message: MessageEvent | unknown) => {
       const { url, title } = (message as any).payload;
-      
-      // Update behavior data
-      const behavior = await this.storage.getBehavior(url) || {
-        url,
-        visitCount: 0,
-        totalTime: 0,
-        scrollDepth: 0,
-        lastVisit: Date.now(),
-        interactions: [],
-      };
-      
-      behavior.visitCount++;
-      behavior.lastVisit = Date.now();
-      
-      await this.storage.saveBehavior(behavior);
-      
+
+      // Update behavior data only if storage is ready
+      if (this.isStorageReady()) {
+        try {
+          const behavior = await this.storage.getBehavior(url) || {
+            url,
+            visitCount: 0,
+            totalTime: 0,
+            scrollDepth: 0,
+            lastVisit: Date.now(),
+            interactions: [],
+          };
+
+          behavior.visitCount++;
+          behavior.lastVisit = Date.now();
+
+          await this.storage.saveBehavior(behavior);
+        } catch (error) {
+          logger.error('Failed to save behavior data:', error);
+        }
+      }
+
       // Enregistre l'événement dans l'historique
       this.events.push({ type: 'visit', timestamp: Date.now(), url });
-      
+
       // Update organism based on behavior
       this.updateOrganismTraits(url, title);
       this.analyzeContextualPatterns();
@@ -261,13 +278,20 @@ class BackgroundService {
     // Handle scroll events
     this.messageBus.on(MessageType.SCROLL_EVENT, async (message: MessageEvent | unknown) => {
       const { url, scrollDepth } = (message as any).payload;
-      
-      const behavior = await this.storage.getBehavior(url);
-      if (behavior) {
-        behavior.scrollDepth = Math.max(behavior.scrollDepth, scrollDepth);
-        await this.storage.saveBehavior(behavior);
+
+      // Update scroll depth only if storage is ready
+      if (this.isStorageReady()) {
+        try {
+          const behavior = await this.storage.getBehavior(url);
+          if (behavior) {
+            behavior.scrollDepth = Math.max(behavior.scrollDepth, scrollDepth);
+            await this.storage.saveBehavior(behavior);
+          }
+        } catch (error) {
+          logger.error('Failed to update scroll depth:', error);
+        }
       }
-      
+
       // Enregistre l'événement dans l'historique
       this.events.push({ type: 'scroll', timestamp: Date.now(), url });
       this.analyzeContextualPatterns();
@@ -537,51 +561,57 @@ class BackgroundService {
 
   private async updateOrganismTraits(url: string, title: string): Promise<void> {
     if (!this.organism) return;
-    
+
     // Simple trait evolution based on content type
     const urlLower = url.toLowerCase();
     const titleLower = title.toLowerCase();
-    
+
     // Creativity boost from technical/creative sites
-    if (urlLower.includes('github') || urlLower.includes('stackoverflow') || 
+    if (urlLower.includes('github') || urlLower.includes('stackoverflow') ||
         urlLower.includes('codepen') || urlLower.includes('dribbble')) {
       this.organism.traits.creativity += 0.5;
-    
+
     }
-    
+
     // Focus boost from documentation/learning sites
-    if (urlLower.includes('docs') || urlLower.includes('wiki') || 
+    if (urlLower.includes('docs') || urlLower.includes('wiki') ||
         urlLower.includes('tutorial') || titleLower.includes('guide')) {
       this.organism.traits.focus += 0.3;
     }
-    
+
     // Empathy boost from social/communication sites
-    if (urlLower.includes('twitter') || urlLower.includes('linkedin') || 
+    if (urlLower.includes('twitter') || urlLower.includes('linkedin') ||
         urlLower.includes('facebook') || urlLower.includes('reddit')) {
       this.organism.traits.empathy += 0.4;
     }
-    
+
     // Curiosity boost from exploration
     const domain = new URL(url).hostname;
     const isNewDomain = !(await this.hasVisitedDomain(domain));
     if (isNewDomain) {
       this.organism.traits.curiosity += 1.0;
     }
-    
+
     // Normalize traits (keep between 0-100)
     if (!this.organism) return;
     const traits = this.organism.traits;
     if (!traits) return;
     Object.keys(traits).forEach(trait => {
-      traits[trait as keyof typeof traits] = 
+      traits[trait as keyof typeof traits] =
         Math.max(0, Math.min(100, traits[trait as keyof typeof traits]));
     });
-    
+
     // Check for mutations
     await this.checkForMutations();
-    
-    // Save updated organism
-    await this.storage.saveOrganism(this.organism);
+
+    // Save updated organism only if storage is ready
+    if (this.isStorageReady()) {
+      try {
+        await this.storage.saveOrganism(this.organism);
+      } catch (error) {
+        logger.error('Failed to save organism:', error);
+      }
+    }
     
     // Détection de pattern simple
     let pattern: string = 'default';
@@ -623,11 +653,20 @@ class BackgroundService {
     const mutationProbability = Math.min(0.5, timeSinceLastMutation / (1000 * 60 * 60)); // Max 50% after 1 hour
     if (SecureRandom.random() < mutationProbability) {
       const mutation = this.generateMutation();
-      await this.storage.addMutation(mutation);
+
+      // Only save to storage if ready
+      if (this.isStorageReady()) {
+        try {
+          await this.storage.addMutation(mutation);
+        } catch (error) {
+          logger.error('Failed to save mutation:', error);
+        }
+      }
+
       org.lastMutation = now;
       // Apply mutation effects
       this.applyMutation(mutation);
-    
+
     }
   }
 
@@ -696,36 +735,47 @@ class BackgroundService {
     return newDNA.join('');
   }
 
-  private startPeriodicTasks(): void {
+  private startPeriodicTasks(_storageInitialized: boolean = false): void {
     // Health decay - organism needs attention
     setInterval(() => {
       if (this.organism && (this.organism.health ?? 0) > 0) {
         this.organism.health = Math.max(0, (this.organism.health ?? 0) - 0.1);
         this.organism.energy = Math.max(0, (this.organism.energy ?? 0) - 0.05);
-      
+
     }
     }, 1000 * 60); // Every minute
 
-    // Periodic sync
+    // Periodic sync - only if storage is available
     setInterval(async () => {
-      if (this.organism) {
-        await this.storage.saveOrganism(this.organism);
-        await resilientBus.send({
-          type: MessageType.ORGANISM_UPDATE,
-          payload: {
-            state: this.organism,
-            mutations: await this.storage.getRecentMutations(5),
-          },
-        });
+      if (this.organism && this.isStorageReady()) {
+        try {
+          await this.storage.saveOrganism(this.organism);
+          const mutations = await this.storage.getRecentMutations(5);
+          await resilientBus.send({
+            type: MessageType.ORGANISM_UPDATE,
+            payload: {
+              state: this.organism,
+              mutations,
+            },
+          });
+        } catch (error) {
+          logger.error('Failed to perform periodic sync:', error);
+        }
       }
     }, 1000 * 30); // Every 30 seconds
   }
 
   // Détection naïve de patterns (à améliorer)
   private async isLoop(url: string): Promise<boolean> {
-    // Si l'utilisateur visite la même URL plus de 3 fois en 10 minutes
-    const behavior = await this.storage.getBehavior(url);
-    return !!behavior && behavior.visitCount >= 3;
+    if (!this.isStorageReady()) return false;
+    try {
+      // Si l'utilisateur visite la même URL plus de 3 fois en 10 minutes
+      const behavior = await this.storage.getBehavior(url);
+      return !!behavior && behavior.visitCount >= 3;
+    } catch (error) {
+      logger.error('Failed to check loop pattern:', error);
+      return false;
+    }
   }
   private async isIdle(): Promise<boolean> {
     // Si aucune interaction depuis plus de 10 minutes (exemple)
@@ -733,16 +783,28 @@ class BackgroundService {
     return false;
   }
   private async isExploration(url: string): Promise<boolean> {
-    // Si le domaine est nouveau ou rarement visité
-    const behavior = await this.storage.getBehavior(url);
-    return !!behavior && behavior.visitCount <= 1;
+    if (!this.isStorageReady()) return false;
+    try {
+      // Si le domaine est nouveau ou rarement visité
+      const behavior = await this.storage.getBehavior(url);
+      return !!behavior && behavior.visitCount <= 1;
+    } catch (error) {
+      logger.error('Failed to check exploration pattern:', error);
+      return false;
+    }
   }
   private async isRoutine(url: string): Promise<boolean> {
-    // Si le site est visité tous les jours (exemple naïf)
-    const behavior = await this.storage.getBehavior(url);
-    if (!behavior) return false;
-    const now = Date.now();
-    return (now - behavior.lastVisit) < 1000 * 60 * 60 * 24 * 2; // Visité il y a moins de 2 jours
+    if (!this.isStorageReady()) return false;
+    try {
+      // Si le site est visité tous les jours (exemple naïf)
+      const behavior = await this.storage.getBehavior(url);
+      if (!behavior) return false;
+      const now = Date.now();
+      return (now - behavior.lastVisit) < 1000 * 60 * 60 * 24 * 2; // Visité il y a moins de 2 jours
+    } catch (error) {
+      logger.error('Failed to check routine pattern:', error);
+      return false;
+    }
   }
 
   /**
@@ -785,15 +847,25 @@ class BackgroundService {
    * Vérifie si un seuil collectif de propagation est atteint et déclenche une invitation spéciale si besoin
    */
   private async checkCollectiveThreshold() {
-    const allInvitations = await this.invitationService.getAllInvitations();
-    const total = allInvitations.length;
-    for (const threshold of this.collectiveThresholds) {
-      if (total >= threshold && !this.reachedThresholds.includes(threshold)) {
-        this.reachedThresholds.push(threshold);
-        await setStorage('symbiont_collective_thresholds', JSON.stringify(this.reachedThresholds));
-        this.triggerContextualInvitation('collective_threshold_' + threshold);
-        break;
+    // Skip if storage is not ready
+    if (!this.isStorageReady()) {
+      logger.debug('Storage not ready, skipping collective threshold check');
+      return;
+    }
+
+    try {
+      const allInvitations = await this.invitationService.getAllInvitations();
+      const total = allInvitations.length;
+      for (const threshold of this.collectiveThresholds) {
+        if (total >= threshold && !this.reachedThresholds.includes(threshold)) {
+          this.reachedThresholds.push(threshold);
+          await setStorage('symbiont_collective_thresholds', JSON.stringify(this.reachedThresholds));
+          this.triggerContextualInvitation('collective_threshold_' + threshold);
+          break;
+        }
       }
+    } catch (error) {
+      logger.error('Failed to check collective threshold:', error);
     }
   }
 
