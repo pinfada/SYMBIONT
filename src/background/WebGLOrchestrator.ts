@@ -228,29 +228,70 @@ export class WebGLOrchestrator {
   }
 
   private async executeRenderRequest(request: RenderRequest, target: RenderTarget): Promise<void> {
-    switch (target.type) {
-      case 'offscreen':
-        await this.webglBridge.renderOrganism(request as any)
-        break
-        
-      case 'popup':
-        // Send to popup via messaging
-        await chrome.runtime.sendMessage({
-          type: 'POPUP_RENDER_REQUEST',
-          request
-        })
-        break
-        
-      case 'content_script':
-        // Send to active tab's content script
-        const tabs = await chrome.tabs.query({ active: true })
-        if (tabs[0]?.id) {
-          await chrome.tabs.sendMessage(tabs[0].id, {
-            type: 'CONTENT_RENDER_REQUEST', 
-            request
-          })
-        }
-        break
+    const RENDER_TIMEOUT = 5000; // 5 seconds timeout
+
+    // Fonction helper pour ajouter un timeout
+    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error('Render request timeout')), timeoutMs)
+        )
+      ]);
+    };
+
+    try {
+      switch (target.type) {
+        case 'offscreen':
+          await withTimeout(
+            this.webglBridge.renderOrganism(request as any),
+            RENDER_TIMEOUT
+          );
+          break;
+
+        case 'popup':
+          // Send to popup via messaging with timeout
+          await withTimeout(
+            chrome.runtime.sendMessage({
+              type: 'POPUP_RENDER_REQUEST',
+              request
+            }),
+            RENDER_TIMEOUT
+          );
+          break;
+
+        case 'content_script':
+          // Send to active tab's content script with timeout
+          const tabs = await chrome.tabs.query({ active: true });
+          if (tabs[0]?.id) {
+            await withTimeout(
+              chrome.tabs.sendMessage(tabs[0].id, {
+                type: 'CONTENT_RENDER_REQUEST',
+                request
+              }),
+              RENDER_TIMEOUT
+            );
+          } else {
+            throw new Error('No active tab found for content script rendering');
+          }
+          break;
+
+        default:
+          throw new Error(`Unknown render target type: ${target.type}`);
+      }
+    } catch (error) {
+      logger.error(`Render request failed for ${request.id} via ${target.type}:`, error);
+
+      // Marquer la cible comme temporairement indisponible
+      target.available = false;
+
+      // Réactiver après 10 secondes
+      setTimeout(() => {
+        target.available = true;
+        logger.info(`Render target ${target.type} re-enabled after failure recovery`);
+      }, 10000);
+
+      throw error; // Re-throw pour la gestion d'erreur dans processRenderQueue
     }
   }
 

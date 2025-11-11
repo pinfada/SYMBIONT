@@ -200,18 +200,18 @@ export class ContentScriptWebGLFallback {
 // Manager unifié avec fallback automatique
 export class WebGLBridgeManager {
   private offscreenManager: ServiceWorkerWebGLBridge;
-  private fallbackManager: ServiceWorkerWebGLBridge; 
+  private fallbackManager: ContentScriptWebGLFallback;
   private useOffscreen = false;
 
   constructor() {
     this.offscreenManager = new ServiceWorkerWebGLBridge();
-    this.fallbackManager = new ServiceWorkerWebGLBridge();
+    this.fallbackManager = new ContentScriptWebGLFallback();
   }
 
   async initialize(): Promise<void> {
     // Tenter Offscreen API en premier
     this.useOffscreen = await this.offscreenManager.initialize();
-    
+
     if (!this.useOffscreen) {
       logger.info('Using Content Script fallback for WebGL rendering');
     }
@@ -221,6 +221,7 @@ export class WebGLBridgeManager {
     if (this.useOffscreen) {
       return await this.offscreenManager.renderOrganism(organismData);
     } else {
+      // Utiliser le fallback Content Script
       return await this.fallbackManager.renderOrganism(organismData);
     }
   }
@@ -229,6 +230,7 @@ export class WebGLBridgeManager {
     if (this.useOffscreen) {
       await this.offscreenManager.cleanup();
     }
+    // Le ContentScriptWebGLFallback n'a pas besoin de cleanup spécial
   }
 }
 
