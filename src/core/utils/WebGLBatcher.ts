@@ -145,17 +145,20 @@ export class WebGLBatcher {
    * Détermine si on doit rendre immédiatement
    */
   private shouldRenderImmediately(): boolean {
+    // Note: Assuming 8 components per vertex (3 pos + 3 normal + 2 uv)
+    const COMPONENTS_PER_VERTEX = 8;
     let totalVertices = 0;
     let totalDrawCalls = 0;
     let hasHighPriority = false;
 
     for (const drawCalls of this.pendingDrawCalls.values()) {
       if (!drawCalls || drawCalls.length === 0) continue; // Protection null
-      
+
       totalDrawCalls += drawCalls.length;
       for (const call of drawCalls) {
         if (call && call.vertices) { // Protection null
-          totalVertices += call.vertices.length / 3; // Assuming 3 components per vertex
+          // Corrected: divide by components per vertex (8) not 3
+          totalVertices += call.vertices.length / COMPONENTS_PER_VERTEX;
         }
         if (call && call.priority === 'high') {
           hasHighPriority = true;
@@ -189,7 +192,8 @@ export class WebGLBatcher {
           if (batchedCall.drawCallCount > 0) {
             this.executeDrawCall(batchedCall);
             this.stats.totalBatches++;
-            this.stats.verticesProcessed += batchedCall.vertices.length / 3;
+            // Corrected: divide by 8 components per vertex
+            this.stats.verticesProcessed += batchedCall.vertices.length / 8;
           }
         }
 
@@ -246,10 +250,13 @@ export class WebGLBatcher {
     let vertexIndexOffset = 0;
 
     // Combine draw calls
+    // Note: Assuming 8 components per vertex (3 pos + 3 normal + 2 uv)
+    const COMPONENTS_PER_VERTEX = 8;
+
     validDrawCalls.forEach(call => {
       // Copy vertices
       vertices.set(call.vertices, vertexOffset);
-      
+
       // Copy and adjust indices
       if (call.indices) {
         for (let i = 0; i < call.indices.length; i++) {
@@ -268,7 +275,8 @@ export class WebGLBatcher {
       });
 
       vertexOffset += call.vertices.length;
-      vertexIndexOffset += call.vertices.length / 3; // Assuming 3 components per vertex
+      // Corrected: divide by components per vertex (8) not 3
+      vertexIndexOffset += call.vertices.length / COMPONENTS_PER_VERTEX;
     });
 
     return {
@@ -318,7 +326,8 @@ export class WebGLBatcher {
         } else {
           // Array drawing
           const mode = this.getGLPrimitive(batchedCall.type);
-          const vertexCount = batchedCall.vertices.length / 8; // 8 components per vertex
+          // Correct calculation: 8 components per vertex (3 pos + 3 normal + 2 uv)
+          const vertexCount = batchedCall.vertices.length / 8;
           gl.drawArrays(mode, 0, vertexCount);
         }
       },

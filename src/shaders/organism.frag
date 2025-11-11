@@ -1,10 +1,9 @@
 // shaders/organism.frag
-#version 300 es
 precision highp float;
 
-in vec2 v_texCoord;
-in float v_pattern;
-in vec3 v_position;
+varying vec2 v_texCoord;
+varying float v_pattern;
+varying vec3 v_position;
 
 uniform float u_time;
 uniform vec3 u_primaryColor;
@@ -15,9 +14,7 @@ uniform float u_patternDensity;
 uniform float u_fluidity;
 uniform sampler2D u_fractalTex;
 
-out vec4 fragColor;
-
-// GLSL 3.0 optimisé
+// GLSL 1.0 compatible
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
@@ -31,7 +28,7 @@ void main() {
     
     // Coordonnées pour la texture fractale (centrées et normalisées)
     vec2 texCoord = v_position.xy * 0.5 + 0.5;
-    float fractal = texture(u_fractalTex, texCoord).r;
+    float fractal = texture2D(u_fractalTex, texCoord).r;
     
     // Mutation color shift
     vec3 color = mix(u_primaryColor, u_secondaryColor, pattern);
@@ -57,6 +54,6 @@ void main() {
     // Anti-aliasing simple
     float alpha = smoothstep(0.0, 0.01, pattern);
     alpha = max(alpha, halo * 0.5);
-    
-    fragColor = vec4(color, alpha * 0.95);
+
+    gl_FragColor = vec4(color, alpha * 0.95);
 }
