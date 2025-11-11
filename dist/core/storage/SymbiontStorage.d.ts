@@ -15,6 +15,11 @@ export declare class SymbiontStorage {
     private db;
     private readonly DB_NAME;
     private readonly DB_VERSION;
+    private readonly OPERATION_TIMEOUT;
+    /**
+     * Wraps a promise with a timeout to prevent indefinite hanging
+     */
+    private withTimeout;
     initialize(): Promise<void>;
     getOrganism(id?: string): Promise<OrganismState | null>;
     saveOrganism(organism: OrganismState): Promise<void>;
