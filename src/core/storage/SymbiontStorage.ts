@@ -26,46 +26,59 @@ export class SymbiontStorage {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'symbiont-db';
   private readonly DB_VERSION = 3;
+  private readonly OPERATION_TIMEOUT = 10000; // 10 seconds timeout for operations
+
+  /**
+   * Wraps a promise with a timeout to prevent indefinite hanging
+   */
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number = this.OPERATION_TIMEOUT): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
+      )
+    ]);
+  }
 
   async initialize(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    const initPromise = new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
       };
-      
+
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        
+
         // Store pour les organismes
         if (!db.objectStoreNames.contains('organisms')) {
           const organismStore = db.createObjectStore('organisms', { keyPath: 'id' });
           organismStore.createIndex('generation', 'generation', { unique: false });
           organismStore.createIndex('createdAt', 'createdAt', { unique: false });
         }
-        
+
         // Store pour les comportements
         if (!db.objectStoreNames.contains('behaviors')) {
           const behaviorStore = db.createObjectStore('behaviors', { keyPath: 'url' });
           behaviorStore.createIndex('lastVisit', 'lastVisit', { unique: false });
           behaviorStore.createIndex('visitCount', 'visitCount', { unique: false });
         }
-        
+
         // Store pour les mutations
         if (!db.objectStoreNames.contains('mutations')) {
           const mutationStore = db.createObjectStore('mutations', { keyPath: 'id', autoIncrement: true });
           mutationStore.createIndex('timestamp', 'timestamp', { unique: false });
           mutationStore.createIndex('type', 'type', { unique: false });
         }
-        
+
         // Store pour les paramètres
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
         }
-        
+
         // Store pour les invitations
         if (!db.objectStoreNames.contains('invitations')) {
           const invitationStore = db.createObjectStore('invitations', { keyPath: 'code' });
@@ -74,15 +87,17 @@ export class SymbiontStorage {
         }
       };
     });
+
+    return this.withTimeout(initPromise, 15000); // 15 second timeout for initialization
   }
 
   async getOrganism(id?: string): Promise<OrganismState | null> {
     if (!this.db) throw new Error('Database not initialized');
-    
-    return new Promise((resolve, reject) => {
+
+    const getPromise = new Promise<OrganismState | null>((resolve, reject) => {
       const transaction = this.db!.transaction(['organisms'], 'readonly');
       const store = transaction.objectStore('organisms');
-      
+
       if (id) {
         const request = store.get(id);
         request.onsuccess = () => resolve(request.result || null);
@@ -97,19 +112,23 @@ export class SymbiontStorage {
         request.onerror = () => reject(request.error);
       }
     });
+
+    return this.withTimeout(getPromise);
   }
 
   async saveOrganism(organism: OrganismState): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    
-    return new Promise((resolve, reject) => {
+
+    const savePromise = new Promise<void>((resolve, reject) => {
       const transaction = this.db!.transaction(['organisms'], 'readwrite');
       const store = transaction.objectStore('organisms');
       const request = store.put(organism);
-      
+
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+
+    return this.withTimeout(savePromise);
   }
 
   async getBehavior(url: string): Promise<BehaviorData | null> {

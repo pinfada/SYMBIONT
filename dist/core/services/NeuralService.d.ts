@@ -21,6 +21,8 @@ export declare class NeuralService {
     private mesh;
     private processingQueue;
     private isProcessing;
+    private readonly MAX_QUEUE_SIZE;
+    private readonly BATCH_SIZE;
     constructor(mesh: INeuralMesh);
     /**
      * Traite un stimulus et retourne les adaptations suggérées
@@ -32,6 +34,7 @@ export declare class NeuralService {
     queuePattern(pattern: NeuralPattern): void;
     /**
      * Traite la queue de patterns en arrière-plan
+     * Process in batches with event loop yielding to prevent blocking
      */
     private processQueue;
     /**

@@ -26,6 +26,8 @@ export class NeuralService {
   private mesh: INeuralMesh;
   private processingQueue: NeuralPattern[] = [];
   private isProcessing = false;
+  private readonly MAX_QUEUE_SIZE = 1000;
+  private readonly BATCH_SIZE = 10; // Process patterns in batches
 
   constructor(mesh: INeuralMesh) {
     this.mesh = mesh;
@@ -73,8 +75,14 @@ export class NeuralService {
    * Ajoute un pattern à la queue de traitement
    */
   queuePattern(pattern: NeuralPattern): void {
+    // Enforce maximum queue size to prevent memory overflow
+    if (this.processingQueue.length >= this.MAX_QUEUE_SIZE) {
+      logger.warn('Neural processing queue at maximum capacity, dropping oldest pattern');
+      this.processingQueue.shift(); // Remove oldest pattern
+    }
+
     this.processingQueue.push(pattern);
-    
+
     if (!this.isProcessing) {
       this.processQueue();
     }
@@ -82,25 +90,36 @@ export class NeuralService {
 
   /**
    * Traite la queue de patterns en arrière-plan
+   * Process in batches with event loop yielding to prevent blocking
    */
   private async processQueue(): Promise<void> {
     if (this.isProcessing || this.processingQueue.length === 0) return;
-    
+
     this.isProcessing = true;
-    
+
     while (this.processingQueue.length > 0) {
-      const pattern = this.processingQueue.shift();
-      if (pattern) {
-        try {
-          if (this.mesh.learn) {
-            await this.mesh.learn(pattern.data);
+      // Process a batch of patterns
+      const batchSize = Math.min(this.BATCH_SIZE, this.processingQueue.length);
+
+      for (let i = 0; i < batchSize; i++) {
+        const pattern = this.processingQueue.shift();
+        if (pattern) {
+          try {
+            if (this.mesh.learn) {
+              await this.mesh.learn(pattern.data);
+            }
+          } catch (_error) {
+            logger.error('Erreur apprentissage neural:', _error);
           }
-        } catch (_error) {
-          logger.error('Erreur apprentissage neural:', _error);
         }
       }
+
+      // Yield to event loop after each batch to prevent blocking
+      if (this.processingQueue.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
     }
-    
+
     this.isProcessing = false;
   }
 

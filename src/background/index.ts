@@ -95,37 +95,71 @@ class BackgroundService {
 
   private async initialize(): Promise<void> {
     try {
-      // Initialize storage
-      await this.storage.initialize();
+      // Initialize storage with timeout handling
+      logger.info('Initializing storage...');
+      try {
+        await this.storage.initialize();
+        logger.info('Storage initialized successfully');
+      } catch (storageError) {
+        logger.error('Storage initialization failed, using fallback mode:', storageError);
+        // Continue without storage - degraded mode
+        this.organism = null;
+        this.setupMessageHandlers();
+        this.startPeriodicTasks();
+        return;
+      }
+
       // Vérifier l'état d'activation (stocké en localStorage ou IndexedDB si besoin)
       this.activated = (await getStorage('symbiont_activated')) === 'true';
+
       // Load or create organism UNIQUEMENT si activé
       if (this.activated) {
-        this.organism = await this.storage.getOrganism();
-        if (!this.organism) {
+        try {
+          logger.info('Loading organism from storage...');
+          this.organism = await this.storage.getOrganism();
+
+          if (!this.organism) {
+            logger.info('No organism found, creating new one...');
+            this.organism = this.createNewOrganism();
+            await this.storage.saveOrganism(this.organism);
+            logger.info('New organism created and saved');
+          } else {
+            logger.info('Organism loaded successfully', { id: this.organism.id });
+          }
+        } catch (organismError) {
+          logger.error('Failed to load/create organism:', organismError);
+          // Try to create a new organism in memory without saving
           this.organism = this.createNewOrganism();
-          await this.storage.saveOrganism(this.organism);
-        
-    }
+          logger.warn('Created organism in memory only (storage unavailable)');
+        }
       } else {
         this.organism = null;
+        logger.info('Symbiont not activated, skipping organism creation');
       }
-      
+
       // Setup message handlers
       this.setupMessageHandlers();
-      
+
       // Start periodic tasks
       this.startPeriodicTasks();
-      
+
       // Démarrer les health checks automatiques
       healthCheckManager.start();
-      
+
       logger.info('Background service initialized', {
         healthCheckActive: true,
-        bulkheadManagerActive: true
+        bulkheadManagerActive: true,
+        organismLoaded: !!this.organism,
+        activated: this.activated
       });
     } catch (error) {
       logger.error('Failed to initialize background service:', error);
+      // Ensure message handlers are set up even if initialization fails
+      try {
+        this.setupMessageHandlers();
+      } catch (handlerError) {
+        logger.error('Failed to setup message handlers:', handlerError);
+      }
     }
   }
 

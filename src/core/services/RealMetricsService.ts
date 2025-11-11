@@ -219,18 +219,36 @@ class RealMetricsService {
   private async estimateCPUUsage(): Promise<number> {
     return new Promise((resolve) => {
       const start = performance.now();
-      const iterations = 50000;
-      
-      // CPU stress test léger
+      const totalIterations = 50000;
+      const chunkSize = 1000; // Process in smaller chunks
+      let currentIteration = 0;
       let result = 0;
-      for (let i = 0; i < iterations; i++) {
-        result += Math.sqrt(i) * Math.sin(i);
-      }
-      
-      const duration = performance.now() - start;
-      // Normaliser entre 0 et 1 (plus de 20ms = usage élevé)
-      const usage = Math.min(duration / 20, 1);
-      resolve(usage);
+
+      // Break work into chunks to avoid blocking the event loop
+      const processChunk = () => {
+        const endIteration = Math.min(currentIteration + chunkSize, totalIterations);
+
+        // Process one chunk
+        for (let i = currentIteration; i < endIteration; i++) {
+          result += Math.sqrt(i) * Math.sin(i);
+        }
+
+        currentIteration = endIteration;
+
+        if (currentIteration < totalIterations) {
+          // Yield to event loop before processing next chunk
+          setTimeout(processChunk, 0);
+        } else {
+          // All chunks processed, calculate result
+          const duration = performance.now() - start;
+          // Normaliser entre 0 et 1 (plus de 20ms = usage élevé)
+          const usage = Math.min(duration / 20, 1);
+          resolve(usage);
+        }
+      };
+
+      // Start processing
+      processChunk();
     });
   }
 
