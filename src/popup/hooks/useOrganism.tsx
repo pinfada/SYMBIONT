@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { OrganismState } from '@shared/types/organism';
+import { logger } from '@shared/utils/secureLogger';
 
 export interface OrganismContextType {
   organism: OrganismState | null;
@@ -84,7 +85,7 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
             }
           }
         } catch (encryptionError) {
-          console.error('Encryption error during organism loading:', encryptionError);
+          logger.error('Encryption error during organism loading', encryptionError);
           // Fallback vers un organisme par défaut si le déchiffrement échoue
           const fallbackOrganism = {
             id: 'fallback-organism',
