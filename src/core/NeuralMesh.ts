@@ -54,33 +54,101 @@ export class NeuralMesh implements INeuralMesh {
   }
 
   /**
-   * Propage l'activation à travers le réseau
+   * Propage l'activation à travers le réseau avec protection contre NaN/Infinity
    */
   propagate(): void {
     // Reset non-input activations
     for (const [nodeId, node] of this.nodes) {
       if (node.type !== 'input') {
-        this.activations.set(nodeId, node.bias);
+        // Validate bias
+        const bias = Number.isFinite(node.bias) ? node.bias : 0;
+        this.activations.set(nodeId, bias);
       }
     }
 
     // Propagate through connections
     for (const [fromId, connections] of this.connections) {
       const fromActivation = this.activations.get(fromId) || 0;
-      
+
+      // Validate from activation
+      if (!Number.isFinite(fromActivation)) {
+        logger.warn(`NeuralMesh: Invalid activation from node ${fromId}: ${fromActivation}, skipping`);
+        continue;
+      }
+
       for (const [toId, weight] of connections) {
+        // Validate weight
+        if (!Number.isFinite(weight)) {
+          logger.warn(`NeuralMesh: Invalid weight from ${fromId} to ${toId}: ${weight}, skipping connection`);
+          continue;
+        }
+
         const currentActivation = this.activations.get(toId) || 0;
-        const newActivation = currentActivation + (fromActivation * weight);
-        this.activations.set(toId, this.sigmoid(newActivation));
+
+        // Validate current activation
+        if (!Number.isFinite(currentActivation)) {
+          logger.warn(`NeuralMesh: Invalid current activation for node ${toId}: ${currentActivation}, resetting to 0`);
+          this.activations.set(toId, 0);
+          continue;
+        }
+
+        // Compute new activation with validation
+        const weightedInput = fromActivation * weight;
+
+        if (!Number.isFinite(weightedInput)) {
+          logger.warn(`NeuralMesh: Invalid weighted input from ${fromId} to ${toId}, skipping`);
+          continue;
+        }
+
+        const newActivation = currentActivation + weightedInput;
+
+        // Validate before sigmoid
+        if (!Number.isFinite(newActivation)) {
+          logger.warn(`NeuralMesh: Invalid new activation for node ${toId}: ${newActivation}, using current`);
+          continue;
+        }
+
+        const activatedValue = this.sigmoid(newActivation);
+        this.activations.set(toId, activatedValue);
+      }
+    }
+
+    // Final validation pass - ensure all activations are valid
+    for (const [nodeId, activation] of this.activations) {
+      if (!Number.isFinite(activation)) {
+        logger.error(`NeuralMesh: CRITICAL - Node ${nodeId} has invalid activation ${activation}, resetting to 0`);
+        this.activations.set(nodeId, 0);
       }
     }
   }
 
   /**
-   * Fonction d'activation sigmoïde
+   * Fonction d'activation sigmoïde avec protection contre NaN/Infinity
    */
   private sigmoid(x: number): number {
-    return 1 / (1 + Math.exp(-x));
+    // Validate input
+    if (!Number.isFinite(x)) {
+      logger.warn(`NeuralMesh: Invalid sigmoid input: ${x}, using 0.5 as fallback`);
+      return 0.5;
+    }
+
+    // Clamp extreme values to prevent overflow
+    const clampedX = Math.max(-500, Math.min(500, x));
+
+    try {
+      const result = 1 / (1 + Math.exp(-clampedX));
+
+      // Validate output
+      if (!Number.isFinite(result)) {
+        logger.warn(`NeuralMesh: Invalid sigmoid output for input ${x}, using 0.5 as fallback`);
+        return 0.5;
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('NeuralMesh: Sigmoid computation error', { input: x, error });
+      return 0.5;
+    }
   }
 
   /**

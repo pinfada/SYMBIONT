@@ -273,8 +273,18 @@ export class HybridRandomProvider {
       crypto.getRandomValues(array);
       return array[0] / 0x100000000;
     }
-    
-    logger.warn('HybridRandom: crypto.getRandomValues non disponible, fallback pool');
+
+    // CRITICAL: Should never reach here in production
+    const error = new Error('SECURITY CRITICAL: crypto.getRandomValues not available for secure random generation');
+    logger.error('HybridRandom: CRITICAL FAILURE in getSecureRandom', error);
+
+    // In production, throw error instead of using insecure fallback
+    if (typeof process === 'undefined' || process.env?.NODE_ENV === 'production') {
+      throw error;
+    }
+
+    // Development only: use pooled random as fallback
+    logger.warn('HybridRandom: Using pooled random fallback in development mode ONLY');
     return this.getPooledRandom();
   }
 
@@ -286,10 +296,28 @@ export class HybridRandomProvider {
     if (poolValue !== null) {
       return poolValue;
     }
-    
-    // Fallback si pool vide
-    logger.warn('HybridRandom: Pool vide, fallback crypto direct');
-    return this.getSecureRandom();
+
+    // Pool is empty, try to get from crypto directly
+    logger.warn('HybridRandom: Pool empty, attempting direct crypto generation');
+
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      return array[0] / 0x100000000;
+    }
+
+    // CRITICAL: Both pool and crypto unavailable
+    const error = new Error('SECURITY CRITICAL: Pool empty and crypto.getRandomValues unavailable');
+    logger.error('HybridRandom: CRITICAL FAILURE - no secure random source available', error);
+
+    // In production, throw error
+    if (typeof process === 'undefined' || process.env?.NODE_ENV === 'production') {
+      throw error;
+    }
+
+    // Development only: use fast PRNG as last resort
+    logger.warn('HybridRandom: Using fast PRNG as emergency fallback in development mode ONLY');
+    return this.getFastRandom();
   }
 
   /**

@@ -16,6 +16,8 @@ export declare class SymbiontStorage {
     private readonly DB_NAME;
     private readonly DB_VERSION;
     private readonly OPERATION_TIMEOUT;
+    private readonly MAX_STORAGE_SIZE_MB;
+    private quotaWarningIssued;
     /**
      * Wraps a promise with a timeout to prevent indefinite hanging
      */
@@ -47,6 +49,19 @@ export declare class SymbiontStorage {
      * Nettoie les anciennes données pour optimiser l'espace
      */
     cleanup(retentionDays?: number): Promise<void>;
+    /**
+     * Vérifie le quota de stockage et alerte si nécessaire
+     */
+    private checkStorageQuota;
+    /**
+     * Obtient les statistiques de stockage
+     */
+    getStorageStats(): Promise<{
+        usageInMB: number;
+        quotaInMB: number;
+        usagePercent: number;
+        needsCleanup: boolean;
+    }>;
     /**
      * Ferme la connexion à la base de données
      */

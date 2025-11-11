@@ -27,6 +27,8 @@ export class SymbiontStorage {
   private readonly DB_NAME = 'symbiont-db';
   private readonly DB_VERSION = 3;
   private readonly OPERATION_TIMEOUT = 10000; // 10 seconds timeout for operations
+  private readonly MAX_STORAGE_SIZE_MB = 50; // Maximum storage size in MB
+  private quotaWarningIssued = false;
 
   /**
    * Wraps a promise with a timeout to prevent indefinite hanging
@@ -41,12 +43,41 @@ export class SymbiontStorage {
   }
 
   async initialize(): Promise<void> {
+    // Check storage quota before initialization
+    try {
+      await this.checkStorageQuota();
+    } catch (quotaError) {
+      console.warn('Failed to check storage quota:', quotaError);
+      // Continue with initialization, but log the warning
+    }
+
     const initPromise = new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        const error = request.error;
+        console.error('IndexedDB open failed:', {
+          name: error?.name,
+          message: error?.message,
+          code: (error as any)?.code
+        });
+        reject(error);
+      };
+
       request.onsuccess = () => {
         this.db = request.result;
+
+        // Setup error handlers for the database
+        this.db.onerror = (event) => {
+          console.error('Database error:', event);
+        };
+
+        this.db.onversionchange = () => {
+          console.warn('Database version changed, closing connection');
+          this.db?.close();
+          this.db = null;
+        };
+
         resolve();
       };
 
@@ -373,6 +404,91 @@ export class SymbiontStorage {
       
       request.onerror = () => reject(request.error);
     });
+  }
+
+  /**
+   * Vérifie le quota de stockage et alerte si nécessaire
+   */
+  private async checkStorageQuota(): Promise<void> {
+    if (!navigator.storage || !navigator.storage.estimate) {
+      console.warn('Storage API not available, skipping quota check');
+      return;
+    }
+
+    try {
+      const estimate = await navigator.storage.estimate();
+      const usageInMB = (estimate.usage || 0) / (1024 * 1024);
+      const quotaInMB = (estimate.quota || 0) / (1024 * 1024);
+      const usagePercent = quotaInMB > 0 ? (usageInMB / quotaInMB) * 100 : 0;
+
+      console.info('Storage quota:', {
+        usageInMB: usageInMB.toFixed(2),
+        quotaInMB: quotaInMB.toFixed(2),
+        usagePercent: usagePercent.toFixed(2) + '%'
+      });
+
+      // Warn if usage is above 80%
+      if (usagePercent > 80 && !this.quotaWarningIssued) {
+        this.quotaWarningIssued = true;
+        console.warn('STORAGE WARNING: Usage above 80%, consider cleanup');
+
+        // Trigger automatic cleanup if above 90%
+        if (usagePercent > 90) {
+          console.warn('STORAGE CRITICAL: Usage above 90%, triggering automatic cleanup');
+          await this.cleanup(15); // Keep only last 15 days
+        }
+      }
+
+      // Check if we're approaching browser limits
+      if (usageInMB > this.MAX_STORAGE_SIZE_MB * 0.9) {
+        console.error('STORAGE CRITICAL: Approaching maximum storage size limit');
+        // Aggressive cleanup
+        await this.cleanup(7); // Keep only last 7 days
+      }
+    } catch (error) {
+      console.error('Failed to check storage quota:', error);
+    }
+  }
+
+  /**
+   * Obtient les statistiques de stockage
+   */
+  async getStorageStats(): Promise<{
+    usageInMB: number;
+    quotaInMB: number;
+    usagePercent: number;
+    needsCleanup: boolean;
+  }> {
+    if (!navigator.storage || !navigator.storage.estimate) {
+      return {
+        usageInMB: 0,
+        quotaInMB: 0,
+        usagePercent: 0,
+        needsCleanup: false
+      };
+    }
+
+    try {
+      const estimate = await navigator.storage.estimate();
+      const usageInMB = (estimate.usage || 0) / (1024 * 1024);
+      const quotaInMB = (estimate.quota || 0) / (1024 * 1024);
+      const usagePercent = quotaInMB > 0 ? (usageInMB / quotaInMB) * 100 : 0;
+
+      return {
+        usageInMB,
+        quotaInMB,
+        usagePercent,
+        needsCleanup: usagePercent > 80
+      };
+    } catch (error) {
+      console.error('Failed to get storage stats:', error);
+      return {
+        usageInMB: 0,
+        quotaInMB: 0,
+        usagePercent: 0,
+        needsCleanup: false
+      };
+    }
   }
 
   /**
