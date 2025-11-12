@@ -23,6 +23,7 @@ export declare class SymbiontStorage {
      */
     private withTimeout;
     initialize(): Promise<void>;
+    private attemptInitialize;
     getOrganism(id?: string): Promise<OrganismState | null>;
     saveOrganism(organism: OrganismState): Promise<void>;
     getBehavior(url: string): Promise<BehaviorData | null>;
@@ -66,6 +67,11 @@ export declare class SymbiontStorage {
      * Ferme la connexion à la base de données
      */
     close(): void;
+    /**
+     * Tente de forcer la fermeture de la base de données en supprimant et recréant
+     * Utilisé en dernier recours quand la base est bloquée par une autre connexion
+     */
+    private forceCloseDatabase;
 }
 export {};
 //# sourceMappingURL=SymbiontStorage.d.ts.map

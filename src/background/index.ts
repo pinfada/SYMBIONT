@@ -330,102 +330,207 @@ class BackgroundService {
 
     // Invitation: génération
     this.messageBus.on(MessageType.GENERATE_INVITATION, async (message: MessageEvent | unknown) => {
-      const { donorId } = (message as any).payload;
-      const rawInvitation = await this.invitationService.generateInvitation(donorId);
-      // Adaptation à l'interface partagée
-      const invitation: import('../shared/types/invitation').Invitation = {
-        code: rawInvitation.code,
-        createdAt: rawInvitation.createdAt,
-        consumed: rawInvitation.used ?? false,
-        inviter: rawInvitation.donorId,
-        ...(rawInvitation.usedAt && { consumedAt: rawInvitation.usedAt }),
-        ...(rawInvitation.receiverId && { invitee: rawInvitation.receiverId })
-      };
-      let encryptedPayload: import('../shared/types/invitation').Invitation | string = invitation;
-      try {
-        encryptedPayload = await this.security.encryptSensitiveData(invitation);
-      } catch (_e) {
-        // fallback : en clair si erreur
-        encryptedPayload = invitation;
+      // Vérifier que le storage est initialisé avant d'utiliser le service d'invitation
+      if (!this.isStorageReady()) {
+        logger.warn('Storage not initialized, cannot generate invitation');
+        await resilientBus.send({
+          type: MessageType.INVITATION_GENERATED,
+          payload: { error: 'Database not initialized' }
+        });
+        return;
       }
-      await resilientBus.send({
-        type: MessageType.INVITATION_GENERATED,
-        payload: encryptedPayload
-      });
+
+      try {
+        const { donorId } = (message as any).payload;
+        const rawInvitation = await this.invitationService.generateInvitation(donorId);
+        // Adaptation à l'interface partagée
+        const invitation: import('../shared/types/invitation').Invitation = {
+          code: rawInvitation.code,
+          createdAt: rawInvitation.createdAt,
+          consumed: rawInvitation.used ?? false,
+          inviter: rawInvitation.donorId,
+          ...(rawInvitation.usedAt && { consumedAt: rawInvitation.usedAt }),
+          ...(rawInvitation.receiverId && { invitee: rawInvitation.receiverId })
+        };
+        let encryptedPayload: import('../shared/types/invitation').Invitation | string = invitation;
+        try {
+          encryptedPayload = await this.security.encryptSensitiveData(invitation);
+        } catch (_e) {
+          // fallback : en clair si erreur
+          encryptedPayload = invitation;
+        }
+        await resilientBus.send({
+          type: MessageType.INVITATION_GENERATED,
+          payload: encryptedPayload
+        });
+      } catch (error) {
+        logger.error('Failed to generate invitation:', error);
+        await resilientBus.send({
+          type: MessageType.INVITATION_GENERATED,
+          payload: { error: error instanceof Error ? error.message : 'Unknown error' }
+        });
+      }
     });
 
     // Invitation: validation/consommation
     this.messageBus.on(MessageType.CONSUME_INVITATION, async (message: MessageEvent | unknown) => {
-      const { code, receiverId, role } = (message as any).payload;
-      // Contrôle d'accès : seul un utilisateur authentifié peut consommer une invitation
-      if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
-        resilientBus.send({
+      if (!this.isStorageReady()) {
+        logger.warn('Storage not initialized, cannot consume invitation');
+        await resilientBus.send({
           type: MessageType.INVITATION_CONSUMED,
-          payload: { error: 'Accès refusé.' }
+          payload: { error: 'Database not initialized' }
         });
         return;
       }
-      const invitation = await this.invitationService.consumeInvitation(code, receiverId);
-      if (invitation) {
-        this.activated = true;
-        await setStorage('symbiont_activated', 'true');
-        // Créer l'organisme à l'activation
-        if (!this.organism) {
-          this.organism = this.createNewOrganism();
-          await this.storage.saveOrganism(this.organism);
+
+      try {
+        const { code, receiverId, role } = (message as any).payload;
+        // Contrôle d'accès : seul un utilisateur authentifié peut consommer une invitation
+        if (!this.security.validateDataAccess({ userId: receiverId, resource: code, role }, 'user')) {
+          resilientBus.send({
+            type: MessageType.INVITATION_CONSUMED,
+            payload: { error: 'Accès refusé.' }
+          });
+          return;
         }
+        const invitation = await this.invitationService.consumeInvitation(code, receiverId);
+        if (invitation) {
+          this.activated = true;
+          await setStorage('symbiont_activated', 'true');
+          // Créer l'organisme à l'activation
+          if (!this.organism) {
+            this.organism = this.createNewOrganism();
+            if (this.isStorageReady()) {
+              await this.storage.saveOrganism(this.organism);
+            }
+          }
+        }
+        resilientBus.send({
+          type: MessageType.INVITATION_CONSUMED,
+          payload: invitation
+        });
+      } catch (error) {
+        logger.error('Failed to consume invitation:', error);
+        await resilientBus.send({
+          type: MessageType.INVITATION_CONSUMED,
+          payload: { error: error instanceof Error ? error.message : 'Unknown error' }
+        });
       }
-      resilientBus.send({
-        type: MessageType.INVITATION_CONSUMED,
-        payload: invitation
-      });
     });
 
     // Invitation: vérification
     this.messageBus.on(MessageType.CHECK_INVITATION, async (message: MessageEvent | unknown) => {
-      const { code } = (message as any).payload;
-      const valid = await this.invitationService.isValid(code);
-      resilientBus.send({
-        type: MessageType.INVITATION_CHECKED,
-        payload: { code, valid }
-      });
+      if (!this.isStorageReady()) {
+        logger.warn('Storage not initialized, cannot check invitation');
+        await resilientBus.send({
+          type: MessageType.INVITATION_CHECKED,
+          payload: { code: (message as any).payload?.code, valid: false, error: 'Database not initialized' }
+        });
+        return;
+      }
+
+      try {
+        const { code } = (message as any).payload;
+        const valid = await this.invitationService.isValid(code);
+        resilientBus.send({
+          type: MessageType.INVITATION_CHECKED,
+          payload: { code, valid }
+        });
+      } catch (error) {
+        logger.error('Failed to check invitation:', error);
+        await resilientBus.send({
+          type: MessageType.INVITATION_CHECKED,
+          payload: { code: (message as any).payload?.code, valid: false, error: error instanceof Error ? error.message : 'Unknown error' }
+        });
+      }
     });
 
     // --- Handlers pour la lignée et l'historique d'invitation ---
     this.messageBus.on(MessageType.GET_INVITER, async (message: MessageEvent | unknown) => {
-      const { userId } = (message as any).payload;
-      // Recherche de l'invitation où receiverId === userId
-      const all = await this.invitationService.getAllInvitations();
-      const inviter = all.find(inv => inv.receiverId === userId);
-      resilientBus.send({
-        type: MessageType.INVITER_RESULT,
-        payload: inviter || null
-      });
+      if (!this.isStorageReady()) {
+        logger.warn('Storage not initialized, cannot get inviter');
+        await resilientBus.send({
+          type: MessageType.INVITER_RESULT,
+          payload: null
+        });
+        return;
+      }
+
+      try {
+        const { userId } = (message as any).payload;
+        // Recherche de l'invitation où receiverId === userId
+        const all = await this.invitationService.getAllInvitations();
+        const inviter = all.find(inv => inv.receiverId === userId);
+        resilientBus.send({
+          type: MessageType.INVITER_RESULT,
+          payload: inviter || null
+        });
+      } catch (error) {
+        logger.error('Failed to get inviter:', error);
+        await resilientBus.send({
+          type: MessageType.INVITER_RESULT,
+          payload: null
+        });
+      }
     });
 
     this.messageBus.on(MessageType.GET_INVITEES, async (message: MessageEvent | unknown) => {
-      const { userId } = (message as any).payload;
-      // Recherche des invitations où donorId === userId
-      const all = await this.invitationService.getAllInvitations();
-      const invitees = all.filter(inv => inv.donorId === userId);
-      resilientBus.send({
-        type: MessageType.INVITEES_RESULT,
-        payload: invitees
-      });
+      if (!this.isStorageReady()) {
+        logger.warn('Storage not initialized, cannot get invitees');
+        await resilientBus.send({
+          type: MessageType.INVITEES_RESULT,
+          payload: []
+        });
+        return;
+      }
+
+      try {
+        const { userId } = (message as any).payload;
+        // Recherche des invitations où donorId === userId
+        const all = await this.invitationService.getAllInvitations();
+        const invitees = all.filter(inv => inv.donorId === userId);
+        resilientBus.send({
+          type: MessageType.INVITEES_RESULT,
+          payload: invitees
+        });
+      } catch (error) {
+        logger.error('Failed to get invitees:', error);
+        await resilientBus.send({
+          type: MessageType.INVITEES_RESULT,
+          payload: []
+        });
+      }
     });
 
     this.messageBus.on(MessageType.GET_INVITATION_HISTORY, async (message: MessageEvent | unknown) => {
-      const { userId } = (message as any).payload;
-      // Historique = invitations reçues ou envoyées
-      const all = await this.invitationService.getAllInvitations();
-      const history = [
-        ...all.filter(inv => inv.receiverId === userId).map(inv => ({ ...inv, type: 'reçue' })),
-        ...all.filter(inv => inv.donorId === userId).map(inv => ({ ...inv, type: 'envoyée' }))
-      ];
-      resilientBus.send({
-        type: MessageType.INVITATION_HISTORY_RESULT,
-        payload: history
-      });
+      if (!this.isStorageReady()) {
+        logger.warn('Storage not initialized, cannot get invitation history');
+        await resilientBus.send({
+          type: MessageType.INVITATION_HISTORY_RESULT,
+          payload: []
+        });
+        return;
+      }
+
+      try {
+        const { userId } = (message as any).payload;
+        // Historique = invitations reçues ou envoyées
+        const all = await this.invitationService.getAllInvitations();
+        const history = [
+          ...all.filter(inv => inv.receiverId === userId).map(inv => ({ ...inv, type: 'reçue' })),
+          ...all.filter(inv => inv.donorId === userId).map(inv => ({ ...inv, type: 'envoyée' }))
+        ];
+        resilientBus.send({
+          type: MessageType.INVITATION_HISTORY_RESULT,
+          payload: history
+        });
+      } catch (error) {
+        logger.error('Failed to get invitation history:', error);
+        await resilientBus.send({
+          type: MessageType.INVITATION_HISTORY_RESULT,
+          payload: []
+        });
+      }
     });
 
     // --- Rituel de mutation partagée ---
@@ -860,7 +965,8 @@ class BackgroundService {
         if (total >= threshold && !this.reachedThresholds.includes(threshold)) {
           this.reachedThresholds.push(threshold);
           await setStorage('symbiont_collective_thresholds', JSON.stringify(this.reachedThresholds));
-          this.triggerContextualInvitation('collective_threshold_' + threshold);
+          // triggerContextualInvitation vérifie déjà si le storage est prêt
+          await this.triggerContextualInvitation('collective_threshold_' + threshold);
           break;
         }
       }
@@ -873,12 +979,22 @@ class BackgroundService {
    * Déclenche une invitation contextuelle avancée
    */
   private async triggerContextualInvitation(context: string) {
-    const userId = (await getStorage('symbiont_user_id') as string) || 'unknown';
-    const invitation = await this.invitationService.generateInvitation(userId);
-    await resilientBus.send({
-      type: MessageType.CONTEXTUAL_INVITATION,
-      payload: { invitation, context }
-    });
+    // Vérifier que le storage est initialisé avant d'utiliser le service d'invitation
+    if (!this.isStorageReady()) {
+      logger.warn('Storage not initialized, skipping contextual invitation generation', { context });
+      return;
+    }
+
+    try {
+      const userId = (await getStorage('symbiont_user_id') as string) || 'unknown';
+      const invitation = await this.invitationService.generateInvitation(userId);
+      await resilientBus.send({
+        type: MessageType.CONTEXTUAL_INVITATION,
+        payload: { invitation, context }
+      });
+    } catch (error) {
+      logger.error('Failed to generate contextual invitation:', error);
+    }
   }
 
   /**

@@ -38,6 +38,10 @@ module.exports = {
 
   resolve: {
     extensions: ['.ts', '.js'],
+    modules: [
+      path.resolve(__dirname, 'node_modules'),
+      'node_modules'
+    ],
     alias: {
       '@': path.resolve(__dirname, 'src'),
       '@core': path.resolve(__dirname, 'src/core'),
