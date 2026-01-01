@@ -5,7 +5,7 @@ export const P2P_CONFIG = {
   // Serveurs de signaling (WebSocket)
   SIGNALING_SERVERS: [
     // Production sur Render (remplacer avec votre URL)
-    'wss://symbiont-signaling.onrender.com',
+    'wss://symbiont-ytla.onrender.com',
 
     // Serveur local de développement
     'ws://localhost:8080',
