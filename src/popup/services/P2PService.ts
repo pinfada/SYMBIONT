@@ -2,6 +2,7 @@
 import { generateSecureUUID } from '@shared/utils/uuid';
 import { logger } from '@shared/utils/secureLogger';
 import { SecureRandom } from '@shared/utils/secureRandom';
+import { P2P_CONFIG } from '@/config/p2p.config';
 
 export interface P2PPeer {
   id: string;
@@ -31,14 +32,8 @@ export interface P2PMessage {
   timestamp: number;
 }
 
-// Configuration ICE pour contourner les NAT/Firewall
-const ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun3.l.google.com:19302' },
-  { urls: 'stun:stun4.l.google.com:19302' }
-];
+// Configuration ICE depuis le fichier de config
+const ICE_SERVERS = P2P_CONFIG.ICE_SERVERS;
 
 // Configuration pour le signaling via BroadcastChannel (entre onglets) ou WebSocket
 // const SIGNALING_METHODS = {
@@ -147,56 +142,126 @@ class P2PService {
       console.warn('P2P: BroadcastChannel error:', e);
     }
 
-    // Méthode 2: WebSocket pour signaling global (optionnel)
-    // Désactivé temporairement car ws:// ne fonctionne pas depuis chrome-extension://
-    // this.connectToSignalingServer();
-    logger.info('P2P: WebSocket signaling désactivé (incompatible avec chrome-extension)');
+    // Méthode 2: WebSocket pour signaling global
+    // Maintenant actif avec WSS sur Render !
+    this.connectToSignalingServer();
+    logger.info('P2P: Tentative de connexion au serveur de signaling WSS...');
 
     // Méthode 3: DHT via WebTorrent (vraiment décentralisé)
     // this.initializeWebTorrent();
   }
 
-  /*
-  private _connectToSignalingServer(): void {
-    // Serveur de signaling optionnel pour découverte globale
-    // Pour un vrai P2P, on peut utiliser un serveur public ou auto-hébergé
-    const SIGNALING_SERVERS = [
-      'ws://localhost:8080',                   // Serveur local de dev (prioritaire)
-      'wss://symbiont-signal.herokuapp.com',  // Serveur public (à créer)
-      'wss://signal.symbiont.network'          // Futur serveur communautaire
-    ];
+  private async connectToSignalingServer(): Promise<void> {
+    // Serveur de signaling pour découverte globale
+    const SIGNALING_SERVERS = P2P_CONFIG.SIGNALING_SERVERS;
 
     // Essayer les serveurs dans l'ordre
     for (const server of SIGNALING_SERVERS) {
       try {
+        logger.info(`P2P: Tentative de connexion à ${server}...`);
         this.signalingSocket = new WebSocket(server);
 
-        this.signalingSocket.onopen = () => {
-          logger.info(`P2P: Connecté au serveur de signaling ${server}`);
-          // S'annoncer
-          this.signalingSocket?.send(JSON.stringify({
-            type: 'announce',
-            peerId: this.myId,
-            organism: this.myOrganism
-          }));
-        };
+        // Attendre la connexion avec timeout
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Connection timeout'));
+          }, 5000);
 
+          this.signalingSocket!.onopen = () => {
+            clearTimeout(timeout);
+            logger.info(`P2P: ✅ Connecté au serveur de signaling ${server}`);
+            console.log(`P2P: Connected to signaling server: ${server}`);
+
+            // S'annoncer au serveur
+            this.signalingSocket?.send(JSON.stringify({
+              type: 'announce',
+              peerId: this.myId,
+              organism: this.myOrganism
+            }));
+
+            // Envoyer un ping régulièrement pour maintenir la connexion
+            setInterval(() => {
+              if (this.signalingSocket?.readyState === WebSocket.OPEN) {
+                this.signalingSocket.send(JSON.stringify({
+                  type: 'ping',
+                  peerId: this.myId
+                }));
+              }
+            }, P2P_CONFIG.TIMEOUTS.HEARTBEAT_INTERVAL);
+
+            resolve();
+          };
+
+          this.signalingSocket!.onerror = (error) => {
+            clearTimeout(timeout);
+            logger.warn(`P2P: Erreur serveur ${server}:`, error);
+            reject(error);
+          };
+        });
+
+        // Gérer les messages du serveur
         this.signalingSocket.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          this.handleSignalingMessage(data);
+          try {
+            const data = JSON.parse(event.data);
+
+            switch(data.type) {
+              case 'peers_list':
+                // Liste des pairs connectés
+                logger.info(`P2P: Reçu liste de ${data.peers?.length || 0} pairs`);
+                data.peers?.forEach((peer: any) => {
+                  if (!this.peers.has(peer.peerId)) {
+                    this.connectToPeer(peer.peerId, peer.organism);
+                  }
+                });
+                break;
+
+              case 'peer_left':
+                // Un pair s'est déconnecté
+                logger.info(`P2P: Pair déconnecté: ${data.peerId}`);
+                const peer = this.peers.get(data.peerId);
+                if (peer) {
+                  peer.connection.close();
+                  this.peers.delete(data.peerId);
+                }
+                break;
+
+              case 'pong':
+                // Réponse au ping
+                break;
+
+              case 'error':
+                logger.error('P2P: Erreur serveur:', data.message);
+                break;
+
+              default:
+                // Messages de signaling WebRTC
+                this.handleSignalingMessage(data);
+            }
+          } catch (error) {
+            logger.error('P2P: Erreur parsing message:', error);
+          }
         };
 
-        this.signalingSocket.onerror = () => {
-          logger.warn(`P2P: Erreur serveur ${server}`);
+        this.signalingSocket.onclose = () => {
+          logger.warn(`P2P: Déconnecté du serveur ${server}`);
+          console.warn('P2P: Disconnected from signaling server');
+          // Tentative de reconnexion après 5 secondes
+          setTimeout(() => this.connectToSignalingServer(), 5000);
         };
 
-        break; // Si connexion réussie, arrêter
+        break; // Si connexion réussie, arrêter d'essayer les autres serveurs
+
       } catch (e) {
-        logger.warn(`P2P: Impossible de se connecter à ${server}`);
+        logger.warn(`P2P: Impossible de se connecter à ${server}:`, e);
+        console.warn(`P2P: Failed to connect to ${server}`, e);
       }
     }
+
+    if (!this.signalingSocket || this.signalingSocket.readyState !== WebSocket.OPEN) {
+      logger.warn('P2P: Aucun serveur de signaling disponible, mode local uniquement');
+      console.warn('P2P: No signaling server available, local mode only');
+    }
   }
-  */
 
   /*
   private _initializeWebTorrent(): void {
@@ -276,6 +341,11 @@ class P2PService {
 
     // Diffuser sur tous les canaux
     this.broadcastDiscovery('symbiont-network', announcement);
+
+    // Aussi annoncer via WebSocket si connecté
+    if (this.signalingSocket?.readyState === WebSocket.OPEN) {
+      this.signalingSocket.send(JSON.stringify(announcement));
+    }
   }
 
   private checkForPeers(): void {
@@ -549,14 +619,15 @@ class P2PService {
   private sendSignalingMessage(message: any): void {
     // Envoyer via tous les canaux disponibles
 
-    // BroadcastChannel
-    if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage(message);
-    }
-
-    // WebSocket
+    // WebSocket prioritaire pour signaling WebRTC
     if (this.signalingSocket?.readyState === WebSocket.OPEN) {
       this.signalingSocket.send(JSON.stringify(message));
+      logger.info(`P2P: Message envoyé via WSS: ${message.type}`);
+    }
+
+    // BroadcastChannel pour découverte locale
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage(message);
     }
 
     // localStorage comme fallback
