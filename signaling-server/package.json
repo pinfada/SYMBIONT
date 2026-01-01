@@ -1,16 +1,30 @@
 {
   "name": "symbiont-signaling-server",
   "version": "1.0.0",
-  "description": "Serveur de signaling minimal pour le réseau P2P SYMBIONT",
+  "description": "WebSocket signaling server for SYMBIONT P2P network - Production ready for Render",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "ws": "^8.14.2"
+    "ws": "^8.14.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  }
+  },
+  "keywords": [
+    "websocket",
+    "signaling",
+    "webrtc",
+    "p2p",
+    "symbiont"
+  ],
+  "author": "SYMBIONT Team",
+  "license": "MIT"
 }

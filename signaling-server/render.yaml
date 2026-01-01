@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: symbiont-signaling
+    runtime: node
+    plan: free # ou starter pour plus de ressources
+    buildCommand: npm install
+    startCommand: node server-production.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: chrome-extension://,https://symbiont-extension.vercel.app
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+    autoDeploy: true # Déploiement automatique depuis GitHub
+    region: oregon # ou frankfurt pour l'Europe
