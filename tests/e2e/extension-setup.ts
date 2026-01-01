@@ -133,23 +133,87 @@ export async function setupExtensionContext(options: {
 }
 
 /**
- * Nettoie le contexte d'extension
+ * Nettoie le contexte d'extension avec fermeture forcée d'IndexedDB
  */
 export async function teardownExtensionContext(testContext: ExtensionTestContext): Promise<void> {
   try {
-    if (testContext.serviceWorkerPage) {
+    // ÉTAPE 1: Forcer la fermeture de toutes les connexions IndexedDB avant de fermer les pages
+    logger.info('Forcing IndexedDB connections to close...');
+
+    if (testContext.page && !testContext.page.isClosed()) {
+      try {
+        // Injecter la méthode de nettoyage global et l'exécuter
+        await testContext.page.evaluate(() => {
+          // Dynamiquement importer SymbiontStorage pour cleanup
+          return new Promise<void>((resolve) => {
+            if (typeof indexedDB !== 'undefined') {
+              // Force close ALL connections via BroadcastChannel
+              const channel = new BroadcastChannel('symbiont-storage-coordination');
+              channel.postMessage({
+                type: 'FORCE_SHUTDOWN',
+                requestId: Date.now().toString(),
+                senderId: 'test-cleanup'
+              });
+
+              // Wait a bit for message to propagate
+              setTimeout(() => {
+                channel.close();
+
+                // Then delete the database
+                const deleteRequest = indexedDB.deleteDatabase('symbiont-db');
+
+                deleteRequest.onsuccess = () => {
+                  console.log('[Cleanup] IndexedDB deleted successfully');
+                  resolve();
+                };
+
+                deleteRequest.onerror = () => {
+                  console.warn('[Cleanup] IndexedDB deletion failed');
+                  resolve(); // Continue anyway
+                };
+
+                deleteRequest.onblocked = () => {
+                  console.warn('[Cleanup] IndexedDB deletion blocked');
+                  setTimeout(() => resolve(), 2000); // Timeout after 2s
+                };
+
+                // Safety timeout
+                setTimeout(() => resolve(), 5000);
+              }, 500);
+            } else {
+              resolve();
+            }
+          });
+        });
+
+        // Wait a bit more to ensure cleanup completed
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        logger.warn('IndexedDB cleanup warning:', error);
+        // Continue with teardown even if cleanup failed
+      }
+    }
+
+    // ÉTAPE 2: Fermer les pages et contextes
+    if (testContext.serviceWorkerPage && !testContext.serviceWorkerPage.isClosed()) {
       await testContext.serviceWorkerPage.close();
     }
-    if (testContext.page) {
+
+    if (testContext.page && !testContext.page.isClosed()) {
       await testContext.page.close();
     }
+
     if (testContext.context) {
       await testContext.context.close();
     }
+
     if (testContext.browser) {
       await testContext.browser.close();
     }
-    
+
+    // ÉTAPE 3: Attendre un peu pour que tout se termine proprement
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     logger.info('Extension context cleaned up successfully');
   } catch (error) {
     logger.error('Extension context cleanup failed:', error);

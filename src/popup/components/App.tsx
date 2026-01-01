@@ -213,12 +213,7 @@ const App: React.FC = () => {
       {/* Header avec logo et titre */}
       <header className="app-header" role="banner">
         <div className="logo-section">
-          <img 
-            src="../assets/icons/icon48.png" 
-            alt="Logo SYMBIONT - Organisme digital évolutif" 
-            width={24} 
-            height={24} 
-          />
+          <span style={{ fontSize: '24px', marginRight: '8px' }}>🧬</span>
           <h1 className="app-title">SYMBIONT</h1>
         </div>
         <div className="header-controls">

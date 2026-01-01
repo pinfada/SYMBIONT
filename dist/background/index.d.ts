@@ -12,6 +12,7 @@ export declare const healthMonitor: BasicHealthMonitor;
 declare class BackgroundService {
     private messageBus;
     private storage;
+    private debouncer;
     organism: OrganismState | null;
     private invitationService;
     private murmureService;
@@ -21,7 +22,9 @@ declare class BackgroundService {
     private reachedThresholds;
     private security;
     private _organismFactory;
+    private initialized;
     constructor();
+    ensureInitialized(): Promise<void>;
     private initialize;
     private createNewOrganism;
     private generateVisualDNA;
@@ -56,9 +59,10 @@ declare class BackgroundService {
      */
     dispose(): void;
 }
-export { BackgroundService };
-export declare const distributedNetwork: DistributedOrganismNetwork;
-export declare const collectiveIntelligence: CollectiveIntelligence;
-export declare const socialResilience: SocialResilience;
-export declare const mysticalEvents: MysticalEvents;
+declare function getBackgroundService(): Promise<BackgroundService>;
+export { BackgroundService, getBackgroundService };
+export declare function getDistributedNetwork(): DistributedOrganismNetwork;
+export declare function getCollectiveIntelligence(): CollectiveIntelligence;
+export declare function getSocialResilience(): SocialResilience;
+export declare function getMysticalEvents(): MysticalEvents;
 //# sourceMappingURL=index.d.ts.map

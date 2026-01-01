@@ -43,5 +43,6 @@ export declare class RealDataService {
     migrateToRealData(userId: string): Promise<void>;
 }
 export declare const realDataService: RealDataService;
+export declare const RealDataServiceClass: typeof RealDataService;
 export {};
 //# sourceMappingURL=RealDataService.d.ts.map

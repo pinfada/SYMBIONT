@@ -3,6 +3,7 @@ import { OrganismState } from '../../shared/types/organism';
 import { Invitation, InvitationStatus } from '../../shared/types/invitation';
 import { SecureRandom } from '@shared/utils/secureRandom';
 import { logger } from '@shared/utils/secureLogger';
+import { chromeApi } from '@/shared/utils/chromeApiSafe';
 
 // Feature flags pour migration progressive
 const FEATURE_FLAGS = {
@@ -17,7 +18,7 @@ const API_CONFIG = (() => {
   const apiUrl = process.env.SYMBIONT_API_URL;
   const wsUrl = process.env.SYMBIONT_WS_URL;
   const apiKey = process.env.SYMBIONT_API_KEY;
-  
+
   // En développement, permettre fallback avec avertissement
   if (process.env.NODE_ENV === 'development') {
     return {
@@ -29,16 +30,16 @@ const API_CONFIG = (() => {
       })()
     };
   }
-  
+
   // En production, variables obligatoires
   if (!apiUrl || !apiKey) {
     throw new Error('Variables d\'environnement SYMBIONT_API_URL et SYMBIONT_API_KEY obligatoires en production');
   }
-  
+
   if (apiKey.length < 32) {
     throw new Error('SYMBIONT_API_KEY trop courte (minimum 32 caractères cryptographiquement sécurisés)');
   }
-  
+
   return {
     BASE_URL: apiUrl,
     WS_URL: wsUrl || apiUrl.replace('http', 'ws').replace('/api', ''),
@@ -94,12 +95,12 @@ export class RealDataService {
       scrollPatterns: [],
       timePatterns: []
     };
-    
+
     this.apiHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${API_CONFIG.API_KEY}`
     };
-    
+
     this.initializeBehaviorTracking();
   }
 
@@ -111,7 +112,7 @@ export class RealDataService {
   }
 
   // === GÉNÉRATION ADN RÉEL ===
-  
+
   async generateRealDNA(userId: string): Promise<string> {
     if (!FEATURE_FLAGS.USE_REAL_DNA) {
       return 'MOCKDNA123456789ABCDEF'; // Fallback mode démo
@@ -127,9 +128,7 @@ export class RealDataService {
   }
 
   private async collectUserBehaviors(_userId: string): Promise<BehaviorMetrics> {
-    // Collecter données réelles de navigation
-    const history = await chrome.history.search({ text: '', maxResults: 100 });
-    
+    // Collecter données réelles de navigation - uniquement si Chrome API disponible
     const behaviorData: BehaviorMetrics = {
       domains: new Map(),
       sessionTime: 0,
@@ -138,21 +137,30 @@ export class RealDataService {
       timePatterns: []
     };
 
-    // Analyser l'historique
-    for (const item of history) {
-      if (item.url) {
-        const domain = new URL(item.url).hostname;
-        const existing = behaviorData.domains.get(domain) || {
-          visits: 0,
-          totalTime: 0,
-          lastVisit: 0,
-          category: await this.categorizeWebsite(domain),
-          interactions: []
-        };
-        
-        existing.visits += item.visitCount || 1;
-        existing.lastVisit = item.lastVisitTime || Date.now();
-        behaviorData.domains.set(domain, existing);
+    // Check if chrome.history API is available
+    if (typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
+      try {
+        const history = await chrome.history.search({ text: '', maxResults: 100 });
+
+        // Analyser l'historique
+        for (const item of history) {
+          if (item.url) {
+            const domain = new URL(item.url).hostname;
+            const existing = behaviorData.domains.get(domain) || {
+              visits: 0,
+              totalTime: 0,
+              lastVisit: 0,
+              category: await this.categorizeWebsite(domain),
+              interactions: []
+            };
+
+            existing.visits += item.visitCount || 1;
+            existing.lastVisit = item.lastVisitTime || Date.now();
+            behaviorData.domains.set(domain, existing);
+          }
+        }
+      } catch (_error) {
+        logger.warn('Chrome history API not available:', _error);
       }
     }
 
@@ -163,7 +171,7 @@ export class RealDataService {
     // Mapping catégories → séquences ADN
     const sequences: Record<string, string> = {
       'social': 'ATCG',
-      'work': 'GCTA', 
+      'work': 'GCTA',
       'entertainment': 'CGAT',
       'education': 'TACG',
       'news': 'AGCT',
@@ -182,12 +190,12 @@ export class RealDataService {
 
     // Construire ADN basé sur distribution des catégories
     const total = Array.from(categories.values()).reduce((a, b) => a + b, 0);
-    
+
     for (const [category, count] of categories) {
       const ratio = count / total;
       const sequence = sequences[category] || sequences['other'];
       const length = Math.floor(ratio * 16); // 64 caractères max
-      
+
       for (let i = 0; i < length; i++) {
         dna += sequence[i % sequence.length];
       }
@@ -248,7 +256,7 @@ export class RealDataService {
       });
 
       if (!response.ok) throw new Error('API Error');
-      
+
       return await response.json();
     } catch (_error) {
       logger.warn('Erreur API invitations, fallback mock:', _error);
@@ -310,12 +318,12 @@ export class RealDataService {
     return new Promise((resolve) => {
       const start = performance.now();
       const iterations = 10000;
-      
+
       // CPU stress test léger
       for (let i = 0; i < iterations; i++) {
         SecureRandom.random() * SecureRandom.random();
       }
-      
+
       const duration = performance.now() - start;
       const cpuRatio = Math.min(duration / 10, 1); // Normalisation
       resolve(cpuRatio);
@@ -337,8 +345,14 @@ export class RealDataService {
   private initializeBehaviorTracking(): void {
     if (!FEATURE_FLAGS.USE_REAL_BEHAVIOR) return;
 
+    // Only initialize if Chrome APIs are available
+    if (!chromeApi.isExtensionEnvironment()) {
+      logger.warn('Chrome extension APIs not available - behavior tracking disabled');
+      return;
+    }
+
     // Écouter les messages du content script
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    chromeApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message.type === 'behavior_data') {
         this.processBehaviorData(message.data);
         sendResponse({ status: 'received' });
@@ -346,16 +360,18 @@ export class RealDataService {
     });
 
     // Tracker les changements d'onglets
-    chrome.tabs.onActivated.addListener((activeInfo) => {
+    chromeApi.tabs.onActivated.addListener((activeInfo) => {
       this.trackTabChange(activeInfo.tabId);
     });
 
-    // Tracker la navigation
-    chrome.webNavigation.onCompleted.addListener((details) => {
-      if (details.frameId === 0) { // Main frame seulement
-        this.trackNavigation(details.url, details.tabId);
-      }
-    });
+    // Tracker la navigation - only if webNavigation API is available
+    if (typeof chrome !== 'undefined' && chrome.webNavigation && chrome.webNavigation.onCompleted) {
+      chrome.webNavigation.onCompleted.addListener((details) => {
+        if (details.frameId === 0) { // Main frame seulement
+          this.trackNavigation(details.url, details.tabId);
+        }
+      });
+    }
   }
 
   private processBehaviorData(data: unknown): void {
@@ -379,8 +395,8 @@ export class RealDataService {
   }
 
   private trackTabChange(tabId: number): void {
-    chrome.tabs.get(tabId, (tab) => {
-      if (tab.url) {
+    chromeApi.tabs.get(tabId, (tab) => {
+      if (tab && tab.url) {
         logger.info('Tab changed to:', new URL(tab.url).hostname);
       }
     });
@@ -435,10 +451,10 @@ export class RealDataService {
     try {
       // 1. Générer ADN réel
       const realDNA = await this.generateRealDNA(userId);
-      
+
       // 2. Récupérer organisme actuel
       const currentOrganism = JSON.parse(localStorage.getItem('symbiont_organism') || '{}');
-      
+
       // 3. Mettre à jour avec vraies données
       const updatedOrganism: OrganismState = {
         ...currentOrganism,
@@ -459,7 +475,7 @@ export class RealDataService {
 
       // 4. Sauvegarder
       localStorage.setItem('symbiont_organism', JSON.stringify(updatedOrganism));
-      
+
       logger.info('✅ Migration réussie:', realDNA);
     } catch (_error) {
       logger.error('❌ Erreur migration:', _error);
@@ -469,4 +485,7 @@ export class RealDataService {
 }
 
 // Export singleton
-export const realDataService = RealDataService.getInstance(); 
+export const realDataService = RealDataService.getInstance();
+
+// Export the main class for static methods
+export const RealDataServiceClass = RealDataService;

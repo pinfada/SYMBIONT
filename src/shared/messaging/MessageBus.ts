@@ -36,6 +36,8 @@ export enum MessageType {
   CONTEXTUAL_INVITATION = 'CONTEXTUAL_INVITATION',
   SECRET_RITUAL_TRIGGERED = 'SECRET_RITUAL_TRIGGERED',
   SECRET_CODE_ENTERED = 'SECRET_CODE_ENTERED',
+  // Ajout pour la récupération de l'organisme depuis le popup
+  GET_ORGANISM = 'GET_ORGANISM',
 }
 
 export interface Message {

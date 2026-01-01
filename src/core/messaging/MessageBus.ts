@@ -169,6 +169,12 @@ export class MessageBus {
   }
 
   private setupListeners(): void {
+    // Guard pour environnements de test sans Chrome APIs
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      logger.warn('[MessageBus] Chrome runtime non disponible - mode test/développement');
+      return;
+    }
+
     // @ts-expect-error Paramètre réservé pour usage futur
     chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
       if (this.shouldProcessMessage(message)) {
@@ -265,12 +271,18 @@ export class MessageBus {
       id: generateUUID(),
     } as Message;
 
+    // Guard pour environnements de test sans Chrome APIs
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      logger.warn('[MessageBus] Chrome runtime non disponible - message non envoyé:', fullMessage.type);
+      return;
+    }
+
     try {
       // Sanitize le message d'abord pour éviter les objets problématiques
       const sanitizedMessage = sanitizeMessage(fullMessage);
       // Nettoyer le message avant envoi pour éviter les erreurs de sérialisation
       const cleanMessage = serializeMessage(sanitizedMessage);
-      
+
       if (this.source === 'content') {
         await chrome.runtime.sendMessage(cleanMessage);
       } else {

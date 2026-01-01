@@ -1,4 +1,6 @@
 import { OrganismState, OrganismMutation } from '../../shared/types/organism';
+import { SecureRandom } from '../../shared/utils/secureRandom';
+import { logger } from '../../shared/utils/secureLogger';
 
 interface BehaviorData {
   url: string;
@@ -13,31 +15,132 @@ interface BehaviorData {
   }>;
 }
 
-// Interface réservée pour usage futur
-interface _StorageSchema {
-  version: number;
-  organisms: OrganismState[];
-  behaviors: BehaviorData[];
-  mutations: OrganismMutation[];
-  settings: unknown;
+/**
+ * Singleton instance management - ensures only one connection per context type
+ */
+class StorageInstanceManager {
+  private static instances: Map<string, SymbiontStorage> = new Map();
+
+  static getInstance(contextType: string): SymbiontStorage | null {
+    return this.instances.get(contextType) || null;
+  }
+
+  static registerInstance(contextType: string, instance: SymbiontStorage): void {
+    const existing = this.instances.get(contextType);
+    if (existing && (existing as any).db) {
+      logger.warn(`[StorageInstanceManager] Closing existing ${contextType} instance before registering new one`);
+      existing.close();
+    }
+    this.instances.set(contextType, instance);
+  }
+
+  static removeInstance(contextType: string): void {
+    this.instances.delete(contextType);
+  }
+
+  static closeAll(): void {
+    logger.info('[StorageInstanceManager] Closing all storage instances');
+    this.instances.forEach((instance, contextType) => {
+      logger.info(`[StorageInstanceManager] Closing ${contextType} instance`);
+      instance.close();
+    });
+    this.instances.clear();
+  }
 }
 
 export class SymbiontStorage {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'symbiont-db';
   private readonly DB_VERSION = 3;
-  private readonly OPERATION_TIMEOUT = 10000; // 10 seconds timeout for operations
+  private readonly OPERATION_TIMEOUT: number;
   private readonly MAX_STORAGE_SIZE_MB = 50; // Maximum storage size in MB
   private quotaWarningIssued = false;
   private broadcastChannel: BroadcastChannel | null = null;
   private contextId: string;
+  private contextType: string;
   private isClosing = false;
+  private readonly isPlaywrightContext: boolean;
+  private initializationPromise: Promise<void> | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor() {
+    // Detect if running in Playwright/automated test environment
+    this.isPlaywrightContext = this.detectPlaywrightContext();
+
+    // Use generous timeouts for ALL environments
+    // IndexedDB can be slow (10-20s) even in production due to:
+    // - Antivirus scanning
+    // - System load
+    // - Browser background operations
+    // - Playwright/test environments
+    this.OPERATION_TIMEOUT = 30000; // 30s baseline for all environments
+
+    // Determine context type
+    this.contextType = this.getContextType();
+
     // Generate a unique ID for this storage instance to track which context is using the DB
-    this.contextId = `${this.getContextType()}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    console.log('[SymbiontStorage] Created instance with contextId:', this.contextId);
+    this.contextId = `${this.contextType}-${Date.now()}-${SecureRandom.random().toString(36).substr(2, 9)}`;
+    logger.info('[SymbiontStorage] Created instance', {
+      contextId: this.contextId,
+      contextType: this.contextType,
+      isPlaywright: this.isPlaywrightContext,
+      timeout: this.OPERATION_TIMEOUT
+    });
+
+    // Register this instance in singleton manager
+    StorageInstanceManager.registerInstance(this.contextType, this);
+
     this.setupBroadcastChannel();
+    this.startHeartbeat();
+  }
+
+  /**
+   * Heartbeat mechanism to detect and cleanup orphaned connections
+   */
+  private startHeartbeat(): void {
+    // Send heartbeat every 5 seconds to announce we're alive
+    this.heartbeatInterval = setInterval(() => {
+      if (this.broadcastChannel && this.db) {
+        this.broadcastChannel.postMessage({
+          type: 'HEARTBEAT',
+          senderId: this.contextId,
+          contextType: this.contextType,
+          timestamp: Date.now()
+        });
+      }
+    }, 5000);
+  }
+
+  /**
+   * Detects if code is running in Playwright automated test environment
+   * Uses User-Agent as the most reliable detection method
+   */
+  private detectPlaywrightContext(): boolean {
+    try {
+      const navContext = typeof navigator !== 'undefined' ? navigator : null;
+
+      // Primary detection: User-Agent contains Playwright markers
+      const userAgent = navContext?.userAgent || '';
+      const isPlaywright = (
+        userAgent.includes('Playwright') ||
+        userAgent.includes('SYMBIONT-TEST') ||
+        userAgent.includes('HeadlessChrome')
+      );
+
+      logger.info('[SymbiontStorage] Playwright detection', {
+        isPlaywright,
+        userAgent: userAgent.substring(0, 120)
+      });
+
+      if (isPlaywright) {
+        logger.info('[SymbiontStorage] Playwright/Test environment detected - using extended timeouts');
+      }
+
+      return isPlaywright;
+    } catch (error) {
+      logger.warn('[SymbiontStorage] Error detecting Playwright context', error);
+      return false;
+    }
   }
 
   /**
@@ -63,37 +166,84 @@ export class SymbiontStorage {
     try {
       this.broadcastChannel = new BroadcastChannel('symbiont-storage-coordination');
 
+      // Track active contexts with heartbeats
+      const activeContexts = new Map<string, { timestamp: number; contextType: string }>();
+
       this.broadcastChannel.onmessage = (event) => {
-        const { type, requestId, senderId } = event.data;
+        const { type, requestId, senderId, contextType: senderContextType } = event.data;
 
         if (senderId === this.contextId) {
           // Ignore messages from ourselves
           return;
         }
 
-        console.log(`[SymbiontStorage:${this.contextId}] Received message:`, type, 'from:', senderId);
+        logger.debug(`[SymbiontStorage:${this.contextId}] Received message`, { type, from: senderId });
 
         switch (type) {
+          case 'HEARTBEAT':
+            // Track heartbeats from other contexts
+            activeContexts.set(senderId, {
+              timestamp: Date.now(),
+              contextType: senderContextType
+            });
+
+            // Cleanup stale contexts (no heartbeat for >15s = considered dead)
+            const now = Date.now();
+            for (const [id, data] of activeContexts.entries()) {
+              if (now - data.timestamp > 15000) {
+                logger.warn(`[SymbiontStorage:${this.contextId}] Context ${id} (${data.contextType}) appears dead (no heartbeat for >15s)`);
+                activeContexts.delete(id);
+              }
+            }
+            break;
+
           case 'REQUEST_CLOSE':
             // Another context is requesting all connections to close
-            console.log(`[SymbiontStorage:${this.contextId}] Received close request from ${senderId}`);
+            logger.info(`[SymbiontStorage:${this.contextId}] Received close request from ${senderId}`);
             if (this.db && !this.isClosing) {
-              console.log(`[SymbiontStorage:${this.contextId}] Closing database connection as requested`);
+              logger.info(`[SymbiontStorage:${this.contextId}] Closing database connection as requested`);
               this.close();
               // Acknowledge that we've closed
               this.broadcastChannel?.postMessage({
                 type: 'CLOSE_ACK',
                 requestId,
-                senderId: this.contextId
+                senderId: this.contextId,
+                contextType: this.contextType
               });
             } else {
-              console.log(`[SymbiontStorage:${this.contextId}] No active connection to close`);
+              logger.debug(`[SymbiontStorage:${this.contextId}] No active connection to close`);
+            }
+            break;
+
+          case 'FORCE_SHUTDOWN':
+            // Force shutdown from global cleanup (tests)
+            logger.warn(`[SymbiontStorage:${this.contextId}] Received FORCE_SHUTDOWN - closing immediately`);
+            if (this.db) {
+              try {
+                this.db.close();
+                this.db = null;
+              } catch (error) {
+                logger.error(`[SymbiontStorage:${this.contextId}] Error during force shutdown`, error);
+              }
+            }
+            // Close broadcast channel and heartbeat
+            if (this.heartbeatInterval) {
+              clearInterval(this.heartbeatInterval);
+              this.heartbeatInterval = null;
+            }
+            if (this.broadcastChannel) {
+              try {
+                this.broadcastChannel.close();
+                this.broadcastChannel = null;
+              } catch (error) {
+                logger.error(`[SymbiontStorage:${this.contextId}] Error closing broadcast channel`, error);
+              }
             }
             break;
 
           case 'CLOSE_ACK':
             // Another context has acknowledged closing their connection
-            console.log(`[SymbiontStorage:${this.contextId}] Context ${senderId} closed their connection`);
+            logger.debug(`[SymbiontStorage:${this.contextId}] Context ${senderId} closed their connection`);
             break;
 
           case 'PING':
@@ -102,6 +252,7 @@ export class SymbiontStorage {
               type: 'PONG',
               requestId,
               senderId: this.contextId,
+              contextType: this.contextType,
               hasConnection: !!this.db
             });
             break;
@@ -109,7 +260,7 @@ export class SymbiontStorage {
       };
 
     } catch (error) {
-      console.warn('[SymbiontStorage] BroadcastChannel not available:', error);
+      logger.warn('[SymbiontStorage] BroadcastChannel not available', error);
       // BroadcastChannel may not be available in all contexts, continue without it
     }
   }
@@ -138,19 +289,27 @@ export class SymbiontStorage {
       };
 
       // Listen for acknowledgments
-      const originalHandler = this.broadcastChannel.onmessage;
-      this.broadcastChannel.onmessage = (event) => {
-        // Call original handler first
-        if (originalHandler) {
-          originalHandler.call(this.broadcastChannel, event);
-        }
+      const originalHandler = this.broadcastChannel?.onmessage;
+      if (this.broadcastChannel) {
+        this.broadcastChannel.onmessage = (event) => {
+          const { type, requestId: ackRequestId, senderId } = event.data;
 
-        const { type, requestId: ackRequestId, senderId } = event.data;
-        if (type === 'CLOSE_ACK' && ackRequestId === requestId) {
-          acknowledgments.add(senderId);
-          console.log(`[SymbiontStorage:${this.contextId}] Received acknowledgment from ${senderId} (${acknowledgments.size} total)`);
-        }
-      };
+          // CRITICAL: Ignore messages from ourselves
+          if (senderId === this.contextId) {
+            return;
+          }
+
+          // Call original handler for other contexts
+          if (originalHandler && this.broadcastChannel) {
+            originalHandler.call(this.broadcastChannel, event);
+          }
+
+          if (type === 'CLOSE_ACK' && ackRequestId === requestId) {
+            acknowledgments.add(senderId);
+            console.log(`[SymbiontStorage:${this.contextId}] Received acknowledgment from ${senderId} (${acknowledgments.size} total)`);
+          }
+        };
+      }
 
       // Wait for up to 2 seconds for acknowledgments
       timeoutId = setTimeout(() => {
@@ -160,7 +319,7 @@ export class SymbiontStorage {
       }, 2000);
 
       // Broadcast the close request
-      this.broadcastChannel.postMessage({
+      this.broadcastChannel?.postMessage({
         type: 'REQUEST_CLOSE',
         requestId,
         senderId: this.contextId
@@ -179,17 +338,18 @@ export class SymbiontStorage {
 
   /**
    * Pings other contexts to see who has the database open
+   * Also detects orphaned connections (contexts that don't respond)
    */
-  private async pingOtherContexts(): Promise<Array<{ contextId: string; hasConnection: boolean }>> {
+  private async pingOtherContexts(): Promise<Array<{ contextId: string; hasConnection: boolean; contextType?: string }>> {
     if (!this.broadcastChannel) {
       return [];
     }
 
     const requestId = Date.now().toString();
-    console.log(`[SymbiontStorage:${this.contextId}] Pinging other contexts...`);
+    logger.debug(`[SymbiontStorage:${this.contextId}] Pinging other contexts...`);
 
-    return new Promise<Array<{ contextId: string; hasConnection: boolean }>>((resolve) => {
-      const responses: Array<{ contextId: string; hasConnection: boolean }> = [];
+    return new Promise<Array<{ contextId: string; hasConnection: boolean; contextType?: string }>>((resolve) => {
+      const responses: Array<{ contextId: string; hasConnection: boolean; contextType?: string }> = [];
       let timeoutId: ReturnType<typeof setTimeout>;
 
       const cleanup = () => {
@@ -199,32 +359,43 @@ export class SymbiontStorage {
         clearTimeout(timeoutId);
       };
 
-      const originalHandler = this.broadcastChannel.onmessage;
-      this.broadcastChannel.onmessage = (event) => {
-        if (originalHandler) {
-          originalHandler.call(this.broadcastChannel, event);
-        }
+      const originalHandler = this.broadcastChannel?.onmessage;
+      if (this.broadcastChannel) {
+        this.broadcastChannel.onmessage = (event) => {
+          const { type, requestId: pongRequestId, senderId, hasConnection, contextType: senderContextType } = event.data;
 
-        const { type, requestId: pongRequestId, senderId, hasConnection } = event.data;
-        if (type === 'PONG' && pongRequestId === requestId) {
-          responses.push({ contextId: senderId, hasConnection });
-          console.log(`[SymbiontStorage:${this.contextId}] Got pong from ${senderId} (hasConnection: ${hasConnection})`);
-        }
-      };
+          // CRITICAL: Ignore messages from ourselves
+          if (senderId === this.contextId) {
+            return;
+          }
+
+          // Call original handler for other contexts
+          if (originalHandler && this.broadcastChannel) {
+            originalHandler.call(this.broadcastChannel, event);
+          }
+
+          if (type === 'PONG' && pongRequestId === requestId) {
+            responses.push({ contextId: senderId, hasConnection, contextType: senderContextType });
+            logger.debug(`[SymbiontStorage:${this.contextId}] Got pong from ${senderId} (${senderContextType}), hasConnection: ${hasConnection}`);
+          }
+        };
+      }
 
       timeoutId = setTimeout(() => {
-        console.log(`[SymbiontStorage:${this.contextId}] Ping timeout, got ${responses.length} responses`);
+        logger.debug(`[SymbiontStorage:${this.contextId}] Ping timeout, got ${responses.length} responses`);
         cleanup();
         resolve(responses);
       }, 1000);
 
-      this.broadcastChannel.postMessage({
+      this.broadcastChannel?.postMessage({
         type: 'PING',
         requestId,
-        senderId: this.contextId
+        senderId: this.contextId,
+        contextType: this.contextType
       });
     });
   }
+
 
   /**
    * Wraps a promise with a timeout to prevent indefinite hanging
@@ -239,25 +410,47 @@ export class SymbiontStorage {
   }
 
   async initialize(): Promise<void> {
+    // Prevent concurrent initialization attempts - return existing promise if already initializing
+    if (this.initializationPromise) {
+      logger.info(`[SymbiontStorage:${this.contextId}] Initialization already in progress, waiting...`);
+      return this.initializationPromise;
+    }
+
+    // Check if already initialized
+    if (this.db) {
+      logger.debug(`[SymbiontStorage:${this.contextId}] Already initialized`);
+      return;
+    }
+
     // Vérifier que IndexedDB est disponible
     if (typeof indexedDB === 'undefined') {
       throw new Error('IndexedDB is not available in this environment');
     }
 
-    console.log(`[SymbiontStorage:${this.contextId}] Starting initialization...`, {
+    this.initializationPromise = this.performInitialization();
+
+    try {
+      await this.initializationPromise;
+    } finally {
+      this.initializationPromise = null;
+    }
+  }
+
+  private async performInitialization(): Promise<void> {
+    logger.info(`[SymbiontStorage:${this.contextId}] Starting initialization`, {
       dbName: this.DB_NAME,
       dbVersion: this.DB_VERSION,
-      contextId: this.contextId
+      contextType: this.contextType
     });
 
     // Fermer toute connexion existante avant de réessayer
     const currentDb = this.db;
     if (currentDb) {
-      console.log(`[SymbiontStorage:${this.contextId}] Closing existing database connection`);
+      logger.info(`[SymbiontStorage:${this.contextId}] Closing existing database connection`);
       try {
         currentDb.close();
       } catch (error) {
-        console.warn(`[SymbiontStorage:${this.contextId}] Error closing existing connection:`, error);
+        logger.warn(`[SymbiontStorage:${this.contextId}] Error closing existing connection`, error);
       }
       this.db = null;
     }
@@ -272,27 +465,27 @@ export class SymbiontStorage {
         )
       ]);
     } catch (quotaError) {
-      console.warn(`[SymbiontStorage:${this.contextId}] Failed to check storage quota (continuing anyway):`, quotaError);
+      logger.warn(`[SymbiontStorage:${this.contextId}] Failed to check storage quota (continuing anyway)`, quotaError);
       // Continue with initialization, but log the warning
     }
 
     // STEP 1: Ping other contexts to see who has connections
     const activeContexts = await this.pingOtherContexts();
     if (activeContexts.length > 0) {
-      console.log(`[SymbiontStorage:${this.contextId}] Found ${activeContexts.length} other active contexts:`, activeContexts);
+      logger.info(`[SymbiontStorage:${this.contextId}] Found ${activeContexts.length} other active contexts`, activeContexts);
       const contextsWithConnection = activeContexts.filter(c => c.hasConnection);
       if (contextsWithConnection.length > 0) {
-        console.log(`[SymbiontStorage:${this.contextId}] ${contextsWithConnection.length} context(s) have active database connections:`,
-          contextsWithConnection.map(c => c.contextId));
+        logger.info(`[SymbiontStorage:${this.contextId}] ${contextsWithConnection.length} context(s) have active database connections`,
+          { contexts: contextsWithConnection.map(c => c.contextId) });
       }
     }
 
     // STEP 2: Request all other contexts to close their connections
-    console.log(`[SymbiontStorage:${this.contextId}] Requesting other contexts to close connections...`);
+    logger.info(`[SymbiontStorage:${this.contextId}] Requesting other contexts to close connections...`);
     await this.requestOtherContextsToClose();
 
     // STEP 3: Wait a bit more to ensure connections are fully closed
-    console.log(`[SymbiontStorage:${this.contextId}] Waiting 500ms for connections to fully close...`);
+    logger.debug(`[SymbiontStorage:${this.contextId}] Waiting 500ms for connections to fully close...`);
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // STEP 4: Tentative d'initialisation avec retry en cas de blocage
@@ -301,13 +494,13 @@ export class SymbiontStorage {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[SymbiontStorage:${this.contextId}] Initialization attempt ${attempt}/${maxRetries}`);
+        logger.info(`[SymbiontStorage:${this.contextId}] Initialization attempt ${attempt}/${maxRetries}`);
         await this.attemptInitialize(attempt === maxRetries);
-        console.log(`[SymbiontStorage:${this.contextId}] Initialization completed successfully`);
+        logger.info(`[SymbiontStorage:${this.contextId}] Initialization completed successfully`);
         return; // Succès, on sort
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.error(`[SymbiontStorage:${this.contextId}] Initialization attempt ${attempt} failed:`, lastError);
+        logger.error(`[SymbiontStorage:${this.contextId}] Initialization attempt ${attempt} failed`, lastError);
 
         // Si c'est un timeout ou un blocage, attendre plus longtemps avant de réessayer
         if (attempt < maxRetries && (
@@ -316,7 +509,7 @@ export class SymbiontStorage {
         )) {
           // Request close again if blocked
           if (lastError.message.includes('blocked')) {
-            console.log(`[SymbiontStorage:${this.contextId}] Database still blocked, requesting close again...`);
+            logger.warn(`[SymbiontStorage:${this.contextId}] Database still blocked, requesting close again...`);
             await this.requestOtherContextsToClose();
           }
 
@@ -324,7 +517,9 @@ export class SymbiontStorage {
           const waitTime = lastError.message.includes('blocked')
             ? 2000 + (attempt * 1000)  // 3s, 4s, 5s pour les blocages
             : 1000 + (attempt * 500); // 1.5s, 2s, 2.5s pour les timeouts
-          console.log(`[SymbiontStorage:${this.contextId}] Waiting ${waitTime}ms before retry (blocked: ${lastError.message.includes('blocked')})...`);
+          logger.info(`[SymbiontStorage:${this.contextId}] Waiting ${waitTime}ms before retry`, {
+            blocked: lastError.message.includes('blocked')
+          });
           await new Promise(resolve => setTimeout(resolve, waitTime));
 
           // Fermer toute connexion existante avant de réessayer
@@ -333,18 +528,18 @@ export class SymbiontStorage {
             try {
               existingDb.close();
             } catch (closeError) {
-              console.warn(`[SymbiontStorage:${this.contextId}] Error closing connection before retry:`, closeError);
+              logger.warn(`[SymbiontStorage:${this.contextId}] Error closing connection before retry`, closeError);
             }
             this.db = null;
           }
 
           // Pour les blocages persistants sur la dernière tentative, forcer la suppression
           if (lastError.message.includes('blocked') && attempt === maxRetries - 1) {
-            console.warn(`[SymbiontStorage:${this.contextId}] Attempting to force close blocked database...`);
+            logger.warn(`[SymbiontStorage:${this.contextId}] Attempting to force close blocked database...`);
             try {
               await this.forceCloseDatabase();
             } catch (forceCloseError) {
-              console.warn(`[SymbiontStorage:${this.contextId}] Could not force close database:`, forceCloseError);
+              logger.warn(`[SymbiontStorage:${this.contextId}] Could not force close database`, forceCloseError);
             }
           }
         } else {
@@ -355,13 +550,13 @@ export class SymbiontStorage {
     }
 
     // Toutes les tentatives ont échoué
-    console.error(`[SymbiontStorage:${this.contextId}] All initialization attempts failed`);
+    logger.error(`[SymbiontStorage:${this.contextId}] All initialization attempts failed`);
     const failedDb = this.db;
     if (failedDb) {
       try {
         failedDb.close();
       } catch (closeError) {
-        console.error(`[SymbiontStorage:${this.contextId}] Error closing database after failed init:`, closeError);
+        logger.error(`[SymbiontStorage:${this.contextId}] Error closing database after failed init`, closeError);
       }
       this.db = null;
     }
@@ -401,10 +596,13 @@ export class SymbiontStorage {
         }
       };
 
-      // Timeout de sécurité - plus court maintenant que nous coordonnons les contextes
-      const timeoutDuration = isLastAttempt ? 15000 : 8000;
+      // Timeout de sécurité - généreux pour tous les environnements
+      // IndexedDB open peut prendre 20-30s en conditions réelles (antivirus, charge système)
+      const baseTimeout = 30000; // 30s standard
+      const timeoutDuration = isLastAttempt ? 60000 : baseTimeout; // 60s pour dernière tentative
       timeoutId = setTimeout(() => {
         console.error(`[SymbiontStorage:${this.contextId}] IndexedDB open request timeout (no response after ${timeoutDuration}ms)`);
+        console.error(`[SymbiontStorage:${this.contextId}] Environment: ${this.isPlaywrightContext ? 'Playwright/Test' : 'Production'}`);
         safeReject(new Error(`IndexedDB open request timeout - no response from browser after ${timeoutDuration}ms`));
       }, timeoutDuration);
 
@@ -520,11 +718,13 @@ export class SymbiontStorage {
         // Augmenter significativement le timeout si onblocked est détecté
         if (timeoutId) {
           clearTimeout(timeoutId);
-          // Timeout plus long pour onblocked mais pas trop car nous avons déjà demandé aux contextes de fermer
-          const extendedTimeout = isLastAttempt ? 20000 : 12000;
+          // Timeout plus long pour onblocked - autre connexion doit se fermer
+          const baseBlockedTimeout = 45000; // 45s pour attente fermeture
+          const extendedTimeout = isLastAttempt ? 90000 : baseBlockedTimeout; // 90s dernière tentative
           timeoutId = setTimeout(() => {
             console.error(`[SymbiontStorage:${this.contextId}] IndexedDB still blocked after ${extendedTimeout}ms wait`);
             console.error(`[SymbiontStorage:${this.contextId}] This usually means another tab/context has the database open and didn't close it`);
+            console.error(`[SymbiontStorage:${this.contextId}] Environment: ${this.isPlaywrightContext ? 'Playwright/Test' : 'Production'}`);
             safeReject(new Error(`IndexedDB blocked - another connection preventing access after ${extendedTimeout}ms`));
           }, extendedTimeout);
         }
@@ -905,16 +1105,23 @@ export class SymbiontStorage {
    * Ferme la connexion à la base de données
    */
   close(): void {
-    console.log(`[SymbiontStorage:${this.contextId}] Closing database connection`);
+    logger.info(`[SymbiontStorage:${this.contextId}] Closing database connection`);
     this.isClosing = true;
+
+    // Stop heartbeat
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+      logger.debug(`[SymbiontStorage:${this.contextId}] Heartbeat stopped`);
+    }
 
     const dbToClose = this.db;
     if (dbToClose) {
       try {
         dbToClose.close();
-        console.log(`[SymbiontStorage:${this.contextId}] Database connection closed successfully`);
+        logger.info(`[SymbiontStorage:${this.contextId}] Database connection closed successfully`);
       } catch (error) {
-        console.error(`[SymbiontStorage:${this.contextId}] Error closing database:`, error);
+        logger.error(`[SymbiontStorage:${this.contextId}] Error closing database`, error);
       }
       this.db = null;
     }
@@ -923,15 +1130,19 @@ export class SymbiontStorage {
     if (this.broadcastChannel) {
       try {
         this.broadcastChannel.close();
-        console.log(`[SymbiontStorage:${this.contextId}] BroadcastChannel closed`);
+        logger.debug(`[SymbiontStorage:${this.contextId}] BroadcastChannel closed`);
       } catch (error) {
-        console.error(`[SymbiontStorage:${this.contextId}] Error closing BroadcastChannel:`, error);
+        logger.error(`[SymbiontStorage:${this.contextId}] Error closing BroadcastChannel`, error);
       }
       this.broadcastChannel = null;
     }
 
+    // Unregister from singleton manager
+    StorageInstanceManager.removeInstance(this.contextType);
+
     this.isClosing = false;
   }
+
 
   /**
    * Tente de forcer la fermeture de la base de données en supprimant et recréant
@@ -999,4 +1210,66 @@ export class SymbiontStorage {
       }, 10000);
     });
   }
+
+  /**
+   * Méthode statique pour nettoyer TOUTES les connexions IndexedDB
+   * Utilisé par les tests Playwright pour cleanup complet
+   */
+  static async forceCloseAllConnections(dbName: string = 'symbiont-db'): Promise<void> {
+    logger.warn('[SymbiontStorage] Force closing ALL IndexedDB connections globally...');
+
+    // Close all registered instances first
+    StorageInstanceManager.closeAll();
+
+    // Broadcast à tous les contextes de fermer immédiatement
+    try {
+      const channel = new BroadcastChannel('symbiont-storage-coordination');
+      channel.postMessage({
+        type: 'FORCE_SHUTDOWN',
+        requestId: Date.now().toString(),
+        senderId: 'global-cleanup'
+      });
+
+      // Attendre un peu pour que tous reçoivent le message
+      await new Promise(resolve => setTimeout(resolve, 500));
+      channel.close();
+    } catch (error) {
+      logger.warn('[SymbiontStorage] BroadcastChannel not available for cleanup', error);
+    }
+
+    // Forcer la suppression de la base de données
+    return new Promise<void>((resolve) => {
+      const deleteRequest = indexedDB.deleteDatabase(dbName);
+
+      let resolved = false;
+      const safeResolve = () => {
+        if (!resolved) {
+          resolved = true;
+          logger.info('[SymbiontStorage] Global cleanup completed');
+          resolve();
+        }
+      };
+
+      deleteRequest.onsuccess = () => {
+        logger.info('[SymbiontStorage] Database deleted during global cleanup');
+        safeResolve();
+      };
+
+      deleteRequest.onerror = () => {
+        logger.warn('[SymbiontStorage] Database deletion failed during cleanup', deleteRequest.error);
+        safeResolve(); // Continue anyway
+      };
+
+      deleteRequest.onblocked = () => {
+        logger.warn('[SymbiontStorage] Database deletion blocked - forcing timeout');
+        setTimeout(() => safeResolve(), 3000);
+      };
+
+      // Safety timeout
+      setTimeout(() => safeResolve(), 5000);
+    });
+  }
 }
+
+// Export StorageInstanceManager for testing and global cleanup
+export { StorageInstanceManager };

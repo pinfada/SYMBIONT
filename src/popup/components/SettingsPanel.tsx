@@ -1,8 +1,8 @@
 // src/popup/components/SettingsPanel.tsx
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
-import { SymbiontStorage } from '../../core/storage/SymbiontStorage';
 import { logger } from '@shared/utils/secureLogger';
+import { chromeApi } from '@/shared/utils/chromeApiSafe';
 
 interface Settings {
   theme: 'light' | 'dark' | 'auto';
@@ -40,18 +40,22 @@ export const SettingsPanel: React.FC = () => {
   }, []);
   
   const loadSettings = async () => {
-    const storage = new SymbiontStorage();
-    await storage.initialize();
-    const savedSettings = await storage.getSetting<Settings>('userPreferences', settings);
-    if (savedSettings) {
-      setSettings(savedSettings);
+    // Use chrome.storage.local instead of direct IndexedDB to avoid connection conflicts
+    try {
+      chromeApi.storage.local.get(['userPreferences'], (result) => {
+        if (result.userPreferences) {
+          setSettings(result.userPreferences);
+        }
+      });
+    } catch (_error) {
+      logger.warn('Failed to load settings:', _error);
     }
   };
   
   const loadFeatureFlags = async () => {
     try {
-      const { RealDataService } = await import('../services/RealDataService');
-      const flags = RealDataService.getFeatureStatus();
+      const { RealDataServiceClass } = await import('../services/RealDataService');
+      const flags = RealDataServiceClass.getFeatureStatus();
       setFeatureFlags(flags);
     } catch (_error) {
       logger.warn('Impossible de charger les feature flags:', _error);
@@ -60,9 +64,14 @@ export const SettingsPanel: React.FC = () => {
   };
   
   const saveSettings = async () => {
-    const storage = new SymbiontStorage();
-    await storage.initialize();
-    await storage.setSetting('userPreferences', settings);
+    // Use chrome.storage.local instead of direct IndexedDB to avoid connection conflicts
+    try {
+      chromeApi.storage.local.set({ userPreferences: settings }, () => {
+        logger.info('Settings saved successfully');
+      });
+    } catch (_error) {
+      logger.error('Failed to save settings:', _error);
+    }
   };
   
   const updateSetting = <K extends keyof Settings>(
@@ -77,13 +86,13 @@ export const SettingsPanel: React.FC = () => {
   
   const toggleFeatureFlag = async (feature: string) => {
     try {
-      const { RealDataService } = await import('../services/RealDataService');
+      const { RealDataServiceClass } = await import('../services/RealDataService');
       const currentValue = featureFlags[feature as keyof typeof featureFlags];
       
       if (currentValue) {
-        RealDataService.disableFeature(feature as keyof typeof featureFlags);
+        RealDataServiceClass.disableFeature(feature as keyof typeof featureFlags);
       } else {
-        RealDataService.enableFeature(feature as keyof typeof featureFlags);
+        RealDataServiceClass.enableFeature(feature as keyof typeof featureFlags);
       }
       
       // Mise à jour locale immédiate

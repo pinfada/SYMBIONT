@@ -2,7 +2,8 @@
 // Point d'entrée Service Worker (Neural Core)
 import { MessageBus } from '../core/messaging/MessageBus';
 import { MessageType } from '../shared/messaging/MessageBus';
-import { SymbiontStorage } from '../core/storage/SymbiontStorage';
+import { IndexedDBCoordinator } from '../core/storage/IndexedDBCoordinator';
+import { StorageDebouncer } from '../core/storage/StorageDebouncer';
 // import { NavigationObserver } from '../content/observers/NavigationObserver'; // Déplacé vers content script
 import { OrganismMutation } from '../shared/types/organism';
 import { InvitationService } from './services/InvitationService';
@@ -65,11 +66,12 @@ let _backgroundServiceInstance: BackgroundService | null = null;
 
 class BackgroundService {
   private messageBus: MessageBus;
-  private storage: SymbiontStorage;
+  private storage: IndexedDBCoordinator | null = null;
+  private debouncer: StorageDebouncer | null = null;
   // NavigationObserver déplacé vers content script
   // private _navigationObserver: NavigationObserver;
   public organism: OrganismState | null = null;
-  private invitationService: InvitationService;
+  private invitationService: InvitationService | null = null;
   private murmureService: MurmureService;
   private activated: boolean = false;
   private events: SequenceEvent[] = [];
@@ -78,30 +80,44 @@ class BackgroundService {
   private security: SecurityManager = new SecurityManager();
   // @ts-expect-error Factory réservée pour usage futur
   private _organismFactory: OrganismFactory;
+  private initialized: boolean = false;
 
   constructor() {
     this.messageBus = new MessageBus('background');
-    this.storage = new SymbiontStorage();
-    // NavigationObserver supprimé du service worker
-    this.invitationService = new InvitationService(this.storage);
     this.murmureService = new MurmureService();
     this._organismFactory = new OrganismFactory();
+    // N'initialise PAS immédiatement - attendre le premier message
+    logger.info('[BackgroundService] Instance créée - en attente d\'initialisation');
+  }
+
+  async ensureInitialized(): Promise<void> {
+    if (this.initialized) return;
+
+    logger.info('[BackgroundService] Démarrage de l\'initialisation lazy');
+
     // Récupère les seuils déjà atteints (persistance locale)
-    getStorage('symbiont_collective_thresholds').then((saved) => {
-      this.reachedThresholds = saved ? JSON.parse(saved as string) : [];
-      this.initialize();
-    });
+    const saved = await getStorage('symbiont_collective_thresholds');
+    this.reachedThresholds = saved ? JSON.parse(saved as string) : [];
+
+    await this.initialize();
+    this.initialized = true;
   }
 
   private async initialize(): Promise<void> {
     let storageInitialized = false;
     try {
-      // Initialize storage with timeout handling and detailed error tracking
-      logger.info('Initializing storage...');
+      // Initialize storage with IndexedDBCoordinator (singleton, thread-safe)
+      logger.info('[BackgroundService] Initializing IndexedDBCoordinator...');
       try {
-        await this.storage.initialize();
+        this.storage = await IndexedDBCoordinator.getInstance();
+        this.debouncer = StorageDebouncer.getInstance();
+        await this.debouncer.setCoordinator(this.storage);
+
+        // Créer le service d'invitation APRÈS que le storage soit initialisé
+        this.invitationService = new InvitationService(this.storage as any);
+
         storageInitialized = true;
-        logger.info('Storage initialized successfully');
+        logger.info('[BackgroundService] Storage and debouncer initialized successfully');
       } catch (storageError) {
         // Log detailed error information for debugging
         const errorDetails = {
@@ -145,12 +161,12 @@ class BackgroundService {
       if (this.activated && storageInitialized) {
         try {
           logger.info('Loading organism from storage...');
-          this.organism = await this.storage.getOrganism();
+          this.organism = await this.storage!.getOrganism();
 
           if (!this.organism) {
             logger.info('No organism found, creating new one...');
             this.organism = this.createNewOrganism();
-            await this.storage.saveOrganism(this.organism);
+            await this.debouncer!.saveOrganism(this.organism);
             logger.info('New organism created and saved');
           } else {
             logger.info('Organism loaded successfully', { id: this.organism.id });
@@ -237,11 +253,77 @@ class BackgroundService {
   }
 
   private isStorageReady(): boolean {
-    // Check if storage has been initialized by checking if db property exists
-    return (this.storage as any).db !== null && (this.storage as any).db !== undefined;
+    // Check if storage coordinator has been initialized
+    return this.storage !== null && this.debouncer !== null;
   }
 
   private setupMessageHandlers(_storageInitialized: boolean = false): void {
+    // Handle GET_ORGANISM request from popup
+    this.messageBus.on(MessageType.GET_ORGANISM, async (_message: MessageEvent | unknown) => {
+      logger.info('[BackgroundService] GET_ORGANISM request received');
+
+      // Si l'organisme existe, l'envoyer immédiatement
+      if (this.organism) {
+        await resilientBus.send({
+          type: MessageType.ORGANISM_UPDATE,
+          payload: {
+            state: this.organism,
+            mutations: this.isStorageReady() ? await this.storage!.getRecentMutations(5) : []
+          }
+        });
+        logger.info('[BackgroundService] Organism sent to popup');
+      } else {
+        // Si pas d'organisme, essayer de le charger ou le créer
+        logger.info('[BackgroundService] No organism available, attempting to create one');
+
+        if (this.isStorageReady()) {
+          try {
+            // Essayer de charger depuis le storage
+            this.organism = await this.storage!.getOrganism();
+
+            if (!this.organism) {
+              // Créer un nouvel organisme
+              this.organism = this.createNewOrganism();
+              await this.debouncer!.saveOrganism(this.organism);
+              logger.info('[BackgroundService] New organism created on GET_ORGANISM request');
+            }
+
+            // Envoyer l'organisme
+            await resilientBus.send({
+              type: MessageType.ORGANISM_UPDATE,
+              payload: {
+                state: this.organism,
+                mutations: []
+              }
+            });
+          } catch (error) {
+            logger.error('[BackgroundService] Failed to handle GET_ORGANISM:', error);
+
+            // Créer un organisme en mémoire comme fallback
+            this.organism = this.createNewOrganism();
+            await resilientBus.send({
+              type: MessageType.ORGANISM_UPDATE,
+              payload: {
+                state: this.organism,
+                mutations: []
+              }
+            });
+          }
+        } else {
+          // Storage pas prêt, créer un organisme temporaire
+          this.organism = this.createNewOrganism();
+          await resilientBus.send({
+            type: MessageType.ORGANISM_UPDATE,
+            payload: {
+              state: this.organism,
+              mutations: []
+            }
+          });
+          logger.warn('[BackgroundService] Sent temporary organism (storage not ready)');
+        }
+      }
+    });
+
     // Handle page visits
     this.messageBus.on(MessageType.PAGE_VISIT, async (message: MessageEvent | unknown) => {
       const { url, title } = (message as any).payload;
@@ -249,7 +331,7 @@ class BackgroundService {
       // Update behavior data only if storage is ready
       if (this.isStorageReady()) {
         try {
-          const behavior = await this.storage.getBehavior(url) || {
+          const behavior = await this.storage!.getBehavior(url) || {
             url,
             visitCount: 0,
             totalTime: 0,
@@ -261,7 +343,7 @@ class BackgroundService {
           behavior.visitCount++;
           behavior.lastVisit = Date.now();
 
-          await this.storage.saveBehavior(behavior);
+          await this.storage!.saveBehavior(behavior);
         } catch (error) {
           logger.error('Failed to save behavior data:', error);
         }
@@ -282,10 +364,10 @@ class BackgroundService {
       // Update scroll depth only if storage is ready
       if (this.isStorageReady()) {
         try {
-          const behavior = await this.storage.getBehavior(url);
+          const behavior = await this.storage!.getBehavior(url);
           if (behavior) {
             behavior.scrollDepth = Math.max(behavior.scrollDepth, scrollDepth);
-            await this.storage.saveBehavior(behavior);
+            await this.storage!.saveBehavior(behavior);
           }
         } catch (error) {
           logger.error('Failed to update scroll depth:', error);
@@ -342,7 +424,7 @@ class BackgroundService {
 
       try {
         const { donorId } = (message as any).payload;
-        const rawInvitation = await this.invitationService.generateInvitation(donorId);
+        const rawInvitation = await this.invitationService!.generateInvitation(donorId);
         // Adaptation à l'interface partagée
         const invitation: import('../shared/types/invitation').Invitation = {
           code: rawInvitation.code,
@@ -393,7 +475,7 @@ class BackgroundService {
           });
           return;
         }
-        const invitation = await this.invitationService.consumeInvitation(code, receiverId);
+        const invitation = await this.invitationService!.consumeInvitation(code, receiverId);
         if (invitation) {
           this.activated = true;
           await setStorage('symbiont_activated', 'true');
@@ -401,7 +483,7 @@ class BackgroundService {
           if (!this.organism) {
             this.organism = this.createNewOrganism();
             if (this.isStorageReady()) {
-              await this.storage.saveOrganism(this.organism);
+              await this.debouncer!.saveOrganism(this.organism);
             }
           }
         }
@@ -431,7 +513,7 @@ class BackgroundService {
 
       try {
         const { code } = (message as any).payload;
-        const valid = await this.invitationService.isValid(code);
+        const valid = await this.invitationService!.isValid(code);
         resilientBus.send({
           type: MessageType.INVITATION_CHECKED,
           payload: { code, valid }
@@ -459,7 +541,7 @@ class BackgroundService {
       try {
         const { userId } = (message as any).payload;
         // Recherche de l'invitation où receiverId === userId
-        const all = await this.invitationService.getAllInvitations();
+        const all = await this.invitationService!.getAllInvitations();
         const inviter = all.find(inv => inv.receiverId === userId);
         resilientBus.send({
           type: MessageType.INVITER_RESULT,
@@ -487,7 +569,7 @@ class BackgroundService {
       try {
         const { userId } = (message as any).payload;
         // Recherche des invitations où donorId === userId
-        const all = await this.invitationService.getAllInvitations();
+        const all = await this.invitationService!.getAllInvitations();
         const invitees = all.filter(inv => inv.donorId === userId);
         resilientBus.send({
           type: MessageType.INVITEES_RESULT,
@@ -515,7 +597,7 @@ class BackgroundService {
       try {
         const { userId } = (message as any).payload;
         // Historique = invitations reçues ou envoyées
-        const all = await this.invitationService.getAllInvitations();
+        const all = await this.invitationService!.getAllInvitations();
         const history = [
           ...all.filter(inv => inv.receiverId === userId).map(inv => ({ ...inv, type: 'reçue' })),
           ...all.filter(inv => inv.donorId === userId).map(inv => ({ ...inv, type: 'envoyée' }))
@@ -709,10 +791,10 @@ class BackgroundService {
     // Check for mutations
     await this.checkForMutations();
 
-    // Save updated organism only if storage is ready
+    // Save updated organism only if storage is ready (using debouncer)
     if (this.isStorageReady()) {
       try {
-        await this.storage.saveOrganism(this.organism);
+        await this.debouncer!.saveOrganism(this.organism);
       } catch (error) {
         logger.error('Failed to save organism:', error);
       }
@@ -732,7 +814,7 @@ class BackgroundService {
       type: MessageType.ORGANISM_UPDATE,
       payload: {
         state: org,
-        mutations: await this.storage.getRecentMutations(5),
+        mutations: await this.storage!.getRecentMutations(5),
       },
     });
     // Générer et envoyer un murmure contextuel
@@ -762,7 +844,7 @@ class BackgroundService {
       // Only save to storage if ready
       if (this.isStorageReady()) {
         try {
-          await this.storage.addMutation(mutation);
+          await this.storage!.addMutation(mutation);
         } catch (error) {
           logger.error('Failed to save mutation:', error);
         }
@@ -841,21 +923,22 @@ class BackgroundService {
   }
 
   private startPeriodicTasks(_storageInitialized: boolean = false): void {
-    // Health decay - organism needs attention
+    // Health decay - organism needs attention (TOUTES LES 5 MINUTES au lieu de 1 minute)
     setInterval(() => {
       if (this.organism && (this.organism.health ?? 0) > 0) {
-        this.organism.health = Math.max(0, (this.organism.health ?? 0) - 0.1);
-        this.organism.energy = Math.max(0, (this.organism.energy ?? 0) - 0.05);
+        // Ajusté pour -0.5/5min = -0.1/min (même taux mais moins fréquent)
+        this.organism.health = Math.max(0, (this.organism.health ?? 0) - 0.5);
+        this.organism.energy = Math.max(0, (this.organism.energy ?? 0) - 0.25);
+      }
+    }, 1000 * 60 * 5); // Every 5 minutes (au lieu de 1 minute)
 
-    }
-    }, 1000 * 60); // Every minute
-
-    // Periodic sync - only if storage is available
+    // Periodic sync - only if storage is available (TOUTES LES 5 MINUTES au lieu de 30s)
     setInterval(async () => {
       if (this.organism && this.isStorageReady()) {
         try {
-          await this.storage.saveOrganism(this.organism);
-          const mutations = await this.storage.getRecentMutations(5);
+          // Utilise le debouncer qui va réduire encore plus les écritures
+          await this.debouncer!.saveOrganism(this.organism);
+          const mutations = await this.storage!.getRecentMutations(5);
           await resilientBus.send({
             type: MessageType.ORGANISM_UPDATE,
             payload: {
@@ -863,11 +946,12 @@ class BackgroundService {
               mutations,
             },
           });
+          logger.debug('[BackgroundService] Periodic sync completed');
         } catch (error) {
           logger.error('Failed to perform periodic sync:', error);
         }
       }
-    }, 1000 * 30); // Every 30 seconds
+    }, 1000 * 60 * 5); // Every 5 minutes (RÉDUCTION: de 30s → 5min = 10x moins d'écritures)
   }
 
   // Détection naïve de patterns (à améliorer)
@@ -875,7 +959,7 @@ class BackgroundService {
     if (!this.isStorageReady()) return false;
     try {
       // Si l'utilisateur visite la même URL plus de 3 fois en 10 minutes
-      const behavior = await this.storage.getBehavior(url);
+      const behavior = await this.storage!.getBehavior(url);
       return !!behavior && behavior.visitCount >= 3;
     } catch (error) {
       logger.error('Failed to check loop pattern:', error);
@@ -891,7 +975,7 @@ class BackgroundService {
     if (!this.isStorageReady()) return false;
     try {
       // Si le domaine est nouveau ou rarement visité
-      const behavior = await this.storage.getBehavior(url);
+      const behavior = await this.storage!.getBehavior(url);
       return !!behavior && behavior.visitCount <= 1;
     } catch (error) {
       logger.error('Failed to check exploration pattern:', error);
@@ -902,7 +986,7 @@ class BackgroundService {
     if (!this.isStorageReady()) return false;
     try {
       // Si le site est visité tous les jours (exemple naïf)
-      const behavior = await this.storage.getBehavior(url);
+      const behavior = await this.storage!.getBehavior(url);
       if (!behavior) return false;
       const now = Date.now();
       return (now - behavior.lastVisit) < 1000 * 60 * 60 * 24 * 2; // Visité il y a moins de 2 jours
@@ -959,7 +1043,7 @@ class BackgroundService {
     }
 
     try {
-      const allInvitations = await this.invitationService.getAllInvitations();
+      const allInvitations = await this.invitationService!.getAllInvitations();
       const total = allInvitations.length;
       for (const threshold of this.collectiveThresholds) {
         if (total >= threshold && !this.reachedThresholds.includes(threshold)) {
@@ -987,7 +1071,7 @@ class BackgroundService {
 
     try {
       const userId = (await getStorage('symbiont_user_id') as string) || 'unknown';
-      const invitation = await this.invitationService.generateInvitation(userId);
+      const invitation = await this.invitationService!.generateInvitation(userId);
       await resilientBus.send({
         type: MessageType.CONTEXTUAL_INVITATION,
         payload: { invitation, context }
@@ -1015,20 +1099,92 @@ class BackgroundService {
   }
 }
 
-// Démarrage effectif du service worker
-_backgroundServiceInstance = new BackgroundService();
+// LAZY INITIALIZATION: Ne pas créer l'instance immédiatement
+// L'instance sera créée au premier message reçu
+async function getBackgroundService(): Promise<BackgroundService> {
+  if (!_backgroundServiceInstance) {
+    logger.info('[Background] Lazy initialization triggered - creating BackgroundService');
+    _backgroundServiceInstance = new BackgroundService();
+    await _backgroundServiceInstance.ensureInitialized();
+    // Garde la référence pour éviter le garbage collection
+    (globalThis as any)._backgroundService = _backgroundServiceInstance;
+  }
+  return _backgroundServiceInstance;
+}
 
-// Garde la référence pour éviter le garbage collection
-(globalThis as any)._backgroundService = _backgroundServiceInstance;
+// Setup listener pour déclencher l'initialisation au premier message
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+  chrome.runtime.onMessage.addListener((_message, _sender, _sendResponse) => {
+    // Initialiser le service au premier message
+    getBackgroundService().then(_service => {
+      logger.debug('[Background] Service initialized via lazy loading');
+      // Le message sera traité par les handlers du MessageBus du service
+    }).catch(error => {
+      logger.error('[Background] Failed to initialize service on message:', error);
+    });
+    return false; // Synchronous response
+  });
 
-// Export for testing
-export { BackgroundService };
+  // INITIALISATION PROACTIVE : Initialiser immédiatement le service au démarrage
+  // Ceci évite le délai lors du premier accès au dashboard
+  setTimeout(() => {
+    logger.info('[Background] Proactive initialization starting...');
+    getBackgroundService().then(service => {
+      logger.info('[Background] Service initialized proactively', {
+        hasOrganism: !!service.organism,
+        organismId: service.organism?.id
+      });
+    }).catch(error => {
+      logger.error('[Background] Failed to initialize service proactively:', error);
+    });
+  }, 500); // Petit délai pour laisser l'extension se charger
 
-// --- Instanciation des modules sociaux (Phase 3) ---
-export const distributedNetwork = new DistributedOrganismNetwork();
-export const collectiveIntelligence = new CollectiveIntelligence();
-export const socialResilience = new SocialResilience();
-export const mysticalEvents = new MysticalEvents();
+  logger.info('[Background] Lazy initialization listener registered + proactive init scheduled');
+} else {
+  logger.warn('[Background] Chrome runtime not available - service will not auto-initialize');
+}
+
+// Export for testing and external access
+export { BackgroundService, getBackgroundService };
+
+// --- LAZY LOADING pour modules sociaux (Phase 3) ---
+// Ne les instancier QUE si nécessaire (quand le service est activé)
+let _distributedNetwork: DistributedOrganismNetwork | null = null;
+let _collectiveIntelligence: CollectiveIntelligence | null = null;
+let _socialResilience: SocialResilience | null = null;
+let _mysticalEvents: MysticalEvents | null = null;
+
+export function getDistributedNetwork(): DistributedOrganismNetwork {
+  if (!_distributedNetwork) {
+    logger.info('[Background] Lazy loading DistributedOrganismNetwork');
+    _distributedNetwork = new DistributedOrganismNetwork();
+  }
+  return _distributedNetwork;
+}
+
+export function getCollectiveIntelligence(): CollectiveIntelligence {
+  if (!_collectiveIntelligence) {
+    logger.info('[Background] Lazy loading CollectiveIntelligence');
+    _collectiveIntelligence = new CollectiveIntelligence();
+  }
+  return _collectiveIntelligence;
+}
+
+export function getSocialResilience(): SocialResilience {
+  if (!_socialResilience) {
+    logger.info('[Background] Lazy loading SocialResilience');
+    _socialResilience = new SocialResilience();
+  }
+  return _socialResilience;
+}
+
+export function getMysticalEvents(): MysticalEvents {
+  if (!_mysticalEvents) {
+    logger.info('[Background] Lazy loading MysticalEvents');
+    _mysticalEvents = new MysticalEvents();
+  }
+  return _mysticalEvents;
+}
 
 // --- Hooks d'intégration (après instanciation des modules) ---
 // Note: Fonctions réservées pour usage futur, hooks d'intégration sociale
