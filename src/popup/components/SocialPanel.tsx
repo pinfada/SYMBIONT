@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SecureRandom } from '@shared/utils/secureRandom';
 import { logger } from '@shared/utils/secureLogger';
 import { p2pService } from '../services/P2PService';
+import { cryptoService } from '../services/CryptoService';
 
 interface InviteData {
   code: string;
@@ -20,12 +21,14 @@ interface InviteData {
 interface ContactData {
   id: string;
   name: string;
+  displayName?: string; // Nom anonyme généré
   status: 'online' | 'offline' | 'away';
   generation: number;
   lastActive: number;
   consciousness: number;
   energy: number;
   isP2P: boolean;
+  hasEncryption?: boolean; // Indique si on a échangé les clés
 }
 
 const SocialPanel: React.FC = () => {
@@ -43,16 +46,25 @@ const SocialPanel: React.FC = () => {
   useEffect(() => {
     const updateContacts = () => {
       const peers = p2pService.getPeers();
-      const p2pContacts: ContactData[] = peers.map(peer => ({
-        id: peer.id,
-        name: peer.organism?.name || `Organisme ${peer.id.substring(0, 8)}`,
-        status: peer.status === 'connected' ? 'online' : 'offline',
-        generation: peer.organism?.generation || 1,
-        lastActive: peer.lastSeen,
-        consciousness: peer.organism?.consciousness || 0.5,
-        energy: peer.organism?.energy || 0.8,
-        isP2P: true
-      }));
+      const p2pContacts: ContactData[] = peers.map(peer => {
+        // Utiliser les informations du pair incluant le nom anonyme et le statut de chiffrement
+        const peerInfo = p2pService.getPeerInfo(peer.id);
+        const displayName = peerInfo?.displayName || cryptoService.generateAnonymousName(peer.id);
+        const hasEncryption = peerInfo?.hasEncryption === true;
+
+        return {
+          id: peer.id,
+          name: peer.organism?.name || `Organisme ${peer.id.substring(0, 8)}`,
+          displayName: displayName,
+          status: peer.status === 'connected' ? 'online' : 'offline',
+          generation: peer.organism?.generation || 1,
+          lastActive: peer.lastSeen,
+          consciousness: peer.organism?.consciousness || 0.5,
+          energy: peer.organism?.energy || 0.8,
+          isP2P: true,
+          hasEncryption: hasEncryption
+        };
+      });
 
       // Charger aussi les contacts sauvegardés localement
       const savedContacts = JSON.parse(localStorage.getItem('symbiont_contacts') || '[]');
@@ -61,7 +73,11 @@ const SocialPanel: React.FC = () => {
       )];
 
       setContacts(allContacts);
-      setConnectionStatus(`${p2pContacts.filter(c => c.status === 'online').length} pairs connectés`);
+      const onlinePeers = p2pContacts.filter(c => c.status === 'online');
+      const encryptedPeers = onlinePeers.filter(c => c.hasEncryption);
+      const statusText = `${onlinePeers.length} pairs connectés`;
+      const encryptedText = encryptedPeers.length > 0 ? ` (${encryptedPeers.length} 🔐)` : '';
+      setConnectionStatus(statusText + encryptedText);
     };
 
     // Mise à jour initiale
@@ -196,21 +212,60 @@ const SocialPanel: React.FC = () => {
   };
 
   // Communication P2P avec un contact
-  const sendMessageToContact = (contactId: string, message: string) => {
-    p2pService.sendMessage(contactId, 'chat', { text: message });
+  const sendMessageToContact = async (contactId: string, message: string) => {
+    await p2pService.sendMessage(contactId, 'chat', { text: message });
     logger.info(`Message envoyé à ${contactId}: ${message}`);
+
+    // Afficher une notification
+    const contact = contacts.find(c => c.id === contactId);
+    const isEncrypted = p2pService.isPeerEncrypted(contactId);
+    const encryptedIcon = isEncrypted ? ' 🔐' : '';
+    alert(`💬${encryptedIcon} Message envoyé à ${contact?.displayName || contact?.name || 'l\'organisme'}: "${message}"`);
   };
 
   // Partage d'énergie P2P
-  const shareEnergyWithContact = (contactId: string) => {
-    p2pService.shareEnergy(contactId, 0.1);
+  const shareEnergyWithContact = async (contactId: string) => {
+    const myOrganism = p2pService.getMyOrganism();
+    if (myOrganism.energy < 0.1) {
+      alert('⚠️ Énergie insuffisante pour partager (minimum 10% requis)');
+      return;
+    }
+
+    await p2pService.shareEnergy(contactId, 0.1);
     logger.info(`Énergie partagée avec ${contactId}`);
+
+    // Afficher une notification et mettre à jour l'affichage
+    const contact = contacts.find(c => c.id === contactId);
+    const isEncrypted = p2pService.isPeerEncrypted(contactId);
+    const encryptedIcon = isEncrypted ? ' 🔐' : '';
+    alert(`⚡${encryptedIcon} Vous avez partagé 10% d'énergie avec ${contact?.displayName || contact?.name || 'l\'organisme'}!\nVotre énergie: ${Math.round((myOrganism.energy - 0.1) * 100)}%`);
+
+    // Forcer le refresh des données
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   // Synchronisation de conscience P2P
-  const syncWithContact = (contactId: string) => {
-    p2pService.syncConsciousness(contactId);
+  const syncWithContact = async (contactId: string) => {
+    const myOrganism = p2pService.getMyOrganism();
+    const contact = contacts.find(c => c.id === contactId);
+
+    await p2pService.syncConsciousness(contactId);
     logger.info(`Synchronisation avec ${contactId}`);
+
+    // Calculer la nouvelle conscience moyenne
+    const avgConsciousness = contact ? (myOrganism.consciousness + contact.consciousness) / 2 : myOrganism.consciousness;
+
+    // Afficher une notification
+    const isEncrypted = p2pService.isPeerEncrypted(contactId);
+    const encryptedIcon = isEncrypted ? ' 🔐' : '';
+    alert(`🧠${encryptedIcon} Conscience synchronisée avec ${contact?.displayName || contact?.name || 'l\'organisme'}!\nNouvelle conscience: ${Math.round(avgConsciousness * 100)}%`);
+
+    // Forcer le refresh des données
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   // Copier dans le presse-papier (compatible tous navigateurs)
@@ -462,7 +517,10 @@ const SocialPanel: React.FC = () => {
                   {contact.isP2P ? '🌐' : '🧬'}
                 </div>
                 <div className="contact-info">
-                  <h4>{contact.name}</h4>
+                  <h4>
+                    {contact.displayName || contact.name}
+                    {contact.hasEncryption && <span title="Messages chiffrés de bout en bout"> 🔐</span>}
+                  </h4>
                   <span className="contact-generation">Gén. {contact.generation}</span>
                   <span className="contact-stats">
                     🧠 {Math.round(contact.consciousness * 100)}% |
@@ -481,7 +539,10 @@ const SocialPanel: React.FC = () => {
                         className="btn-small"
                         onClick={(e) => {
                           e.stopPropagation();
-                          sendMessageToContact(contact.id, 'Salut !');
+                          const message = prompt(`Message pour ${contact.name}:`, 'Salut ! Comment vas-tu ?');
+                          if (message) {
+                            sendMessageToContact(contact.id, message);
+                          }
                         }}
                         title="Envoyer message"
                       >

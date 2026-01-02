@@ -3,6 +3,7 @@ import { generateSecureUUID } from '@shared/utils/uuid';
 import { logger } from '@shared/utils/secureLogger';
 import { SecureRandom } from '@shared/utils/secureRandom';
 import { P2P_CONFIG } from '@/config/p2p.config';
+import { cryptoService } from './CryptoService';
 
 export interface P2PPeer {
   id: string;
@@ -22,14 +23,18 @@ export interface P2PPeer {
   dataChannel: RTCDataChannel | null;
   status: 'connecting' | 'connected' | 'disconnected';
   lastSeen: number;
+  publicKey?: string; // Clé publique pour le chiffrement E2E
+  displayName?: string; // Nom anonyme généré
+  hasEncryption?: boolean; // Indique si le chiffrement est actif
 }
 
 export interface P2PMessage {
-  type: 'organism_update' | 'energy_share' | 'consciousness_sync' | 'mutation_exchange' | 'chat' | 'discovery';
+  type: 'organism_update' | 'energy_share' | 'consciousness_sync' | 'mutation_exchange' | 'chat' | 'discovery' | 'key_exchange';
   from: string;
   to?: string;
   data: any;
   timestamp: number;
+  encrypted?: boolean; // Indique si le message est chiffré
 }
 
 // Configuration ICE depuis le fichier de config
@@ -391,9 +396,27 @@ class P2PService {
   }
 
   private async connectToPeer(peerId: string, organismData: any): Promise<void> {
-    if (this.peers.has(peerId)) return;
+    // Vérifier si une connexion existe déjà ou est en cours
+    const existingPeer = this.peers.get(peerId);
+    if (existingPeer) {
+      // Si déjà connecté ou en cours de connexion, ne pas reconnecter
+      if (existingPeer.status === 'connected' || existingPeer.status === 'connecting') {
+        logger.info(`P2P: Déjà connecté ou en cours avec ${peerId}`);
+        return;
+      }
+      // Si déconnecté, nettoyer avant de reconnecter
+      existingPeer.connection.close();
+      this.peers.delete(peerId);
+    }
 
-    logger.info(`P2P: Connexion au pair ${peerId}`);
+    // Pour éviter les connexions simultanées, on décide qui initie selon l'ID
+    // Le pair avec l'ID le plus petit initie la connexion
+    if (peerId < this.myId) {
+      logger.info(`P2P: En attente de connexion de ${peerId} (son ID est plus petit)`);
+      return;
+    }
+
+    logger.info(`P2P: Initiation de connexion au pair ${peerId}`);
 
     const connection = new RTCPeerConnection({
       iceServers: ICE_SERVERS
@@ -413,11 +436,19 @@ class P2PService {
     // Gérer les candidats ICE
     connection.onicecandidate = (event) => {
       if (event.candidate) {
+        // Convertir RTCIceCandidate en objet simple pour éviter l'erreur de clonage
+        const candidateInit = {
+          candidate: event.candidate.candidate,
+          sdpMid: event.candidate.sdpMid,
+          sdpMLineIndex: event.candidate.sdpMLineIndex,
+          usernameFragment: event.candidate.usernameFragment
+        };
+
         this.sendSignalingMessage({
           type: 'ice-candidate',
           peerId: this.myId,
           targetPeerId: peerId,
-          candidate: event.candidate
+          candidate: candidateInit
         });
       }
     };
@@ -428,14 +459,31 @@ class P2PService {
       maxPacketLifeTime: 3000
     });
 
-    dataChannel.onopen = () => {
+    dataChannel.onopen = async () => {
       logger.info(`P2P: Canal ouvert avec ${peerId}`);
       peer.dataChannel = dataChannel;
       peer.status = 'connected';
       peer.lastSeen = Date.now();
 
+      // Générer un nom anonyme pour ce pair
+      peer.displayName = cryptoService.generateAnonymousName(peerId);
+
+      // Échanger les clés publiques pour le chiffrement E2E
+      try {
+        const myPublicKey = await cryptoService.getPublicKeyString();
+        await this.sendToPeer(peerId, {
+          type: 'key_exchange',
+          from: this.myId,
+          data: { publicKey: myPublicKey },
+          timestamp: Date.now()
+        });
+        logger.info(`P2P: Clé publique envoyée à ${peerId}`);
+      } catch (error) {
+        logger.error('P2P: Erreur envoi clé publique:', error);
+      }
+
       // Envoyer notre organisme
-      this.sendToPeer(peerId, {
+      await this.sendToPeer(peerId, {
         type: 'organism_update',
         from: this.myId,
         data: this.myOrganism,
@@ -443,9 +491,9 @@ class P2PService {
       });
     };
 
-    dataChannel.onmessage = (event) => {
+    dataChannel.onmessage = async (event) => {
       const message = JSON.parse(event.data);
-      this.handlePeerMessage(peerId, message);
+      await this.handlePeerMessage(peerId, message);
     };
 
     dataChannel.onclose = () => {
@@ -468,6 +516,19 @@ class P2PService {
   private async handleOffer(peerId: string, offer: RTCSessionDescriptionInit): Promise<void> {
     logger.info(`P2P: Offre reçue de ${peerId}`);
 
+    // Vérifier si on a déjà une connexion avec ce pair
+    const existingPeer = this.peers.get(peerId);
+    if (existingPeer && (existingPeer.status === 'connected' || existingPeer.status === 'connecting')) {
+      logger.info(`P2P: Ignoré offre de ${peerId}, déjà connecté ou en cours`);
+      return;
+    }
+
+    // Nettoyer toute connexion existante
+    if (existingPeer) {
+      existingPeer.connection.close();
+      this.peers.delete(peerId);
+    }
+
     const connection = new RTCPeerConnection({
       iceServers: ICE_SERVERS
     });
@@ -485,11 +546,19 @@ class P2PService {
 
     connection.onicecandidate = (event) => {
       if (event.candidate) {
+        // Convertir RTCIceCandidate en objet simple pour éviter l'erreur de clonage
+        const candidateInit = {
+          candidate: event.candidate.candidate,
+          sdpMid: event.candidate.sdpMid,
+          sdpMLineIndex: event.candidate.sdpMLineIndex,
+          usernameFragment: event.candidate.usernameFragment
+        };
+
         this.sendSignalingMessage({
           type: 'ice-candidate',
           peerId: this.myId,
           targetPeerId: peerId,
-          candidate: event.candidate
+          candidate: candidateInit
         });
       }
     };
@@ -498,13 +567,30 @@ class P2PService {
       const dataChannel = event.channel;
       peer.dataChannel = dataChannel;
 
-      dataChannel.onopen = () => {
+      dataChannel.onopen = async () => {
         logger.info(`P2P: Canal accepté de ${peerId}`);
         peer.status = 'connected';
         peer.lastSeen = Date.now();
 
+        // Générer un nom anonyme pour ce pair
+        peer.displayName = cryptoService.generateAnonymousName(peerId);
+
+        // Échanger les clés publiques pour le chiffrement E2E
+        try {
+          const myPublicKey = await cryptoService.getPublicKeyString();
+          await this.sendToPeer(peerId, {
+            type: 'key_exchange',
+            from: this.myId,
+            data: { publicKey: myPublicKey },
+            timestamp: Date.now()
+          });
+          logger.info(`P2P: Clé publique envoyée à ${peerId}`);
+        } catch (error) {
+          logger.error('P2P: Erreur envoi clé publique:', error);
+        }
+
         // Envoyer notre organisme
-        this.sendToPeer(peerId, {
+        await this.sendToPeer(peerId, {
           type: 'organism_update',
           from: this.myId,
           data: this.myOrganism,
@@ -512,9 +598,9 @@ class P2PService {
         });
       };
 
-      dataChannel.onmessage = (event) => {
+      dataChannel.onmessage = async (event) => {
         const message = JSON.parse(event.data);
-        this.handlePeerMessage(peerId, message);
+        await this.handlePeerMessage(peerId, message);
       };
     };
 
@@ -532,9 +618,26 @@ class P2PService {
 
   private async handleAnswer(peerId: string, answer: RTCSessionDescriptionInit): Promise<void> {
     const peer = this.peers.get(peerId);
-    if (peer) {
+    if (!peer) {
+      logger.warn(`P2P: Réponse ignorée de ${peerId}, pair inconnu`);
+      return;
+    }
+
+    // Vérifier l'état de signaling de la connexion
+    const signalingState = peer.connection.signalingState;
+    if (signalingState !== 'have-local-offer') {
+      logger.warn(`P2P: Réponse ignorée de ${peerId}, état incorrect: ${signalingState}`);
+      return;
+    }
+
+    try {
       await peer.connection.setRemoteDescription(answer);
       logger.info(`P2P: Réponse traitée de ${peerId}`);
+    } catch (error) {
+      logger.error(`P2P: Erreur lors du traitement de la réponse de ${peerId}:`, error);
+      // Nettoyer la connexion en cas d'erreur
+      peer.connection.close();
+      this.peers.delete(peerId);
     }
   }
 
@@ -545,12 +648,35 @@ class P2PService {
     }
   }
 
-  private handlePeerMessage(peerId: string, message: P2PMessage): void {
+  private async handlePeerMessage(peerId: string, message: P2PMessage): Promise<void> {
     const peer = this.peers.get(peerId);
     if (peer) {
       peer.lastSeen = Date.now();
 
+      // Si le message est chiffré, le déchiffrer d'abord
+      if (message.encrypted && message.data && typeof message.data === 'string') {
+        try {
+          const decryptedData = await cryptoService.decryptMessage(message.data);
+          message.data = JSON.parse(decryptedData);
+          logger.info(`P2P: Message déchiffré de ${peerId}`);
+        } catch (error) {
+          logger.error('P2P: Erreur déchiffrement message:', error);
+          return;
+        }
+      }
+
       switch (message.type) {
+        case 'key_exchange':
+          // Stocker la clé publique du pair
+          const publicKey = message.data.publicKey;
+          if (publicKey) {
+            await cryptoService.importPeerPublicKey(peerId, publicKey);
+            peer.publicKey = publicKey;
+            peer.hasEncryption = true;
+            logger.info(`P2P: Clé publique reçue de ${peerId}, chiffrement E2E activé 🔐`);
+          }
+          break;
+
         case 'organism_update':
           peer.organism = message.data;
           break;
@@ -636,10 +762,34 @@ class P2PService {
     localStorage.setItem('symbiont_signals', JSON.stringify(signals.slice(-100)));
   }
 
-  private sendToPeer(peerId: string, message: P2PMessage): void {
+  private async sendToPeer(peerId: string, message: P2PMessage): Promise<void> {
     const peer = this.peers.get(peerId);
     if (peer && peer.dataChannel && peer.dataChannel.readyState === 'open') {
-      peer.dataChannel.send(JSON.stringify(message));
+      // Si le pair a une clé publique et le message n'est pas un échange de clé, chiffrer
+      if (peer.hasEncryption && message.type !== 'key_exchange' && cryptoService.hasPeerKey(peerId)) {
+        try {
+          // Chiffrer les données sensibles
+          const dataString = JSON.stringify(message.data);
+          const encryptedData = await cryptoService.encryptForPeer(peerId, dataString);
+
+          // Envoyer le message avec données chiffrées
+          const encryptedMessage = {
+            ...message,
+            data: encryptedData,
+            encrypted: true
+          };
+
+          peer.dataChannel.send(JSON.stringify(encryptedMessage));
+          logger.info(`P2P: Message chiffré envoyé à ${peerId} 🔐`);
+        } catch (error) {
+          logger.error('P2P: Erreur chiffrement message:', error);
+          // Fallback: envoyer en clair si erreur
+          peer.dataChannel.send(JSON.stringify(message));
+        }
+      } else {
+        // Envoyer en clair (pas de clé ou échange de clé)
+        peer.dataChannel.send(JSON.stringify(message));
+      }
     }
   }
 
@@ -654,6 +804,10 @@ class P2PService {
     this.peers.forEach((peer, peerId) => {
       if (now - peer.lastSeen > timeout) {
         logger.info(`P2P: Déconnexion du pair inactif ${peerId}`);
+
+        // Nettoyer la clé de chiffrement
+        cryptoService.removePeerKey(peerId);
+
         peer.connection.close();
         if (peer.dataChannel) {
           peer.dataChannel.close();
@@ -673,8 +827,8 @@ class P2PService {
     return this.getPeers().length;
   }
 
-  sendMessage(peerId: string, type: P2PMessage['type'], data: any): void {
-    this.sendToPeer(peerId, {
+  async sendMessage(peerId: string, type: P2PMessage['type'], data: any): Promise<void> {
+    await this.sendToPeer(peerId, {
       type,
       from: this.myId,
       to: peerId,
@@ -683,7 +837,7 @@ class P2PService {
     });
   }
 
-  broadcast(type: P2PMessage['type'], data: any): void {
+  async broadcast(type: P2PMessage['type'], data: any): Promise<void> {
     const message: P2PMessage = {
       type,
       from: this.myId,
@@ -691,11 +845,14 @@ class P2PService {
       timestamp: Date.now()
     };
 
+    const promises: Promise<void>[] = [];
     this.peers.forEach((peer, peerId) => {
       if (peer.status === 'connected') {
-        this.sendToPeer(peerId, message);
+        promises.push(this.sendToPeer(peerId, message));
       }
     });
+
+    await Promise.all(promises);
   }
 
   onMessage(handler: (msg: P2PMessage) => void): void {
@@ -703,21 +860,21 @@ class P2PService {
     this.messageHandlers.set(id, handler);
   }
 
-  shareEnergy(peerId: string, amount: number = 0.1): void {
-    this.sendMessage(peerId, 'energy_share', { amount });
+  async shareEnergy(peerId: string, amount: number = 0.1): Promise<void> {
+    await this.sendMessage(peerId, 'energy_share', { amount });
     // Réduire notre propre énergie
     this.myOrganism.energy = Math.max(0, this.myOrganism.energy - amount);
     this.saveOrganism();
   }
 
-  syncConsciousness(peerId: string): void {
-    this.sendMessage(peerId, 'consciousness_sync', {
+  async syncConsciousness(peerId: string): Promise<void> {
+    await this.sendMessage(peerId, 'consciousness_sync', {
       consciousness: this.myOrganism.consciousness
     });
   }
 
-  exchangeMutation(peerId: string): void {
-    this.sendMessage(peerId, 'mutation_exchange', {
+  async exchangeMutation(peerId: string): Promise<void> {
+    await this.sendMessage(peerId, 'mutation_exchange', {
       mutation: {
         type: 'trait_boost',
         trait: Object.keys(this.myOrganism.traits)[0]
@@ -725,11 +882,11 @@ class P2PService {
     });
   }
 
-  sendChat(text: string, peerId?: string): void {
+  async sendChat(text: string, peerId?: string): Promise<void> {
     if (peerId) {
-      this.sendMessage(peerId, 'chat', { text });
+      await this.sendMessage(peerId, 'chat', { text });
     } else {
-      this.broadcast('chat', { text });
+      await this.broadcast('chat', { text });
     }
   }
 
@@ -737,17 +894,33 @@ class P2PService {
     return this.myOrganism;
   }
 
+  // Obtenir les informations détaillées d'un pair
+  getPeerInfo(peerId: string): P2PPeer | undefined {
+    return this.peers.get(peerId);
+  }
+
+  // Vérifier si les messages avec un pair sont chiffrés
+  isPeerEncrypted(peerId: string): boolean {
+    const peer = this.peers.get(peerId);
+    return peer?.hasEncryption === true && cryptoService.hasPeerKey(peerId);
+  }
+
   cleanup(): void {
     if (this.discoveryInterval) {
       clearInterval(this.discoveryInterval);
     }
 
-    this.peers.forEach(peer => {
+    this.peers.forEach((peer, peerId) => {
+      // Nettoyer les clés de chiffrement
+      cryptoService.removePeerKey(peerId);
+
       peer.connection.close();
       if (peer.dataChannel) {
         peer.dataChannel.close();
       }
     });
+
+    this.peers.clear();
 
     if (this.broadcastChannel) {
       this.broadcastChannel.close();
