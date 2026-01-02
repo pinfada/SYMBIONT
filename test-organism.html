@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SYMBIONT Organism</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .status {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f44336;
+        }
+        .warning {
+            background: #ff9800;
+        }
+        .console-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧬 Test Page SYMBIONT Organism</h1>
+
+        <div class="info-box">
+            <h2>📋 Instructions :</h2>
+            <ol>
+                <li>Ouvrez cette page dans Chrome/Brave avec SYMBIONT installé</li>
+                <li>Ouvrez la console (F12) pour voir les logs</li>
+                <li>L'organisme devrait apparaître en bas à droite</li>
+                <li>Bougez votre souris près de lui pour voir sa réaction</li>
+            </ol>
+        </div>
+
+        <div class="info-box">
+            <h2>🔍 Vérification :</h2>
+            <div id="status"></div>
+            <button onclick="checkExtension()">Vérifier l'extension</button>
+            <button onclick="toggleOrganism()">Toggle Organism</button>
+            <button onclick="feedOrganism()">Nourrir l'organisme</button>
+        </div>
+
+        <div class="info-box">
+            <h2>📊 Console Output :</h2>
+            <div id="console" class="console-output">
+                En attente des logs...
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h2>🔬 Contenu Science (pour tester la réaction)</h2>
+            <p>
+                Quantum physics research experiment discovery theory biology chemistry
+                Les mots scientifiques devraient rendre l'organisme excité et vert !
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Capturer les logs de la console
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleDiv = document.getElementById('console');
+
+        function addToConsole(message, type = 'log') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f44' : '#0f0';
+            consoleDiv.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.map(arg =>
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+            ).join(' ');
+            if (message.includes('SYMBIONT')) {
+                addToConsole(message);
+            }
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const message = args.map(arg =>
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+            ).join(' ');
+            if (message.includes('SYMBIONT')) {
+                addToConsole(message, 'error');
+            }
+        };
+
+        function checkExtension() {
+            const statusDiv = document.getElementById('status');
+
+            // Vérifier si le content script est chargé
+            const organismContainer = document.getElementById('symbiont-organism-container');
+
+            if (organismContainer) {
+                statusDiv.innerHTML = '<div class="status">✅ Organisme détecté !</div>';
+
+                // Obtenir les infos de position et taille
+                const rect = organismContainer.getBoundingClientRect();
+                statusDiv.innerHTML += `<div class="status">Position : ${rect.left}px, ${rect.top}px</div>`;
+                statusDiv.innerHTML += `<div class="status">Taille : ${rect.width}px x ${rect.height}px</div>`;
+            } else {
+                statusDiv.innerHTML = '<div class="status error">❌ Organisme non trouvé</div>';
+
+                // Vérifier si l'extension est installée
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+                    statusDiv.innerHTML += '<div class="status warning">⚠️ Extension détectée mais organisme non visible</div>';
+                } else {
+                    statusDiv.innerHTML += '<div class="status error">❌ Extension SYMBIONT non détectée</div>';
+                }
+            }
+
+            // Essayer d'envoyer un message à l'extension
+            try {
+                chrome.runtime.sendMessage({ type: 'PING' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        addToConsole('Erreur communication : ' + chrome.runtime.lastError.message, 'error');
+                    } else {
+                        addToConsole('Communication avec extension OK');
+                    }
+                });
+            } catch (e) {
+                addToConsole('Impossible de communiquer avec l\'extension', 'error');
+            }
+        }
+
+        function toggleOrganism() {
+            // Envoyer un message pour toggle l'organisme
+            chrome.storage.local.get(['symbiont_webgl_enabled'], (result) => {
+                const newState = !result.symbiont_webgl_enabled;
+                chrome.storage.local.set({ symbiont_webgl_enabled: newState }, () => {
+                    addToConsole('WebGL Organism ' + (newState ? 'activé' : 'désactivé'));
+                    setTimeout(() => window.location.reload(), 1000);
+                });
+            });
+        }
+
+        function feedOrganism() {
+            // Simuler un feed
+            window.postMessage({
+                source: 'symbiont-controller',
+                type: 'ORGANISM_ACTION',
+                data: { action: 'feed' }
+            }, '*');
+            addToConsole('Feed command envoyé');
+        }
+
+        // Check initial
+        setTimeout(checkExtension, 1000);
+
+        // Log initial
+        console.log('[SYMBIONT TEST] Page de test chargée');
+    </script>
+</body>
+</html>

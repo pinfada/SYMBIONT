@@ -1,6 +1,8 @@
 // src/popup/components/MetricsPanel.tsx
 import React, { useState, useEffect } from 'react';
 import { useOrganism } from '../hooks/useOrganism';
+import { organismStateManager } from '@shared/services/OrganismStateManager';
+import type { OrganismState } from '@shared/services/OrganismStateManager';
 
 interface Stat {
   label: string;
@@ -18,21 +20,24 @@ interface ChartData {
 
 export const MetricsPanel: React.FC = () => {
   const { organism } = useOrganism();
-  const [sessionTime, setSessionTime] = useState(0);
-  const [clickCount, setClickCount] = useState(0);
+  const [sharedState, setSharedState] = useState<OrganismState>(organismStateManager.getState());
 
   useEffect(() => {
-    // Compteur de temps de session
-    const timer = setInterval(() => {
-      setSessionTime(prev => prev + 1);
-    }, 1000);
+    // S'abonner aux changements d'état centralisé
+    const unsubscribe = organismStateManager.subscribe((newState) => {
+      setSharedState(newState);
+    });
 
-    // Simuler des clics
-    const handleClick = () => setClickCount(prev => prev + 1);
+
+    // Détecter les clics pour nourrir l'organisme
+    const handleClick = () => {
+      // Nourrir l'organisme via interaction
+      organismStateManager.feed('interaction');
+    };
     document.addEventListener('click', handleClick);
 
     return () => {
-      clearInterval(timer);
+      unsubscribe();
       document.removeEventListener('click', handleClick);
     };
   }, []);
@@ -175,22 +180,14 @@ export const MetricsPanel: React.FC = () => {
     return `${ageInMinutes}m`;
   };
 
-  const formatSessionTime = () => {
-    const hours = Math.floor(sessionTime / 3600);
-    const minutes = Math.floor((sessionTime % 3600) / 60);
-    const seconds = sessionTime % 60;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    if (minutes > 0) return `${minutes}m ${seconds}s`;
-    return `${seconds}s`;
-  };
 
   const stats: Stat[] = [
     {
-      label: 'Génération',
-      value: organism.generation || 1,
+      label: 'Évolution',
+      value: `Stade ${sharedState.evolutionStage}`,
       icon: '🧬',
       color: '#00e0ff',
-      description: 'Niveau évolutif actuel'
+      description: `${sharedState.experience} XP total`
     },
     {
       label: 'Âge',
@@ -200,46 +197,46 @@ export const MetricsPanel: React.FC = () => {
       description: `Né le ${new Date(organism.createdAt || Date.now()).toLocaleDateString()}`
     },
     {
-      label: 'Mutations',
-      value: organism.mutations?.length || 0,
-      icon: '🔬',
+      label: 'Pages visitées',
+      value: sharedState.pagesVisited,
+      icon: '🌐',
       color: '#9c6ade',
-      description: 'Adaptations génétiques'
+      description: 'Sites explorés'
     },
     {
-      label: 'Santé',
-      value: `${Math.round((organism.health || 1) * 100)}%`,
-      icon: '❤️',
-      color: '#ff6b6b',
-      description: 'État de santé global'
+      label: 'Connaissances',
+      value: sharedState.knowledgeGained,
+      icon: '📚',
+      color: '#4caf50',
+      description: 'Savoirs acquis'
     },
     {
       label: 'Énergie',
-      value: `${Math.round((organism.energy || 0.8) * 100)}%`,
+      value: `${Math.round(sharedState.energy)}%`,
       icon: '⚡',
-      color: '#ffd93d',
-      description: 'Niveau d\'énergie actuel'
+      color: sharedState.energy < 30 ? '#ff9800' : '#ffd93d',
+      description: 'Niveau d\'énergie synchronisé'
     },
     {
       label: 'Conscience',
-      value: `${Math.round((organism.consciousness || 0.5) * 100)}%`,
+      value: `${Math.round(sharedState.consciousness)}%`,
       icon: '🧠',
       color: '#ff9ff3',
-      description: 'Niveau de conscience'
+      description: 'Niveau de conscience synchronisé'
     },
     {
-      label: 'Session',
-      value: formatSessionTime(),
-      icon: '⏱️',
+      label: 'Interactions sociales',
+      value: sharedState.socialInteractions,
+      icon: '👥',
       color: '#54a0ff',
-      description: 'Temps de session actuel'
+      description: 'Échanges sociaux'
     },
     {
-      label: 'Interactions',
-      value: clickCount,
-      icon: '👆',
+      label: 'Humeur',
+      value: sharedState.mood,
+      icon: '😊',
       color: '#48dbfb',
-      description: 'Clics cette session'
+      description: `Page actuelle: ${sharedState.currentPageType}`
     }
   ];
 

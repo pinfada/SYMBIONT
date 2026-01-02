@@ -1,6 +1,7 @@
 // src/content/index.ts
-// Point d'entrée Content Script
-// src/content/index.ts
+// Point d'entrée Content Script avec WebGL Organism Renderer
+//console.log('[SYMBIONT] Content script loading...');
+
 import { MessageBus } from '../core/messaging/MessageBus';
 import { NavigationObserver } from '../shared/observers/NavigationObserver';
 import { InteractionCollector } from './collectors/InteractionCollector';
@@ -8,6 +9,22 @@ import { DOMAnalyzer } from './observers/DOMAnalyzer';
 import { ScrollTracker } from './observers/ScrollTracker';
 import { AttentionMonitor } from './monitors/AttentionMonitor';
 import { logger } from '@shared/utils/secureLogger';
+
+//console.log('[SYMBIONT] Importing WebGL modules...');
+
+// Import du renderer WebGL et du contrôleur conscient
+import './webgl/OrganismRenderer';
+// Import et activation explicite du contrôleur conscient
+import { ConsciousOrganismController } from './webgl/ConsciousOrganismController';
+
+// Activer le système de conscience après un court délai pour s'assurer que le DOM est prêt
+setTimeout(() => {
+  // Forcer l'activation du système de conscience
+  ConsciousOrganismController.getInstance();
+  logger.info('🧠 Conscious Organism Controller activated in content script');
+}, 100);
+
+//console.log('[SYMBIONT] WebGL modules imported');
 
 /**
  * ContentScript - Système sensoriel de SYMBIONT

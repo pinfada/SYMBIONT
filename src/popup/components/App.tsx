@@ -87,7 +87,7 @@ const App: React.FC = () => {
           focused: true
         });
         // Fermer le popup actuel
-        window.close();
+        //window.close();
       } catch (_error) {
         logger.warn('Impossible d\'ouvrir en fenêtre:', _error);
         setToast({ 

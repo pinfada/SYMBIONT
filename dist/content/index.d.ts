@@ -1,3 +1,5 @@
+import './webgl/OrganismRenderer';
+import './webgl/OrganismController';
 export interface NavigationChange {
     type: 'pushstate' | 'replacestate' | 'popstate' | 'hashchange';
     url: string;

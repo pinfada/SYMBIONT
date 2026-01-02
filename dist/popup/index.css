@@ -4191,6 +4191,279 @@ button:disabled:hover::after, button[aria-disabled="true"]:hover::after {
 .timeline-event:hover .timeline-content {
   background: #1a2233;
 }
+.organism-control {
+  padding: 16px;
+  background: linear-gradient(135deg, #0a0e1a 0%, #0f1419 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 224, 255, 0.1);
+}
+.organism-control__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #00e0ff;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.organism-control__grid {
+  display: grid;
+  gap: 16px;
+}
+.organism-control__section {
+  padding: 12px;
+  background: rgba(0, 224, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 224, 255, 0.08);
+}
+.organism-control__section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4fc3f7;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.organism-control__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.organism-control__toggle-label {
+  font-size: 13px;
+  color: #8899a6;
+}
+.organism-control__switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: rgba(0, 224, 255, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.organism-control__switch.active {
+  background: rgba(0, 224, 255, 0.3);
+}
+.organism-control__switch-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #4fc3f7;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 224, 255, 0.4);
+}
+.organism-control__switch.active .organism-control__switch-slider {
+  transform: translateX(20px);
+  background: #00e0ff;
+}
+.organism-control__position {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  max-width: 120px;
+}
+.organism-control__position-btn {
+  padding: 8px;
+  background: rgba(0, 224, 255, 0.1);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  color: #4fc3f7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  text-align: center;
+}
+.organism-control__position-btn:hover {
+  background: rgba(0, 224, 255, 0.2);
+  color: #00e0ff;
+  transform: scale(1.05);
+}
+.organism-control__position-btn.active {
+  background: rgba(0, 224, 255, 0.3);
+  color: #00e0ff;
+  border-color: #00e0ff;
+}
+.organism-control__position-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.organism-control__position-btn:nth-child(5) {
+  grid-column: 2;
+  font-weight: bold;
+}
+.organism-control__size {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.organism-control__slider {
+  flex: 1;
+  height: 4px;
+  background: rgba(0, 224, 255, 0.1);
+  border-radius: 2px;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  outline: none;
+  position: relative;
+}
+.organism-control__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+          appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #00e0ff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 224, 255, 0.6);
+  -webkit-transition: transform 0.2s ease;
+  transition: transform 0.2s ease;
+}
+.organism-control__slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+.organism-control__slider-value {
+  font-size: 11px;
+  color: #00e0ff;
+  min-width: 30px;
+  text-align: right;
+}
+.organism-control__behaviors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.organism-control__behavior-chip {
+  padding: 6px 12px;
+  background: rgba(0, 224, 255, 0.1);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 16px;
+  color: #8899a6;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: capitalize;
+}
+.organism-control__behavior-chip:hover {
+  background: rgba(0, 224, 255, 0.15);
+  color: #4fc3f7;
+}
+.organism-control__behavior-chip.active {
+  background: rgba(0, 224, 255, 0.25);
+  border-color: #00e0ff;
+  color: #00e0ff;
+}
+.organism-control__status {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 224, 255, 0.1);
+}
+.organism-control__status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.organism-control__status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+.organism-control__status-label {
+  color: #8899a6;
+}
+.organism-control__status-value {
+  color: #00e0ff;
+  font-weight: 500;
+}
+.organism-control__progress {
+  margin-top: 4px;
+  height: 3px;
+  background: rgba(0, 224, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.organism-control__progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00e0ff 0%, #4fc3f7 100%);
+  transition: width 0.5s ease;
+  box-shadow: 0 0 8px rgba(0, 224, 255, 0.6);
+}
+.organism-control__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.organism-control__action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(0, 224, 255, 0.2) 0%, rgba(79, 195, 247, 0.2) 100%);
+  border: 1px solid rgba(0, 224, 255, 0.3);
+  border-radius: 6px;
+  color: #00e0ff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.organism-control__action-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 224, 255, 0.3) 0%, rgba(79, 195, 247, 0.3) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 224, 255, 0.3);
+}
+.organism-control__action-btn:active {
+  transform: translateY(0);
+}
+.organism-control__action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.organism-control--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.organism-control__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+}
+.organism-control__loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 224, 255, 0.2);
+  border-top: 2px solid #00e0ff;
+  border-radius: 50%;
+  animation: organism-spin 0.8s linear infinite;
+}
+@keyframes organism-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.organism-control__loading-text {
+  font-size: 12px;
+  color: #8899a6;
+}
+@media (max-width: 400px) {
+  .organism-control__status-grid {
+    grid-template-columns: 1fr;
+  }
+  .organism-control__actions {
+    flex-direction: column;
+  }
+}
 .text-primary {
   color: #00e0ff;
 }

@@ -1,9 +1,11 @@
 // src/popup/App.tsx
 import React, { useState, useEffect, Suspense } from 'react';
-import { OrganismViewer } from './components/OrganismViewer';
 import { logger } from '@shared/utils/secureLogger';
 
 // Import des composants
+import { UnifiedOrganismViewer } from './components/UnifiedOrganismViewer';
+import { OrganismNutrition } from './components/OrganismNutrition';
+import OrganismControl from './components/OrganismControl';
 import { GlobalNetworkGraph } from './components/GlobalNetworkGraph';
 import MetricsPanel from './components/MetricsPanel';
 import MysticalPanel from './components/MysticalPanel';
@@ -140,7 +142,13 @@ const App: React.FC = () => {
               <span>🧬</span>
               <span>Votre Organisme Digital</span>
             </h2>
-            <OrganismViewer />
+            <UnifiedOrganismViewer />
+            <div style={{ marginTop: '20px' }}>
+              <OrganismNutrition />
+            </div>
+            <div style={{ marginTop: '20px' }}>
+              <OrganismControl />
+            </div>
           </div>
         );
 

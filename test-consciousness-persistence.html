@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test SYMBIONT Consciousness Persistence</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #0a0a0a;
+      color: #00e0ff;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #00ff88;
+      text-shadow: 0 0 10px currentColor;
+    }
+    .status {
+      background: rgba(0, 224, 255, 0.1);
+      border: 1px solid rgba(0, 224, 255, 0.3);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .metric {
+      margin: 10px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .value {
+      color: #ffaa00;
+      font-weight: bold;
+    }
+    button {
+      background: rgba(0, 255, 136, 0.2);
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background: rgba(0, 255, 136, 0.3);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    }
+    .log {
+      background: #111;
+      border: 1px solid #333;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .log-entry {
+      margin: 5px 0;
+      color: #888;
+    }
+    .chemistry {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .chemical {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+    .bar {
+      height: 20px;
+      background: linear-gradient(90deg, #00ff88, #00e0ff);
+      border-radius: 4px;
+      transition: width 0.5s;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧠 SYMBIONT Consciousness Test</h1>
+
+    <div class="status">
+      <h2>Consciousness State</h2>
+      <div id="consciousness-state">
+        <p>Loading consciousness data...</p>
+      </div>
+    </div>
+
+    <div class="status">
+      <h2>Neural Chemistry</h2>
+      <div id="chemistry" class="chemistry">
+        <!-- Chemistry bars will be inserted here -->
+      </div>
+    </div>
+
+    <div class="status">
+      <h2>Persistence Test</h2>
+      <div class="metric">
+        <span>Total Thoughts:</span>
+        <span class="value" id="total-thoughts">0</span>
+      </div>
+      <div class="metric">
+        <span>Total Dreams:</span>
+        <span class="value" id="total-dreams">0</span>
+      </div>
+      <div class="metric">
+        <span>Total Interactions:</span>
+        <span class="value" id="total-interactions">0</span>
+      </div>
+      <div class="metric">
+        <span>Memory Count:</span>
+        <span class="value" id="memory-count">0</span>
+      </div>
+      <div class="metric">
+        <span>DNA Signature:</span>
+        <span class="value" id="dna-signature">---</span>
+      </div>
+    </div>
+
+    <div class="status">
+      <h2>Actions</h2>
+      <button onclick="testPersistence()">Test Storage Save/Load</button>
+      <button onclick="triggerThought()">Trigger Thought</button>
+      <button onclick="forceREM()">Force REM Sleep</button>
+      <button onclick="clearStorage()">Clear Storage</button>
+      <button onclick="refreshData()">Refresh Data</button>
+    </div>
+
+    <div class="status">
+      <h2>Event Log</h2>
+      <div class="log" id="event-log">
+        <!-- Events will be logged here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let lastState = null;
+
+    function addLog(message, type = 'info') {
+      const log = document.getElementById('event-log');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const timestamp = new Date().toLocaleTimeString();
+      entry.innerHTML = `<span style="color: #666">[${timestamp}]</span> ${message}`;
+      log.insertBefore(entry, log.firstChild);
+
+      // Keep only last 20 entries
+      while (log.children.length > 20) {
+        log.removeChild(log.lastChild);
+      }
+    }
+
+    async function getConsciousnessData() {
+      try {
+        // Try to get data from chrome storage directly
+        const result = await chrome.storage.local.get('symbiont_consciousness');
+
+        if (result.symbiont_consciousness) {
+          return result.symbiont_consciousness;
+        }
+
+        addLog('No consciousness data found in storage', 'warning');
+        return null;
+      } catch (error) {
+        addLog('Error accessing storage: ' + error.message, 'error');
+        return null;
+      }
+    }
+
+    async function updateDisplay() {
+      const state = await getConsciousnessData();
+
+      if (!state) {
+        document.getElementById('consciousness-state').innerHTML = '<p>No consciousness data available</p>';
+        return;
+      }
+
+      lastState = state;
+
+      // Update consciousness state
+      const stateHtml = `
+        <div class="metric">
+          <span>Phase:</span>
+          <span class="value">${state.currentPhase || 'awake'}</span>
+        </div>
+        <div class="metric">
+          <span>Temperature:</span>
+          <span class="value">${state.temperature ? state.temperature.toFixed(2) : '0.70'}</span>
+        </div>
+        <div class="metric">
+          <span>Last Update:</span>
+          <span class="value">${state.lastUpdate ? new Date(state.lastUpdate).toLocaleTimeString() : 'Never'}</span>
+        </div>
+      `;
+      document.getElementById('consciousness-state').innerHTML = stateHtml;
+
+      // Update chemistry
+      if (state.chemistry) {
+        const chemistryHtml = Object.entries(state.chemistry).map(([chem, value]) => `
+          <div class="chemical">
+            <span>${chem}:</span>
+            <span class="value">${(value * 100).toFixed(0)}%</span>
+          </div>
+          <div class="bar" style="width: ${value * 100}%"></div>
+        `).join('');
+        document.getElementById('chemistry').innerHTML = chemistryHtml;
+      }
+
+      // Update persistence metrics
+      document.getElementById('total-thoughts').textContent = state.totalThoughts || 0;
+      document.getElementById('total-dreams').textContent = state.totalDreams || 0;
+      document.getElementById('total-interactions').textContent = state.totalInteractions || 0;
+      document.getElementById('memory-count').textContent = state.memories ? state.memories.length : 0;
+      document.getElementById('dna-signature').textContent = state.dna ? state.dna.substring(0, 8) + '...' : '---';
+
+      addLog('Display updated');
+    }
+
+    async function testPersistence() {
+      addLog('Testing persistence...');
+
+      // Save current state
+      const beforeState = await getConsciousnessData();
+
+      // Modify a value
+      if (beforeState) {
+        beforeState.totalInteractions = (beforeState.totalInteractions || 0) + 1;
+        beforeState.lastUpdate = Date.now();
+
+        // Save back
+        await chrome.storage.local.set({ 'symbiont_consciousness': beforeState });
+        addLog('State saved with incremented interaction count');
+
+        // Reload and verify
+        setTimeout(async () => {
+          const afterState = await getConsciousnessData();
+          if (afterState && afterState.totalInteractions === beforeState.totalInteractions) {
+            addLog('✓ Persistence test successful!', 'success');
+          } else {
+            addLog('✗ Persistence test failed', 'error');
+          }
+          updateDisplay();
+        }, 500);
+      }
+    }
+
+    function triggerThought() {
+      // Send message to trigger a thought
+      window.postMessage({
+        source: 'symbiont-test',
+        type: 'TRIGGER_THOUGHT'
+      }, '*');
+      addLog('Thought trigger sent');
+    }
+
+    function forceREM() {
+      // Send message to force REM sleep
+      window.postMessage({
+        source: 'symbiont-test',
+        type: 'FORCE_REM'
+      }, '*');
+      addLog('REM sleep trigger sent');
+    }
+
+    async function clearStorage() {
+      if (confirm('Are you sure you want to clear all consciousness data?')) {
+        await chrome.storage.local.remove('symbiont_consciousness');
+        addLog('Storage cleared - organism reset', 'warning');
+        setTimeout(updateDisplay, 500);
+      }
+    }
+
+    function refreshData() {
+      updateDisplay();
+      addLog('Data refreshed');
+    }
+
+    // Listen for consciousness messages
+    window.addEventListener('message', (event) => {
+      if (event.data.source === 'symbiont-consciousness') {
+        addLog(`Consciousness event: ${event.data.type}`);
+      }
+    });
+
+    // Auto-refresh every 5 seconds
+    setInterval(updateDisplay, 5000);
+
+    // Initial load
+    updateDisplay();
+    addLog('Test page loaded');
+
+    // Check if extension is installed
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      addLog('✓ Chrome extension API available', 'success');
+    } else {
+      addLog('✗ Chrome extension API not available', 'error');
+    }
+  </script>
+</body>
+</html>
