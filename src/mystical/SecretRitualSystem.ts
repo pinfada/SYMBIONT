@@ -1,7 +1,5 @@
 import { RitualCondition, SecretFunction, MysticalEvent, RitualTrigger, ExecutionContext, SecretResult } from '../shared/types/mystical'
-import { PerformanceOptimizedRandom } from '@shared/utils/PerformanceOptimizedRandom';
-
-// @ts-expect-error Fonction réservée pour usage futur
+import { PerformanceOptimizedRandom } from '@shared/utils/PerformanceOptimizedRandom';
 function randomUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = PerformanceOptimizedRandom.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -32,8 +30,7 @@ export class SecretRitualSystem {
       rarity: 0.01
     })
     // Rituel synchronisation collective
-    this.ritualTriggers.set('collective_awakening', {
-      // @ts-expect-error Paramètre réservé pour usage futur
+    this.ritualTriggers.set('collective_awakening', {
       trigger: (interactions: unknown[]) => {
         // TODO: Détection de synchronisation multi-utilisateurs
         return false
@@ -46,8 +43,7 @@ export class SecretRitualSystem {
       }),
       rarity: 0.001
     })
-    // Code secret "SYMBIOSIS"
-    // @ts-expect-error Paramètre réservé pour usage futur
+    // Code secret "SYMBIOSIS"
     this.secretCodes.set('SYMBIOSIS', async (context: ExecutionContext) => ({
       name: 'Symbiosis Mode',
       description: 'Fusion complète entre vous et votre organisme numérique',

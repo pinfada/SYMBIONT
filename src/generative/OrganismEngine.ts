@@ -36,14 +36,11 @@ export class OrganismEngine {
   private indexBuffer: WebGLBuffer | null = null;
   
   // État
-  private frameCount = 0;
-  // @ts-expect-error Temps réservé pour usage futur
+  private frameCount = 0;
   private elapsedTime = 0;
   private geometry: Geometry;
-  private traits: OrganismTraits;
-  // @ts-expect-error Propriétés réservées pour usage futur
-  private visualProperties: VisualProperties;
-  // @ts-expect-error État réservé pour usage futur
+  private traits: OrganismTraits;
+  private visualProperties: VisualProperties;
   private currentState: OrganismState;
   private lastGeometryComplexity: number = 0;
   private fractalTexture: WebGLTexture | null = null;

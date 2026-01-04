@@ -8,6 +8,7 @@ import { logger } from '@shared/utils/secureLogger';
 
 type MessageHandler<T extends Message = Message> = (message: T) => void | Promise<void>;
 type MessageFilter = (message: Message) => boolean;
+type MessageTarget = string | Window | chrome.runtime.Port;
 
 function isOrganismState(obj: unknown): obj is OrganismState {
   return typeof obj === 'object' && obj !== null &&
@@ -173,9 +174,7 @@ export class MessageBus {
     if (typeof chrome === 'undefined' || !chrome.runtime) {
       logger.warn('[MessageBus] Chrome runtime non disponible - mode test/développement');
       return;
-    }
-
-    // @ts-expect-error Paramètre réservé pour usage futur
+    }
     chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
       if (this.shouldProcessMessage(message)) {
         this.enqueueMessage(message);
@@ -317,22 +316,16 @@ export class MessageBus {
     if (handlers) {
       handlers.forEach(handler => handler({ type, payload }));
     }
-  }
-
-  // @ts-expect-error Variables réservées pour usage futur
+  }
   private handleMessage(message: MessageEvent | unknown, targetFrame: string): void {
     // Handle cross-frame messages
     logger.info('Handling message:', message);
-  }
-
-  // @ts-expect-error Paramètre réservé pour usage futur
+  }
   private onMessage(message: MessageEvent | unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
     // Handle incoming message
     logger.info('Received message:', message);
     return true;
-  }
-
-  // @ts-expect-error Variables réservées pour usage futur
+  }
   private sendToFrame(handleMessage: (msg: any) => any, targetFrame: MessageTarget, payload: any): void {
     // Send message to frame
     logger.info('Sending to frame:', targetFrame, payload);

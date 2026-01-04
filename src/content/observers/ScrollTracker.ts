@@ -33,8 +33,7 @@ export class ScrollTracker extends EventTarget {
   // Scroll tracking state
   private lastScrollPosition: number = 0;
   private lastScrollTime: number = 0;
-  private scrollHistory: Array<{position: number, timestamp: number, velocity: number}> = [];
-  // @ts-expect-error Sessions réservées pour usage futur
+  private scrollHistory: Array<{position: number, timestamp: number, velocity: number}> = [];
   private scrollSessions: Array<{start: number, end: number, distance: number}> = [];
   
   // Metrics tracking
@@ -241,9 +240,7 @@ export class ScrollTracker extends EventTarget {
         metrics: this.calculateMetrics()
       });
     }
-  }
-
-  // @ts-expect-error Méthode réservée pour usage futur
+  }
   private handleScrollResume(): void {
     this.isPaused = false;
     this.emitScrollEvent({
@@ -254,9 +251,7 @@ export class ScrollTracker extends EventTarget {
       direction: 'down',
       metrics: this.calculateMetrics()
     });
-  }
-
-  // @ts-expect-error Méthode réservée pour usage futur
+  }
   private updateScrollData(position: number, timestamp: number, velocity: number, direction: 'up' | 'down'): void {
     // Update total distance
     const distance = Math.abs(position - this.lastScrollPosition);

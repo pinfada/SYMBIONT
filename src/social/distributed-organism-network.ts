@@ -4,8 +4,7 @@ import { SecureRandom } from '../shared/utils/secureRandom';
 import { logger } from '@shared/utils/secureLogger';
 
 export class DistributedOrganismNetwork {
-  private peers: Set<string> = new Set()
-  // @ts-expect-error État d'organisme réservé pour usage futur
+  private peers: Set<string> = new Set()
   private organismState: any = null
   private channel: BroadcastChannel
   private peerId: string

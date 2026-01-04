@@ -9,8 +9,7 @@ export class WebGLBridge {
   private messageBus: MessageBus;
   private renderInterval: NodeJS.Timeout | null = null;
   private currentState: OrganismState | null = null;
-  private isRendering: boolean = false;
-  // @ts-expect-error Handler réservé pour usage futur
+  private isRendering: boolean = false;
   private unsubscribeHandler?: () => void;
   private pendingFrames = new Set<number>();
   private renderQueue: OrganismState[] = [];

@@ -11,12 +11,9 @@ interface CachedResponse { response: any; timestamp: number; }
 interface NeuralImpulse { type: string; [key: string]: any; }
 
 export class SynapticRouter extends EventEmitter {
-  private static instance: SynapticRouter;
-  // @ts-expect-error Mesh réservé pour usage futur
-  private neuralMesh: NeuralMesh;
-  // @ts-expect-error Prédictions réservées pour usage futur
-  private predictions: Map<string, RoutePrection> = new Map();
-  // @ts-expect-error Cache réservé pour usage futur
+  private static instance: SynapticRouter;
+  private neuralMesh: NeuralMesh;
+  private predictions: Map<string, RoutePrection> = new Map();
   private cache: Map<string, CachedResponse> = new Map();
   private routes: Map<string, any> = new Map();
   
@@ -53,26 +50,18 @@ export class SynapticRouter extends EventEmitter {
     return response;
   }
 
-  private setupLearningLoop(): void {}
-  // @ts-expect-error Paramètre réservé pour usage futur
-  private getRouteKey(impulse: NeuralImpulse): string { return '' }
-  // @ts-expect-error Paramètre réservé pour usage futur
-  private async findOptimalRoute(impulse: NeuralImpulse): Promise<{predicted?: boolean; predictedResponse?: unknown; route?: string}> { return {}; }
-  // @ts-expect-error Paramètres réservés pour usage futur
-  private async performRouting(impulse: NeuralImpulse, route: any): Promise<unknown> { return {}; }
-  // @ts-expect-error Paramètres réservés pour usage futur
-  private learnFromRouting(routeKey: string, route: any, response: any): void {}
-
-  // @ts-expect-error Paramètres réservés pour usage futur
+  private setupLearningLoop(): void {}
+  private getRouteKey(impulse: NeuralImpulse): string { return '' }
+  private async findOptimalRoute(impulse: NeuralImpulse): Promise<{predicted?: boolean; predictedResponse?: unknown; route?: string}> { return {}; }
+  private async performRouting(impulse: NeuralImpulse, route: any): Promise<unknown> { return {}; }
+  private learnFromRouting(routeKey: string, route: any, response: any): void {}
   route(type: string, target: string): any {
     return null;
   }
 
   addRoute(type: string, handler: any): void {
     this.routes.set(type, handler);
-  }
-
-  // @ts-expect-error Paramètre réservé pour usage futur
+  }
   processImpulse(impulse: any): any {
     return null;
   }

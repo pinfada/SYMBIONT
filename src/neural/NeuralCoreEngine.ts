@@ -214,9 +214,7 @@ export class NeuralCoreEngine {
       const newValue = Math.max(0, Math.min(1, currentValue + mutation.delta))
       organism.traits[mutation.trait] = newValue
     }
-  }
-
-  // @ts-expect-error Paramètre réservé pour usage futur
+  }
   private calculateConfidence(organism: OrganismState, context: PageContext): number {
     // Base confidence sur l'expérience (nombre de mutations = expérience)
     const mutationsLength = organism.mutations ? organism.mutations.length : 0;
@@ -227,9 +225,7 @@ export class NeuralCoreEngine {
     const wisdomBonus = (organism.traits.wisdom || 0.1) * 0.3
     
     return Math.min(0.95, 0.4 + experienceBonus + focusBonus + wisdomBonus)
-  }
-
-  // @ts-expect-error Paramètre réservé pour usage futur
+  }
   private generateSuggestions(organism: OrganismState, context: PageContext): string[] {
     const suggestions = ['browse']
     

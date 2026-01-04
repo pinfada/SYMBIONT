@@ -135,8 +135,7 @@ export class ErrorHandler {
 
   /**
    * Valide le type et les contraintes d'une valeur
-   */
-  // @ts-expect-error Paramètre de type réservé pour usage futur
+   */
   public validateType<T>(
     value: unknown,
     expectedType: string,

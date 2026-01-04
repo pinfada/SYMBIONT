@@ -4,12 +4,9 @@ import { logger } from '@shared/utils/secureLogger';
 // Intelligence adaptative contextuelle (Phase 2)
 
 export class ContextAwareOrganism {
-  private contextEngine: any
-  // @ts-expect-error Intelligence réservée pour usage futur
-  private adaptiveIntelligence: any
-  // @ts-expect-error Analyseur réservé pour usage futur
-  private environmentAnalyzer: any
-  // @ts-expect-error Prédicteur réservé pour usage futur
+  private contextEngine: any
+  private adaptiveIntelligence: any
+  private environmentAnalyzer: any
   private behaviorPredictor: any
   private traits: Record<string, number> = {
     empathy: 0.5,

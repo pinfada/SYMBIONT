@@ -27,8 +27,7 @@ interface GenerativeParameters {
     next(): number { this.seed = (this.seed * 9301 + 49297) % 233280; return this.seed / 233280; }
   }
   
-  export class ProceduralGenerator {
-    // @ts-expect-error Paramètres réservés pour usage futur
+  export class ProceduralGenerator {
     private params: GenerativeParameters;
     private rng: SeededRandom;
     
@@ -151,16 +150,13 @@ interface GenerativeParameters {
     }
     
     // Table de permutation pour le bruit
-    private perm = new Uint8Array(512);
-    
-    // @ts-expect-error Méthode réservée pour usage futur
+    private perm = new Uint8Array(512);
     private initPermutation(): void {
       // Initialise la table de permutation de Perlin
       // Cette implémentation sera nécessaire pour le bruit procédural avancé
     }
     
     private calculateNormals(vertices: Float32Array): Float32Array { return new Float32Array(vertices.length); }
-    private triangulate(complexity: number): Uint16Array { return new Uint16Array(complexity); }
-    // @ts-expect-error Paramètre réservé pour usage futur
+    private triangulate(complexity: number): Uint16Array { return new Uint16Array(complexity); }
     private interpretLSystem(current: string): Geometry { return { vertices: new Float32Array(0), indices: new Uint16Array(0) }; }
   }

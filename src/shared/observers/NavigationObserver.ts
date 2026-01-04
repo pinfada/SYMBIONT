@@ -1,7 +1,6 @@
 import type { NavigationChange } from '../../content/index';
 
-export class NavigationObserver {
-  // @ts-expect-error Handler réservé pour usage futur
+export class NavigationObserver {
   private _handler: ((change: NavigationChange) => void) | null = null;
 
   constructor(_messageBus?: any) {}

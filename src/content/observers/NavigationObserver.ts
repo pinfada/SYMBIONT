@@ -410,9 +410,7 @@ export class NavigationObserver extends EventTarget {
     // Simple heuristic: check if new URL was visited recently
     const recentUrls = this.navigationHistory.slice(-5).map(h => h.url);
     return recentUrls.includes(newUrl) && newUrl !== this.currentUrl;
-  }
-
-  // @ts-expect-error Paramètre réservé pour usage futur
+  }
   private isForwardNavigation(newUrl: string): boolean {
     // Simple forward navigation detection
     return true;

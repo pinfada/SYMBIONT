@@ -549,7 +549,7 @@ export class OrganismRenderer {
    */
   private spiralParticles(intensity: number): void {
     // Modifier temporairement le comportement des particules
-    const originalParticles = [...this.particles];
+    const originalParticles = new Float32Array(this.particles);
 
     for (let i = 0; i < this.particleCount; i++) {
       const angle = (i / this.particleCount) * Math.PI * 2;

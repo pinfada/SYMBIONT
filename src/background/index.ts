@@ -77,8 +77,7 @@ class BackgroundService {
   private events: SequenceEvent[] = [];
   private collectiveThresholds = [10, 50, 100, 250, 500];
   private reachedThresholds: number[] = [];
-  private security: SecurityManager = new SecurityManager();
-  // @ts-expect-error Factory réservée pour usage futur
+  private security: SecurityManager = new SecurityManager();
   private _organismFactory: OrganismFactory;
   private initialized: boolean = false;
 

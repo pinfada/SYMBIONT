@@ -39,8 +39,7 @@ export class InteractionCollector extends EventTarget {
   private eventCounts: Map<string, number> = new Map();
   private lastEventTimes: Map<string, number> = new Map();
 
-  // Tracking state
-  // @ts-expect-error Position réservée pour usage futur
+  // Tracking state
   private mousePosition: { x: number; y: number } = { x: 0, y: 0 };
   private lastClickTime: number = 0;
   private clickSequence: number = 0;
@@ -404,9 +403,7 @@ export class InteractionCollector extends EventTarget {
       },
       element: this.extractElementInfo(event.target as Element)
     });
-  }
-
-  // @ts-expect-error Paramètre réservé pour usage futur - fonction de sélection
+  }
   private handleSelectionChange(event: Event): void {
     const selection = document.getSelection();
     if (selection && selection.toString().length > 0) {

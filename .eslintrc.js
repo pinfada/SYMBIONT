@@ -17,6 +17,23 @@ module.exports = {
     rules: {
       'react/react-in-jsx-scope': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn'
+      '@typescript-eslint/no-explicit-any': 'warn',
+      
+      // Ajout de la règle de gestion des commentaires TS
+      '@typescript-eslint/ban-ts-comment': [
+        'warn', // Utilisez 'warn' pour ne pas bloquer le build, ou 'error' pour rester strict
+        {
+          'ts-expect-error': 'allow-with-description',
+          'ts-ignore': 'allow-with-description',
+          'ts-nocheck': true,
+          'ts-check': false,
+          'minimumDescriptionLength': 5
+        }
+      ]
+    },
+    settings: {
+      react: {
+        version: 'detect' // Bonne pratique pour éviter les warnings react/prop-types
+      }
     }
 };

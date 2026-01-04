@@ -1,7 +1,6 @@
 // Analyseur de patterns
 
-export class PatternAnalyzer {
-  // @ts-expect-error Paramètre réservé pour usage futur
+export class PatternAnalyzer {
   analyzeSequence(data: unknown[]): any {
     // Pattern analysis logic
     return { pattern: 'unknown', confidence: 0.5 };

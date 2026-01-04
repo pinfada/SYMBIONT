@@ -2,13 +2,10 @@ import { logger } from '@shared/utils/secureLogger';
 // background/persistent-service-worker.ts
 // Service Worker persistant et auto-réparant (Phase 1)
 
-export class PersistentServiceWorker {
-  // @ts-expect-error Instance réservée pour usage futur
+export class PersistentServiceWorker {
   private static _instance: PersistentServiceWorker | null = null
-  private isAlive = true
-  // @ts-expect-error Interval réservé pour usage futur
-  private _heartbeatInterval: ReturnType<typeof setInterval> | undefined = undefined
-  // @ts-expect-error Health map réservée pour usage futur
+  private isAlive = true
+  private _heartbeatInterval: ReturnType<typeof setInterval> | undefined = undefined
   private _connectionHealth = new Map<string, any>()
   private lastHeartbeat: number = Date.now()
 

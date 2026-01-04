@@ -4,8 +4,7 @@ import { BehaviorPredictor } from './BehaviorPredictor';
 import { BehaviorAnalysis, NavigationEvent } from '../../types/behavioral';
 import { logger } from '@shared/utils/secureLogger';
 
-class SessionTracker {
-  // @ts-expect-error Paramètre réservé pour usage futur
+class SessionTracker {
   track(data: unknown): void {
     // Simplified tracking
     logger.info('Tracking behavior');
@@ -13,14 +12,11 @@ class SessionTracker {
 }
 
 export class BehavioralEngine {
-  private static instance: BehavioralEngine;
-  // @ts-expect-error Propriété réservée pour usage futur
+  private static instance: BehavioralEngine;
   private patterns: PatternAnalyzer;
   private analyzer: PatternAnalyzer;
-  private predictor: BehaviorPredictor;
-  // @ts-expect-error Propriété réservée pour usage futur
-  private sessionTracker: SessionTracker;
-  // @ts-expect-error Propriété réservée pour usage futur
+  private predictor: BehaviorPredictor;
+  private sessionTracker: SessionTracker;
   private storage: Map<string, any>;
   
   private constructor() {

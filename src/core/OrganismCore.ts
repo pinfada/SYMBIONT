@@ -30,8 +30,7 @@ export class OrganismCore implements IOrganismCore {
   private readonly traitService: TraitService;
   private readonly energyService: EnergyService;
   private readonly neuralService: NeuralService;
-  private readonly metricsService: RealMetricsService;
-  // @ts-expect-error Service réservé pour usage futur
+  private readonly metricsService: RealMetricsService;
   private readonly featureFlags: FeatureFlagService;
   private readonly logger: { debug: Function; info: Function; error: Function } | undefined;
 
