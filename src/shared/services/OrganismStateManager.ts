@@ -1,7 +1,11 @@
 // Gestionnaire d'état centralisé pour l'organisme
 // Synchronise l'état entre popup, content scripts et background
+// Intégré avec le système de backpressure pour éviter la saturation
 
 import { logger } from '../utils/secureLogger';
+import { backpressureController } from '@/core/metabolic/BackpressureController';
+import { circadianCycle } from '@/core/metabolic/CircadianCycle';
+import { softwareEpigenetics } from '@/core/resilience/SoftwareEpigenetics';
 
 export interface OrganismState {
   // État principal
@@ -37,10 +41,17 @@ export class OrganismStateManager {
   private listeners: Set<(state: OrganismState) => void> = new Set();
   private syncInterval: number | null = null;
 
+  // Nouveaux champs pour la gestion adaptative
+  private lastSavedState: string = '';  // Hash de l'état pour détecter les changements
+  private pendingSave: boolean = false;
+  private saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly BASE_SYNC_INTERVAL = 5000;  // Intervalle de base
+  private readonly MAX_SYNC_INTERVAL = 60000;  // Intervalle max (1 minute)
+
   private constructor() {
     this.state = this.getDefaultState();
     this.initializeState();
-    this.startSyncLoop();
+    this.startAdaptiveSyncLoop();
   }
 
   static getInstance(): OrganismStateManager {
@@ -95,12 +106,86 @@ export class OrganismStateManager {
     });
   }
 
-  private startSyncLoop(): void {
-    // Mise à jour automatique toutes les 5 secondes
-    this.syncInterval = window.setInterval(() => {
-      this.updateMetabolism();
-      this.saveState();
-    }, 5000);
+  /**
+   * Démarre une boucle de synchronisation adaptative
+   * L'intervalle s'ajuste selon le cycle circadien et le backpressure
+   */
+  private startAdaptiveSyncLoop(): void {
+    const scheduleNextSync = () => {
+      // Calculer l'intervalle adaptatif
+      const circadianMultiplier = circadianCycle.getFrequencyMultiplier();
+      const backpressureMultiplier = backpressureController.getThrottleMultiplier();
+
+      // L'intervalle augmente quand le système est sous pression ou en mode économie
+      const adaptiveInterval = Math.min(
+        this.MAX_SYNC_INTERVAL,
+        this.BASE_SYNC_INTERVAL * Math.max(circadianMultiplier, 1) * backpressureMultiplier
+      );
+
+      this.syncInterval = window.setTimeout(() => {
+        this.performAdaptiveSync();
+        scheduleNextSync();
+      }, adaptiveInterval) as unknown as number;
+    };
+
+    scheduleNextSync();
+  }
+
+  /**
+   * Effectue une synchronisation adaptative
+   * Ne sauvegarde que si l'état a réellement changé et si le système le permet
+   */
+  private async performAdaptiveSync(): Promise<void> {
+    // Mettre à jour le métabolisme (toujours)
+    this.updateMetabolism();
+
+    // Vérifier si la feature storage est active
+    if (!softwareEpigenetics.isFeatureActive('core_storage')) {
+      return;
+    }
+
+    // Vérifier si on peut écrire (backpressure)
+    if (!backpressureController.canAcceptOperation('write', 'organism_state')) {
+      logger.info('[OrganismStateManager] Save skipped due to backpressure');
+      return;
+    }
+
+    // Vérifier si l'état a changé
+    const currentStateHash = this.hashState(this.state);
+    if (currentStateHash === this.lastSavedState) {
+      // Pas de changement, pas besoin de sauvegarder
+      return;
+    }
+
+    // Sauvegarder avec debounce
+    await this.debouncedSave();
+  }
+
+  /**
+   * Sauvegarde avec debounce pour coalescer les écritures rapprochées
+   */
+  private async debouncedSave(): Promise<void> {
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
+
+    this.pendingSave = true;
+
+    this.saveDebounceTimer = setTimeout(async () => {
+      if (this.pendingSave) {
+        await this.saveState();
+        this.pendingSave = false;
+      }
+    }, 1000); // Attendre 1 seconde avant de vraiment sauvegarder
+  }
+
+  /**
+   * Crée un hash simple de l'état pour détecter les changements
+   */
+  private hashState(state: OrganismState): string {
+    // On ignore lastUpdate car il change toujours
+    const { lastUpdate, ...stateWithoutTimestamp } = state;
+    return JSON.stringify(stateWithoutTimestamp);
   }
 
   private updateMetabolism(): void {
@@ -264,18 +349,31 @@ export class OrganismStateManager {
   }
 
   private async saveState(): Promise<void> {
+    const operationId = backpressureController.startOperation('write', 'organism_state');
+
     try {
       await chrome.storage.local.set({
         organism_state: this.state
       });
+
+      // Enregistrer le hash de l'état sauvegardé
+      this.lastSavedState = this.hashState(this.state);
+
+      backpressureController.completeOperation(operationId, true);
     } catch (error) {
       logger.error('Failed to save organism state:', error);
+      backpressureController.completeOperation(operationId, false);
     }
   }
 
   public destroy(): void {
     if (this.syncInterval) {
-      clearInterval(this.syncInterval);
+      clearTimeout(this.syncInterval);
+      this.syncInterval = null;
+    }
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+      this.saveDebounceTimer = null;
     }
     this.listeners.clear();
   }

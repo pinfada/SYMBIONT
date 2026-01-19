@@ -303,71 +303,60 @@ export class HybridStorageManager {
   }
 
   private setupDataReplication() {
-    // Synchronisation automatique sur changement chrome.storage
-    if (chrome.storage && chrome.storage.onChanged) {
-      chrome.storage.onChanged.addListener((changes: any, areaName: string) => {
-        if (areaName === 'local') {
-          for (const key in changes) {
-            const { newValue } = changes[key]
-            this.syncKeyAcrossLayers(key, newValue)
-            logger.info('[HybridStorageManager] DataReplication - Synchronisation des couches', key)
-          }
-        }
-      })
-    }
+    // DÉSACTIVÉ: La réplication automatique causait des boucles d'écriture infinies
+    // qui saturaient IndexedDB et la RAM (3GB+).
+    //
+    // L'ancienne implémentation écoutait chrome.storage.onChanged et
+    // synchronisait chaque changement sur toutes les couches, créant
+    // une cascade d'écritures qui bloquait le système avec l'erreur:
+    // "IndexedDB open request timeout - no response from browser after 60000ms"
+    //
+    // Pour une réplication coordonnée, utiliser ResilientStorageManager à la place
+    // qui gère la cohérence avec backpressure et coalescing.
+    logger.info('[HybridStorageManager] DataReplication disabled to prevent infinite write loops');
   }
 
   private setupIntegrityMonitoring() {
-    // Vérification périodique de l'intégrité des données (toutes les 60s)
+    // Vérification périodique de l'intégrité des données
+    // MODIFIÉ: Intervalle augmenté de 60s à 5 minutes et limité aux clés critiques
+    // pour éviter la saturation qui causait le timeout IndexedDB
+    const CRITICAL_KEY_PATTERNS = ['organism_state', 'neural_mesh', 'consciousness_state'];
+    const CHECK_INTERVAL = 300000; // 5 minutes au lieu de 60 secondes
+
     setInterval(async () => {
-      for (const key of this.memoryCache.keys()) {
+      // Ne vérifier que les clés critiques pour éviter la surcharge
+      const criticalKeys = Array.from(this.memoryCache.keys())
+        .filter(key => CRITICAL_KEY_PATTERNS.some(pattern => key.includes(pattern)))
+        .slice(0, 3); // Max 3 clés par cycle
+
+      for (const key of criticalKeys) {
         try {
           const memVal = this.memoryCache.get(key)
           const chromeVal = await new Promise<unknown>((resolve) => {
             this.persistentStorage.get([key], (res: any) => resolve(res[key]))
           })
-          await this.indexedDBReady
-          let idbVal: unknown = undefined
-          if (this.indexedDB) {
-            idbVal = await new Promise((resolve) => {
-              const tx = this.indexedDB!.transaction(['symbiont'], 'readonly')
-              const store = tx.objectStore('symbiont')
-              const req = store.get(key)
-              req.onsuccess = () => resolve(req.result)
-              req.onerror = () => resolve(undefined)
-            })
-          }
-          const localValRaw = await this.emergencyLocalStorage.getItem(key)
-          const localVal = localValRaw ? JSON.parse(localValRaw) : undefined
-          // Vérification de cohérence simple (JSON.stringify)
-          const values = [memVal, chromeVal, idbVal, localVal].filter(v => v !== undefined)
-          const allEqual = values.every(v => JSON.stringify(v) === JSON.stringify(values[0]))
-          if (!allEqual) {
-            logger.warn('[HybridStorageManager] IntegrityMonitoring - Divergence détectée pour', key)
-            // Auto-réparation naïve : on prend la valeur majoritaire ou la plus récente (TODO: améliorer)
-            const valueCounts: Record<string, number> = {}
-            for (const v of values) {
-              const s = JSON.stringify(v)
-              valueCounts[s] = (valueCounts[s] || 0) + 1
+
+          // Comparaison simplifiée: seulement mémoire vs chrome.storage
+          // IndexedDB et localStorage sont des fallbacks, pas des sources de vérité
+          if (memVal !== undefined && chromeVal !== undefined) {
+            const memString = JSON.stringify(memVal)
+            const chromeString = JSON.stringify(chromeVal)
+
+            if (memString !== chromeString) {
+              logger.warn('[HybridStorageManager] IntegrityMonitoring - Divergence détectée pour', key)
+              // Préférer la valeur mémoire (plus récente)
+              this.persistentStorage.set({ [key]: memVal })
+              logger.info('[HybridStorageManager] IntegrityMonitoring - Synchronisation appliquée pour', key)
             }
-            const [mostCommon] = Object.entries(valueCounts).sort((a, b) => b[1] - a[1])[0]
-            const repaired = JSON.parse(mostCommon)
-            // Réécriture dans toutes les couches
-            this.memoryCache.set(key, repaired)
-            this.persistentStorage.set({ [key]: repaired })
-            if (this.indexedDB) {
-              const tx = this.indexedDB.transaction(['symbiont'], 'readwrite')
-              const store = tx.objectStore('symbiont')
-              store.put(repaired, key)
-            }
-            this.emergencyLocalStorage.setItem(key, JSON.stringify(repaired))
-            logger.info('[HybridStorageManager] IntegrityMonitoring - Auto-réparation appliquée pour', key)
           }
         } catch (_e) {
           logger.warn('[HybridStorageManager] IntegrityMonitoring - Erreur sur', { key, error: String(_e) })
         }
+
+        // Pause entre les vérifications pour éviter la saturation
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-    }, 60000) // toutes les 60 secondes
+    }, CHECK_INTERVAL)
   }
 }
 

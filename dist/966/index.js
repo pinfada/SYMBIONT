@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunksymbiont=self.webpackChunksymbiont||[]).push([[966],{966:(e,s,t)=>{t.d(s,{MockInvitationService:()=>o});const n=crypto.randomUUID().substring(0,6).toUpperCase(),c=[],i=[],o={getUserCode:async()=>n,getInviter:async()=>null,getInvitees:async()=>c,getHistory:async()=>i}}}]);
