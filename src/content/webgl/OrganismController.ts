@@ -15,6 +15,8 @@ export class OrganismController {
   private pageAnalysis: PageAnalysis;
   private updateInterval: number | null = null;
   private lastInteraction: number = Date.now();
+  private currentPageUrl: string = window.location.href;
+  private hasVisitedCurrentPage: boolean = false;
 
   private constructor() {
     this.pageAnalysis = this.analyzePage();
@@ -123,10 +125,6 @@ export class OrganismController {
           sendResponse(this.pageAnalysis);
           break;
 
-        case 'FEED_ORGANISM':
-          this.feedOrganism();
-          sendResponse({ success: true });
-          break;
 
         case 'TOGGLE_ORGANISM':
           this.toggleOrganismVisibility();
@@ -174,14 +172,28 @@ export class OrganismController {
     const timeSinceInteraction = Date.now() - this.lastInteraction;
     const isUserActive = timeSinceInteraction < 30000; // Actif dans les 30 dernières secondes
 
+    // Vérifier si l'URL a changé (nouvelle page visitée)
+    const newUrl = window.location.href;
+    if (newUrl !== this.currentPageUrl) {
+      this.currentPageUrl = newUrl;
+      this.hasVisitedCurrentPage = false;
+      // Re-analyser la page lors d'un changement d'URL
+      this.pageAnalysis = this.analyzePage();
+      logger.info(`Navigation détectée vers: ${newUrl}`);
+    }
+
     // Mettre à jour l'état centralisé
     await organismStateManager.updateState({
       currentPageType: this.pageAnalysis.type,
       isActive: isUserActive
     });
 
-    // Notifier de la visite de page
-    await organismStateManager.onPageVisit(this.pageAnalysis.type);
+    // Notifier de la visite de page seulement une fois par page
+    if (!this.hasVisitedCurrentPage) {
+      await organismStateManager.onPageVisit(this.pageAnalysis.type);
+      this.hasVisitedCurrentPage = true;
+      logger.info(`Page visitée enregistrée: ${this.pageAnalysis.type}`);
+    }
 
     // Obtenir l'état actuel synchronisé
     const currentState = organismStateManager.getState();
@@ -220,6 +232,14 @@ export class OrganismController {
   }
 
   private onPageChange(): void {
+    // Vérifier si l'URL a changé (SPA navigation)
+    const currentUrl = window.location.href;
+    if (currentUrl !== this.currentPageUrl) {
+      this.currentPageUrl = currentUrl;
+      this.hasVisitedCurrentPage = false;
+      logger.info(`Page change détecté via MutationObserver: ${currentUrl}`);
+    }
+
     // Détecter les changements significatifs
     const newAnalysis = this.analyzePage();
 
@@ -239,13 +259,6 @@ export class OrganismController {
     }
   }
 
-  private feedOrganism(): void {
-    window.postMessage({
-      source: 'symbiont-controller',
-      type: 'ORGANISM_ACTION',
-      data: { action: 'feed' }
-    }, '*');
-  }
 
   private toggleOrganismVisibility(): void {
     window.postMessage({
@@ -280,9 +293,13 @@ export class OrganismController {
   }
 }
 
-// Auto-initialisation si WebGL est activé
+// Auto-initialisation désactivée - ConsciousOrganismController est maintenant utilisé
+// Pour réactiver OrganismController, décommenter le code ci-dessous et commenter
+// l'initialisation de ConsciousOrganismController dans content/index.ts
+/*
 chrome.storage.local.get(['symbiont_webgl_enabled'], (result) => {
   if (result.symbiont_webgl_enabled !== false) {
     OrganismController.getInstance();
   }
 });
+*/

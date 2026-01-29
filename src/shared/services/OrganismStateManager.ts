@@ -273,7 +273,7 @@ export class OrganismStateManager {
     this.notifyListeners();
   }
 
-  public async feed(source: 'ritual' | 'interaction' | 'knowledge' | 'social'): Promise<void> {
+  public async feed(source: 'ritual' | 'knowledge' | 'social'): Promise<void> {
     let energyGain = 0;
     let xpGain = 0;
 
@@ -282,10 +282,6 @@ export class OrganismStateManager {
         energyGain = 30;
         xpGain = 50;
         this.state.consciousness += 10;
-        break;
-      case 'interaction':
-        energyGain = 10;
-        xpGain = 10;
         break;
       case 'knowledge':
         energyGain = 15;
@@ -397,7 +393,7 @@ export const organismStateManager = {
     return _instance.updateState(updates);
   },
 
-  async feed(source: 'ritual' | 'interaction' | 'knowledge' | 'social'): Promise<void> {
+  async feed(source: 'ritual' | 'knowledge' | 'social'): Promise<void> {
     if (!_instance) {
       _instance = OrganismStateManager.getInstance();
     }

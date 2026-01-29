@@ -44,6 +44,10 @@ export class ConsciousOrganismController {
   // private lastInteraction: number = Date.now(); // Tracked in methods
   private thoughtCooldown: number = 0;
 
+  // Tracking des pages pour éviter le double comptage
+  private currentPageUrl: string = window.location.href;
+  private hasVisitedCurrentPage: boolean = false;
+
   // Métriques temps réel
   private tabCount: number = 0;
   private cpuUsage: number = 0;
@@ -81,6 +85,9 @@ export class ConsciousOrganismController {
     // Analyser l'environnement initial
     this.pageAnalysis = this.analyzePage();
     this.browserSensors = this.collectSensorData();
+
+    // Enregistrer la première visite de page
+    this.trackPageVisit();
 
     // Démarrer les systèmes
     this.setupListeners();
@@ -443,6 +450,16 @@ export class ConsciousOrganismController {
     const chemistry = this.neuroCore.getChemistry();
     const circadianState = this.circadianRhythm.getState();
 
+    // Vérifier si l'URL a changé (navigation détectée)
+    const currentUrl = window.location.href;
+    if (currentUrl !== this.currentPageUrl) {
+      this.currentPageUrl = currentUrl;
+      this.hasVisitedCurrentPage = false;
+      // Re-analyser la page lors d'un changement d'URL
+      this.pageAnalysis = this.analyzePage();
+      logger.info(`[ConsciousController] Navigation détectée vers: ${currentUrl}`);
+    }
+
     // Déterminer l'humeur basée sur la chimie
     let mood: any = 'curious';
     if (chemistry.melatonin > 0.6) {
@@ -470,6 +487,22 @@ export class ConsciousOrganismController {
       currentPageType: this.pageAnalysis.type,
       isActive: circadianState.phase === SleepPhase.AWAKE
     });
+
+    // Enregistrer la visite de page si c'est une nouvelle page
+    if (!this.hasVisitedCurrentPage) {
+      await this.trackPageVisit();
+    }
+  }
+
+  /**
+   * Enregistre une visite de page unique
+   */
+  private async trackPageVisit(): Promise<void> {
+    if (!this.hasVisitedCurrentPage) {
+      await organismStateManager.onPageVisit(this.pageAnalysis.type);
+      this.hasVisitedCurrentPage = true;
+      logger.info(`[ConsciousController] Page visitée enregistrée: ${this.pageAnalysis.type} (${this.currentPageUrl})`);
+    }
   }
 
   // Méthodes héritées de l'ancien contrôleur
@@ -590,9 +623,17 @@ export class ConsciousOrganismController {
       }
     });
 
-    // Observer les changements de DOM
+    // Observer les changements de DOM et vérifier les changements d'URL
     const observer = new MutationObserver(() => {
-      this.pageAnalysis = this.analyzePage();
+      const currentUrl = window.location.href;
+      if (currentUrl !== this.currentPageUrl) {
+        // Nouvelle page détectée via changement DOM (SPA)
+        this.currentPageUrl = currentUrl;
+        this.hasVisitedCurrentPage = false;
+        this.pageAnalysis = this.analyzePage();
+        this.trackPageVisit();
+        logger.info(`[ConsciousController] SPA navigation détectée: ${currentUrl}`);
+      }
     });
 
     observer.observe(document.body, {
@@ -600,6 +641,29 @@ export class ConsciousOrganismController {
       subtree: true,
       attributes: false,
       characterData: false
+    });
+
+    // Écouter les changements d'URL (popstate, hashchange)
+    window.addEventListener('popstate', () => {
+      const currentUrl = window.location.href;
+      if (currentUrl !== this.currentPageUrl) {
+        this.currentPageUrl = currentUrl;
+        this.hasVisitedCurrentPage = false;
+        this.pageAnalysis = this.analyzePage();
+        this.trackPageVisit();
+        logger.info(`[ConsciousController] Popstate navigation: ${currentUrl}`);
+      }
+    });
+
+    window.addEventListener('hashchange', () => {
+      const currentUrl = window.location.href;
+      if (currentUrl !== this.currentPageUrl) {
+        this.currentPageUrl = currentUrl;
+        this.hasVisitedCurrentPage = false;
+        this.pageAnalysis = this.analyzePage();
+        this.trackPageVisit();
+        logger.info(`[ConsciousController] Hash navigation: ${currentUrl}`);
+      }
     });
   }
 

@@ -39,10 +39,11 @@ export const SharedMutationRitual: React.FC<{ userId: string; traits: Record<str
         setStep('enter');
         return;
       }
-      // Fusionner les traits (exemple simple)
+      // Fusionner les traits (correction du calcul)
       const mergedTraits = { ...(ritual.traits as Record<string, number>) };
       Object.keys(traits).forEach(k => {
-        mergedTraits[k] = ((mergedTraits[k] || 0) + (traits[k] || 0)) / 2;
+        // CORRECTION: Parenthèses correctes pour calculer la moyenne
+        mergedTraits[k] = ((mergedTraits[k] ?? 0) + (traits[k] ?? 0)) / 2;
       });
       setResult({ initiatorId: ritual.initiatorId, receiverId: userId, mergedTraits, timestamp: Date.now() });
       setStep('result');

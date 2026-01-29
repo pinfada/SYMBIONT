@@ -29,16 +29,8 @@ export const MetricsPanel: React.FC = () => {
     });
 
 
-    // Détecter les clics pour nourrir l'organisme
-    const handleClick = () => {
-      // Nourrir l'organisme via interaction
-      organismStateManager.feed('interaction');
-    };
-    document.addEventListener('click', handleClick);
-
     return () => {
       unsubscribe();
-      document.removeEventListener('click', handleClick);
     };
   }, []);
 

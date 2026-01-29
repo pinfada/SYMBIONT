@@ -334,8 +334,6 @@ export class OrganismRenderer {
     chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'UPDATE_ORGANISM_STATE') {
         this.updateState(message.data);
-      } else if (message.type === 'ORGANISM_ACTION') {
-        this.performAction(message.action);
       }
     });
 
@@ -420,23 +418,6 @@ export class OrganismRenderer {
     };
   }
 
-  private performAction(action: string): void {
-    switch (action) {
-      case 'feed':
-        this.state.energy = Math.min(1, this.state.energy + 0.2);
-        this.showFeedbackAnimation('energy');
-        break;
-      case 'meditate':
-        this.state.consciousness = Math.min(1, this.state.consciousness + 0.1);
-        this.showFeedbackAnimation('consciousness');
-        break;
-      case 'play':
-        this.state.mood = 'happy';
-        this.container.classList.add('excited');
-        setTimeout(() => this.container.classList.remove('excited'), 2000);
-        break;
-    }
-  }
 
   /**
    * Gère les messages provenant du système de conscience
@@ -684,25 +665,6 @@ export class OrganismRenderer {
     } : null;
   }
 
-  private showFeedbackAnimation(type: string): void {
-    const feedback = document.createElement('div');
-    feedback.style.cssText = `
-      position: absolute;
-      top: -20px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: ${type === 'energy' ? '#ffeb3b' : '#9c27b0'};
-      font-size: 20px;
-      font-weight: bold;
-      pointer-events: none;
-      animation: rise-and-fade 2s ease-out forwards;
-    `;
-
-    feedback.textContent = type === 'energy' ? '⚡ +20%' : '🧠 +10%';
-    this.container.appendChild(feedback);
-
-    setTimeout(() => feedback.remove(), 2000);
-  }
 
   private animate(): void {
     if (!this.gl || !this.shaderProgram) {

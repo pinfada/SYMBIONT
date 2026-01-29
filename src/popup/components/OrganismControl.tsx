@@ -3,19 +3,11 @@ import { logger } from '@shared/utils/secureLogger';
 
 interface OrganismSettings {
   webglEnabled: boolean;
-  floatingPosition: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
-  size: 'small' | 'medium' | 'large';
-  interactionMode: 'curious' | 'shy' | 'neutral';
-  visibility: 'always' | 'hover' | 'focus';
 }
 
 const OrganismControl: React.FC = () => {
   const [settings, setSettings] = useState<OrganismSettings>({
-    webglEnabled: true,
-    floatingPosition: 'bottom-right',
-    size: 'medium',
-    interactionMode: 'curious',
-    visibility: 'always'
+    webglEnabled: true
   });
 
   const [organismState, setOrganismState] = useState({
@@ -76,56 +68,7 @@ const OrganismControl: React.FC = () => {
     });
   };
 
-  const changePosition = (position: OrganismSettings['floatingPosition']) => {
-    const newSettings = { ...settings, floatingPosition: position };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
 
-  const changeSize = (size: OrganismSettings['size']) => {
-    const newSettings = { ...settings, size };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
-
-  const changeInteractionMode = (mode: OrganismSettings['interactionMode']) => {
-    const newSettings = { ...settings, interactionMode: mode };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
-
-  const saveSettings = (newSettings: OrganismSettings) => {
-    chrome.storage.local.set({
-      symbiont_webgl_settings: newSettings
-    }, () => {
-      // Broadcast les nouveaux paramètres
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]?.id) {
-          chrome.tabs.sendMessage(tabs[0].id, {
-            type: 'UPDATE_ORGANISM_SETTINGS',
-            settings: newSettings
-          }).catch(() => {});
-        }
-      });
-    });
-  };
-
-  const feedOrganism = () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'FEED_ORGANISM'
-        }, (response) => {
-          if (response?.success) {
-            setOrganismState(prev => ({
-              ...prev,
-              energy: Math.min(1, prev.energy + 0.2)
-            }));
-          }
-        });
-      }
-    });
-  };
 
   const getMoodEmoji = (mood: string): string => {
     const moods: Record<string, string> = {
@@ -156,7 +99,7 @@ const OrganismControl: React.FC = () => {
   return (
     <div className="organism-control">
       <div className="control-header">
-        <h3>🧬 Organisme Compagnon</h3>
+        <h3>🧬 Visualisation WebGL</h3>
         <label className="toggle-switch">
           <input
             type="checkbox"
@@ -207,80 +150,16 @@ const OrganismControl: React.FC = () => {
             </div>
           </div>
 
-          <div className="control-section">
-            <h4>Position</h4>
-            <div className="position-grid">
-              <button
-                className={`position-btn ${settings.floatingPosition === 'top-left' ? 'active' : ''}`}
-                onClick={() => changePosition('top-left')}
-                title="Haut gauche"
-              >↖</button>
-              <button
-                className={`position-btn ${settings.floatingPosition === 'top-right' ? 'active' : ''}`}
-                onClick={() => changePosition('top-right')}
-                title="Haut droite"
-              >↗</button>
-              <button
-                className={`position-btn ${settings.floatingPosition === 'bottom-left' ? 'active' : ''}`}
-                onClick={() => changePosition('bottom-left')}
-                title="Bas gauche"
-              >↙</button>
-              <button
-                className={`position-btn ${settings.floatingPosition === 'bottom-right' ? 'active' : ''}`}
-                onClick={() => changePosition('bottom-right')}
-                title="Bas droite"
-              >↘</button>
-            </div>
-          </div>
-
-          <div className="control-section">
-            <h4>Taille</h4>
-            <div className="size-options">
-              {(['small', 'medium', 'large'] as const).map(size => (
-                <button
-                  key={size}
-                  className={`size-btn ${settings.size === size ? 'active' : ''}`}
-                  onClick={() => changeSize(size)}
-                >
-                  {size === 'small' ? 'Petit' : size === 'medium' ? 'Moyen' : 'Grand'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="control-section">
-            <h4>Comportement</h4>
-            <select
-              value={settings.interactionMode}
-              onChange={(e) => changeInteractionMode(e.target.value as OrganismSettings['interactionMode'])}
-              className="behavior-select"
-            >
-              <option value="curious">🔍 Curieux (suit la souris)</option>
-              <option value="shy">😳 Timide (fuit la souris)</option>
-              <option value="neutral">😐 Neutre (ignore la souris)</option>
-            </select>
-          </div>
-
-          <div className="control-actions">
-            <button
-              className="feed-btn"
-              onClick={feedOrganism}
-              disabled={organismState.energy > 0.9}
-            >
-              🍎 Nourrir l'organisme
-            </button>
-          </div>
 
           <div className="organism-info">
             <p className="info-text">
-              💡 Votre organisme vit dans les pages web que vous visitez.
-              Il réagit au contenu et évolue selon vos interactions !
+              💡 Visualisation WebGL de l'activité de l'extension sur la page courante.
             </p>
             <ul className="behavior-list">
-              <li>🔬 <strong>Pages scientifiques</strong> : S'excite et change de couleur</li>
-              <li>👥 <strong>Réseaux sociaux</strong> : Devient plus social</li>
-              <li>💻 <strong>Code</strong> : Se concentre intensément</li>
-              <li>🎬 <strong>Divertissement</strong> : Se détend et joue</li>
+              <li>🔬 <strong>Affichage visuel</strong> : Représentation 3D de l'organisme numérique</li>
+              <li>📊 <strong>État</strong> : Indicateurs d'énergie et de conscience basés sur les métriques système</li>
+              <li>⚙️ <strong>Configuration</strong> : Position et taille personnalisables de l'affichage</li>
+              <li>🎨 <strong>Rendu</strong> : Animation WebGL en temps réel</li>
             </ul>
           </div>
         </>

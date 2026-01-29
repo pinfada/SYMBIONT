@@ -38,6 +38,17 @@ export class InvitationService {
   async consumeInvitation(code: string, receiverId: string): Promise<Invitation | null> {
     const invitation = await this.storage.getInvitation(code);
     if (!invitation || invitation.used) return null;
+
+    // SÉCURITÉ: Empêcher l'auto-invitation
+    if (invitation.donorId === receiverId) {
+      console.warn('[InvitationService] SECURITY: Self-invitation attempt blocked', {
+        code,
+        userId: receiverId,
+        timestamp: Date.now()
+      });
+      throw new Error('Auto-invitation interdite: Vous ne pouvez pas accepter votre propre invitation');
+    }
+
     invitation.used = true;
     invitation.receiverId = receiverId;
     invitation.usedAt = Date.now();
@@ -49,6 +60,11 @@ export class InvitationService {
   async isValid(code: string): Promise<boolean> {
     const invitation = await this.storage.getInvitation(code);
     return !!invitation && !invitation.used;
+  }
+
+  // Récupère une invitation par son code (pour validation)
+  async getInvitation(code: string): Promise<Invitation | null> {
+    return await this.storage.getInvitation(code);
   }
 
   // Génère un motif/couleur symbolique (exemple simple)

@@ -474,6 +474,29 @@ class BackgroundService {
           });
           return;
         }
+
+        // SÉCURITÉ: Vérification préventive contre l'auto-invitation
+        // Récupération des détails de l'invitation pour validation
+        const invitationDetails = await this.invitationService!.getInvitation(code);
+
+        if (invitationDetails && invitationDetails.donorId === receiverId) {
+          logger.warn('[Background] SECURITY: Self-invitation attempt detected and blocked', {
+            code,
+            donorId: invitationDetails.donorId,
+            receiverId,
+            timestamp: Date.now()
+          });
+          await resilientBus.send({
+            type: MessageType.INVITATION_CONSUMED,
+            payload: {
+              error: 'Auto-invitation détectée: Vous ne pouvez pas accepter votre propre invitation.',
+              code,
+              blocked: true
+            }
+          });
+          return;
+        }
+
         const invitation = await this.invitationService!.consumeInvitation(code, receiverId);
         if (invitation) {
           this.activated = true;
@@ -649,8 +672,41 @@ class BackgroundService {
       // Fusionner les traits (moyenne)
       const mergedTraits: Record<string, number> = { ...session.traits };
       for (const key of Object.keys(traits)) {
-        mergedTraits[key] = (mergedTraits[key] ?? 0 + traits[key] ?? 0) / 2;
+        // CORRECTION: Parenthèses correctes pour la moyenne
+        mergedTraits[key] = ((mergedTraits[key] ?? 0) + (traits[key] ?? 0)) / 2;
       }
+
+      // IMPORTANT: Appliquer réellement les traits fusionnés à l'organisme
+      if (this.organism && this.organism.traits) {
+        logger.info('[Background] Applying merged traits to organism', {
+          before: { ...this.organism.traits },
+          merged: mergedTraits
+        });
+
+        // Appliquer les nouveaux traits
+        for (const [key, value] of Object.entries(mergedTraits)) {
+          if (key in this.organism.traits) {
+            const traitKey = key as keyof typeof this.organism.traits;
+            this.organism.traits[traitKey] = Math.max(0, Math.min(100, value)); // Borner entre 0-100
+          }
+        }
+
+        // Sauvegarder l'organisme modifié
+        if (this.isStorageReady()) {
+          await this.debouncer!.saveOrganism(this.organism);
+          logger.info('[Background] Organism saved with merged traits');
+        }
+
+        // Notifier le popup des changements
+        await resilientBus.send({
+          type: MessageType.ORGANISM_UPDATE,
+          payload: {
+            state: this.organism,
+            mutations: []
+          }
+        });
+      }
+
       sharedMutationSessions.delete(code);
       let resultPayload: import('../shared/types/rituals').SharedMutationResult | string = {
         initiatorId: session.initiatorId,

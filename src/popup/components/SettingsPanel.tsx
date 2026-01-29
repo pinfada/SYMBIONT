@@ -1,247 +1,59 @@
 // src/popup/components/SettingsPanel.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTheme } from '../hooks/useTheme';
-import { logger } from '@shared/utils/secureLogger';
-import { chromeApi } from '@/shared/utils/chromeApiSafe';
-
-interface Settings {
-  theme: 'light' | 'dark' | 'auto';
-  notifications: boolean;
-  autoMutate: boolean;
-  mutationSpeed: number;
-  visualQuality: 'low' | 'medium' | 'high';
-}
 
 export const SettingsPanel: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  const [settings, setSettings] = useState<Settings>({
-    theme: 'auto',
-    notifications: true,
-    autoMutate: false,
-    mutationSpeed: 1,
-    visualQuality: 'high'
-  });
-  const [autoBackup, setAutoBackup] = useState(false);
-  const [featureFlags, setFeatureFlags] = useState<{
-    USE_REAL_DNA: boolean;
-    USE_REAL_BEHAVIOR: boolean;
-    USE_REAL_NETWORK: boolean;
-    USE_BACKEND_API: boolean;
-  }>({
-    USE_REAL_DNA: false,
-    USE_REAL_BEHAVIOR: false,
-    USE_REAL_NETWORK: false,
-    USE_BACKEND_API: false
-  });
-  
-  useEffect(() => {
-    loadSettings();
-    loadFeatureFlags();
-  }, []);
-  
-  const loadSettings = async () => {
-    // Use chrome.storage.local instead of direct IndexedDB to avoid connection conflicts
-    try {
-      chromeApi.storage.local.get(['userPreferences'], (result) => {
-        if (result.userPreferences) {
-          setSettings(result.userPreferences);
-        }
-      });
-    } catch (_error) {
-      logger.warn('Failed to load settings:', _error);
-    }
-  };
-  
-  const loadFeatureFlags = async () => {
-    try {
-      const { RealDataServiceClass } = await import('../services/RealDataService');
-      const flags = RealDataServiceClass.getFeatureStatus();
-      setFeatureFlags(flags);
-    } catch (_error) {
-      logger.warn('Impossible de charger les feature flags:', _error);
-      // Garder les valeurs par défaut
-    }
-  };
-  
-  const saveSettings = async () => {
-    // Use chrome.storage.local instead of direct IndexedDB to avoid connection conflicts
-    try {
-      chromeApi.storage.local.set({ userPreferences: settings }, () => {
-        logger.info('Settings saved successfully');
-      });
-    } catch (_error) {
-      logger.error('Failed to save settings:', _error);
-    }
-  };
-  
-  const updateSetting = <K extends keyof Settings>(
-    key: K,
-    value: Settings[K]
-  ) => {
-    setSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-  
-  const toggleFeatureFlag = async (feature: string) => {
-    try {
-      const { RealDataServiceClass } = await import('../services/RealDataService');
-      const currentValue = featureFlags[feature as keyof typeof featureFlags];
-      
-      if (currentValue) {
-        RealDataServiceClass.disableFeature(feature as keyof typeof featureFlags);
-      } else {
-        RealDataServiceClass.enableFeature(feature as keyof typeof featureFlags);
-      }
-      
-      // Mise à jour locale immédiate
-      setFeatureFlags(prev => ({
-        ...prev,
-        [feature]: !currentValue
-      }));
-      
-      // Notifier les autres composants du changement si nécessaire
-      if (feature === 'USE_BACKEND_API') {
-        // Refresh data when backend API status changes
-        setTimeout(() => window.location.reload(), 100);
-      }
-    } catch (_error) {
-      logger.error('Erreur toggle feature flag:', _error);
-    }
-  };
-
-  const migrateToRealData = async () => {
-    try {
-      const { realDataService } = await import('../services/RealDataService');
-      const userId = localStorage.getItem('symbiont_user_id') || 'default-user';
-      
-      await realDataService.migrateToRealData(userId);
-      alert('✅ Migration vers vraies données réussie ! Rechargez l\'extension.');
-    } catch (_error) {
-      logger.error('Erreur migration:', _error);
-      alert('❌ Erreur lors de la migration. Voir console.');
-    }
-  };
 
   return (
     <div className="ext-settings-panel max-w-lg mx-auto p-6 bg-white rounded-xl shadow-lg mt-8">
       <h2 className="text-2xl font-bold text-center text-[#00e0ff] mb-6">Paramètres</h2>
-      <section className="ext-settings-section mb-6">
-        <h3 className="text-lg font-bold text-[#00e0ff] mb-2">Préférences utilisateur</h3>
-        <div className="flex flex-col gap-4">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={settings.notifications} onChange={e => updateSetting('notifications', e.target.checked)} /> Notifications
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={settings.autoMutate} onChange={e => updateSetting('autoMutate', e.target.checked)} /> Mutation automatique
-          </label>
-          <label className="flex items-center gap-2">
-            Qualité visuelle&nbsp;:
-            <select value={settings.visualQuality} onChange={e => updateSetting('visualQuality', e.target.value as any)} className="ml-2 rounded-md border px-2 py-1">
-              <option value="high">Haute</option>
-              <option value="medium">Moyenne</option>
-              <option value="low">Basse</option>
-            </select>
-          </label>
-        </div>
-      </section>
+
+      {/* Section Thème */}
       <section className="ext-settings-section">
-        <h3 className="text-lg font-bold text-[#00e0ff] mb-2">Thème</h3>
-        <div className="flex gap-4">
-          <button onClick={() => setTheme('light')} className={`rounded-lg px-4 py-2 font-bold ${theme === 'light' ? 'bg-[#00e0ff] text-[#181c22]' : 'bg-[#eaf6fa] text-[#232946]'}`}>Clair</button>
-          <button onClick={() => setTheme('dark')} className={`rounded-lg px-4 py-2 font-bold ${theme === 'dark' ? 'bg-[#00e0ff] text-[#181c22]' : 'bg-[#232946] text-white'}`}>Sombre</button>
-          <button onClick={() => setTheme('auto')} className={`rounded-lg px-4 py-2 font-bold ${theme === 'auto' ? 'bg-[#00e0ff] text-[#181c22]' : 'bg-[#888] text-white'}`}>Auto</button>
-        </div>
-      </section>
-      <section className="ext-settings-section">
-        <h3 className="text-lg font-bold text-[#00e0ff] mb-2">💾 Données</h3>
-        <div className="flex flex-col gap-4">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={autoBackup} onChange={e => setAutoBackup(e.target.checked)} /> Sauvegarde automatique
-          </label>
-        </div>
-      </section>
-      <section className="ext-settings-section">
-        <h3 className="text-lg font-bold text-[#00e0ff] mb-2">🚀 Données Réelles (Mode Avancé)</h3>
-        <p className="section-description">
-          Activez progressivement les vraies données pour remplacer le mode démo.
-          <br />
-          ⚠️ Nécessite un rechargement de l'extension après activation.
-        </p>
-        <div className="feature-flags-grid">
-          <div className="feature-flag-item">
-            <div className="flag-info">
-              <h4>🧬 ADN Comportemental</h4>
-              <p>Génère l'ADN basé sur vos vrais patterns de navigation</p>
-            </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={featureFlags.USE_REAL_DNA}
-                onChange={() => toggleFeatureFlag('USE_REAL_DNA').catch(console.error)}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-          </div>
-          <div className="feature-flag-item">
-            <div className="flag-info">
-              <h4>📊 Métriques Système</h4>
-              <p>Collecte les vraies métriques de performance du navigateur</p>
-            </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={featureFlags.USE_REAL_BEHAVIOR}
-                onChange={() => toggleFeatureFlag('USE_REAL_BEHAVIOR').catch(console.error)}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-          </div>
-          <div className="feature-flag-item">
-            <div className="flag-info">
-              <h4>🌐 Réseau Social</h4>
-              <p>Connecte au réseau SYMBIONT réel (nécessite backend)</p>
-            </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={featureFlags.USE_REAL_NETWORK}
-                onChange={() => toggleFeatureFlag('USE_REAL_NETWORK').catch(console.error)}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-          </div>
-          <div className="feature-flag-item">
-            <div className="flag-info">
-              <h4>🔌 API Backend</h4>
-              <p>Utilise l'API serveur pour synchroniser les données</p>
-            </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={featureFlags.USE_BACKEND_API}
-                onChange={() => toggleFeatureFlag('USE_BACKEND_API').catch(console.error)}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-        <div className="migration-actions">
-          <button 
-            onClick={migrateToRealData}
-            className="btn-primary migration-btn"
-            disabled={!featureFlags.USE_REAL_DNA}
+        <h3 className="text-lg font-bold text-[#00e0ff] mb-4">🎨 Thème de l'interface</h3>
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={() => setTheme('light')}
+            className={`rounded-lg px-4 py-2 font-bold transition-all ${
+              theme === 'light'
+                ? 'bg-[#00e0ff] text-[#181c22] shadow-lg scale-105'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105'
+            }`}
           >
-            🔄 Migrer vers Vraies Données
+            ☀️ Clair
           </button>
-          <p className="migration-note">
-            Cette action génère un nouvel ADN basé sur vos données de navigation réelles
-          </p>
+          <button
+            onClick={() => setTheme('dark')}
+            className={`rounded-lg px-4 py-2 font-bold transition-all ${
+              theme === 'dark'
+                ? 'bg-[#00e0ff] text-[#181c22] shadow-lg scale-105'
+                : 'bg-gray-700 text-white hover:bg-gray-600 hover:scale-105'
+            }`}
+          >
+            🌙 Sombre
+          </button>
+          <button
+            onClick={() => setTheme('auto')}
+            className={`rounded-lg px-4 py-2 font-bold transition-all ${
+              theme === 'auto'
+                ? 'bg-[#00e0ff] text-[#181c22] shadow-lg scale-105'
+                : 'bg-gray-500 text-white hover:bg-gray-400 hover:scale-105'
+            }`}
+          >
+            🔄 Auto
+          </button>
         </div>
+        <p className="mt-4 text-sm text-gray-600 text-center">
+          Le thème <strong>Auto</strong> s'adapte automatiquement aux préférences de votre système
+        </p>
       </section>
-      <div className="flex justify-end mt-6">
-        <button onClick={saveSettings} className="bg-[#00e0ff] text-[#181c22] rounded-lg px-5 py-2 font-bold cursor-pointer">Enregistrer</button>
+
+      {/* Info footer */}
+      <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+        <p className="text-sm text-blue-700 text-center">
+          <span className="text-lg">🧬</span> SYMBIONT v1.0.0 - Extension de vie numérique organique
+        </p>
       </div>
     </div>
   );

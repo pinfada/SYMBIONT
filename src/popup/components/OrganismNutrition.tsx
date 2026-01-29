@@ -16,8 +16,6 @@ interface NutritionSource {
 
 export const OrganismNutrition: React.FC = () => {
   const [state, setState] = useState<OrganismState>(organismStateManager.getState());
-  const [feeding, setFeeding] = useState(false);
-  const [lastFeedSource, setLastFeedSource] = useState<string>('');
   const [showHelp, setShowHelp] = useState(false);
 
   const nutritionSources: NutritionSource[] = [
@@ -40,15 +38,6 @@ export const OrganismNutrition: React.FC = () => {
       cooldown: 10
     },
     {
-      id: 'interaction',
-      name: 'Interaction',
-      icon: '🖱️',
-      description: 'Cliquez et scrollez activement sur les pages',
-      energyGain: 10,
-      xpGain: 10,
-      cooldown: 2
-    },
-    {
       id: 'ritual',
       name: 'Rituel Mystique',
       icon: '✨',
@@ -66,22 +55,6 @@ export const OrganismNutrition: React.FC = () => {
     return unsubscribe;
   }, []);
 
-  const handleFeed = async (source: NutritionSource) => {
-    setFeeding(true);
-    setLastFeedSource(source.name);
-
-    await organismStateManager.feed(source.id);
-
-    // Animation de feedback
-    setTimeout(() => {
-      setFeeding(false);
-    }, 1500);
-
-    // Sauvegarder le temps d'utilisation
-    const feedHistory = JSON.parse(localStorage.getItem('feed_history') || '{}');
-    feedHistory[source.id] = Date.now();
-    localStorage.setItem('feed_history', JSON.stringify(feedHistory));
-  };
 
   const getTimeUntilNextFeed = (source: NutritionSource): string => {
     const feedHistory = JSON.parse(localStorage.getItem('feed_history') || '{}');
@@ -153,20 +126,20 @@ export const OrganismNutrition: React.FC = () => {
 
       {showHelp && (
         <div className="nutrition-help">
-          <h4>Comment nourrir votre organisme ?</h4>
+          <h4>Comment votre organisme se nourrit-il ?</h4>
           <p>
-            Votre organisme se nourrit de vos activités en ligne.
-            Il gagne automatiquement de l'énergie et de l'expérience selon :
+            Votre organisme se nourrit automatiquement de votre navigation web.
+            Il gagne de l'énergie et de l'expérience selon :
           </p>
           <ul>
-            <li>Le type de sites que vous visitez</li>
-            <li>Vos interactions avec les pages</li>
-            <li>Les rituels mystiques que vous accomplissez</li>
-            <li>Vos activités sociales</li>
+            <li><strong>Navigation automatique :</strong> Le type de sites visités influence l'évolution</li>
+            <li><strong>Pages éducatives :</strong> Augmentent la conscience progressivement</li>
+            <li><strong>Rituels mystiques :</strong> Sources d'énergie manuelle puissantes</li>
+            <li><strong>Contexte social :</strong> Les réseaux sociaux apportent de l'expérience</li>
           </ul>
           <p className="help-note">
             💡 L'organisme consomme de l'énergie en permanence.
-            Plus il est actif, plus il consomme !
+            La navigation active consomme plus (-0.5/s) que le repos (-0.2/s).
           </p>
         </div>
       )}
@@ -222,35 +195,21 @@ export const OrganismNutrition: React.FC = () => {
                 </div>
               </div>
 
-              {source.id === 'interaction' && available && (
-                <button
-                  className="feed-button"
-                  onClick={() => handleFeed(source)}
-                  disabled={feeding}
-                >
-                  Nourrir
-                </button>
-              )}
             </div>
           );
         })}
       </div>
 
-      {feeding && (
-        <div className="feeding-animation">
-          <div className="feeding-message">
-            🍽️ {lastFeedSource} en cours...
-          </div>
-        </div>
-      )}
 
       <div className="nutrition-tips">
         <h4>💡 Conseils</h4>
         <ul>
+          <li>Votre organisme se nourrit automatiquement de votre navigation</li>
           <li>Les pages scientifiques augmentent la conscience (+0.3/s)</li>
-          <li>Les rituels mystiques sont la meilleure source d'énergie</li>
+          <li>Les pages sociales apportent de l'expérience sociale</li>
+          <li>Les rituels mystiques sont la meilleure source d'énergie manuelle</li>
           <li>L'organisme évolue tous les 100 points d'XP</li>
-          <li>Un organisme affamé perd ses capacités progressivement</li>
+          <li>L'énergie diminue naturellement (-0.5/s si actif, -0.2/s au repos)</li>
         </ul>
       </div>
 
