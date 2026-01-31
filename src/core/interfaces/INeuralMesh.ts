@@ -58,4 +58,11 @@ export interface INeuralMesh {
   reset(): void;
   healthCheck(): { healthy: boolean; issues: string[] };
   cleanup(): void;
+
+  // Resonance analysis methods
+  feedNetworkLatency(latency: number): void;
+  feedDOMJitter(jitter: number): void;
+  getResonanceState?(): any;
+  getResonanceDiagnostics?(): any;
+  resetResonanceAnalyzer?(): void;
 } 

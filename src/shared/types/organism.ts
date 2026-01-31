@@ -57,6 +57,7 @@ export interface OrganismMutation {
     type: 'visual' | 'behavioral' | 'cognitive';
     trigger: string;
     magnitude: number;
+    timestamp: number;
     // Ajoutez d'autres propriétés si besoin
 }
 

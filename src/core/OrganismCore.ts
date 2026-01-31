@@ -475,7 +475,7 @@ export class OrganismCore implements IOrganismCore {
   getShaderParameters(): ShaderParameters {
     const traits = this.getTraits();
     const energy = this.energyService.getEnergyLevel();
-    
+
     return {
       energy: energy / 100,
       health: this.health / 100,
@@ -484,5 +484,124 @@ export class OrganismCore implements IOrganismCore {
       focus: traits.focus,
       time: Date.now() / 1000
     };
+  }
+
+  /**
+   * Process hidden DOM elements and update traits (Phase 1.2)
+   * @param hiddenElementsData Data from Vision Spectrale ritual
+   * @since 1.2.0
+   * @see proposition_amelioration.md - DOM Archaeology
+   */
+  processHiddenElements(hiddenElementsData: {
+    elements: Array<{ type: string; significance: number; content: string }>;
+    statistics: {
+      total: number;
+      suspiciousPatterns: number;
+      hasNegativeZIndex: boolean;
+      byType: Record<string, number>;
+    };
+  }): void {
+    const { elements, statistics } = hiddenElementsData;
+
+    if (!elements || elements.length === 0) {
+      this.logger?.debug('No hidden elements to process');
+      return;
+    }
+
+    // Calculate trait gains based on findings
+    const elementCount = Math.min(elements.length, 100);
+    const suspiciousRatio = statistics.suspiciousPatterns / Math.max(1, statistics.total);
+
+    // Base gains (logarithmic scale to prevent excessive growth)
+    const intuitionGain = Math.log(1 + elementCount * 0.01) * 0.1;
+    const awarenessGain = Math.log(1 + statistics.suspiciousPatterns * 0.02) * 0.15;
+
+    // Bonus for detecting negative z-index (very suspicious)
+    const zIndexBonus = statistics.hasNegativeZIndex ? 0.05 : 0;
+
+    // Calculate consciousness gain based on pattern complexity
+    const consciousnessGain = (suspiciousRatio * 0.1) + zIndexBonus;
+
+    // Apply trait updates with energy cost
+    const energyCost = 5; // Vision Spectrale consumes energy
+    if (!this.energyService.consumeEnergy(energyCost, 'vision_spectrale_processing')) {
+      this.logger?.debug('Insufficient energy to process hidden elements');
+      return;
+    }
+
+    // Update traits
+    const currentTraits = this.traitService.getAllTraits();
+    const updates: Partial<OrganismTraits> = {};
+
+    // Intuition increases from discovering hidden patterns
+    if (intuitionGain > 0) {
+      updates.intuition = Math.min(1, currentTraits.intuition + intuitionGain);
+    }
+
+    // Awareness increases from detecting suspicious elements
+    if (awarenessGain > 0) {
+      // Note: awareness might not be a standard trait, check if it exists
+      if ('awareness' in currentTraits) {
+        updates.awareness = Math.min(1, (currentTraits as any).awareness + awarenessGain);
+      } else {
+        // Map to a similar trait like focus or memory
+        updates.focus = Math.min(1, currentTraits.focus + awarenessGain * 0.5);
+        updates.memory = Math.min(1, currentTraits.memory + awarenessGain * 0.5);
+      }
+    }
+
+    // Consciousness expands from understanding hidden structures
+    if (consciousnessGain > 0) {
+      updates.consciousness = Math.min(1, currentTraits.consciousness + consciousnessGain);
+    }
+
+    // Special handling for highly suspicious patterns
+    if (suspiciousRatio > 0.5) {
+      // High cortisol (stress) response
+      updates.cortisol = Math.min(1, currentTraits.cortisol + 0.1);
+
+      // But also increased curiosity from learning
+      updates.curiosity = Math.min(1, currentTraits.curiosity + 0.05);
+    }
+
+    // Apply all trait updates
+    this.traitService.updateTraits(updates, 'hidden_elements_analysis');
+
+    // Log the analysis results
+    this.logger?.info('Hidden elements processed', {
+      id: this.id,
+      elementsAnalyzed: elementCount,
+      suspiciousPatterns: statistics.suspiciousPatterns,
+      hasNegativeZIndex: statistics.hasNegativeZIndex,
+      traitsUpdated: Object.keys(updates),
+      gains: {
+        intuition: intuitionGain.toFixed(3),
+        awareness: awarenessGain.toFixed(3),
+        consciousness: consciousnessGain.toFixed(3)
+      }
+    });
+
+    // Store pattern in neural memory for future learning
+    this.neuralService.queuePattern({
+      id: `hidden_elements_${Date.now()}`,
+      type: 'behavioral', // Changed from 'structural' to match type definition
+      data: {
+        summary: statistics,
+        topElements: elements.slice(0, 10).map(el => ({
+          type: el.type,
+          significance: el.significance
+        }))
+      },
+      timestamp: Date.now(),
+      confidence: suspiciousRatio
+    });
+
+    // Trigger health improvement if significant discoveries
+    if (statistics.suspiciousPatterns > 10) {
+      this.health = Math.min(100, this.health + 5);
+      this.logger?.debug('Health improved from structural awareness', {
+        newHealth: this.health
+      });
+    }
   }
 }

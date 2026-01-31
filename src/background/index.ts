@@ -12,6 +12,7 @@ import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
 import { OrganismFactory } from '../core/factories/OrganismFactory';
 import { generateUUID } from '../shared/utils/uuid';
+import { NetworkLatencyCollector } from './services/NetworkLatencyCollector';
 
 // --- Ajout des modules résilients ---
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
@@ -19,6 +20,10 @@ import { HybridStorageManager } from '../storage/hybrid-storage-manager';
 import { BasicHealthMonitor } from '../monitoring/basic-health-monitor';
 import { healthCheckManager } from '../shared/monitoring/HealthCheckManager';
 import { bulkheadManager } from '../shared/patterns/BulkheadManager';
+
+// --- Import du système de rituels ---
+import { initializeRituals, RitualBootstrap } from '../core/rituals/RitualBootstrap';
+import { RitualType } from '../core/rituals/interfaces/IRitual';
 
 // --- Instanciation des modules sociaux (Phase 3) ---
 import { DistributedOrganismNetwork } from '../social/distributed-organism-network';
@@ -80,11 +85,14 @@ class BackgroundService {
   private security: SecurityManager = new SecurityManager();
   private _organismFactory: OrganismFactory;
   private initialized: boolean = false;
+  private networkLatencyCollector: NetworkLatencyCollector;
+  private ritualBootstrap: RitualBootstrap | null = null;
 
   constructor() {
     this.messageBus = new MessageBus('background');
     this.murmureService = new MurmureService();
     this._organismFactory = new OrganismFactory();
+    this.networkLatencyCollector = new NetworkLatencyCollector();
     // N'initialise PAS immédiatement - attendre le premier message
     logger.info('[BackgroundService] Instance créée - en attente d\'initialisation');
   }
@@ -191,14 +199,39 @@ class BackgroundService {
       // Start periodic tasks
       this.startPeriodicTasks(storageInitialized);
 
+      // Démarrer la collecte de latence réseau avec callback vers NeuralMesh
+      this.networkLatencyCollector.start(async (latency) => {
+        try {
+          const neuralMesh = await this._organismFactory.getNeuralMesh();
+          if (neuralMesh && typeof neuralMesh.feedNetworkLatency === 'function') {
+            neuralMesh.feedNetworkLatency(latency);
+          }
+        } catch (error) {
+          logger.error('[Background] Failed to feed network latency to NeuralMesh:', error);
+        }
+      });
+
       // Démarrer les health checks automatiques
       healthCheckManager.start();
+
+      // Initialiser le système de rituels SI l'organisme est actif
+      if (this.activated && this.organism) {
+        try {
+          logger.info('[BackgroundService] Initializing ritual system...');
+          this.ritualBootstrap = await initializeRituals();
+          logger.info('[BackgroundService] Ritual system initialized successfully');
+        } catch (ritualError) {
+          logger.error('[BackgroundService] Failed to initialize rituals:', ritualError);
+          // Non critique - continuer sans rituels
+        }
+      }
 
       logger.info('Background service initialized', {
         healthCheckActive: true,
         bulkheadManagerActive: true,
         organismLoaded: !!this.organism,
-        activated: this.activated
+        activated: this.activated,
+        ritualsActive: !!this.ritualBootstrap
       });
     } catch (error) {
       logger.error('Failed to initialize background service:', error);
@@ -383,6 +416,104 @@ class BackgroundService {
       const { type, timestamp, target, data } = (message as any).payload;
       this.events.push({ type, timestamp, target, ...data });
       this.analyzeContextualPatterns();
+    });
+
+    // Handler pour les signaux de résonance DOM détectés
+    this.messageBus.on(MessageType.DOM_RESONANCE_DETECTED, async (message: MessageEvent | unknown) => {
+      try {
+        const {
+          resonance,
+          jitter,
+          shadowActivity,
+          metrics,
+          timestamps
+        } = (message as any).payload;
+
+        // CORRECTION: Calcul correct de la latence avec timestamps absolus
+        const receivedAt = Date.now();
+        const transmissionLatency = timestamps?.emitted ?
+          receivedAt - timestamps.emitted : // Latence en ms (temps absolus)
+          null;
+
+        // Latence totale depuis la détection
+        const totalLatency = timestamps?.detected ?
+          receivedAt - timestamps.detected :
+          null;
+
+        logger.info('[Background] DOM Resonance detected', {
+          resonance,
+          shadowActivity,
+          metricsSnapshot: metrics,
+          transmissionLatency: transmissionLatency ? `${transmissionLatency}ms` : 'unknown',
+          totalLatency: totalLatency ? `${totalLatency}ms` : 'unknown',
+          receivedAt: new Date(receivedAt).toISOString()
+        });
+
+        // Alimenter le NeuralMesh avec les données de jitter DOM
+        if (this.organism && jitter) {
+          // Récupérer ou créer une instance du NeuralMesh via l'OrganismFactory
+          const neuralMesh = await this._organismFactory.getNeuralMesh();
+          if (neuralMesh && typeof neuralMesh.feedDOMJitter === 'function') {
+            neuralMesh.feedDOMJitter(jitter);
+          }
+        }
+
+        // Notifier le popup de l'état de résonance
+        await resilientBus.send({
+          type: MessageType.RESONANCE_UPDATE,
+          payload: {
+            resonanceLevel: resonance,
+            jitterAverage: metrics?.averageJitter || 0,
+            shadowActivityCount: shadowActivity,
+            timestamp: Date.now()
+          }
+        });
+
+        // Si résonance critique, déclencher une mutation adaptative
+        // CORRECTION: Utiliser le timestamp de détection original pour synchronisation
+        const mutationTimestamp = timestamps?.detected || Date.now();
+
+        if (resonance > 0.8 && this.organism) {
+          logger.warn('[Background] Critical resonance detected, triggering adaptive mutation', {
+            transmissionLatency: transmissionLatency ? `${transmissionLatency}ms` : 'unknown',
+            totalLatency: totalLatency ? `${totalLatency}ms` : 'unknown',
+            mutationTimestamp: new Date(mutationTimestamp).toISOString()
+          });
+
+          const mutation: OrganismMutation = {
+            type: 'cognitive',
+            trigger: 'resonance_adaptation',
+            magnitude: resonance * 0.5,
+            timestamp: mutationTimestamp // Utiliser le timestamp de détection original
+          };
+          this.applyMutation(mutation);
+
+          if (this.isStorageReady()) {
+            await this.storage!.addMutation(mutation);
+          }
+
+          // Déclencher les rituels si disponibles
+          if (this.ritualBootstrap && metrics) {
+            const ritualContext = {
+              organism: this.organism,
+              resonanceLevel: resonance,
+              networkPressure: metrics.networkPressure || 0,
+              domOppression: metrics.domOppression || shadowActivity / 100,
+              frictionIndex: metrics.frictionIndex || jitter / 100,
+              timestamp: Date.now()
+            };
+
+            // Déclencher le rituel approprié selon les conditions
+            if (metrics.frictionIndex > 0.7) {
+              await this.ritualBootstrap.triggerRitual(RitualType.TEMPORAL_DEPHASING, 'High friction detected');
+            } else if (metrics.networkPressure > 0.6) {
+              await this.ritualBootstrap.triggerRitual(RitualType.FREQUENCY_COMMUNION, 'Network pressure detected');
+            }
+          }
+        }
+      } catch (error) {
+        logger.error('[Background] Failed to handle DOM resonance:', error);
+      }
     });
 
     // Handler pour récupérer les métriques de santé système

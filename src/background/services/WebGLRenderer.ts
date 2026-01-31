@@ -30,6 +30,10 @@ export interface OrganismRenderData {
   energy: number;
   consciousness: number;
   generation: number;
+  // Ajout pour la résonance
+  resonanceLevel?: number;
+  networkPressure?: number;
+  domOppression?: number;
 }
 
 export interface ShaderSource {
@@ -133,6 +137,9 @@ export class WebGLRenderer {
       this.gl.depthFunc(this.gl.LEQUAL);
       this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
+      // Charger les shaders de résonance par défaut
+      await this.loadResonanceShaders();
+
       this.isInitialized = true;
       logger.info('WebGLRenderer initialized successfully');
       return true;
@@ -208,6 +215,105 @@ export class WebGLRenderer {
     }
 
     return shader;
+  }
+
+  /**
+   * Charge les shaders de résonance prédéfinis
+   */
+  async loadResonanceShaders(): Promise<boolean> {
+    try {
+      // Vertex shader pour la résonance
+      const resonanceVertexShader = `
+        attribute vec3 a_position;
+        attribute vec2 a_texCoord;
+
+        uniform vec2 u_position;
+        uniform float u_rotation;
+        uniform float u_resonance;
+
+        varying vec2 v_texCoord;
+        varying float v_resonance;
+
+        void main() {
+          float c = cos(u_rotation);
+          float s = sin(u_rotation);
+          mat2 rot = mat2(c, -s, s, c);
+
+          vec2 pos = rot * a_position.xy + u_position;
+
+          // Ajout de distorsion basée sur la résonance
+          pos += vec2(sin(pos.y * 10.0) * u_resonance * 0.1);
+
+          gl_Position = vec4(pos, a_position.z, 1.0);
+          v_texCoord = a_texCoord;
+          v_resonance = u_resonance;
+        }
+      `;
+
+      // Fragment shader pour la résonance (version simplifiée du shader complet)
+      const resonanceFragmentShader = `
+        precision mediump float;
+
+        uniform float u_time;
+        uniform vec3 u_color;
+        uniform float u_energy;
+        uniform float u_consciousness;
+        uniform float u_resonance;
+        uniform float u_networkPressure;
+        uniform float u_domOppression;
+
+        varying vec2 v_texCoord;
+        varying float v_resonance;
+
+        void main() {
+          vec2 uv = v_texCoord;
+
+          // Base color avec modulation de résonance
+          vec3 baseColor = u_color;
+
+          // Aberration chromatique basée sur la résonance
+          float aberration = v_resonance * 0.02;
+          vec3 color;
+          color.r = baseColor.r + sin(u_time + uv.x * 10.0) * aberration;
+          color.g = baseColor.g + sin(u_time * 1.3 + uv.y * 10.0) * aberration;
+          color.b = baseColor.b + sin(u_time * 0.7) * aberration;
+
+          // Coloration selon le type de pression
+          if (u_networkPressure > 0.5) {
+            color = mix(color, vec3(1.0, 0.5, 0.0), u_networkPressure * 0.3); // Orange
+          }
+          if (u_domOppression > 0.5) {
+            color = mix(color, vec3(0.2, 0.5, 1.0), u_domOppression * 0.3); // Bleu
+          }
+
+          // Onde de résonance
+          float wave = sin(distance(uv, vec2(0.5)) * 20.0 - u_time * 3.0) * v_resonance;
+          color += vec3(wave * 0.1);
+
+          // Intensité basée sur l'énergie
+          float intensity = mix(0.5, 1.0, u_energy);
+          color *= intensity;
+
+          // Pulsation de conscience
+          float pulse = 0.9 + 0.1 * sin(u_time * 2.0 * u_consciousness);
+          color *= pulse;
+
+          gl_FragColor = vec4(color, mix(0.7, 1.0, u_energy));
+        }
+      `;
+
+      // Créer le programme shader
+      const success = this.createShaderProgram('resonance', resonanceVertexShader, resonanceFragmentShader);
+
+      if (success) {
+        logger.info('Resonance shaders loaded successfully');
+      }
+
+      return success;
+    } catch (error) {
+      logger.error('Failed to load resonance shaders:', error);
+      return false;
+    }
   }
 
   /**
@@ -335,6 +441,33 @@ export class WebGLRenderer {
   }
 
   /**
+   * Rend un organisme avec les effets de résonance
+   */
+  renderOrganismWithResonance(organism: OrganismRenderData, resonanceData: {
+    resonanceLevel: number;
+    networkPressure: number;
+    domOppression: number;
+  }): void {
+    // Activer le shader de résonance
+    if (!this.useProgram('resonance')) {
+      logger.warn('Resonance shader not available, falling back to default rendering');
+      this.renderOrganism(organism);
+      return;
+    }
+
+    // Mettre à jour les données de l'organisme avec les données de résonance
+    const organismWithResonance: OrganismRenderData = {
+      ...organism,
+      resonanceLevel: resonanceData.resonanceLevel,
+      networkPressure: resonanceData.networkPressure,
+      domOppression: resonanceData.domOppression
+    };
+
+    // Rendre avec le shader de résonance
+    this.renderOrganism(organismWithResonance);
+  }
+
+  /**
    * Cr�e un draw call pour un organisme
    */
   private createOrganismDrawCall(organism: OrganismRenderData): Omit<WebGLDrawCall, 'id' | 'timestamp'> {
@@ -359,7 +492,12 @@ export class WebGLRenderer {
         u_rotation: organism.rotation,
         u_color: new Float32Array(organism.color),
         u_energy: organism.energy / 100,
-        u_consciousness: organism.consciousness
+        u_consciousness: organism.consciousness,
+        // Ajout des uniforms pour la résonance
+        u_resonance: organism.resonanceLevel || 0.0,
+        u_networkPressure: organism.networkPressure || 0.0,
+        u_domOppression: organism.domOppression || 0.0,
+        u_time: (Date.now() - this.startTime) / 1000.0
       },
       priority: organism.energy > 70 ? 'high' : 'normal'
     };

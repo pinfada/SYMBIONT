@@ -10,6 +10,7 @@ export interface OrganismDependencies {
 
 export class OrganismFactory {
   private static dependencies: OrganismDependencies | null = null;
+  private neuralMeshInstance: INeuralMesh | null = null;
 
   static setDependencies(deps: OrganismDependencies): void {
     this.dependencies = deps;
@@ -29,5 +30,13 @@ export class OrganismFactory {
     // Import dynamique pour éviter la circularité
     const { NeuralMesh } = require('../NeuralMesh');
     return new NeuralMesh();
+  }
+
+  // Méthode d'instance pour obtenir le NeuralMesh (singleton lazy)
+  async getNeuralMesh(): Promise<INeuralMesh> {
+    if (!this.neuralMeshInstance) {
+      this.neuralMeshInstance = OrganismFactory.createNeuralMesh();
+    }
+    return this.neuralMeshInstance;
   }
 } 

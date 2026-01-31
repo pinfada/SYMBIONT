@@ -157,6 +157,20 @@ export class SecureRandom {
     const id = this.randomString(length, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
     return prefix ? `${prefix}_${id}` : id;
   }
+
+  /**
+   * Alias pour randomInt - génère un entier entre min et max (exclusif)
+   */
+  static between(min: number, max: number): number {
+    return this.randomInt(min, max);
+  }
+
+  /**
+   * Alias pour randomId - génère un ID de la longueur spécifiée
+   */
+  static generateId(length = 8): string {
+    return this.randomId('', length);
+  }
 }
 
 // Alias pour une migration facile depuis Math.random()

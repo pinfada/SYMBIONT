@@ -6,11 +6,12 @@ const path = require('path');
 module.exports = {
   mode: 'production',
   entry: {
-    'neural-worker': './src/workers/NeuralWorker.ts'
+    'neural-worker': './src/workers/NeuralWorker.ts',
+    'resonance-worker': './src/workers/ResonanceWorker.ts'
   },
   
   output: {
-    path: path.resolve(__dirname, 'dist/workers'),
+    path: path.resolve(__dirname, 'dist'),
     filename: '[name].js',
     globalObject: 'self', // Important pour les workers
     library: {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useOrganism } from '../hooks/useOrganism';
 import { logger } from '@shared/utils/secureLogger';
 
@@ -38,6 +38,20 @@ interface RitualHistory {
 }
 
 const AVAILABLE_RITUALS: Ritual[] = [
+  {
+    id: 'vision-spectrale',
+    name: 'Vision Spectrale',
+    description: 'Révèle les éléments cachés et les flux invisibles du DOM',
+    type: 'individual',
+    icon: '👁️',
+    cost: 10,
+    cooldown: 3 * 60 * 1000, // 3 minutes
+    effects: {
+      consciousness: 0.05,
+      traits: { intuition: 0.1, awareness: 0.05 }
+    },
+    requirements: { minConsciousness: 0.1 }
+  },
   {
     id: 'meditation',
     name: 'Méditation Quantique',
@@ -115,49 +129,201 @@ const MysticalPanel: React.FC = () => {
   const [ritualHistory, setRitualHistory] = useState<RitualHistory[]>([]);
   const [ritualCooldowns, setRitualCooldowns] = useState<Record<string, number>>({});
   const [notifications, setNotifications] = useState<string[]>([]);
+  const [murmurs, setMurmurs] = useState<Array<{ message: string; type: 'info' | 'warning' | 'critical'; timestamp: number }>>([]);
 
-  // Charger l'historique et les cooldowns depuis le localStorage
+  /**
+   * Ajoute un murmure mystique (notification de friction DOM)
+   * @param message - Message à afficher
+   * @param type - Type de murmure selon l'intensité
+   */
+  const addMurmur = useCallback((message: string, type: 'info' | 'warning' | 'critical' = 'info') => {
+    const murmur = {
+      message,
+      type,
+      timestamp: Date.now()
+    };
+
+    setMurmurs(prev => {
+      const updated = [...prev, murmur];
+      // Garder seulement les 5 derniers murmures
+      return updated.slice(-5);
+    });
+
+    // Auto-suppression après 6 secondes
+    setTimeout(() => {
+      setMurmurs(prev => prev.filter(m => m.timestamp !== murmur.timestamp));
+    }, 6000);
+  }, []);
+
+  // Écouter les messages de résonance DOM (Phase 1.1)
+  useEffect(() => {
+    const handleResonanceMessage = (message: any) => {
+      if (message.type === 'DOM_RESONANCE_DETECTED') {
+        const { resonance, state } = message.payload;
+
+        // Convertir l'état de résonance en type de murmure
+        let murmurType: 'info' | 'warning' | 'critical' = 'info';
+        let murmurMessage = '';
+
+        switch (state.level) {
+          case 'quiet':
+            // Ne pas afficher de murmure pour un état calme
+            return;
+          case 'normal':
+            murmurType = 'info';
+            murmurMessage = `🌊 Légère friction détectée (${(resonance * 100).toFixed(0)}%)`;
+            break;
+          case 'active':
+            murmurType = 'warning';
+            murmurMessage = `⚡ Friction significative: ${state.description}`;
+            break;
+          case 'critical':
+            murmurType = 'critical';
+            murmurMessage = `🔥 Friction critique! ${state.description}`;
+            break;
+        }
+
+        if (murmurMessage) {
+          addMurmur(murmurMessage, murmurType);
+
+          // Log pour monitoring
+          logger.debug('DOM Resonance murmur', {
+            resonance,
+            level: state.level,
+            message: murmurMessage
+          });
+        }
+      }
+    };
+
+    // Écouter les messages du content script
+    chrome.runtime.onMessage.addListener(handleResonanceMessage);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleResonanceMessage);
+    };
+  }, [addMurmur]);
+
+  // Validation sécurisée des données localStorage
+  const validateRitualHistory = (data: unknown): RitualHistory[] => {
+    if (!Array.isArray(data)) return [];
+
+    return data.filter(item => {
+      return item &&
+        typeof item === 'object' &&
+        typeof item.ritualId === 'string' &&
+        typeof item.completedAt === 'number' &&
+        item.completedAt > 0 &&
+        item.completedAt < Date.now() + 86400000; // Max 1 jour dans le futur
+    }).slice(0, 100); // Limite à 100 entrées max
+  };
+
+  const validateRitualCooldowns = (data: unknown): Record<string, number> => {
+    if (!data || typeof data !== 'object') return {};
+
+    const result: Record<string, number> = {};
+    const now = Date.now();
+    const maxCooldown = now + (7 * 24 * 60 * 60 * 1000); // Max 7 jours
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (typeof key === 'string' &&
+          typeof value === 'number' &&
+          value > now &&
+          value < maxCooldown &&
+          AVAILABLE_RITUALS.some(r => r.id === key)) {
+        result[key] = value;
+      }
+    });
+
+    return result;
+  };
+
+  // Charger l'historique et les cooldowns depuis le localStorage avec validation stricte
   useEffect(() => {
     try {
       const savedHistory = localStorage.getItem('symbiont_ritual_history');
       if (savedHistory) {
-        setRitualHistory(JSON.parse(savedHistory));
+        const parsed = JSON.parse(savedHistory);
+        const validated = validateRitualHistory(parsed);
+        setRitualHistory(validated);
+
+        if (validated.length !== parsed.length) {
+          logger.warn('Ritual history data validation removed invalid entries', {
+            original: parsed.length,
+            validated: validated.length
+          });
+        }
       }
-      
+
       const savedCooldowns = localStorage.getItem('symbiont_ritual_cooldowns');
       if (savedCooldowns) {
-        setRitualCooldowns(JSON.parse(savedCooldowns));
+        const parsed = JSON.parse(savedCooldowns);
+        const validated = validateRitualCooldowns(parsed);
+        setRitualCooldowns(validated);
+
+        if (Object.keys(validated).length !== Object.keys(parsed).length) {
+          logger.warn('Ritual cooldowns validation removed invalid entries');
+        }
       }
-    } catch (_e) {
-      logger.warn('Erreur lors du chargement de l\'historique des rituels');
+    } catch (error) {
+      logger.error('Failed to load ritual data from localStorage', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      // Continuer avec des valeurs par défaut
+      setRitualHistory([]);
+      setRitualCooldowns({});
     }
   }, []);
 
-  // Mettre à jour les cooldowns en temps réel
+  // Mettre à jour les cooldowns en temps réel avec protection contre les race conditions
   useEffect(() => {
-    const interval = setInterval(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    let isMounted = true;
+
+    const updateCooldowns = () => {
+      if (!isMounted) return;
+
       const now = Date.now();
       setRitualCooldowns(prev => {
+        if (!isMounted) return prev;
+
         const updated = { ...prev };
         let hasChanges = false;
-        
+
         Object.keys(updated).forEach(ritualId => {
           if (updated[ritualId] <= now) {
             delete updated[ritualId];
             hasChanges = true;
-            addNotification(`Le rituel ${AVAILABLE_RITUALS.find(r => r.id === ritualId)?.name} est à nouveau disponible !`);
+            // Éviter d'appeler addNotification si le composant est démonté
+            if (isMounted) {
+              const ritual = AVAILABLE_RITUALS.find(r => r.id === ritualId);
+              if (ritual) {
+                addNotification(`Le rituel ${ritual.name} est à nouveau disponible !`);
+              }
+            }
           }
         });
-        
-        if (hasChanges) {
-          localStorage.setItem('symbiont_ritual_cooldowns', JSON.stringify(updated));
+
+        if (hasChanges && isMounted) {
+          try {
+            localStorage.setItem('symbiont_ritual_cooldowns', JSON.stringify(updated));
+          } catch (error) {
+            logger.error('Failed to save ritual cooldowns', { error });
+          }
         }
-        
+
         return updated;
       });
-    }, 1000);
+    };
 
-    return () => clearInterval(interval);
+    intervalId = setInterval(updateCooldowns, 1000);
+
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, []);
 
   // Progression de la session active
@@ -223,13 +389,13 @@ const MysticalPanel: React.FC = () => {
     return { canPerform: true };
   };
 
-  const startRitual = (ritual: Ritual, providedSecretCode?: string) => {
+  const startRitual = async (ritual: Ritual, providedSecretCode?: string) => {
     const check = canPerformRitual(ritual);
     if (!check.canPerform) {
       addNotification(`Impossible: ${check.reason}`);
       return;
     }
-    
+
     // Vérifier le code secret si nécessaire
     if (ritual.requirements?.secretCode) {
       if (providedSecretCode !== ritual.requirements.secretCode) {
@@ -237,7 +403,37 @@ const MysticalPanel: React.FC = () => {
         return;
       }
     }
-    
+
+    // Gestion spéciale pour Vision Spectrale (Phase 1.2)
+    if (ritual.id === 'vision-spectrale') {
+      try {
+        // Envoyer message au content script pour extraire les éléments cachés
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          await chrome.tabs.sendMessage(tab.id, {
+            type: 'EXTRACT_HIDDEN_ELEMENTS',
+            payload: {
+              depth: 100, // Profondeur de scan maximale
+              includeZIndex: true // Inclure la détection z-index négatif
+            }
+          });
+
+          // Log pour traçabilité
+          logger.info('Vision Spectrale ritual initiated', {
+            tabId: tab.id,
+            url: tab.url
+          });
+
+          addNotification('👁️ Vision Spectrale activée - Scan en cours...');
+          addMurmur('Les voiles du DOM se dissipent...', 'info');
+        }
+      } catch (error) {
+        logger.error('Failed to initiate Vision Spectrale', { error });
+        addNotification('⚠️ Erreur lors de l\'activation de Vision Spectrale');
+        return;
+      }
+    }
+
     // Démarrer la session
     const duration = ritual.type === 'collective' ? 60000 : 30000; // 1min ou 30s
     const session: RitualSession = {
@@ -247,10 +443,10 @@ const MysticalPanel: React.FC = () => {
       progress: 0,
       completed: false
     };
-    
+
     setCurrentSession(session);
     addNotification(`Rituel "${ritual.name}" commencé !`);
-    
+
     // Consommer l'énergie immédiatement
     if (organism) {
       const updatedOrganism = {
@@ -547,6 +743,25 @@ const MysticalPanel: React.FC = () => {
 
   return (
     <div className="mystical-panel">
+      {/* Murmures mystiques (Phase 1.1 - Feedback de résonance DOM) */}
+      {murmurs.length > 0 && (
+        <div className="murmurs-container">
+          <div className="murmurs-header">🔮 Murmures de l'Ombre</div>
+          {murmurs.map((murmur) => (
+            <div
+              key={murmur.timestamp}
+              className={`murmur murmur-${murmur.type}`}
+              style={{
+                animation: 'fadeInOut 6s ease-in-out',
+                opacity: 0.9
+              }}
+            >
+              {murmur.message}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Notifications */}
       <div className="notifications">
         {notifications.map((notification, index) => (

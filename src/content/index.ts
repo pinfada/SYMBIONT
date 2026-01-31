@@ -6,9 +6,12 @@ import { MessageBus } from '../core/messaging/MessageBus';
 import { NavigationObserver } from '../shared/observers/NavigationObserver';
 import { InteractionCollector } from './collectors/InteractionCollector';
 import { DOMAnalyzer } from './observers/DOMAnalyzer';
+import { DOMResonanceSensor } from './observers/DOMResonanceSensor';
 import { ScrollTracker } from './observers/ScrollTracker';
 import { AttentionMonitor } from './monitors/AttentionMonitor';
 import { logger } from '@shared/utils/secureLogger';
+// Import du gestionnaire de contre-mesures pour les rituels
+import { countermeasureHandler } from './rituals/CountermeasureHandler';
 
 //console.log('[SYMBIONT] Importing WebGL modules...');
 
@@ -37,6 +40,7 @@ class ContentScript {
   private navigationObserver: NavigationObserver;
   private interactionCollector: InteractionCollector;
   private domAnalyzer: DOMAnalyzer;
+  private domResonanceSensor: DOMResonanceSensor;
   private scrollTracker: ScrollTracker;
   private attentionMonitor: AttentionMonitor;
   
@@ -66,6 +70,7 @@ class ContentScript {
     this.navigationObserver = new NavigationObserver(this.messageBus);
     this.interactionCollector = new InteractionCollector(this.messageBus);
     this.domAnalyzer = new DOMAnalyzer();
+    this.domResonanceSensor = new DOMResonanceSensor();
     this.scrollTracker = new ScrollTracker(this.messageBus);
     this.attentionMonitor = new AttentionMonitor(this.messageBus);
     
@@ -96,7 +101,7 @@ class ContentScript {
     (this.navigationObserver as any).observe((change: NavigationChange) => {
       this.handleNavigationChange(change);
     });
-    
+
     // Collection des interactions
     this.interactionCollector.start({
       clicks: true,
@@ -104,24 +109,28 @@ class ContentScript {
       forms: true,
       media: true
     });
-    
+
     this.interactionCollector.on('interaction', (interaction) => {
       this.handleInteraction(interaction);
     });
-    
+
     // Tracking du scroll
     this.scrollTracker.on('scroll', (data: any) => {
       if (data && typeof data === 'object' && 'timestamp' in data) {
         this.updateScrollData(data as ScrollEvent);
       }
     });
-    
+
     // Monitoring de l'attention
     this.attentionMonitor.on('attentionChange', (state: any) => {
       if (state && typeof state === 'object' && 'isActive' in state) {
         this.handleAttentionChange(state as AttentionState);
       }
     });
+
+    // Démarrage du capteur de résonance DOM
+    this.domResonanceSensor.start();
+    logger.info('🌊 DOM Resonance Sensor activated');
   }
 
   private setupEventListeners(): void {
@@ -387,13 +396,17 @@ class ContentScript {
   private cleanup(): void {
     // Finalisation de la session
     this.finalizePage();
-    
+
     // Nettoyage des observateurs
     (this.navigationObserver as any).disconnect();
     this.interactionCollector.stop();
     this.scrollTracker.stop();
     this.attentionMonitor.stop();
-    
+    this.domResonanceSensor.stop();
+
+    // Nettoyage des contre-mesures de rituels
+    countermeasureHandler.cleanup();
+
     logger.info('🧹 SYMBIONT Content Script cleaned up');
   }
 }

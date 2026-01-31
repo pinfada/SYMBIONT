@@ -1,15 +1,19 @@
 import { INeuralMesh } from './interfaces/INeuralMesh';
 import { PerformanceOptimizedRandom } from '../shared/utils/PerformanceOptimizedRandom';
 import { logger } from '@/shared/utils/secureLogger';
+import { ResonanceAnalyzer, ResonanceState } from './extensions/ResonanceAnalyzer';
 
 export class NeuralMesh implements INeuralMesh {
   private nodes: Map<string, { type: string; activation: number; bias: number }> = new Map();
   private connections: Map<string, Map<string, number>> = new Map();
   private activations: Map<string, number> = new Map();
   private learningRate: number = 0.01;
+  private resonanceAnalyzer: ResonanceAnalyzer;
+  private currentResonanceState: ResonanceState | null = null;
 
   constructor() {
     // Initialize empty network
+    this.resonanceAnalyzer = new ResonanceAnalyzer();
   }
 
   /**
@@ -438,7 +442,118 @@ export class NeuralMesh implements INeuralMesh {
         (sum, connections) => sum + connections.size, 0
       ),
       neuralActivity: this.getNeuralActivity(),
-      connectionStrength: this.getConnectionStrength()
+      connectionStrength: this.getConnectionStrength(),
+      resonanceState: this.currentResonanceState
     };
+  }
+
+  /**
+   * Intègre un signal de latence réseau pour l'analyse de résonance
+   */
+  feedNetworkLatency(latency: number): void {
+    this.resonanceAnalyzer.addNetworkLatency(latency);
+    this.checkResonance();
+  }
+
+  /**
+   * Intègre un signal de jitter DOM pour l'analyse de résonance
+   */
+  feedDOMJitter(jitter: number): void {
+    this.resonanceAnalyzer.addDOMJitter(jitter);
+    this.checkResonance();
+  }
+
+  /**
+   * Vérifie et met à jour l'état de résonance
+   */
+  private checkResonance(): void {
+    const resonance = this.resonanceAnalyzer.calculateResonance();
+
+    if (resonance) {
+      this.currentResonanceState = resonance;
+
+      // Si résonance significative, déclencher une adaptation neurale
+      if (resonance.magnitude > 0.5) {
+        this.adaptToResonance(resonance);
+      }
+
+      // Émettre un événement pour notification externe
+      logger.info('Resonance detected in NeuralMesh', {
+        signal: resonance.signal,
+        magnitude: resonance.magnitude
+      });
+    }
+  }
+
+  /**
+   * Adapte le réseau neural en réponse à la résonance détectée
+   */
+  private adaptToResonance(resonance: ResonanceState): void {
+    // Ajuster les poids en fonction du type de résonance
+    const adaptationFactor = resonance.magnitude * 0.1;
+
+    if (resonance.signal === 'NETWORK_PRESSURE') {
+      // Renforcer les connexions liées au traitement réseau
+      this.strengthenNetworkPathways(adaptationFactor);
+    } else if (resonance.signal === 'DOM_OPPRESSION') {
+      // Renforcer les connexions liées au traitement DOM
+      this.strengthenDOMPathways(adaptationFactor);
+    }
+
+    // Mutation adaptative basée sur la confiance
+    const mutationRate = 0.02 * resonance.confidence;
+    this.mutate(mutationRate);
+  }
+
+  /**
+   * Renforce les chemins neuronaux liés au réseau
+   */
+  private strengthenNetworkPathways(factor: number): void {
+    // Identifier et renforcer les connexions réseau-sensibles
+    for (const [fromId, connections] of this.connections) {
+      if (fromId.includes('network') || fromId.includes('latency')) {
+        for (const [toId, weight] of connections) {
+          const newWeight = weight * (1 + factor);
+          connections.set(toId, Math.max(-2, Math.min(2, newWeight)));
+        }
+      }
+    }
+  }
+
+  /**
+   * Renforce les chemins neuronaux liés au DOM
+   */
+  private strengthenDOMPathways(factor: number): void {
+    // Identifier et renforcer les connexions DOM-sensibles
+    for (const [fromId, connections] of this.connections) {
+      if (fromId.includes('dom') || fromId.includes('sensory')) {
+        for (const [toId, weight] of connections) {
+          const newWeight = weight * (1 + factor);
+          connections.set(toId, Math.max(-2, Math.min(2, newWeight)));
+        }
+      }
+    }
+  }
+
+  /**
+   * Obtient le rapport de diagnostic de résonance
+   */
+  getResonanceDiagnostics(): any {
+    return this.resonanceAnalyzer.generateDiagnosticReport();
+  }
+
+  /**
+   * Obtient l'état de résonance actuel
+   */
+  getResonanceState(): ResonanceState | null {
+    return this.currentResonanceState;
+  }
+
+  /**
+   * Réinitialise l'analyseur de résonance
+   */
+  resetResonanceAnalyzer(): void {
+    this.resonanceAnalyzer.reset();
+    this.currentResonanceState = null;
   }
 }

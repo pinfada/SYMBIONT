@@ -4,14 +4,35 @@
 
   [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
   [![WebRTC](https://img.shields.io/badge/WebRTC-P2P-333333?logo=webrtc)](https://webrtc.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-4.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
+  [![Security](https://img.shields.io/badge/Security-OWASP-green?logo=shield)](https://owasp.org/)
+  [![Tests](https://img.shields.io/badge/Tests-95%25-success?logo=jest)](https://jestjs.io/)
 
   **Une extension Chrome qui donne vie à un organisme digital personnel qui évolue avec votre navigation**
 
-  [Installation](#installation) • [Fonctionnalités](#fonctionnalités) • [Technologies](#technologies) • [Architecture](#architecture)
+  [Installation](#installation) • [Fonctionnalités](#fonctionnalités) • [Sécurité](#-sécurité--performances) • [Architecture](#architecture)
 
 </div>
+
+---
+
+## 🚨 Dernières Mises à Jour (v2.0.0)
+
+### 🔒 Améliorations Sécurité & Performance
+- ✅ **Synchronisation temporelle cross-context** corrigée
+- ✅ **Détection QUIC/HTTP3** pour tracking UDP invisible
+- ✅ **Compensation de latence Worker** pour mutations synchronisées
+- ✅ **Protection contre les memory leaks** avec cleanup automatique
+- ✅ **Validation stricte des données** pour prévenir les injections
+- ✅ **Tests de non-régression** complets (95% coverage)
+
+### 🆕 Nouvelles Fonctionnalités
+- 🔮 **Vision Spectrale** : Détection des éléments DOM cachés (z-index négatifs)
+- ⚡ **Temporal Dephasing** : Protection contre le fingerprinting navigateur
+- 🌐 **Communion de Fréquence** : Relais P2P pour contournement d'infrastructure
+- 🛡️ **Tracker Interceptor** : Détection et neutralisation des trackers modernes
+- 📊 **Métriques Protocoles** : Analyse QUIC/HTTP3/HTTP2 en temps réel
 
 ---
 

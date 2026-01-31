@@ -656,4 +656,79 @@ export class NeuralMeshAsync implements INeuralMesh {
     this.activations.clear();
     this.workerReady = false;
   }
+
+  /**
+   * Feed network latency data for resonance analysis
+   * (Stub implementation - actual resonance analysis would be done in worker)
+   */
+  feedNetworkLatency(latency: number): void {
+    // In a real implementation, this would send data to the worker for analysis
+    logger.debug('NeuralMeshAsync: Network latency recorded', { latency });
+
+    // TODO: Implement NEURAL_NETWORK_LATENCY in worker when needed
+    // For now, just log the latency locally
+    /*
+    if (this.worker && this.workerReady) {
+      // Send to worker for processing
+      this.sendWorkerMessage('NEURAL_NETWORK_LATENCY', {
+        networkId: this.networkId,
+        latency
+      }).catch(error => {
+        logger.warn('Failed to send network latency to worker', { error });
+      });
+    }
+    */
+  }
+
+  /**
+   * Feed DOM jitter data for resonance analysis
+   * (Stub implementation - actual resonance analysis would be done in worker)
+   */
+  feedDOMJitter(jitter: number): void {
+    // In a real implementation, this would send data to the worker for analysis
+    logger.debug('NeuralMeshAsync: DOM jitter recorded', { jitter });
+
+    // TODO: Implement NEURAL_DOM_JITTER in worker when needed
+    // For now, just log the jitter locally
+    /*
+    if (this.worker && this.workerReady) {
+      // Send to worker for processing
+      this.sendWorkerMessage('NEURAL_DOM_JITTER', {
+        networkId: this.networkId,
+        jitter
+      }).catch(error => {
+        logger.warn('Failed to send DOM jitter to worker', { error });
+      });
+    }
+    */
+  }
+
+  /**
+   * Get resonance state (optional implementation)
+   */
+  getResonanceState(): any {
+    // Stub implementation
+    return null;
+  }
+
+  /**
+   * Get resonance diagnostics (optional implementation)
+   */
+  getResonanceDiagnostics(): any {
+    // Stub implementation
+    return {
+      networkLatency: 0,
+      domJitter: 0,
+      resonanceLevel: 0,
+      timestamp: Date.now()
+    };
+  }
+
+  /**
+   * Reset resonance analyzer (optional implementation)
+   */
+  resetResonanceAnalyzer(): void {
+    // Stub implementation
+    logger.debug('NeuralMeshAsync: Resonance analyzer reset');
+  }
 } 
