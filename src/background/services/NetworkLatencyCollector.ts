@@ -1,4 +1,5 @@
 import { logger } from '@/shared/utils/secureLogger';
+import { MemoryFragmentCollector } from '@/core/dreams/MemoryFragmentCollector';
 
 /**
  * NetworkLatencyCollector - Collecte les métriques de latence réseau
@@ -244,6 +245,9 @@ export class NetworkLatencyCollector {
       if (isQUIC) {
         this.detectQUICTracking(resource.name, networkLatency, protocol);
       }
+
+      // NOUVEAU: Collecter le fragment pour l'analyse cross-domain
+      this.collectNetworkFragment(resource, protocol, networkLatency, isQUIC);
     }
     } catch (error) {
       logger.error('[NetworkLatencyCollector] Resource timing analysis failed:', error);
@@ -428,7 +432,8 @@ export class NetworkLatencyCollector {
     }
 
     // OPTIMISATION: Log seulement en debug mode
-    if (logger.level === 'debug') {
+    // Note: logger.level n'est pas exposé, utiliser une approche différente
+    if (process.env.NODE_ENV === 'development') {
       logger.debug('[NetworkLatencyCollector] Latency recorded:', {
         latency: latency.toFixed(2),
         bufferSize: this.latencyBuffer.length
@@ -531,5 +536,74 @@ export class NetworkLatencyCollector {
     const baseLatency = min + Math.random() * (max - min);
     const jitteredLatency = baseLatency * (1 + (Math.random() - 0.5) * jitter);
     this.recordLatency(jitteredLatency);
+  }
+
+  /**
+   * Collecte un fragment mémoire depuis les données réseau
+   */
+  private collectNetworkFragment(
+    resource: PerformanceResourceTiming,
+    protocol: string,
+    latency: number,
+    isQUIC: boolean
+  ): void {
+    try {
+      const urlObj = new URL(resource.name);
+      const domain = urlObj.hostname;
+
+      // Collecter uniquement pour les domaines externes (pas l'extension)
+      if (domain === 'localhost' || domain.includes('chrome-extension')) {
+        return;
+      }
+
+      const fragmentCollector = MemoryFragmentCollector.getInstance();
+
+      // Créer un timing resource simplifié
+      const resourceTiming: { name: string; duration: number; nextHopProtocol?: string } = {
+        name: resource.name,
+        duration: resource.duration || 0
+      };
+
+      // Ajouter nextHopProtocol seulement si défini et non unknown
+      if (protocol !== 'unknown') {
+        resourceTiming.nextHopProtocol = protocol;
+      }
+
+      // Collecter les trackers UDP si QUIC détecté
+      const udpTrackers = isQUIC && this.protocolStats.udpTrackers.has(domain)
+        ? [domain]
+        : undefined;
+
+      // Créer l'objet avec udpTrackers seulement si défini
+      const fragmentData: {
+        domain: string;
+        latency: number;
+        protocol: string;
+        resourceTimings: { name: string; duration: number; nextHopProtocol?: string }[];
+        udpTrackers?: string[];
+      } = {
+        domain,
+        latency,
+        protocol,
+        resourceTimings: [resourceTiming]
+      };
+
+      // Ajouter udpTrackers seulement si défini
+      if (udpTrackers !== undefined) {
+        fragmentData.udpTrackers = udpTrackers;
+      }
+
+      fragmentCollector.collectNetworkLatency(fragmentData);
+
+      logger.debug('[NetworkLatencyCollector] Fragment collected', {
+        domain,
+        protocol,
+        latency: latency.toFixed(2)
+      });
+
+    } catch (error) {
+      // Ignorer silencieusement les URLs invalides
+      logger.debug('[NetworkLatencyCollector] Failed to collect fragment', error);
+    }
   }
 }

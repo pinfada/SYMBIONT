@@ -110,16 +110,19 @@ export class TrackerInterceptor {
 
   /**
    * Vérifie les permissions Chrome nécessaires
+   * Note: webRequestBlocking n'est plus supporté dans Manifest V3
    */
   private async checkPermissions(): Promise<boolean> {
     try {
+      // Dans MV3, nous utilisons webRequest en mode observation uniquement
       const permissions = await chrome.permissions.contains({
-        permissions: ['webRequest', 'webRequestBlocking']
+        permissions: ['webRequest']
       });
 
       if (!permissions) {
         logger.warn('TrackerInterceptor: Missing required permissions', {
-          required: ['webRequest', 'webRequestBlocking']
+          required: ['webRequest'],
+          note: 'MV3 uses observational mode only'
         });
         return false;
       }
@@ -152,10 +155,11 @@ export class TrackerInterceptor {
       };
 
       // Ajouter le listener avec les bonnes options
+      // MV3: Mode observation uniquement, pas de blocking
       chrome.webRequest.onBeforeRequest.addListener(
         this.requestListener,
         { urls: ['<all_urls>'] },
-        ['requestBody'] // Pas de 'blocking' pour éviter de freezer
+        ['requestBody'] // MV3: Mode observation uniquement
       );
 
       // Listener pour analyser les headers

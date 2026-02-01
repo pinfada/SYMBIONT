@@ -1,395 +1,312 @@
-// Jest setup file for SYMBIONT tests
+/**
+ * Global test setup
+ * Mocks for browser APIs and global objects
+ */
+
 import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
 
-// Mock global objects that might not be available in test environment
-global.performance = global.performance || {};
-global.performance.now = jest.fn(() => Date.now());
-global.performance.mark = jest.fn();
-global.performance.measure = jest.fn();
-global.performance.clearMarks = jest.fn();
-global.performance.clearMeasures = jest.fn();
-global.performance.getEntries = jest.fn(() => []);
-global.performance.getEntriesByName = jest.fn(() => []);
-global.performance.getEntriesByType = jest.fn(() => []);
-
-// Mock PerformanceObserver
-global.PerformanceObserver = jest.fn().mockImplementation((callback) => ({
-  observe: jest.fn(),
-  disconnect: jest.fn(),
-  takeRecords: jest.fn(() => [])
-}));
-
-// Mock TextEncoder/TextDecoder for Node.js
-const { TextEncoder, TextDecoder } = require('util');
+// Polyfill for TextEncoder/TextDecoder
 global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+global.TextDecoder = TextDecoder as any;
 
-// Mock btoa/atob for Node.js
-global.btoa = global.btoa || ((str: string) => Buffer.from(str, 'binary').toString('base64'));
-global.atob = global.atob || ((str: string) => Buffer.from(str, 'base64').toString('binary'));
-
-// Mock crypto for WebCrypto
-const mockCryptoKey = {
-  type: 'secret',
-  extractable: true,
-  algorithm: { name: 'AES-GCM', length: 256 },
-  usages: ['encrypt', 'decrypt']
-} as CryptoKey;
-
-// Create realistic mock data
-const createMockEncryptionResult = (plaintext: string) => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(plaintext);
-  const iv = new Uint8Array(12);
-  const mockEncrypted = new Uint8Array(data.length + 16); // +16 for auth tag
-  data.forEach((byte, i) => {
-    mockEncrypted[i] = byte ^ 0xAA; // Simple XOR for mock encryption
-  });
-  return mockEncrypted.buffer;
-};
-
-const createMockDecryptionResult = (encryptedData: ArrayBuffer) => {
-  const data = new Uint8Array(encryptedData);
-  const decrypted = new Uint8Array(data.length - 16); // -16 for auth tag
-  for (let i = 0; i < decrypted.length; i++) {
-    decrypted[i] = data[i] ^ 0xAA; // Reverse XOR
-  }
-  return decrypted.buffer;
-};
-
-// Enhanced crypto mock with better error handling
-const cryptoSubtle = {
-  generateKey: jest.fn().mockImplementation(async (algorithm, extractable, usages) => {
-    // Add some validation
-    if (!algorithm || !usages) {
-      throw new Error('Invalid parameters for generateKey');
-    }
-    return mockCryptoKey;
-  }),
-  importKey: jest.fn().mockResolvedValue(mockCryptoKey),
-  exportKey: jest.fn().mockResolvedValue(new ArrayBuffer(32)),
-  encrypt: jest.fn().mockImplementation(async (algorithm, key, data) => {
-    try {
-      if (!algorithm || !key || !data) {
-        throw new Error('Missing required parameters for encryption');
-      }
-      const decoder = new TextDecoder();
-      const plaintext = decoder.decode(data);
-      return createMockEncryptionResult(plaintext);
-    } catch (error) {
-      throw new Error(`Crypto failure: ${error.message}`);
-    }
-  }),
-  decrypt: jest.fn().mockImplementation(async (algorithm, key, data) => {
-    try {
-      if (!algorithm || !key || !data) {
-        throw new Error('Missing required parameters for decryption');
-      }
-      return createMockDecryptionResult(data);
-    } catch (error) {
-      throw new Error(`Decrypt failure: ${error.message}`);
-    }
-  }),
-  digest: jest.fn().mockImplementation(async (algorithm, data) => {
-    if (!data) {
-      throw new Error('Data is required for digest');
-    }
-    // Mock SHA-256 hash - create realistic output
-    const input = data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(data);
-    const hash = new Uint8Array(32);
-    for (let i = 0; i < 32; i++) {
-      hash[i] = (input[i % input.length] + i) % 256;
-    }
-    return hash.buffer;
-  })
-};
-
-const cryptoGetRandomValues = jest.fn((arr) => {
-  // Mock crypto-secure values for tests (not cryptographically secure in test env)
-  for (let i = 0; i < arr.length; i++) {
-    arr[i] = Math.floor(Math.random() * 256);
-  }
-  return arr;
-});
-
-global.crypto = global.crypto || {};
-global.crypto.subtle = cryptoSubtle;
-global.crypto.getRandomValues = cryptoGetRandomValues;
-
-// swCryptoAPI will be mocked globally
-
-// Mock requestAnimationFrame and cancelAnimationFrame
-global.requestAnimationFrame = jest.fn((callback) => {
-  return setTimeout(callback, 16); // ~60fps
-});
-
-global.cancelAnimationFrame = jest.fn((id) => {
-  clearTimeout(id);
-});
-
-// Mock URL.createObjectURL for Web Workers
-global.URL = global.URL || {};
-global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
-global.URL.revokeObjectURL = jest.fn();
-
-// Mock Worker constructor with improved functionality
-global.Worker = jest.fn().mockImplementation((scriptURL) => {
-  const mockWorker = {
-    postMessage: jest.fn().mockImplementation((message) => {
-      // Simulate async response
-      setTimeout(() => {
-        if (mockWorker.onmessage) {
-          mockWorker.onmessage({ data: { type: 'response', payload: message } });
-        }
-      }, 10);
-    }),
-    terminate: jest.fn(),
-    addEventListener: jest.fn().mockImplementation((type, listener) => {
-      if (type === 'message') {
-        mockWorker.onmessage = listener;
-      } else if (type === 'error') {
-        mockWorker.onerror = listener;
-      }
-    }),
-    removeEventListener: jest.fn(),
-    onmessage: null,
-    onerror: null,
-    dispatchEvent: jest.fn()
-  };
-  
-  // Simulate worker ready state
-  setTimeout(() => {
-    if (mockWorker.onmessage) {
-      mockWorker.onmessage({ data: { type: 'ready' } });
-    }
-  }, 5);
-  
-  return mockWorker;
-});
-
-// Mock WebGL context
-const createMockWebGLContext = () => ({
-  // WebGL constants
-  TRIANGLES: 4,
-  LINES: 1,
-  POINTS: 0,
-  ARRAY_BUFFER: 34962,
-  ELEMENT_ARRAY_BUFFER: 34963,
-  DYNAMIC_DRAW: 35048,
-  STATIC_DRAW: 35044,
-  FLOAT: 5126,
-  UNSIGNED_SHORT: 5123,
-  
-  // Buffer methods
-  createBuffer: jest.fn(() => ({ id: Math.random() })),
-  deleteBuffer: jest.fn(),
-  bindBuffer: jest.fn(),
-  bufferData: jest.fn(),
-  
-  // Vertex attributes
-  vertexAttribPointer: jest.fn(),
-  enableVertexAttribArray: jest.fn(),
-  disableVertexAttribArray: jest.fn(),
-  
-  // Drawing
-  drawArrays: jest.fn(),
-  drawElements: jest.fn(),
-  
-  // Shaders (for future tests)
-  createShader: jest.fn(() => ({ id: Math.random() })),
-  createProgram: jest.fn(() => ({ id: Math.random() })),
-  compileShader: jest.fn(),
-  linkProgram: jest.fn(),
-  useProgram: jest.fn(),
-  
-  // State
-  viewport: jest.fn(),
-  clear: jest.fn(),
-  clearColor: jest.fn(),
-  enable: jest.fn(),
-  disable: jest.fn(),
-  
-  // Error checking
-  getError: jest.fn(() => 0), // GL_NO_ERROR
-  
-  // Extensions
-  getExtension: jest.fn(),
-  getSupportedExtensions: jest.fn(() => [])
-});
-
-// Mock canvas and WebGL
-(HTMLCanvasElement.prototype.getContext as jest.Mock) = jest.fn((contextType) => {
-  if (contextType === 'webgl' || contextType === 'experimental-webgl') {
-    return createMockWebGLContext() as unknown as WebGLRenderingContext;
-  }
-  if (contextType === 'webgl2') {
-    return {
-      ...createMockWebGLContext(),
-      createVertexArray: jest.fn(() => ({ id: Math.random() })),
-      deleteVertexArray: jest.fn(),
-      bindVertexArray: jest.fn()
-    } as unknown as WebGL2RenderingContext;
-  }
-  return null;
-});
-
-// Mock Chrome APIs for extension testing
-const mockStorageData: { [key: string]: any } = {};
-
-(global as any).chrome = {
+// Mock chrome API
+global.chrome = {
   runtime: {
+    sendMessage: jest.fn(),
     onMessage: {
       addListener: jest.fn(),
       removeListener: jest.fn()
-    } as Partial<chrome.events.Event<any>>,
-    sendMessage: jest.fn(),
-    getURL: jest.fn((path: string) => `chrome-extension://mock-id/${path}`)
-  } as Partial<typeof chrome.runtime>,
-  tabs: {
-    query: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn()
-  } as Partial<typeof chrome.tabs>,
+    },
+    getManifest: jest.fn(() => ({ version: '1.0.0' })),
+    id: 'test-extension-id'
+  },
   storage: {
     local: {
-      get: jest.fn().mockImplementation((keys?: string | string[] | null, callback?: (result: { [key: string]: any }) => void) => {
-        const result: { [key: string]: any } = {};
-        if (typeof keys === 'string') {
-          if (mockStorageData[keys] !== undefined) {
-            result[keys] = mockStorageData[keys];
-          }
-        } else if (Array.isArray(keys)) {
-          keys.forEach(key => {
-            if (mockStorageData[key] !== undefined) {
-              result[key] = mockStorageData[key];
-            }
-          });
-        } else {
-          Object.assign(result, mockStorageData);
-        }
-        if (callback) callback(result);
-        return Promise.resolve(result);
-      }),
-      set: jest.fn().mockImplementation((items: { [key: string]: any }, callback?: () => void) => {
-        Object.assign(mockStorageData, items);
-        if (callback) callback();
-        return Promise.resolve();
-      }),
-      remove: jest.fn().mockImplementation((keys: string | string[], callback?: () => void) => {
-        const keysArray = Array.isArray(keys) ? keys : [keys];
-        keysArray.forEach(key => delete mockStorageData[key]);
-        if (callback) callback();
-        return Promise.resolve();
-      }),
-      clear: jest.fn().mockImplementation((callback?: () => void) => {
-        Object.keys(mockStorageData).forEach(key => delete mockStorageData[key]);
-        if (callback) callback();
-        return Promise.resolve();
-      })
-    } as Partial<chrome.storage.LocalStorageArea>,
+      get: jest.fn(),
+      set: jest.fn(),
+      remove: jest.fn(),
+      clear: jest.fn()
+    },
     sync: {
-      get: jest.fn().mockResolvedValue({}),
-      set: jest.fn().mockResolvedValue(undefined),
-      remove: jest.fn().mockResolvedValue(undefined),
-      clear: jest.fn().mockResolvedValue(undefined)
-    } as Partial<chrome.storage.SyncStorageArea>
-  } as Partial<typeof chrome.storage>
-};
-
-// Console override for test cleanup
-const originalConsole = global.console;
-global.console = {
-  ...originalConsole,
-  // Suppress console.log in tests unless explicitly needed
-  log: process.env.JEST_VERBOSE === 'true' ? originalConsole.log : jest.fn(),
-  info: process.env.JEST_VERBOSE === 'true' ? originalConsole.info : jest.fn(),
-  warn: originalConsole.warn,
-  error: originalConsole.error,
-  debug: process.env.JEST_VERBOSE === 'true' ? originalConsole.debug : jest.fn()
-};
-
-// Increase timeout for integration tests and slower CI environments
-jest.setTimeout(30000);
-
-// Global test utilities
-global.testUtils = {
-  // Helper to wait for async operations
-  waitFor: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
-  
-  // Helper to create mock DNA sequences
-  createMockDNA: (length: number = 16) => {
-    const bases = ['A', 'T', 'C', 'G'];
-    return Array.from({ length }, () => bases[Math.floor(Math.random() * bases.length)]).join('');
-  },
-  
-  // Helper to create valid organism traits
-  createMockTraits: () => ({
-    curiosity: Math.random(),
-    focus: Math.random(),
-    rhythm: Math.random(),
-    empathy: Math.random(),
-    creativity: Math.random(),
-    resilience: Math.random(),
-    adaptability: Math.random(),
-    memory: Math.random(),
-    intuition: Math.random() * 0.2 // Intuition is typically lower
-  }),
-  
-  // Helper to suppress console output during tests
-  suppressConsole: () => {
-    const spy = {
-      log: jest.spyOn(console, 'log').mockImplementation(() => {}),
-      info: jest.spyOn(console, 'info').mockImplementation(() => {}),
-      warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
-      error: jest.spyOn(console, 'error').mockImplementation(() => {}),
-      debug: jest.spyOn(console, 'debug').mockImplementation(() => {})
-    };
-    
-    return () => {
-      Object.values(spy).forEach(s => s.mockRestore());
-    };
-  }
-};
-
-// Clean up after each test
-afterEach(() => {
-  jest.clearAllMocks();
-  jest.clearAllTimers();
-  
-  // Clear mock storage data
-  Object.keys(mockStorageData).forEach(key => delete mockStorageData[key]);
-  
-  // Reset performance mock if it exists and is a Jest mock
-  if (global.performance.now && typeof (global.performance.now as any).mockClear === 'function') {
-    (global.performance.now as jest.Mock).mockClear();
-  }
-  
-  // Reset RAF mocks if they exist and are Jest mocks
-  if (global.requestAnimationFrame && typeof (global.requestAnimationFrame as any).mockClear === 'function') {
-    (global.requestAnimationFrame as jest.Mock).mockClear();
-  }
-  if (global.cancelAnimationFrame && typeof (global.cancelAnimationFrame as any).mockClear === 'function') {
-    (global.cancelAnimationFrame as jest.Mock).mockClear();
-  }
-});
-
-// Global mock setup that needs to be done before imports
-beforeAll(() => {
-  // Mock the service-worker-adapter module
-  jest.doMock('../src/background/service-worker-adapter', () => ({
-    swCryptoAPI: {
-      subtle: cryptoSubtle,
-      getRandomValues: cryptoGetRandomValues
+      get: jest.fn(),
+      set: jest.fn(),
+      remove: jest.fn(),
+      clear: jest.fn()
     }
-  }));
-});
+  },
+  tabs: {
+    query: jest.fn(),
+    sendMessage: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn()
+  }
+} as any;
 
-// TypeScript declarations for global test utilities
-declare global {
-  var testUtils: {
-    waitFor: (ms: number) => Promise<void>;
-    createMockDNA: (length?: number) => string;
-    createMockTraits: () => any;
-    suppressConsole: () => () => void;
-  };
-} 
+// Mock IndexedDB
+class MockIDBRequest {
+  result: any = null;
+  error: any = null;
+  onsuccess: ((e: any) => void) | null = null;
+  onerror: ((e: any) => void) | null = null;
+
+  constructor(result?: any) {
+    this.result = result;
+    // Simulate async success
+    setTimeout(() => {
+      if (this.onsuccess) {
+        this.onsuccess({ target: { result: this.result } });
+      }
+    }, 0);
+  }
+}
+
+class MockIDBObjectStore {
+  add = jest.fn(() => new MockIDBRequest());
+  put = jest.fn(() => new MockIDBRequest());
+  get = jest.fn(() => new MockIDBRequest());
+  delete = jest.fn(() => new MockIDBRequest());
+  clear = jest.fn(() => new MockIDBRequest());
+  openCursor = jest.fn(() => new MockIDBRequest(null));
+  createIndex = jest.fn();
+  index = jest.fn(() => this);
+  count = jest.fn(() => new MockIDBRequest(0));
+}
+
+class MockIDBTransaction {
+  objectStore = jest.fn(() => new MockIDBObjectStore());
+  oncomplete: (() => void) | null = null;
+  onerror: ((e: any) => void) | null = null;
+
+  constructor() {
+    // Simulate async complete
+    setTimeout(() => {
+      if (this.oncomplete) {
+        this.oncomplete();
+      }
+    }, 0);
+  }
+}
+
+class MockIDBDatabase {
+  objectStoreNames = { contains: jest.fn(() => false), length: 0 };
+  createObjectStore = jest.fn(() => new MockIDBObjectStore());
+  deleteObjectStore = jest.fn();
+  transaction = jest.fn(() => new MockIDBTransaction());
+  close = jest.fn();
+}
+
+global.indexedDB = {
+  open: jest.fn((name: string, version?: number) => {
+    const db = new MockIDBDatabase();
+    const request = new MockIDBRequest(db);
+    (request as any).onupgradeneeded = null;
+    (request as any).onsuccess = null;
+    (request as any).onerror = null;
+
+    // Simulate async behavior
+    setTimeout(() => {
+      if ((request as any).onsuccess) {
+        (request as any).onsuccess({ target: { result: db } });
+      }
+    }, 0);
+
+    return request;
+  }),
+  deleteDatabase: jest.fn((name: string) => {
+    const request = new MockIDBRequest();
+    (request as any).onsuccess = null;
+    (request as any).onerror = null;
+
+    setTimeout(() => {
+      if ((request as any).onsuccess) {
+        (request as any).onsuccess({ target: { result: undefined } });
+      }
+    }, 0);
+
+    return request;
+  })
+} as any;
+
+// Mock WebGL
+class MockWebGLRenderingContext {
+  canvas = { width: 800, height: 600 };
+  createShader = jest.fn(() => ({}));
+  shaderSource = jest.fn();
+  compileShader = jest.fn();
+  getShaderParameter = jest.fn(() => true);
+  createProgram = jest.fn(() => ({}));
+  attachShader = jest.fn();
+  linkProgram = jest.fn();
+  getProgramParameter = jest.fn(() => true);
+  useProgram = jest.fn();
+  getAttribLocation = jest.fn(() => 0);
+  getUniformLocation = jest.fn(() => 0);
+  enableVertexAttribArray = jest.fn();
+  createBuffer = jest.fn(() => ({}));
+  bindBuffer = jest.fn();
+  bufferData = jest.fn();
+  vertexAttribPointer = jest.fn();
+  uniform1f = jest.fn();
+  uniform2f = jest.fn();
+  uniform3f = jest.fn();
+  uniform4f = jest.fn();
+  uniformMatrix4fv = jest.fn();
+  viewport = jest.fn();
+  clearColor = jest.fn();
+  clear = jest.fn();
+  enable = jest.fn();
+  disable = jest.fn();
+  blendFunc = jest.fn();
+  drawArrays = jest.fn();
+  drawElements = jest.fn();
+  createTexture = jest.fn(() => ({}));
+  bindTexture = jest.fn();
+  texImage2D = jest.fn();
+  texParameteri = jest.fn();
+  deleteShader = jest.fn();
+  deleteProgram = jest.fn();
+  deleteBuffer = jest.fn();
+  deleteTexture = jest.fn();
+  getError = jest.fn(() => 0);
+  ARRAY_BUFFER = 0x8892;
+  ELEMENT_ARRAY_BUFFER = 0x8893;
+  STATIC_DRAW = 0x88E4;
+  FLOAT = 0x1406;
+  VERTEX_SHADER = 0x8B31;
+  FRAGMENT_SHADER = 0x8B30;
+  COMPILE_STATUS = 0x8B81;
+  LINK_STATUS = 0x8B82;
+  COLOR_BUFFER_BIT = 0x00004000;
+  DEPTH_BUFFER_BIT = 0x00000100;
+  BLEND = 0x0BE2;
+  SRC_ALPHA = 0x0302;
+  ONE_MINUS_SRC_ALPHA = 0x0303;
+  TRIANGLES = 0x0004;
+  TEXTURE_2D = 0x0DE1;
+  TEXTURE0 = 0x84C0;
+  RGBA = 0x1908;
+  UNSIGNED_BYTE = 0x1401;
+  TEXTURE_WRAP_S = 0x2802;
+  TEXTURE_WRAP_T = 0x2803;
+  TEXTURE_MIN_FILTER = 0x2801;
+  TEXTURE_MAG_FILTER = 0x2800;
+  CLAMP_TO_EDGE = 0x812F;
+  LINEAR = 0x2601;
+  NO_ERROR = 0;
+}
+
+HTMLCanvasElement.prototype.getContext = jest.fn((contextType: string) => {
+  if (contextType === 'webgl' || contextType === 'experimental-webgl') {
+    return new MockWebGLRenderingContext();
+  }
+  return null;
+}) as any;
+
+// Mock crypto for secure random
+global.crypto = {
+  getRandomValues: jest.fn((array: Uint8Array | Uint32Array) => {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+    return array;
+  }),
+  randomUUID: jest.fn(() => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  }))
+} as any;
+
+// Mock performance API
+global.performance = {
+  now: jest.fn(() => Date.now()),
+  mark: jest.fn(),
+  measure: jest.fn(),
+  getEntriesByType: jest.fn(() => []),
+  getEntriesByName: jest.fn(() => []),
+  clearMarks: jest.fn(),
+  clearMeasures: jest.fn()
+} as any;
+
+// Mock fetch
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(''),
+    blob: () => Promise.resolve(new Blob()),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    headers: new Headers(),
+    status: 200,
+    statusText: 'OK'
+  })
+) as any;
+
+// Mock localStorage
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+  length: 0,
+  key: jest.fn()
+};
+global.localStorage = localStorageMock as any;
+
+// Mock sessionStorage
+global.sessionStorage = localStorageMock as any;
+
+// Mock requestAnimationFrame
+global.requestAnimationFrame = jest.fn((cb) => {
+  setTimeout(cb, 16);
+  return 1;
+}) as any;
+
+global.cancelAnimationFrame = jest.fn();
+
+// Mock IntersectionObserver
+class MockIntersectionObserver {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+
+  constructor(callback: any, options?: any) {}
+}
+global.IntersectionObserver = MockIntersectionObserver as any;
+
+// Mock MutationObserver
+class MockMutationObserver {
+  observe = jest.fn();
+  disconnect = jest.fn();
+  takeRecords = jest.fn(() => []);
+
+  constructor(callback: any) {}
+}
+global.MutationObserver = MockMutationObserver as any;
+
+// Mock ResizeObserver
+class MockResizeObserver {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+
+  constructor(callback: any) {}
+}
+global.ResizeObserver = MockResizeObserver as any;
+
+// Mock console methods to avoid noise in tests
+const originalConsole = { ...console };
+global.console = {
+  ...console,
+  log: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  trace: jest.fn()
+};
+
+// Restore original console for debugging if needed
+(global as any).originalConsole = originalConsole;

@@ -1208,3 +1208,221 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+/* ===== MURMURS DEDUPLICATION SYSTEM ===== */
+.murmurs-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.murmurs-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-purple);
+  text-align: center;
+  margin-bottom: 8px;
+  opacity: 0.8;
+  text-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+}
+
+.murmur {
+  background: linear-gradient(135deg,
+    rgba(10, 13, 21, 0.95),
+    rgba(20, 26, 37, 0.95));
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-secondary);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  pointer-events: auto;
+  transition: all 0.3s ease;
+}
+
+.murmur-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.murmur-message {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Type-specific murmur styles */
+.murmur-info {
+  border-left: 3px solid var(--accent-cyan);
+}
+
+.murmur-info .murmur-message {
+  color: var(--accent-cyan);
+}
+
+.murmur-warning {
+  border-left: 3px solid var(--warning-orange);
+  background: linear-gradient(135deg,
+    rgba(255, 183, 0, 0.1),
+    rgba(20, 26, 37, 0.95));
+}
+
+.murmur-warning .murmur-message {
+  color: var(--warning-orange);
+  text-shadow: 0 0 8px rgba(255, 183, 0, 0.3);
+}
+
+.murmur-critical {
+  border-left: 3px solid var(--error-red);
+  background: linear-gradient(135deg,
+    rgba(255, 107, 107, 0.15),
+    rgba(20, 26, 37, 0.95));
+  animation: criticalPulse 1s ease-in-out infinite;
+}
+
+.murmur-critical .murmur-message {
+  color: var(--error-red);
+  text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+  font-weight: 600;
+}
+
+@keyframes criticalPulse {
+  0%, 100% {
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.4),
+      0 0 0 0 rgba(255, 107, 107, 0);
+  }
+  50% {
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.4),
+      0 0 20px 5px rgba(255, 107, 107, 0.3);
+  }
+}
+
+/* Action suggestion button */
+.murmur-action {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.murmur-action-btn {
+  background: linear-gradient(135deg,
+    var(--accent-purple),
+    var(--accent-blue));
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);
+}
+
+.murmur-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(147, 51, 234, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.murmur-action-btn:active {
+  transform: translateY(0);
+}
+
+/* Fade in/out animation */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* Deduplication counter */
+.murmur-message:has(+ .murmur-action) {
+  padding-bottom: 4px;
+}
+
+/* Counter badge for repeated messages */
+.murmur-message::after {
+  content: attr(data-count);
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+.murmur-message:not([data-count])::after {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .murmurs-container {
+    right: 10px;
+    left: 10px;
+    max-width: calc(100% - 20px);
+  }
+
+  .murmur {
+    padding: 10px 14px;
+  }
+
+  .murmur-message {
+    font-size: 0.85rem;
+  }
+
+  .murmur-action-btn {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .murmur {
+    animation: none;
+  }
+
+  .murmur-critical {
+    animation: none;
+    border: 2px solid var(--error-red);
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; }
+    10%, 90% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+}

@@ -15,6 +15,9 @@
 import { logger } from '@/shared/utils/secureLogger';
 import { neuromodulation } from './Neuromodulation';
 import { backpressureController } from './BackpressureController';
+import { DreamProcessor } from '@/core/dreams/DreamProcessor';
+import { MemoryFragmentCollector } from '@/core/dreams/MemoryFragmentCollector';
+import type { MemoryFragment } from '@/core/dreams/DreamProcessor';
 
 export type CircadianPhase = 'active' | 'idle' | 'sleep' | 'dream';
 
@@ -62,6 +65,12 @@ export class CircadianCycleManager {
   // Tâches périodiques configurées
   private periodicTasks: Map<string, { interval: number; lastRun: number; task: DigestTask }> = new Map();
 
+  // Dream processor et collecteur de fragments
+  private dreamProcessor: DreamProcessor | null = null;
+  private fragmentCollector: MemoryFragmentCollector | null = null;
+  private lastDreamSynthesis: number = 0;
+  private readonly DREAM_SYNTHESIS_INTERVAL = 60000; // 1 minute minimum (réaliste pour phase dream)
+
   constructor(config?: Partial<CircadianConfig>) {
     this.config = {
       idleThreshold: 60000,      // 1 minute
@@ -88,6 +97,10 @@ export class CircadianCycleManager {
    * Démarre le gestionnaire de cycle circadien
    */
   async start(): Promise<void> {
+    // Initialiser le dream processor et le collecteur
+    this.dreamProcessor = DreamProcessor.getInstance();
+    this.fragmentCollector = MemoryFragmentCollector.getInstance();
+
     // Configuration de la détection d'inactivité via chrome.idle
     await this.setupIdleDetection();
 
@@ -97,7 +110,10 @@ export class CircadianCycleManager {
       this.processTaskQueue();
     }, this.config.checkInterval);
 
-    logger.info('[CircadianCycle] Started');
+    // Enregistrer la tâche de synthèse onirique
+    this.registerDreamSynthesisTask();
+
+    logger.info('[CircadianCycle] Started with Dream Processor');
   }
 
   /**
@@ -220,6 +236,8 @@ export class CircadianCycleManager {
         break;
       case 'dream':
         neuromodulation.processEvent('relaxation', 1.0);
+        // Déclencher la synthèse onirique si suffisamment de temps s'est écoulé
+        this.triggerDreamSynthesis();
         break;
     }
 
@@ -458,6 +476,135 @@ export class CircadianCycleManager {
       lastActivity: Date.now(), // Reset l'activité au chargement
       lastPhaseChange: Date.now()
     };
+  }
+
+  /**
+   * Enregistre la tâche de synthèse onirique périodique
+   */
+  private registerDreamSynthesisTask(): void {
+    const dreamTask: DigestTask = {
+      id: 'dream-synthesis',
+      type: 'consolidation',
+      priority: 10, // Priorité maximale
+      estimatedDuration: 30000, // 30 secondes max
+      execute: async () => {
+        await this.performDreamSynthesis();
+      }
+    };
+
+    // Enregistrer comme tâche périodique
+    this.registerPeriodicTask('dream-synthesis', this.DREAM_SYNTHESIS_INTERVAL, dreamTask);
+  }
+
+  /**
+   * Déclenche la synthèse onirique si les conditions sont réunies
+   */
+  private async triggerDreamSynthesis(): Promise<void> {
+    const now = Date.now();
+
+    // Vérifier l'intervalle minimum
+    if (now - this.lastDreamSynthesis < this.DREAM_SYNTHESIS_INTERVAL) {
+      return;
+    }
+
+    // Vérifier qu'on est bien en phase dream
+    if (this.state.phase !== 'dream') {
+      return;
+    }
+
+    // Vérifier le backpressure
+    if (backpressureController.getLevel() === 'emergency' ||
+        backpressureController.getLevel() === 'critical') {
+      logger.warn('[CircadianCycle] Skipping dream synthesis due to backpressure');
+      return;
+    }
+
+    // Exécuter la synthèse
+    await this.performDreamSynthesis();
+  }
+
+  /**
+   * Effectue la synthèse onirique cross-domain
+   */
+  private async performDreamSynthesis(): Promise<void> {
+    if (!this.dreamProcessor || !this.fragmentCollector) {
+      logger.error('[CircadianCycle] Dream processor not initialized');
+      return;
+    }
+
+    try {
+      logger.info('[CircadianCycle] Starting dream synthesis');
+
+      // Récupérer les fragments mémoire collectés
+      const fragments = await this.fragmentCollector.getRecentFragments(500); // Max 500 fragments
+
+      if (fragments.length === 0) {
+        logger.info('[CircadianCycle] No memory fragments to process');
+        return;
+      }
+
+      // Lancer l'analyse cross-domain
+      const report = await this.dreamProcessor.performNocturnalSynthesis(fragments);
+
+      this.lastDreamSynthesis = Date.now();
+
+      logger.info('[CircadianCycle] Dream synthesis complete', {
+        fragmentsAnalyzed: report.fragmentsAnalyzed,
+        shadowEntities: report.shadowEntities.length,
+        cpuUtilization: report.cpuUtilization,
+        duration: report.endTime - report.startTime
+      });
+
+      // Nettoyer les fragments traités
+      await this.fragmentCollector.clearProcessedFragments(fragments);
+
+    } catch (error) {
+      logger.error('[CircadianCycle] Dream synthesis failed', error);
+    }
+  }
+
+  /**
+   * Force une synthèse onirique manuelle (pour tests)
+   */
+  public async forceDreamSynthesis(): Promise<void> {
+    logger.warn('[CircadianCycle] Forcing dream synthesis manually');
+    this.lastDreamSynthesis = 0; // Reset pour bypasser l'intervalle
+
+    // Créer des fragments de test si aucun n'existe
+    const fragments = await this.fragmentCollector?.getRecentFragments(500);
+    if (!fragments || fragments.length === 0) {
+      logger.info('[CircadianCycle] Creating test fragments for forced synthesis');
+
+      // Injecter des fragments de test réalistes
+      const testFragments = [
+        {
+          domain: 'tracker1.com',
+          timestamp: Date.now(),
+          friction: 120,
+          latency: 45,
+          trackers: ['analytics.js', 'pixel.gif'],
+          hiddenElements: [],
+          protocolSignature: 'h3',
+          resourceTimings: []
+        },
+        {
+          domain: 'tracker2.net',
+          timestamp: Date.now(),
+          friction: 115,
+          latency: 48,
+          trackers: ['analytics.js', 'fingerprint.js'],
+          hiddenElements: [],
+          protocolSignature: 'h3',
+          resourceTimings: []
+        }
+      ];
+
+      for (const fragment of testFragments) {
+        this.fragmentCollector?.importFragments([fragment]);
+      }
+    }
+
+    await this.performDreamSynthesis();
   }
 }
 

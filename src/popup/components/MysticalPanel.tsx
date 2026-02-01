@@ -1,6 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useOrganism } from '../hooks/useOrganism';
 import { logger } from '@shared/utils/secureLogger';
+import { useMurmurDeduplication, type MurmurAction } from '../hooks/useMurmurDeduplication';
+import { SecureRandom } from '@/shared/utils/secureRandom';
+import type {
+  HiddenElementData,
+  HiddenElementsResponse,
+  CategorizedElements
+} from '@/types/hiddenElements';
 
 interface Ritual {
   id: string;
@@ -129,19 +136,50 @@ const MysticalPanel: React.FC = () => {
   const [ritualHistory, setRitualHistory] = useState<RitualHistory[]>([]);
   const [ritualCooldowns, setRitualCooldowns] = useState<Record<string, number>>({});
   const [notifications, setNotifications] = useState<string[]>([]);
-  const [murmurs, setMurmurs] = useState<Array<{ message: string; type: 'info' | 'warning' | 'critical'; timestamp: number }>>([]);
+  const [murmurs, setMurmurs] = useState<Array<{
+    message: string;
+    type: 'info' | 'warning' | 'critical';
+    timestamp: number;
+    suggestedAction?: MurmurAction;  // Type strict, no 'any'
+  }>>([]);
+
+  // Ref pour éviter les race conditions sur Vision Spectrale
+  const visionSpectraleInProgress = useRef<boolean>(false);
+  const componentMounted = useRef<boolean>(true);
+
+  // Hook de déduplication des murmures
+  const { processMurmur, cleanupCache, getDeduplicationStats } = useMurmurDeduplication();
 
   /**
-   * Ajoute un murmure mystique (notification de friction DOM)
+   * Ajoute un murmure mystique avec déduplication intelligente
    * @param message - Message à afficher
    * @param type - Type de murmure selon l'intensité
    */
   const addMurmur = useCallback((message: string, type: 'info' | 'warning' | 'critical' = 'info') => {
-    const murmur = {
-      message,
-      type,
-      timestamp: Date.now()
+    // Traiter le murmure avec déduplication
+    const dedupedMurmur = processMurmur(message, type);
+
+    // Si le murmure est supprimé par déduplication, ne pas l'afficher
+    if (!dedupedMurmur) {
+      return;
+    }
+
+    // Si une action est suggérée, l'ajouter au murmure
+    const murmur: {
+      message: string;
+      type: 'info' | 'warning' | 'critical';
+      timestamp: number;
+      suggestedAction?: MurmurAction;
+    } = {
+      message: dedupedMurmur.message,
+      type: dedupedMurmur.type,
+      timestamp: dedupedMurmur.timestamp
     };
+
+    // Ajouter suggestedAction seulement si défini
+    if (dedupedMurmur.suggestedAction) {
+      murmur.suggestedAction = dedupedMurmur.suggestedAction;
+    }
 
     setMurmurs(prev => {
       const updated = [...prev, murmur];
@@ -149,10 +187,39 @@ const MysticalPanel: React.FC = () => {
       return updated.slice(-5);
     });
 
-    // Auto-suppression après 6 secondes
+    // Auto-suppression après un délai variable selon l'importance
+    const displayDuration = type === 'critical' ? 10000 : type === 'warning' ? 8000 : 6000;
+
     setTimeout(() => {
       setMurmurs(prev => prev.filter(m => m.timestamp !== murmur.timestamp));
-    }, 6000);
+    }, displayDuration);
+
+    // Log les statistiques de déduplication de temps en temps (SecureRandom)
+    if (SecureRandom.random() < 0.1) { // 10% de chance
+      const stats = getDeduplicationStats();
+      logger.debug('Murmur deduplication stats', stats);
+    }
+  }, [processMurmur, getDeduplicationStats]);
+
+  // Nettoyer le cache de déduplication périodiquement
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      cleanupCache();
+    }, 60000); // Toutes les minutes
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [cleanupCache]);
+
+  // Cleanup on unmount pour éviter les memory leaks
+  useEffect(() => {
+    componentMounted.current = true;
+
+    return () => {
+      componentMounted.current = false;
+      visionSpectraleInProgress.current = false;
+    };
   }, []);
 
   // Écouter les messages de résonance DOM (Phase 1.1)
@@ -406,29 +473,157 @@ const MysticalPanel: React.FC = () => {
 
     // Gestion spéciale pour Vision Spectrale (Phase 1.2)
     if (ritual.id === 'vision-spectrale') {
+      // Vérifier qu'un scan n'est pas déjà en cours (race condition)
+      if (visionSpectraleInProgress.current) {
+        addNotification('⚠️ Un scan est déjà en cours...');
+        return;
+      }
+
+      visionSpectraleInProgress.current = true;
+
       try {
         // Envoyer message au content script pour extraire les éléments cachés
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id) {
-          await chrome.tabs.sendMessage(tab.id, {
+
+        if (!tab?.id) {
+          throw new Error('No active tab found');
+        }
+
+        // Utiliser sendMessage avec callback pour récupérer la réponse
+        chrome.tabs.sendMessage<any, HiddenElementsResponse>(
+          tab.id,
+          {
             type: 'EXTRACT_HIDDEN_ELEMENTS',
             payload: {
               depth: 100, // Profondeur de scan maximale
               includeZIndex: true // Inclure la détection z-index négatif
             }
-          });
+          },
+          (response) => {
+            // Reset flag
+            visionSpectraleInProgress.current = false;
 
-          // Log pour traçabilité
-          logger.info('Vision Spectrale ritual initiated', {
-            tabId: tab.id,
-            url: tab.url
-          });
+            // Check si le composant est toujours monté (memory leak prevention)
+            if (!componentMounted.current) {
+              return;
+            }
 
-          addNotification('👁️ Vision Spectrale activée - Scan en cours...');
-          addMurmur('Les voiles du DOM se dissipent...', 'info');
-        }
+            // Gestion des erreurs Chrome
+            if (chrome.runtime.lastError) {
+              logger.error('Vision Spectrale communication error', {
+                error: chrome.runtime.lastError.message
+              });
+              addMurmur('⚠️ Impossible de scanner cette page (restrictions de sécurité)', 'warning');
+              return;
+            }
+
+            // Validation de la réponse avec types stricts
+            if (!response || !Array.isArray(response.hiddenElements)) {
+              addMurmur('🔍 Scan terminé - Aucune anomalie détectée', 'info');
+              return;
+            }
+
+            const { hiddenElements, stats } = response;
+
+            // Afficher les résultats dans les murmures
+            if (hiddenElements.length === 0) {
+              addMurmur('✅ Aucun élément caché détecté - Zone propre', 'info');
+              return;
+            }
+
+            addMurmur(`🔍 ${hiddenElements.length} éléments cachés détectés!`, 'warning');
+
+            // Catégorisation performante (single pass)
+            const categorized = categorizeHiddenElements(hiddenElements);
+
+            // Messages détaillés sur les découvertes
+            if (categorized.trackers.length > 0) {
+              addMurmur(
+                `⚠️ ${categorized.trackers.length} scripts/trackers invisibles actifs`,
+                'warning'
+              );
+
+              // Log les domaines des trackers (avec sanitization)
+              const uniqueHosts = new Set<string>();
+
+              for (const tracker of categorized.trackers) {
+                if (tracker.src) {
+                  try {
+                    const url = new URL(tracker.src);
+                    const sanitizedHost = sanitizeHostname(url.hostname);
+
+                    if (!uniqueHosts.has(sanitizedHost)) {
+                      uniqueHosts.add(sanitizedHost);
+
+                      // Limite à 5 domaines pour ne pas spammer
+                      if (uniqueHosts.size <= 5) {
+                        addMurmur(`📡 Tracker: ${sanitizedHost}`, 'info');
+                      }
+                    }
+                  } catch (err) {
+                    // URL invalide, ignorer silencieusement
+                    logger.debug('Invalid tracker URL', { src: tracker.src });
+                  }
+                }
+              }
+
+              if (uniqueHosts.size > 5) {
+                addMurmur(`... et ${uniqueHosts.size - 5} autres domaines`, 'info');
+              }
+            }
+
+            if (categorized.pixels.length > 0) {
+              addMurmur(
+                `👁️ ${categorized.pixels.length} pixels de tracking détectés`,
+                'warning'
+              );
+            }
+
+            if (categorized.zIndexNegative.length > 0) {
+              addMurmur(
+                `🕵️ ${categorized.zIndexNegative.length} éléments avec z-index négatif`,
+                'critical'
+              );
+            }
+
+            // Si beaucoup d'éléments cachés, suggérer une protection
+            if (hiddenElements.length > 10) {
+              addMurmur(
+                `🛡️ Surveillance intensive détectée! Activation de contre-mesures recommandée`,
+                'critical'
+              );
+            }
+
+            // Log les statistiques (avec validation)
+            if (stats && typeof stats === 'object') {
+              logger.info('Vision Spectrale results', {
+                hiddenCount: hiddenElements.length,
+                trackers: categorized.trackers.length,
+                pixels: categorized.pixels.length,
+                zIndexNegative: categorized.zIndexNegative.length,
+                scanTime: stats.scanTime || 0,
+                depth: stats.depth || 0
+              });
+            }
+          }
+        );
+
+        // Log pour traçabilité
+        logger.info('Vision Spectrale ritual initiated', {
+          tabId: tab.id,
+          url: tab.url?.slice(0, 100) // Limite URL length
+        });
+
+        addNotification('👁️ Vision Spectrale activée - Scan en cours...');
+        addMurmur('Les voiles du DOM se dissipent...', 'info');
+
       } catch (error) {
-        logger.error('Failed to initiate Vision Spectrale', { error });
+        visionSpectraleInProgress.current = false;
+
+        logger.error('Failed to initiate Vision Spectrale', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+
         addNotification('⚠️ Erreur lors de l\'activation de Vision Spectrale');
         return;
       }
@@ -524,6 +719,70 @@ const MysticalPanel: React.FC = () => {
       startRitual(ritual);
     }
   };
+
+  /**
+   * Categorise les éléments cachés de manière performante (single pass)
+   * Complexity: O(n) avec validation de types stricte
+   */
+  const categorizeHiddenElements = useCallback((
+    elements: HiddenElementData[]
+  ): CategorizedElements => {
+    const result: CategorizedElements = {
+      trackers: [],
+      pixels: [],
+      zIndexNegative: [],
+      other: []
+    };
+
+    // Single pass au lieu de 3 filter()
+    for (const el of elements) {
+      // Validation des types
+      if (!el || typeof el !== 'object') continue;
+
+      // Détection tracker
+      if (
+        el.tag === 'SCRIPT' ||
+        el.tag === 'IFRAME' ||
+        (el.id && el.id.includes('track'))
+      ) {
+        result.trackers.push(el);
+      }
+      // Détection pixel
+      else if (
+        (el.width === 1 && el.height === 1) ||
+        (el.classes && el.classes.includes('pixel'))
+      ) {
+        result.pixels.push(el);
+      }
+      // Détection z-index négatif
+      else if (el.styles?.zIndex) {
+        try {
+          const zIndex = parseInt(el.styles.zIndex, 10);
+          if (!isNaN(zIndex) && zIndex < 0) {
+            result.zIndexNegative.push(el);
+          } else {
+            result.other.push(el);
+          }
+        } catch {
+          result.other.push(el);
+        }
+      } else {
+        result.other.push(el);
+      }
+    }
+
+    return result;
+  }, []);
+
+  /**
+   * Sanitize hostname pour éviter XSS
+   */
+  const sanitizeHostname = useCallback((hostname: string): string => {
+    // Remove caractères dangereux
+    return hostname
+      .replace(/[<>\"'&]/g, '')
+      .slice(0, 100); // Limite de longueur
+  }, []);
 
   const submitSecretCode = () => {
     const secretRituals = AVAILABLE_RITUALS.filter(r => r.requirements?.secretCode);
@@ -756,7 +1015,38 @@ const MysticalPanel: React.FC = () => {
                 opacity: 0.9
               }}
             >
-              {murmur.message}
+              <div className="murmur-content">
+                <span className="murmur-message">{murmur.message}</span>
+                {murmur.suggestedAction && (
+                  <div className="murmur-action">
+                    <button
+                      className="murmur-action-btn"
+                      onClick={() => {
+                        // Secure null check
+                        if (!murmur.suggestedAction) return;
+
+                        const ritual = AVAILABLE_RITUALS.find(r => r.id === murmur.suggestedAction!.ritualId);
+                        if (ritual) {
+                          const check = canPerformRitual(ritual);
+                          if (check.canPerform) {
+                            startRitual(ritual);
+                            addNotification(`✨ ${murmur.suggestedAction.reason}`);
+                          } else {
+                            addNotification(`❌ ${check.reason}`);
+                          }
+                        } else {
+                          logger.warn('[MysticalPanel] Suggested ritual not found', {
+                            ritualId: murmur.suggestedAction.ritualId
+                          });
+                        }
+                      }}
+                      title={murmur.suggestedAction.reason}
+                    >
+                      → {murmur.suggestedAction.ritualName}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

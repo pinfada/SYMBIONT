@@ -13,6 +13,7 @@ import { SecurityManager } from './SecurityManager';
 import { OrganismFactory } from '../core/factories/OrganismFactory';
 import { generateUUID } from '../shared/utils/uuid';
 import { NetworkLatencyCollector } from './services/NetworkLatencyCollector';
+import { MemoryFragmentCollector } from '@/core/dreams/MemoryFragmentCollector';
 
 // --- Ajout des modules résilients ---
 import { ResilientMessageBus } from '../communication/resilient-message-bus';
@@ -426,7 +427,8 @@ class BackgroundService {
           jitter,
           shadowActivity,
           metrics,
-          timestamps
+          timestamps,
+          url
         } = (message as any).payload;
 
         // CORRECTION: Calcul correct de la latence avec timestamps absolus
@@ -447,6 +449,37 @@ class BackgroundService {
           transmissionLatency: transmissionLatency ? `${transmissionLatency}ms` : 'unknown',
           totalLatency: totalLatency ? `${totalLatency}ms` : 'unknown',
           receivedAt: new Date(receivedAt).toISOString()
+        });
+
+        // NOUVEAU: Collecter le fragment mémoire pour l'analyse cross-domain
+        const fragmentCollector = MemoryFragmentCollector.getInstance();
+        const currentUrl = url || (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.url || 'unknown';
+
+        // Extraire le domaine de l'URL
+        let domain = 'unknown';
+        try {
+          domain = new URL(currentUrl).hostname;
+        } catch (e) {
+          domain = currentUrl;
+        }
+
+        // Collecter les données de résonance DOM avec données réelles
+        const mutations = [];
+        // Extraire les mutations du payload si disponible
+        if ((message as any).payload.mutations) {
+          mutations.push(...(message as any).payload.mutations);
+        }
+
+        fragmentCollector.collectDOMResonance({
+          domain,
+          friction: jitter || resonance * 100, // Utiliser resonance si jitter absent
+          mutations: mutations.length > 0 ? mutations : [
+            { type: 'resonance', target: `level_${resonance}` }
+          ],
+          hiddenElements: metrics?.hiddenElements || [
+            { type: 'shadow', count: shadowActivity }
+          ],
+          timestamps: timestamps || { detected: Date.now(), emitted: Date.now() }
         });
 
         // Alimenter le NeuralMesh avec les données de jitter DOM

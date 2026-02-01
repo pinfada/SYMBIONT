@@ -192,8 +192,9 @@ export class ExtensionBioDetector {
 
     // Classification par permissions
     if (info.permissions) {
+      // MV3: webRequestBlocking n'existe plus, utiliser declarativeNetRequest
       if (info.permissions.includes('webRequest') ||
-          info.permissions.includes('webRequestBlocking')) {
+          info.permissions.includes('declarativeNetRequest')) {
         return OrganType.BLOCKER;
       }
       if (info.permissions.includes('identity') ||

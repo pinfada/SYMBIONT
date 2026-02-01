@@ -95,7 +95,7 @@ describe('Security Fixes Validation', () => {
       await interceptor.initialize();
 
       expect(chrome.permissions.contains).toHaveBeenCalledWith({
-        permissions: ['webRequest', 'webRequestBlocking']
+        permissions: ['webRequest']
       });
     });
 
