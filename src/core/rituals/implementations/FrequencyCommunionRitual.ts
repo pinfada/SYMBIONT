@@ -1,7 +1,11 @@
 /**
  * FrequencyCommunionRitual.ts
  * Rituel de Communion de Fréquence - Infrastructure Bypass
- * Utilise le réseau P2P pour contourner la surveillance et les limitations
+ * Utilise le réseau P2P réel (WebRTC DataChannels) pour contourner
+ * la surveillance et les limitations.
+ *
+ * Upgraded to use PeerNetwork for real WebRTC DataChannels instead of
+ * simulated in-memory peers.
  */
 
 import {
@@ -17,6 +21,7 @@ import {
 import { logger } from '@/shared/utils/secureLogger';
 import { SecureRandom } from '@/shared/utils/secureRandom';
 import { MessageBus, MessageType } from '@/shared/messaging/MessageBus';
+import { PeerNetwork, PeerInfo } from '@/services/p2p/PeerNetwork';
 
 interface PeerNode {
   id: string;
@@ -76,10 +81,15 @@ export class FrequencyCommunionRitual implements IRitual {
   public executionCount = 0;
 
   private messageBus: MessageBus;
-  private peerNetwork: Map<string, PeerNode> = new Map();
+  /** Legacy in-memory peer map (populated from real PeerNetwork) */
+  private peerNetworkMap: Map<string, PeerNode> = new Map();
   private activeRoutes: Map<string, RelayRoute> = new Map();
   private fragmentCache: Map<string, DataFragment[]> = new Map();
   private dataChannels: Map<string, RTCDataChannel> = new Map();
+
+  /** Real WebRTC PeerNetwork for actual DataChannel connections */
+  private realPeerNetwork: PeerNetwork;
+  private peerNetworkStarted = false;
 
   private metrics = {
     totalBytesRelayed: 0,
@@ -92,28 +102,73 @@ export class FrequencyCommunionRitual implements IRitual {
 
   constructor() {
     this.messageBus = new MessageBus('frequency-communion-ritual');
+    this.realPeerNetwork = new PeerNetwork();
     this.initializePeerDiscovery();
   }
 
   /**
-   * Initialise la découverte de pairs P2P
+   * Initialise la découverte de pairs P2P.
+   * Uses the real PeerNetwork (WebRTC DataChannels with chrome.storage.sync
+   * signaling) alongside the legacy MessageBus announcements.
    */
   private async initializePeerDiscovery(): Promise<void> {
-    // Écouter les annonces de pairs
+    // Start the real WebRTC PeerNetwork
+    try {
+      await this.realPeerNetwork.start();
+      this.peerNetworkStarted = true;
+      logger.info('[FrequencyCommunion] Real PeerNetwork started');
+
+      // Listen for data on real DataChannels
+      this.realPeerNetwork.onData(({ peerId, data }) => {
+        if (typeof data === 'string') {
+          this.handleRelayedData(peerId, data);
+        } else {
+          this.handleRelayedData(peerId, new TextDecoder().decode(data as ArrayBuffer));
+        }
+      });
+    } catch (error) {
+      logger.warn('[FrequencyCommunion] Failed to start PeerNetwork, falling back to legacy', error);
+    }
+
+    // Legacy: listen for MessageBus peer announcements
     this.messageBus.on('PEER_ANNOUNCE' as MessageType, (message: any) => {
       const peer = message.payload as PeerNode;
       if (this.validatePeer(peer)) {
-        this.peerNetwork.set(peer.id, peer);
+        this.peerNetworkMap.set(peer.id, peer);
         logger.debug(`[FrequencyCommunion] New peer discovered: ${peer.id}`);
       }
     });
 
-    // Annoncer notre présence périodiquement
+    // Sync discovered peers from real PeerNetwork into legacy map
     setInterval(() => {
+      if (this.peerNetworkStarted) {
+        for (const info of this.realPeerNetwork.getDiscoveredPeers()) {
+          if (!this.peerNetworkMap.has(info.id)) {
+            this.peerNetworkMap.set(info.id, this.peerInfoToNode(info));
+          }
+        }
+        this.metrics.peersConnected = this.realPeerNetwork.getConnectedPeers().length;
+      }
+
       if (this.status === RitualStatus.EXECUTING) {
         this.broadcastPresence();
       }
-    }, 30000); // Toutes les 30 secondes
+    }, 30000);
+  }
+
+  /**
+   * Convert a PeerInfo from the real PeerNetwork to a legacy PeerNode.
+   */
+  private peerInfoToNode(info: PeerInfo): PeerNode {
+    return {
+      id: info.id,
+      publicKey: info.publicKey,
+      endpoint: 'webrtc-datachannel',
+      latency: 50, // Default estimate; refined after first RTT measurement
+      trustScore: info.trustScore,
+      lastSeen: info.lastSeen,
+      capabilities: info.capabilities,
+    };
   }
 
   /**
@@ -577,7 +632,9 @@ export class FrequencyCommunionRitual implements IRitual {
   }
 
   /**
-   * Envoie les fragments via P2P
+   * Envoie les fragments via P2P.
+   * Uses the real PeerNetwork DataChannels when available,
+   * falls back to legacy channels.
    */
   private async sendFragments(
     fragments: DataFragment[],
@@ -585,16 +642,20 @@ export class FrequencyCommunionRitual implements IRitual {
     channels: Map<string, RTCDataChannel>
   ): Promise<void> {
     for (const fragment of fragments) {
-      // Distribuer sur différents pairs
       const peerIndex = fragment.index % route.path.length;
       const peer = route.path[peerIndex];
-      const channel = channels.get(peer.id);
+      const payload = JSON.stringify({ type: 'FRAGMENT', fragment });
 
+      // Try real PeerNetwork first
+      if (this.peerNetworkStarted && this.realPeerNetwork.isConnected(peer.id)) {
+        const sent = await this.realPeerNetwork.sendData(peer.id, payload);
+        if (sent) continue;
+      }
+
+      // Fallback to legacy channels
+      const channel = channels.get(peer.id);
       if (channel && channel.readyState === 'open') {
-        channel.send(JSON.stringify({
-          type: 'FRAGMENT',
-          fragment
-        }));
+        channel.send(payload);
       } else {
         logger.warn(`[FrequencyCommunion] Channel not ready for peer ${peer.id}`);
       }
@@ -692,7 +753,17 @@ export class FrequencyCommunionRitual implements IRitual {
   private getActivePeers(): PeerNode[] {
     const now = Date.now();
     const timeout = 60000; // 1 minute
-    return Array.from(this.peerNetwork.values())
+
+    // Merge peers from real PeerNetwork
+    if (this.peerNetworkStarted) {
+      for (const info of this.realPeerNetwork.getDiscoveredPeers()) {
+        if (!this.peerNetworkMap.has(info.id)) {
+          this.peerNetworkMap.set(info.id, this.peerInfoToNode(info));
+        }
+      }
+    }
+
+    return Array.from(this.peerNetworkMap.values())
       .filter(peer => now - peer.lastSeen < timeout);
   }
 
@@ -837,7 +908,7 @@ export class FrequencyCommunionRitual implements IRitual {
   public async cancel(): Promise<void> {
     this.status = RitualStatus.CANCELLED;
 
-    // Fermer tous les canaux de données
+    // Fermer tous les canaux de données legacy
     for (const channel of this.dataChannels.values()) {
       channel.close();
     }
@@ -848,6 +919,12 @@ export class FrequencyCommunionRitual implements IRitual {
 
     // Vider le cache de fragments
     this.fragmentCache.clear();
+
+    // Destroy the real PeerNetwork
+    if (this.peerNetworkStarted) {
+      this.realPeerNetwork.destroy();
+      this.peerNetworkStarted = false;
+    }
   }
 
   /**
@@ -883,13 +960,28 @@ export class FrequencyCommunionRitual implements IRitual {
   }
 
   /**
+   * Get PeerNetwork stats for external monitoring.
+   */
+  public getPeerNetworkStats(): { discovered: number; connected: number; channels: number } {
+    if (!this.peerNetworkStarted) {
+      return { discovered: this.peerNetworkMap.size, connected: 0, channels: 0 };
+    }
+    const stats = this.realPeerNetwork.getStats();
+    return {
+      discovered: stats.discoveredPeers,
+      connected: stats.activeConnections,
+      channels: stats.openChannels,
+    };
+  }
+
+  /**
    * Obtient l'état de santé
    */
   public getHealthStatus(): RitualHealth {
     const issues: string[] = [];
     const recommendations: string[] = [];
 
-    if (this.peerNetwork.size < 3) {
+    if (this.peerNetworkMap.size < 3) {
       issues.push('Insufficient peer network');
       recommendations.push('Invite more trusted peers to strengthen the network');
     }
