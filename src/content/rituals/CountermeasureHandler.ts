@@ -2,13 +2,18 @@
  * CountermeasureHandler.ts
  * Gestionnaire des contre-mesures de rituels dans le content script
  * Reçoit les messages du background et applique les modifications DOM/réseau de manière sécurisée
+ *
+ * Now includes FingerprintProtection integration for deterministic,
+ * session-consistent anti-fingerprinting that is much harder to detect
+ * than the legacy FINGERPRINT_POISON approach.
  */
 
 import { logger } from '@/shared/utils/secureLogger';
 import { SecureRandom } from '@/shared/utils/secureRandom';
+import { FingerprintProtection } from '../countermeasures/FingerprintProtection';
 
 export interface CountermeasureConfig {
-  countermeasure: 'NETWORK_LATENCY' | 'DOM_NOISE' | 'FINGERPRINT_POISON';
+  countermeasure: 'NETWORK_LATENCY' | 'DOM_NOISE' | 'FINGERPRINT_POISON' | 'FINGERPRINT_PROTECTION';
   config: any;
   trackerPatterns?: string[];
 }
@@ -16,6 +21,8 @@ export interface CountermeasureConfig {
 export class CountermeasureHandler {
   private activeCountermeasures: Map<string, any> = new Map();
   private originalFunctions: Map<string, any> = new Map();
+  /** Deterministic fingerprint protection (session-scoped noise) */
+  private fingerprintProtection: FingerprintProtection = new FingerprintProtection();
 
   constructor() {
     this.initialize();
@@ -58,8 +65,50 @@ export class CountermeasureHandler {
       case 'FINGERPRINT_POISON':
         this.applyFingerprintPoison(config);
         break;
+      case 'FINGERPRINT_PROTECTION':
+        this.applyFingerprintProtection(config);
+        break;
       default:
         logger.warn('[CountermeasureHandler] Unknown countermeasure:', countermeasure);
+    }
+  }
+
+  /**
+   * Applies the new deterministic FingerprintProtection.
+   *
+   * Unlike FINGERPRINT_POISON (which uses random noise per call and is
+   * detectable via repeated comparison), this uses session-scoped
+   * deterministic noise: same results within a session, different
+   * between sessions.
+   */
+  private applyFingerprintProtection(config: any): void {
+    const { duration } = config;
+
+    if (this.fingerprintProtection.isActive()) {
+      logger.debug('[CountermeasureHandler] FingerprintProtection already active');
+      return;
+    }
+
+    this.fingerprintProtection.activate();
+
+    this.activeCountermeasures.set('fingerprint_protection', {
+      startTime: Date.now(),
+      duration,
+      protections: this.fingerprintProtection.getActiveProtections(),
+    });
+
+    logger.info('[CountermeasureHandler] FingerprintProtection activated', {
+      protections: this.fingerprintProtection.getActiveProtections(),
+      duration,
+    });
+
+    // Schedule deactivation if duration specified
+    if (duration && duration > 0) {
+      setTimeout(() => {
+        this.fingerprintProtection.deactivate();
+        this.activeCountermeasures.delete('fingerprint_protection');
+        logger.debug('[CountermeasureHandler] FingerprintProtection expired');
+      }, duration);
     }
   }
 
@@ -619,12 +668,24 @@ export class CountermeasureHandler {
   }
 
   /**
+   * Check if the deterministic FingerprintProtection is currently active.
+   */
+  public isFingerprintProtectionActive(): boolean {
+    return this.fingerprintProtection.isActive();
+  }
+
+  /**
    * Nettoie toutes les contre-mesures actives
    */
   public cleanup(): void {
     // Restaurer toutes les fonctions
     this.restoreNetworkFunctions();
     this.restoreFingerprintFunctions();
+
+    // Deactivate deterministic fingerprint protection
+    if (this.fingerprintProtection.isActive()) {
+      this.fingerprintProtection.deactivate();
+    }
 
     // Nettoyer les contre-mesures actives
     this.activeCountermeasures.clear();

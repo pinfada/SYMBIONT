@@ -273,27 +273,27 @@ export class TemporalDephasingRitual implements IRitual {
   }
 
   /**
-   * Empoisonne les techniques de fingerprinting
+   * Activates fingerprint protection.
+   *
+   * Uses the new deterministic FINGERPRINT_PROTECTION (session-scoped
+   * noise, much harder to detect) instead of the legacy FINGERPRINT_POISON
+   * (random noise per call, easily detected via repeated comparison).
    */
   private async poisonFingerprinting(): Promise<void> {
-    // Envoyer un message au content script pour activer les contre-mesures de fingerprinting
     const tabs = await chrome.tabs.query({ active: true });
     for (const tab of tabs) {
       if (tab.id && !tab.url?.startsWith('chrome://')) {
+        // Use the new deterministic protection by default
         chrome.tabs.sendMessage(tab.id, {
           type: MessageType.INJECT_COUNTERMEASURE,
           payload: {
-            countermeasure: 'FINGERPRINT_POISON',
+            countermeasure: 'FINGERPRINT_PROTECTION',
             config: {
-              timezoneNoise: true,
-              canvasNoise: true,
-              screenNoise: true,
-              audioNoise: true,
               duration: 300000 // 5 minutes
             }
           }
         }).catch(error => {
-          logger.warn(`[TemporalDephasing] Could not poison fingerprinting in tab ${tab.id}:`, error);
+          logger.warn(`[TemporalDephasing] Could not activate fingerprint protection in tab ${tab.id}:`, error);
         });
       }
     }
