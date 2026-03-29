@@ -56,9 +56,11 @@ describe('DynamicThresholdEngine', () => {
   });
 
   it('applies double damping on large variations', () => {
-    engine.getCurrentThreshold(makeInputs({ systemLoad: 0, siteRiskScore: 0 }));
+    // Start with low load → threshold near base
+    engine.getCurrentThreshold(makeInputs({ systemLoad: 0, thermalPressure: 0 }));
+    // Jump to high load → large delta triggers damping
     const ctx = engine.getCurrentThreshold(
-      makeInputs({ systemLoad: 1.0, siteRiskScore: 1.0 }),
+      makeInputs({ systemLoad: 1.0, thermalPressure: 1.0 }),
     );
     expect(ctx.dampingApplied).toBe(true);
   });

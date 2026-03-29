@@ -60,23 +60,23 @@ export class DraftModel {
 
     const processingTimeMs = performance.now() - startTime;
 
-    // Scoring
-    let totalScore = 0;
-    let maxPossibleScore = 0;
-
-    for (const rule of this.rules) {
-      maxPossibleScore += rule.currentWeight;
-    }
+    // Scoring — normalisation par les règles matchées
+    let totalWeightedScore = 0;
+    let totalMatchWeight = 0;
 
     for (const match of matches) {
       const rule = this.rules.find((r) => r.id === match.ruleId);
       if (rule) {
-        totalScore += rule.currentWeight * match.strength;
+        totalWeightedScore += rule.currentWeight * match.strength;
+        totalMatchWeight += rule.currentWeight;
       }
     }
 
-    const normalizedScore =
-      maxPossibleScore > 0 ? totalScore / maxPossibleScore : 0;
+    // Score normalisé : moyenne pondérée des règles matchées,
+    // atténuée si peu de règles matchent (couverture faible)
+    const matchAverage = totalMatchWeight > 0 ? totalWeightedScore / totalMatchWeight : 0;
+    const coverageFactor = Math.min(1, matches.length / 3); // 3 règles = couverture suffisante
+    const normalizedScore = matchAverage * (0.5 + 0.5 * coverageFactor);
 
     // Verdict
     let verdict: Verdict;
