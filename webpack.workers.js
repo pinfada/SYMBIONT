@@ -7,7 +7,8 @@ module.exports = {
   mode: 'production',
   entry: {
     'neural-worker': './src/workers/NeuralWorker.ts',
-    'resonance-worker': './src/workers/ResonanceWorker.ts'
+    'resonance-worker': './src/workers/ResonanceWorker.ts',
+    'cortex-worker': './src/cortex/workers/CortexWorker.ts'
   },
   
   output: {
