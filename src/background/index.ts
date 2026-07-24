@@ -100,6 +100,10 @@ class BackgroundService {
   private hebbian: HebbieanLearningSystem = new HebbieanLearningSystem();
   private geneticMutator: GeneticMutator = new GeneticMutator();
   private circadianStarted: boolean = false;
+  // Système nerveux : le NeuralMesh traduit la perception en état ressenti
+  private neuralLastApplied: number = 0;
+  private readonly NEURAL_APPLY_INTERVAL = 8000; // min 8 s entre deux réponses neuronales
+  private environmentalHostility: number = 0;    // 0..1, monté par les menaces, décroît
   // Clusters d'infrastructure invisible perçus (id → domaines + impact + dernier chuchotement)
   private shadowClusters: Map<string, { domains: string[]; impact: number; confidence: number; lastWhisper: number }> = new Map();
   private notifiedClusters: Set<string> = new Set();
@@ -439,6 +443,11 @@ class BackgroundService {
     // iframes cachés tiers et le fingerprinting avéré).
     const whisper = this.threatWhisperMessage(metadata);
     if (whisper && domain) {
+      // La menace forte élève l'hostilité environnementale ressentie : la
+      // prochaine propagation neuronale entrera avec un memory_input élevé et
+      // l'organisme se durcira réellement (résilience/focus). Décroît ensuite.
+      const bump = whisper.severity === 'high' ? 0.5 : 0.3;
+      this.environmentalHostility = Math.min(1, this.environmentalHostility + bump);
       const key = `${domain}|${whisper.category}`;
       const now = Date.now();
       if (now - (this.threatWhisperCooldown.get(key) || 0) >= this.THREAT_WHISPER_COOLDOWN) {
@@ -477,6 +486,94 @@ class BackgroundService {
       return { text: "Un cadre invisible d'un tiers est chargé en arrière-plan sur ce site.", category: 'hidden_iframe', severity: 'normal' };
     }
     return null;
+  }
+
+  /**
+   * Système nerveux de l'organisme : fait passer la perception réelle par le
+   * NeuralMesh (stimulation des entrées sensorielles/mémoire → propagation →
+   * sorties motrice/émotionnelle), puis TRADUIT la sortie en état ressenti et
+   * en pression d'évolution. C'est ce qui donne au réseau un rôle causal réel
+   * plutôt qu'un simple calcul lu pour l'affichage.
+   *
+   * @param sensory  Hostilité/intensité perçue de l'environnement (0..1)
+   * @returns métriques neuronales pour l'affichage, ou null si throttlé/indispo
+   */
+  private async applyNeuralResponse(sensory: number): Promise<{ emotion: number; motor: number; activity: number } | null> {
+    if (!this.organism) return null;
+
+    let mesh: any;
+    try {
+      mesh = await this._organismFactory.getNeuralMesh();
+    } catch {
+      return null;
+    }
+    if (!mesh || typeof mesh.processPattern !== 'function') return null;
+
+    const now = Date.now();
+    const throttled = now - this.neuralLastApplied < this.NEURAL_APPLY_INTERVAL;
+
+    // Entrée mémoire : pression accumulée (hostilité environnementale récente)
+    const memory = Math.max(0, Math.min(1, this.environmentalHostility));
+    const clampedSensory = Math.max(0, Math.min(1, sensory));
+
+    // Propagation neuronale sur des valeurs RÉELLES
+    let emotion = 0;
+    let motor = 0;
+    try {
+      const out = await mesh.processPattern({ sensory_input: clampedSensory, memory_input: memory }) as Record<string, number>;
+      emotion = typeof out?.emotion_output === 'number' ? out.emotion_output : 0;
+      motor = typeof out?.motor_output === 'number' ? out.motor_output : 0;
+      // Renforcement : le réseau « apprend » de l'intensité perçue
+      if (typeof mesh.learn === 'function') {
+        await mesh.learn({ feedback: clampedSensory });
+      }
+    } catch {
+      return null;
+    }
+    const activity = typeof mesh.getNeuralActivity === 'function' ? mesh.getNeuralActivity() : 0;
+
+    // Décroissance de l'hostilité (l'organisme se calme avec le temps)
+    this.environmentalHostility = memory * 0.9;
+
+    // On n'applique l'effet sur l'organisme qu'à intervalle borné (anti-bruit)
+    if (throttled) {
+      return { emotion, motor, activity };
+    }
+    this.neuralLastApplied = now;
+
+    // 1) La sortie émotionnelle tire la conscience vers elle (lentement)
+    const prevConsciousness = this.organism.consciousness ?? 0.5;
+    const consciousness = Math.max(0, Math.min(1, prevConsciousness + (emotion - prevConsciousness) * 0.08));
+    this.organism.consciousness = consciousness;
+
+    // 2) Pression d'évolution des traits selon l'état ressenti (échelle 0..100)
+    const traits = this.organism.traits as Record<string, number>;
+    const nudge = (trait: string, delta: number) => {
+      if (typeof traits[trait] === 'number') {
+        traits[trait] = Math.max(0, Math.min(100, traits[trait] + delta));
+      }
+    };
+    if (clampedSensory > 0.6 || memory > 0.6) {
+      // Environnement hostile → l'organisme se durcit
+      nudge('resilience', 0.6);
+      nudge('focus', 0.4);
+    } else if (clampedSensory < 0.3 && memory < 0.3) {
+      // Environnement calme → il s'ouvre
+      nudge('curiosity', 0.4);
+      nudge('creativity', 0.3);
+    }
+
+    // 3) Persister + diffuser l'état ressenti
+    this.organism.lastMutation = now;
+    if (this.isStorageReady()) {
+      try { await this.debouncer!.saveOrganism(this.organism); } catch { /* best-effort */ }
+    }
+    await resilientBus.send({
+      type: MessageType.ORGANISM_UPDATE,
+      payload: { state: this.organism, mutations: [] }
+    });
+
+    return { emotion, motor, activity };
   }
 
   /**
@@ -882,25 +979,25 @@ class BackgroundService {
           timestamps: timestamps || { detected: Date.now(), emitted: Date.now() }
         });
 
-        // Alimenter le NeuralMesh avec les données de jitter DOM et relire
-        // sa sortie (activité neuronale, état de résonance interne) pour la
-        // propager au popup — le réseau n'est plus un cul-de-sac calculatoire.
+        // Système nerveux : la perception DOM réelle passe par le NeuralMesh,
+        // dont la sortie agit CAUSALEMENT sur l'organisme (conscience, traits)
+        // avant d'être relue pour l'affichage. Le réseau n'est plus un
+        // cul-de-sac calculatoire lu seulement pour un champ d'UI.
         let neuralActivity = 0;
         let neuralResonanceSignal: string | null = null;
-        if (this.organism && jitter) {
-          const neuralMesh = await this._organismFactory.getNeuralMesh();
-          if (neuralMesh && typeof neuralMesh.feedDOMJitter === 'function') {
+        if (this.organism) {
+          const neuralMesh = await this._organismFactory.getNeuralMesh().catch(() => null);
+          if (neuralMesh && jitter && typeof neuralMesh.feedDOMJitter === 'function') {
+            // Nourrit l'analyseur de résonance interne (état/signal)
             neuralMesh.feedDOMJitter(jitter);
-            // Propagation puis lecture de l'activité résultante
-            if (typeof neuralMesh.propagate === 'function') {
-              neuralMesh.propagate();
-            }
-            if (typeof neuralMesh.getNeuralActivity === 'function') {
-              neuralActivity = neuralMesh.getNeuralActivity();
-            }
             const neuralState = neuralMesh.getResonanceState?.();
             neuralResonanceSignal = neuralState?.signal ?? null;
           }
+          // Propagation causale sur l'intensité perçue (résonance normalisée)
+          const neural = await this.applyNeuralResponse(
+            typeof resonance === 'number' ? resonance : 0
+          );
+          neuralActivity = neural?.activity ?? neuralActivity;
         }
 
         // Soumettre l'événement au Cortex pour analyse de menace (draft → oracle)

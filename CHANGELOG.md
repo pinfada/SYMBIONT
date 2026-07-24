@@ -16,6 +16,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### 🧠 Chaîne IA
 - **Perception rebranchée** : émission de `PAGE_VISIT`, `SCROLL_EVENT` enrichi (url + profondeur), validation de payload corrigée — la navigation fait à nouveau évoluer les traits.
 - **NeuralMesh activé** : initialisé à la création (réseau non vide) ; sa sortie (activité neuronale) est propagée au popup.
+- **NeuralMesh causal** : la perception DOM réelle traverse désormais le réseau (`processPattern({ sensory_input, memory_input })` → sorties émotionnelle/motrice + `learn({ feedback })`), et sa sortie **agit sur l'organisme** au lieu d'alimenter un simple champ d'affichage : la sortie émotionnelle tire la conscience, l'état ressenti pousse les traits (durcissement résilience/focus en environnement hostile, ouverture curiosité/créativité au calme). Une variable d'**hostilité environnementale** (montée par les menaces fortes détectées, décroissance dans le temps) devient l'entrée mémoire du réseau — les menaces se ressentent réellement. Application bornée dans le temps (anti-bruit).
 - **État unifié** : le viewer du popup reflète l'organisme canonique du background via `ORGANISM_UPDATE`.
 - **Cortex démarré** : le moteur de détection de menaces s'exécute dans le background et analyse les signaux de résonance DOM réels (Oracle en fallback main-thread, un service worker MV3 ne pouvant pas créer de Worker imbriqué).
 - **Apprentissage hebbien** : passe périodique nourrie des comportements réels, appliquant des mutations de traits à l'organisme canonique.
