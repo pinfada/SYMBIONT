@@ -135,6 +135,7 @@ class ContentScript {
     this.domResonanceSensor.start();
     this.threatObserver.start();
     this.listenFingerprintDetector();
+    this.bridgeFingerprintProtection();
     logger.info('🌊 DOM Resonance Sensor activated');
   }
 
@@ -269,6 +270,34 @@ class ContentScript {
         /* contexte invalidé */
       }
     });
+  }
+
+  /**
+   * Pont entre le réglage utilisateur (chrome.storage) et la protection
+   * anti-fingerprinting qui tourne dans le monde MAIN (fp-protector). La
+   * protection est active par défaut ; on la désactive si l'utilisateur a
+   * coupé le réglage, et on réagit aux changements en direct.
+   */
+  private bridgeFingerprintProtection(): void {
+    const postState = (active: boolean) => {
+      try {
+        window.postMessage({ __symbiont: 'fp-protect', active }, window.location.origin || '*');
+      } catch { /* ignore */ }
+    };
+
+    try {
+      chrome.storage?.local?.get(['symbiont_fp_protection'], (res) => {
+        // Défaut ON : seul un false explicite désactive.
+        const active = res?.symbiont_fp_protection !== false;
+        postState(active);
+      });
+
+      chrome.storage?.onChanged?.addListener((changes, area) => {
+        if (area === 'local' && changes.symbiont_fp_protection) {
+          postState(changes.symbiont_fp_protection.newValue !== false);
+        }
+      });
+    } catch { /* contexte non-extension */ }
   }
 
   private setupPerformanceObserver(): void {

@@ -10,12 +10,16 @@ module.exports = {
   entry: {
     content: './src/content/index.ts',
     popup: './src/popup/index.tsx',
-    'fp-detector': './src/content/fp-detector.ts'
+    'fp-detector': './src/content/fp-detector.ts',
+    'fp-protector': './src/content/fp-protector.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    // fp-detector est chargé comme content script MAIN → fichier à la racine.
-    filename: (pathData) => (pathData.chunk.name === 'fp-detector' ? 'fp-detector.js' : '[name]/index.js'),
+    // Les scripts MAIN (fp-detector, fp-protector) sont chargés comme content
+    // scripts autonomes → fichiers à la racine ; le reste garde [name]/index.js.
+    filename: (pathData) => (
+      pathData.chunk.name.startsWith('fp-') ? `${pathData.chunk.name}.js` : '[name]/index.js'
+    ),
     clean: false
   },
   resolve: {
