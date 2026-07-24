@@ -19,6 +19,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **État unifié** : le viewer du popup reflète l'organisme canonique du background via `ORGANISM_UPDATE`.
 - **Cortex démarré** : le moteur de détection de menaces s'exécute dans le background et analyse les signaux de résonance DOM réels (Oracle en fallback main-thread, un service worker MV3 ne pouvant pas créer de Worker imbriqué).
 - **Apprentissage hebbien** : passe périodique nourrie des comportements réels, appliquant des mutations de traits à l'organisme canonique.
+- **Sommeil Analytique branché** : le cycle circadien est démarré dans le background (`circadianCycle.start()`), déclenchant réellement la synthèse onirique (vectorisation 32D → clustering par résonance adaptative → identification d'entités d'ombre cross-domain). Le rapport de vigilance (« Réveil Lucide ») est diffusé au popup et affiché dans un nouvel onglet **Vigilance**, avec déclenchement manuel sûr (fragments réels uniquement). Auparavant tout le moteur existait mais n'était jamais démarré (`OrganismVitalSystems`, seul appelant, non instancié).
 
 > **Écart assumé** : `NeuralCoreEngine` (wrapper complet) reste volontairement non instancié — il maintiendrait un organisme parallèle (échelle 0-1, memory bank propre) qui rouvrirait la divergence d'état corrigée. Seul son cœur d'apprentissage (`HebbieanLearningSystem` + `GeneticMutator`) est branché, sur l'organisme canonique unique.
 

@@ -12,8 +12,9 @@ import MysticalPanel from './components/MysticalPanel';
 import SocialPanel from './components/SocialPanel';
 import SettingsPanel from './components/SettingsPanel';
 import PredictionPanel from './components/PredictionPanel';
+import VigilancePanel from './components/VigilancePanel';
 
-type ViewType = 'organism' | 'network' | 'metrics' | 'prediction' | 'mystical' | 'social' | 'settings';
+type ViewType = 'organism' | 'network' | 'metrics' | 'prediction' | 'vigilance' | 'mystical' | 'social' | 'settings';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('organism');
@@ -27,6 +28,7 @@ const App: React.FC = () => {
     { id: 'network', label: 'Réseau', icon: '🌐', view: 'network' as ViewType },
     { id: 'metrics', label: 'Stats', icon: '📊', view: 'metrics' as ViewType },
     { id: 'prediction', label: 'Prédiction', icon: '🔮', view: 'prediction' as ViewType },
+    { id: 'vigilance', label: 'Vigilance', icon: '🌙', view: 'vigilance' as ViewType },
     { id: 'mystical', label: 'Rituels', icon: '✨', view: 'mystical' as ViewType },
     { id: 'social', label: 'Social', icon: '👥', view: 'social' as ViewType },
     { id: 'settings', label: 'Params', icon: '⚙️', view: 'settings' as ViewType },
@@ -189,6 +191,19 @@ const App: React.FC = () => {
             </h2>
             <Suspense fallback={<LoadingComponent message="Analyse des comportements..." />}>
               <PredictionPanel />
+            </Suspense>
+          </div>
+        );
+
+      case 'vigilance':
+        return (
+          <div>
+            <h2 style={appStyles.sectionTitle}>
+              <span>🌙</span>
+              <span>Réveil Lucide — Vigilance</span>
+            </h2>
+            <Suspense fallback={<LoadingComponent message="Lecture du sommeil analytique..." />}>
+              <VigilancePanel />
             </Suspense>
           </div>
         );

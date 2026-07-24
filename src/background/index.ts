@@ -43,6 +43,10 @@ import { HebbieanLearningSystem } from '../neural/HebbieanLearningSystem';
 import { GeneticMutator } from '../neural/GeneticMutator';
 import type { BehaviorPattern } from '../shared/types/organism';
 
+// --- Sommeil analytique (rêve cross-domain) ---
+import { circadianCycle } from '../core/metabolic/CircadianCycle';
+import type { DreamReport } from '../core/dreams/DreamProcessor';
+
 // --- Instanciation des modules sociaux (Phase 3) ---
 import { DistributedOrganismNetwork } from '../social/distributed-organism-network';
 import { CollectiveIntelligence } from '../social/collective-intelligence';
@@ -97,6 +101,7 @@ class BackgroundService {
   private cortexOrchestrator: CortexOrchestrator | null = null;
   private hebbian: HebbieanLearningSystem = new HebbieanLearningSystem();
   private geneticMutator: GeneticMutator = new GeneticMutator();
+  private circadianStarted: boolean = false;
 
   constructor() {
     this.messageBus = new MessageBus('background');
@@ -227,6 +232,9 @@ class BackgroundService {
       // Démarrer le Cortex (détection de menaces) — non bloquant
       void this.startCortex();
 
+      // Démarrer le sommeil analytique (rêve cross-domain) — non bloquant
+      void this.startCircadianDreams();
+
       // Initialiser le système de rituels SI l'organisme est actif
       if (this.activated && this.organism) {
         try {
@@ -254,6 +262,32 @@ class BackgroundService {
       } catch (handlerError) {
         logger.error('Failed to setup message handlers:', handlerError);
       }
+    }
+  }
+
+  /**
+   * Démarre le cycle circadien et le sommeil analytique. C'est ce qui manquait
+   * pour que la synthèse onirique (vectorisation 32D → corrélation cross-domain
+   * → entités d'ombre) tourne réellement : les fragments sont collectés depuis
+   * le handler DOM_RESONANCE, mais rien n'appelait circadianCycle.start().
+   */
+  private async startCircadianDreams(): Promise<void> {
+    if (this.circadianStarted) return;
+    try {
+      await circadianCycle.start();
+      this.circadianStarted = true;
+
+      // Réveil Lucide : à chaque synthèse, diffuser le rapport de vigilance
+      circadianCycle.onDreamReport((report: DreamReport) => {
+        void resilientBus.send({
+          type: MessageType.DREAM_REPORT,
+          payload: report
+        });
+      });
+
+      logger.info('[BackgroundService] Circadian dream cycle started');
+    } catch (error) {
+      logger.error('[BackgroundService] Circadian dream cycle failed to start (non-critical):', error);
     }
   }
 
@@ -585,6 +619,26 @@ class BackgroundService {
       const { type, timestamp, target, data } = (message as any).payload;
       this.events.push({ type, timestamp, target, ...data });
       this.analyzeContextualPatterns();
+    });
+
+    // Réveil Lucide : le popup demande le dernier rapport de vigilance
+    this.messageBus.on(MessageType.GET_DREAM_REPORT, async () => {
+      const report = circadianCycle.getLastDreamReport();
+      await resilientBus.send({
+        type: MessageType.DREAM_REPORT,
+        payload: report
+      });
+    });
+
+    // Le popup demande de lancer une synthèse onirique immédiate (données réelles)
+    this.messageBus.on(MessageType.RUN_DREAM_NOW, async () => {
+      const report = await circadianCycle.runDreamSynthesisNow();
+      // Si aucune synthèse n'a produit de rapport (pas assez de fragments),
+      // renvoyer le dernier rapport connu pour informer le popup.
+      await resilientBus.send({
+        type: MessageType.DREAM_REPORT,
+        payload: report ?? circadianCycle.getLastDreamReport()
+      });
     });
 
     // Handler pour les signaux de résonance DOM détectés

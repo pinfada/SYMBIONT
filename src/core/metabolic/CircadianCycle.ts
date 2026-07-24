@@ -17,7 +17,7 @@ import { neuromodulation } from './Neuromodulation';
 import { backpressureController } from './BackpressureController';
 import { DreamProcessor } from '@/core/dreams/DreamProcessor';
 import { MemoryFragmentCollector } from '@/core/dreams/MemoryFragmentCollector';
-import type { MemoryFragment } from '@/core/dreams/DreamProcessor';
+import type { MemoryFragment, DreamReport } from '@/core/dreams/DreamProcessor';
 
 export type CircadianPhase = 'active' | 'idle' | 'sleep' | 'dream';
 
@@ -70,6 +70,8 @@ export class CircadianCycleManager {
   private fragmentCollector: MemoryFragmentCollector | null = null;
   private lastDreamSynthesis: number = 0;
   private readonly DREAM_SYNTHESIS_INTERVAL = 60000; // 1 minute minimum (réaliste pour phase dream)
+  private lastDreamReport: DreamReport | null = null;
+  private dreamReportCallbacks: Array<(report: DreamReport) => void> = [];
 
   constructor(config?: Partial<CircadianConfig>) {
     this.config = {
@@ -403,6 +405,36 @@ export class CircadianCycleManager {
   }
 
   /**
+   * S'abonne aux rapports de synthèse onirique (Réveil Lucide).
+   * Le callback reçoit le DreamReport à chaque synthèse réussie.
+   */
+  onDreamReport(callback: (report: DreamReport) => void): () => void {
+    this.dreamReportCallbacks.push(callback);
+    return () => {
+      const index = this.dreamReportCallbacks.indexOf(callback);
+      if (index >= 0) {
+        this.dreamReportCallbacks.splice(index, 1);
+      }
+    };
+  }
+
+  /** Dernier rapport de vigilance produit (null si aucune synthèse encore). */
+  getLastDreamReport(): DreamReport | null {
+    return this.lastDreamReport;
+  }
+
+  /**
+   * Déclenche une synthèse onirique à la demande, sur les fragments RÉELS
+   * uniquement (contrairement à forceDreamSynthesis, réservé aux tests, qui
+   * injecte des fragments factices). Sans données réelles, ne fait rien.
+   */
+  async runDreamSynthesisNow(): Promise<DreamReport | null> {
+    this.lastDreamSynthesis = 0; // bypasser l'intervalle côté cycle
+    await this.performDreamSynthesis();
+    return this.lastDreamReport;
+  }
+
+  /**
    * Signale une activité utilisateur (reset du timer d'inactivité)
    */
   recordActivity(): void {
@@ -547,6 +579,7 @@ export class CircadianCycleManager {
       const report = await this.dreamProcessor.performNocturnalSynthesis(fragments);
 
       this.lastDreamSynthesis = Date.now();
+      this.lastDreamReport = report;
 
       logger.info('[CircadianCycle] Dream synthesis complete', {
         fragmentsAnalyzed: report.fragmentsAnalyzed,
@@ -554,6 +587,15 @@ export class CircadianCycleManager {
         cpuUtilization: report.cpuUtilization,
         duration: report.endTime - report.startTime
       });
+
+      // Réveil Lucide : notifier les abonnés du rapport de vigilance
+      for (const cb of this.dreamReportCallbacks) {
+        try {
+          cb(report);
+        } catch (error) {
+          logger.error('[CircadianCycle] Dream report callback error', error);
+        }
+      }
 
       // Nettoyer les fragments traités
       await this.fragmentCollector.clearProcessedFragments(fragments);
