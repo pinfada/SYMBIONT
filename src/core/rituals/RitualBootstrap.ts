@@ -215,6 +215,19 @@ export class RitualBootstrap {
   }
 
   /**
+   * Évalue un contexte de perception RÉEL (fourni par le background) et laisse
+   * chaque rituel décider lui-même s'il doit s'activer via sa condition
+   * `canTrigger`. C'est le chemin de déclenchement autonome réellement vivant :
+   * le contexte porte les vraies métriques (friction, pression réseau, état de
+   * l'organisme) au lieu d'un contexte reconstruit depuis un stockage possiblement
+   * périmé, et il ouvre la voie à STRUCTURE_INSTINCT (léthargie) que l'ancien
+   * chemin manuel ne déclenchait jamais.
+   */
+  public async evaluateAutonomousTriggers(context: RitualContext): Promise<void> {
+    await this.ritualManager.evaluateContext(context);
+  }
+
+  /**
    * Déclenche un rituel manuellement
    */
   public async triggerRitual(type: RitualType, reason?: string): Promise<void> {

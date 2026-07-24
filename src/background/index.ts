@@ -23,7 +23,6 @@ import { bulkheadManager } from '../shared/patterns/BulkheadManager';
 
 // --- Import du système de rituels ---
 import { initializeRituals, RitualBootstrap } from '../core/rituals/RitualBootstrap';
-import { RitualType } from '../core/rituals/interfaces/IRitual';
 
 // --- Import du Cortex (détection cognitive de menaces) ---
 import { CortexBootstrap } from '../cortex/CortexBootstrap';
@@ -1039,23 +1038,21 @@ class BackgroundService {
             await this.storage!.addMutation(mutation);
           }
 
-          // Déclencher les rituels si disponibles
-          if (this.ritualBootstrap && metrics) {
-            const ritualContext = {
+          // Déclenchement autonome des rituels de protection : on fournit le
+          // contexte de perception RÉEL (métriques live + organisme canonique)
+          // et chaque rituel décide seul via sa propre condition `canTrigger`
+          // (cooldown/rate-limit inclus). Plus de gate grossier if/else, et le
+          // contexte n'est plus reconstruit depuis un stockage périmé — le
+          // déclenchement ne peut pas transiter par le bus partagé (no-op ici).
+          if (this.ritualBootstrap && metrics && this.organism) {
+            await this.ritualBootstrap.evaluateAutonomousTriggers({
               organism: this.organism,
               resonanceLevel: resonance,
-              networkPressure: metrics.networkPressure || 0,
-              domOppression: metrics.domOppression || shadowActivity / 100,
-              frictionIndex: metrics.frictionIndex || jitter / 100,
+              networkPressure: metrics.networkPressure ?? 0,
+              domOppression: metrics.domOppression ?? shadowActivity / 100,
+              frictionIndex: metrics.frictionIndex ?? jitter / 100,
               timestamp: Date.now()
-            };
-
-            // Déclencher le rituel approprié selon les conditions
-            if (metrics.frictionIndex > 0.7) {
-              await this.ritualBootstrap.triggerRitual(RitualType.TEMPORAL_DEPHASING, 'High friction detected');
-            } else if (metrics.networkPressure > 0.6) {
-              await this.ritualBootstrap.triggerRitual(RitualType.FREQUENCY_COMMUNION, 'Network pressure detected');
-            }
+            });
           }
         }
       } catch (error) {
@@ -1694,6 +1691,24 @@ class BackgroundService {
         void this.runHebbianLearningPass();
       }, 1000 * 60 * 10); // Toutes les 10 minutes
     }
+
+    // Évaluation de léthargie : quand l'organisme n'a pas muté depuis un moment
+    // (aucune perception marquante), on offre un contexte calme aux rituels.
+    // Seul STRUCTURE_INSTINCT (condition de léthargie, indépendante d'échelle)
+    // s'y active — analyse structurelle profonde pendant les temps morts. Les
+    // rituels de contre-mesure (friction/pression réseau nulles ici) ne s'y
+    // déclenchent pas. Auto-limité par le cooldown 15 min + 4/h du rituel.
+    setInterval(() => {
+      if (!this.ritualBootstrap || !this.organism) return;
+      void this.ritualBootstrap.evaluateAutonomousTriggers({
+        organism: this.organism,
+        resonanceLevel: 0,
+        networkPressure: 0,
+        domOppression: 0,
+        frictionIndex: 0,
+        timestamp: Date.now()
+      });
+    }, 1000 * 60 * 3); // Toutes les 3 minutes
   }
 
   /**

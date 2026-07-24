@@ -353,14 +353,23 @@ export class RitualManager {
     // Écouter les changements de contexte pour auto-trigger
     this.messageBus.on('RESONANCE_UPDATE' as MessageType, async (message: any) => {
       const context = this.buildContextFromResonance(message.payload);
-
-      // Vérifier tous les rituels pour auto-déclenchement
-      for (const ritual of this.rituals.values()) {
-        if (ritual.canTrigger(context)) {
-          await this.triggerRitual(ritual.type, context);
-        }
-      }
+      await this.evaluateContext(context);
     });
+  }
+
+  /**
+   * Évalue un contexte de perception RÉEL et déclenche tous les rituels dont
+   * la condition (`canTrigger`) est satisfaite. Point d'entrée direct (appelé
+   * par le background avec le contexte vivant), le bus de messages partagé
+   * étant un no-op dans ce contexte d'exécution — le déclenchement automatique
+   * ne peut donc pas dépendre de lui.
+   */
+  public async evaluateContext(context: RitualContext): Promise<void> {
+    for (const ritual of this.rituals.values()) {
+      if (ritual.canTrigger(context)) {
+        await this.triggerRitual(ritual.type, context);
+      }
+    }
   }
 
   /**
