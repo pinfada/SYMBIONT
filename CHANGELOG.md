@@ -7,6 +7,21 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Non publié]
 
+### 🔒 Sécurité & vie privée
+- **Signaling minimal** : le serveur de signaling ne reçoit plus que le `peerId` de routage ; l'organisme (traits, ADN, conscience) et l'IP ne sont plus stockés ni journalisés côté serveur. L'organisme ne circule qu'en pair-à-pair chiffré.
+- **Chiffrement au repos** : `SymbiontStorage` (IndexedDB v4) chiffre l'organisme et les comportements en AES-256-GCM ; les URLs ne sont stockées que sous forme de hash SHA-256.
+- **CryptoService durci** : clés persistées (IndexedDB), chiffrement hybride RSA-OAEP + AES-256-GCM (tout message est réellement chiffré, quelle que soit sa taille), signatures ECDSA réelles, empreinte de vérification (anti-MITM), et échec fermé (plus de repli silencieux en clair).
+- **PRIVACY.md** aligné sur le comportement réel du code.
+
+### 🧠 Chaîne IA
+- **Perception rebranchée** : émission de `PAGE_VISIT`, `SCROLL_EVENT` enrichi (url + profondeur), validation de payload corrigée — la navigation fait à nouveau évoluer les traits.
+- **NeuralMesh activé** : initialisé à la création (réseau non vide) ; sa sortie (activité neuronale) est propagée au popup.
+- **État unifié** : le viewer du popup reflète l'organisme canonique du background via `ORGANISM_UPDATE`.
+- **Cortex démarré** : le moteur de détection de menaces s'exécute dans le background et analyse les signaux de résonance DOM réels (Oracle en fallback main-thread, un service worker MV3 ne pouvant pas créer de Worker imbriqué).
+- **Apprentissage hebbien** : passe périodique nourrie des comportements réels, appliquant des mutations de traits à l'organisme canonique.
+
+> **Écart assumé** : `NeuralCoreEngine` (wrapper complet) reste volontairement non instancié — il maintiendrait un organisme parallèle (échelle 0-1, memory bank propre) qui rouvrirait la divergence d'état corrigée. Seul son cœur d'apprentissage (`HebbieanLearningSystem` + `GeneticMutator`) est branché, sur l'organisme canonique unique.
+
 ## [1.1.0] - 2025-01-12
 
 ### ✅ Corrigé

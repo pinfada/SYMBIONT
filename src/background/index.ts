@@ -34,6 +34,15 @@ import type { CortexSignal } from '../cortex/CortexTypes';
 import RealMetricsService from '../core/services/RealMetricsService';
 import { backpressureController } from '../core/metabolic/BackpressureController';
 
+// --- Cœur d'apprentissage neuronal (Hebbien) ---
+// On branche le cœur d'apprentissage (HebbieanLearningSystem + GeneticMutator)
+// directement sur l'organisme canonique, plutôt que NeuralCoreEngine complet
+// qui maintiendrait un organisme parallèle (échelle 0-1, memory bank propre) —
+// ce qui rouvrirait la divergence d'état corrigée précédemment.
+import { HebbieanLearningSystem } from '../neural/HebbieanLearningSystem';
+import { GeneticMutator } from '../neural/GeneticMutator';
+import type { BehaviorPattern } from '../shared/types/organism';
+
 // --- Instanciation des modules sociaux (Phase 3) ---
 import { DistributedOrganismNetwork } from '../social/distributed-organism-network';
 import { CollectiveIntelligence } from '../social/collective-intelligence';
@@ -86,6 +95,8 @@ class BackgroundService {
   private ritualBootstrap: RitualBootstrap | null = null;
   private cortex: CortexBootstrap | null = null;
   private cortexOrchestrator: CortexOrchestrator | null = null;
+  private hebbian: HebbieanLearningSystem = new HebbieanLearningSystem();
+  private geneticMutator: GeneticMutator = new GeneticMutator();
 
   constructor() {
     this.messageBus = new MessageBus('background');
@@ -1345,6 +1356,107 @@ class BackgroundService {
         }
       }
     }, 1000 * 60 * 5); // Every 5 minutes (RÉDUCTION: de 30s → 5min = 10x moins d'écritures)
+
+    // Passe d'apprentissage hebbien périodique : nourrit le réseau de Hebb
+    // avec les comportements réels accumulés et applique les mutations
+    // résultantes à l'organisme canonique.
+    if (_storageInitialized) {
+      setInterval(() => {
+        void this.runHebbianLearningPass();
+      }, 1000 * 60 * 10); // Toutes les 10 minutes
+    }
+  }
+
+  /**
+   * Apprentissage hebbien sur les comportements réels observés :
+   * "neurons that fire together, wire together". Les patterns renforcés/nouveaux
+   * produisent des mutations de traits appliquées à l'organisme canonique
+   * (mémoire/adaptabilité quand de nouveaux patterns émergent, focus quand des
+   * connexions se renforcent), puis persistées et diffusées.
+   */
+  private async runHebbianLearningPass(): Promise<void> {
+    if (!this.isStorageReady()) return;
+    await this.ensureOrganism();
+    if (!this.organism) return;
+
+    try {
+      const behaviors = await this.storage!.getBehaviorPatterns();
+      if (!behaviors || behaviors.length === 0) return;
+
+      // Mapper BehaviorData (stockage) → BehaviorPattern (apprentissage)
+      const patterns: BehaviorPattern[] = behaviors.map(b => ({
+        url: b.url,
+        interactions: Array.isArray(b.interactions) ? b.interactions.length : 0,
+        timeSpent: b.totalTime || 0,
+        scrollDepth: b.scrollDepth || 0,
+        timestamp: b.lastVisit || Date.now()
+      }));
+
+      const result = await this.hebbian.updateWeights(patterns);
+
+      // Traduire l'apprentissage en mutations de traits réelles
+      const traitDeltas: Record<string, number> = {};
+      if (result.newPatterns.length > 0) {
+        // Nouveaux patterns → mémoire + adaptabilité
+        this.accumulateTraitDelta(traitDeltas, 'memory', 'pattern_learning');
+        this.accumulateTraitDelta(traitDeltas, 'adaptability', 'pattern_learning');
+      }
+      if (result.strengthenedConnections > result.weakenedConnections) {
+        // Connexions renforcées → focus
+        this.accumulateTraitDelta(traitDeltas, 'focus', 'hebbian_reinforcement');
+      }
+
+      const changedTraits = Object.keys(traitDeltas);
+      if (changedTraits.length === 0) return;
+
+      // Appliquer sur l'organisme canonique (échelle 0-100)
+      const traits = this.organism.traits as Record<string, number>;
+      for (const trait of changedTraits) {
+        if (typeof traits[trait] === 'number') {
+          // delta GeneticMutator est en échelle 0-1 → *100 pour l'organisme
+          const scaled = traitDeltas[trait] * 100;
+          traits[trait] = Math.max(0, Math.min(100, traits[trait] + scaled));
+        }
+      }
+
+      const mutation: OrganismMutation = {
+        type: 'cognitive',
+        trigger: 'hebbian_learning',
+        magnitude: Math.min(1, result.confidence),
+        timestamp: Date.now()
+      };
+      this.organism.mutations = [...(this.organism.mutations || []), mutation];
+      this.organism.lastMutation = Date.now();
+
+      await this.storage!.addMutation(mutation);
+      await this.debouncer!.saveOrganism(this.organism);
+      await resilientBus.send({
+        type: MessageType.ORGANISM_UPDATE,
+        payload: { state: this.organism, mutations: [] }
+      });
+
+      logger.info('[BackgroundService] Hebbian learning pass applied', {
+        newPatterns: result.newPatterns.length,
+        strengthened: result.strengthenedConnections,
+        traits: changedTraits
+      });
+    } catch (error) {
+      logger.error('[BackgroundService] Hebbian learning pass failed:', error);
+    }
+  }
+
+  /** Génère une mutation de trait via le GeneticMutator et l'accumule. */
+  private accumulateTraitDelta(
+    acc: Record<string, number>,
+    trait: string,
+    trigger: string
+  ): void {
+    if (!this.organism) return;
+    const mutation = this.geneticMutator.generateMutation(trait, trigger);
+    if (mutation && typeof mutation.delta === 'number') {
+      // On ne garde que les deltas positifs (renforcement) pour l'évolution
+      acc[trait] = (acc[trait] || 0) + Math.abs(mutation.delta);
+    }
   }
 
   // Détection naïve de patterns (à améliorer)
