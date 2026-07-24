@@ -485,13 +485,8 @@ class P2PService {
         logger.error('P2P: Erreur envoi clé publique:', error);
       }
 
-      // Envoyer notre organisme
-      await this.sendToPeer(peerId, {
-        type: 'organism_update',
-        from: this.myId,
-        data: this.myOrganism,
-        timestamp: Date.now()
-      });
+      // L'organisme n'est PAS envoyé ici : il le sera de façon chiffrée
+      // une fois la clé du pair reçue (voir handlePeerMessage 'key_exchange').
     };
 
     dataChannel.onmessage = async (event) => {
@@ -767,32 +762,32 @@ class P2PService {
 
   private async sendToPeer(peerId: string, message: P2PMessage): Promise<void> {
     const peer = this.peers.get(peerId);
-    if (peer && peer.dataChannel && peer.dataChannel.readyState === 'open') {
-      // Si le pair a une clé publique et le message n'est pas un échange de clé, chiffrer
-      if (peer.hasEncryption && message.type !== 'key_exchange' && cryptoService.hasPeerKey(peerId)) {
-        try {
-          // Chiffrer les données sensibles
-          const dataString = JSON.stringify(message.data);
-          const encryptedData = await cryptoService.encryptForPeer(peerId, dataString);
+    if (!peer || !peer.dataChannel || peer.dataChannel.readyState !== 'open') {
+      return;
+    }
 
-          // Envoyer le message avec données chiffrées
-          const encryptedMessage = {
-            ...message,
-            data: encryptedData,
-            encrypted: true
-          };
+    // Le key_exchange est le SEUL message autorisé en clair : il amorce le
+    // chiffrement et ne contient qu'une clé publique (donnée publique).
+    if (message.type === 'key_exchange') {
+      peer.dataChannel.send(JSON.stringify(message));
+      return;
+    }
 
-          peer.dataChannel.send(JSON.stringify(encryptedMessage));
-          logger.info(`P2P: Message chiffré envoyé à ${peerId} 🔐`);
-        } catch (error) {
-          logger.error('P2P: Erreur chiffrement message:', error);
-          // Fallback: envoyer en clair si erreur
-          peer.dataChannel.send(JSON.stringify(message));
-        }
-      } else {
-        // Envoyer en clair (pas de clé ou échange de clé)
-        peer.dataChannel.send(JSON.stringify(message));
-      }
+    // Tout autre message DOIT être chiffré. Sans clé, on ne l'envoie pas :
+    // il sera émis une fois le chiffrement établi (échec fermé, jamais de clair).
+    if (!cryptoService.hasPeerKey(peerId)) {
+      logger.info(`P2P: message ${message.type} différé pour ${peerId} (chiffrement pas encore prêt)`);
+      return;
+    }
+
+    try {
+      const dataString = JSON.stringify(message.data);
+      const encryptedData = await cryptoService.encryptForPeer(peerId, dataString);
+      peer.dataChannel.send(JSON.stringify({ ...message, data: encryptedData, encrypted: true }));
+      logger.info(`P2P: Message chiffré envoyé à ${peerId} 🔐`);
+    } catch (error) {
+      // Échec fermé : on abandonne le message plutôt que de fuiter en clair.
+      logger.error(`P2P: chiffrement impossible pour ${peerId}, message ${message.type} abandonné:`, error);
     }
   }
 
