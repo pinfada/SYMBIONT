@@ -13,6 +13,7 @@ import SocialPanel from './components/SocialPanel';
 import SettingsPanel from './components/SettingsPanel';
 import PredictionPanel from './components/PredictionPanel';
 import VigilancePanel from './components/VigilancePanel';
+import FeltStatePanel from './components/FeltStatePanel';
 
 type ViewType = 'organism' | 'network' | 'metrics' | 'prediction' | 'vigilance' | 'mystical' | 'social' | 'settings';
 
@@ -146,6 +147,7 @@ const App: React.FC = () => {
               <span>🧬</span>
               <span>Votre Organisme Digital</span>
             </h2>
+            <FeltStatePanel />
             <UnifiedOrganismViewer />
             <div style={{ marginTop: '20px' }}>
               <OrganismNutrition />

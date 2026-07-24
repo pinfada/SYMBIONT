@@ -40,6 +40,9 @@ export enum MessageType {
   DREAM_REPORT = 'DREAM_REPORT',
   GET_DREAM_REPORT = 'GET_DREAM_REPORT',
   RUN_DREAM_NOW = 'RUN_DREAM_NOW',
+  // État ressenti de l'organisme (conscience, climat perçu, activité neuronale)
+  FELT_STATE = 'FELT_STATE',
+  GET_FELT_STATE = 'GET_FELT_STATE',
   // Chuchotement contextuel injecté dans la page (perception de structure invisible)
   WHISPER = 'WHISPER',
   // Signal de menace observé sur la page (alimente le Cortex)

@@ -105,6 +105,7 @@ class BackgroundService {
   private environmentalHostility: number = 0;    // 0..1, monté par les menaces, décroît
   private attentionLastApplied: number = 0;      // throttle de l'effet attentionnel
   private readonly ATTENTION_APPLY_INTERVAL = 10000; // min 10 s entre deux effets
+  private lastNeuralActivity: number = 0;        // dernière activité neuronale mesurée
   // Clusters d'infrastructure invisible perçus (id → domaines + impact + dernier chuchotement)
   private shadowClusters: Map<string, { domains: string[]; impact: number; confidence: number; lastWhisper: number }> = new Map();
   private notifiedClusters: Set<string> = new Set();
@@ -449,6 +450,7 @@ class BackgroundService {
       // l'organisme se durcira réellement (résilience/focus). Décroît ensuite.
       const bump = whisper.severity === 'high' ? 0.5 : 0.3;
       this.environmentalHostility = Math.min(1, this.environmentalHostility + bump);
+      this.broadcastFeltState();
       const key = `${domain}|${whisper.category}`;
       const now = Date.now();
       if (now - (this.threatWhisperCooldown.get(key) || 0) >= this.THREAT_WHISPER_COOLDOWN) {
@@ -531,6 +533,30 @@ class BackgroundService {
       type: MessageType.ORGANISM_UPDATE,
       payload: { state: this.organism, mutations: [] }
     });
+    this.broadcastFeltState();
+  }
+
+  /**
+   * Diffuse l'« état ressenti » de l'organisme au popup : conscience, climat
+   * perçu (hostilité environnementale 0..1) et activité neuronale. Purement
+   * passif et informatif — c'est la face visible des effets causals du système
+   * nerveux, sans aucune action requise de l'utilisateur.
+   */
+  private broadcastFeltState(): void {
+    const consciousness = Math.max(0, Math.min(1, this.organism?.consciousness ?? 0.5));
+    const climate = Math.max(0, Math.min(1, this.environmentalHostility));
+    const neuralActivity = Math.max(0, Math.min(1, this.lastNeuralActivity));
+
+    let mood: string;
+    if (climate >= 0.6) mood = 'vigilant';
+    else if (climate >= 0.35) mood = 'attentif';
+    else if (consciousness >= 0.6) mood = 'serein';
+    else mood = 'calme';
+
+    void resilientBus.send({
+      type: MessageType.FELT_STATE,
+      payload: { consciousness, climate, neuralActivity, mood, timestamp: Date.now() }
+    });
   }
 
   /**
@@ -604,9 +630,14 @@ class BackgroundService {
       return null;
     }
     const activity = typeof mesh.getNeuralActivity === 'function' ? mesh.getNeuralActivity() : 0;
+    this.lastNeuralActivity = activity;
 
     // Décroissance de l'hostilité (l'organisme se calme avec le temps)
     this.environmentalHostility = memory * 0.9;
+
+    // L'état ressenti (climat + activité) se rafraîchit à chaque perception,
+    // même quand l'effet sur les traits reste throttlé.
+    this.broadcastFeltState();
 
     // On n'applique l'effet sur l'organisme qu'à intervalle borné (anti-bruit)
     if (throttled) {
@@ -975,6 +1006,11 @@ class BackgroundService {
       const payload = (message as any)?.payload;
       if (!payload?.source) return;
       await this.handleThreatSignal(payload);
+    });
+
+    // État ressenti : le popup demande l'instantané courant à l'ouverture
+    this.messageBus.on(MessageType.GET_FELT_STATE, () => {
+      this.broadcastFeltState();
     });
 
     // Réveil Lucide : le popup demande le dernier rapport de vigilance
