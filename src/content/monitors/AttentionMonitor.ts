@@ -236,7 +236,7 @@ export class AttentionMonitor extends EventTarget {
     this.lastScrollPosition = currentScroll;
     
     // Calculate scroll velocity
-    const scrollTime = now - this.scrollStartTime;
+    const scrollTime = now - this.scrollStartTime;
     const scrollVelocity = this.scrollDistance / (scrollTime / 1000); // pixels/second
     
     // Reset scroll tracking after pause
@@ -419,7 +419,7 @@ export class AttentionMonitor extends EventTarget {
     }
     
     return visibleText.trim();
-  }
+  }
   private getElementSelector(element: Element): string {
     // Generate unique selector for element
     const classes = safeGetClasses(element);
@@ -429,13 +429,26 @@ export class AttentionMonitor extends EventTarget {
   }
 
   private emitAttentionEvent(event: AttentionEvent): void {
+    // L'événement complet (avec contexte) reste DANS la page (jamais transmis).
     this.dispatchEvent(new CustomEvent('attention', { detail: event }));
-    
-    // Send to background if message bus available
+
+    // Vers le background : uniquement des métriques scalaires + le type. On NE
+    // transmet JAMAIS le texte visible ni l'URL/titre en clair (privacy-first) ;
+    // l'organisme n'a besoin que du climat attentionnel, pas de son contenu.
     if (this.messageBus) {
       this.messageBus.sendToBackground({
         type: 'ATTENTION_EVENT',
-        payload: event
+        payload: {
+          type: event.type,
+          timestamp: event.timestamp,
+          metrics: {
+            focusLevel: event.metrics.focusLevel,
+            readingSpeed: event.metrics.readingSpeed,
+            scrollVelocity: event.metrics.scrollVelocity,
+            multitaskingScore: event.metrics.multitaskingScore,
+            engagementPattern: event.metrics.engagementPattern
+          }
+        }
       });
     }
   }

@@ -103,6 +103,8 @@ class BackgroundService {
   private neuralLastApplied: number = 0;
   private readonly NEURAL_APPLY_INTERVAL = 8000; // min 8 s entre deux réponses neuronales
   private environmentalHostility: number = 0;    // 0..1, monté par les menaces, décroît
+  private attentionLastApplied: number = 0;      // throttle de l'effet attentionnel
+  private readonly ATTENTION_APPLY_INTERVAL = 10000; // min 10 s entre deux effets
   // Clusters d'infrastructure invisible perçus (id → domaines + impact + dernier chuchotement)
   private shadowClusters: Map<string, { domains: string[]; impact: number; confidence: number; lastWhisper: number }> = new Map();
   private notifiedClusters: Set<string> = new Set();
@@ -457,6 +459,78 @@ class BackgroundService {
         });
       }
     }
+  }
+
+  /**
+   * Exploite un signal d'attention (métriques scalaires uniquement, jamais de
+   * contenu). Le climat attentionnel devient une force d'évolution réelle :
+   *  - engagement profond / flux de lecture → environnement riche et apaisé :
+   *    l'organisme s'ouvre (focus + curiosité), l'hostilité ressentie décroît ;
+   *  - distraction / multitâche → agitation : légère érosion du focus, hausse
+   *    de l'hostilité ressentie qui nourrira la prochaine propagation du
+   *    NeuralMesh (l'organisme « sent » l'agitation).
+   * Effet borné dans le temps (anti-bruit) ; l'inactivité (idle) est laissée au
+   * cycle circadien / rêve, pas traitée ici.
+   */
+  private handleAttentionEvent(payload: {
+    type: string;
+    metrics?: { focusLevel?: number; multitaskingScore?: number; engagementPattern?: string };
+  }): void {
+    if (!this.organism) return;
+
+    const kind = payload.type;
+    const pattern = payload.metrics?.engagementPattern;
+    const focusLevel = typeof payload.metrics?.focusLevel === 'number' ? payload.metrics.focusLevel : undefined;
+    const multitasking = typeof payload.metrics?.multitaskingScore === 'number' ? payload.metrics.multitaskingScore : 0;
+
+    // Enregistrement d'un marqueur d'événement SANS contenu (type + horodatage)
+    this.events.push({ type: `attention:${kind}`, timestamp: Date.now() });
+
+    const isEngaged = kind === 'deep_focus' || kind === 'reading_flow' ||
+      pattern === 'deep' || pattern === 'focused' ||
+      (focusLevel !== undefined && focusLevel > 0.7);
+    const isDistracted = kind === 'distraction' ||
+      pattern === 'distracted' || pattern === 'scanning' ||
+      multitasking > 0.6 ||
+      (focusLevel !== undefined && focusLevel < 0.3);
+
+    // Modulation de l'hostilité ressentie → entrée mémoire du NeuralMesh
+    if (isEngaged) {
+      this.environmentalHostility = Math.max(0, this.environmentalHostility * 0.8);
+    } else if (isDistracted) {
+      this.environmentalHostility = Math.min(1, this.environmentalHostility + 0.12);
+    }
+
+    // Effet sur les traits borné dans le temps (anti-bruit)
+    const now = Date.now();
+    if (now - this.attentionLastApplied < this.ATTENTION_APPLY_INTERVAL) return;
+    if (!isEngaged && !isDistracted) return;
+    this.attentionLastApplied = now;
+
+    const traits = this.organism.traits as Record<string, number>;
+    const nudge = (trait: string, delta: number) => {
+      if (typeof traits[trait] === 'number') {
+        traits[trait] = Math.max(0, Math.min(100, traits[trait] + delta));
+      }
+    };
+    if (isEngaged) {
+      nudge('focus', 0.5);
+      nudge('curiosity', 0.3);
+      const prev = this.organism.consciousness ?? 0.5;
+      this.organism.consciousness = Math.max(0, Math.min(1, prev + (1 - prev) * 0.03));
+    } else {
+      nudge('focus', -0.4);
+      nudge('adaptability', 0.3); // s'adapter à un environnement fragmenté
+    }
+
+    this.organism.lastMutation = now;
+    if (this.isStorageReady()) {
+      void this.debouncer!.saveOrganism(this.organism);
+    }
+    void resilientBus.send({
+      type: MessageType.ORGANISM_UPDATE,
+      payload: { state: this.organism, mutations: [] }
+    });
   }
 
   /**
@@ -885,6 +959,14 @@ class BackgroundService {
       const { type, timestamp, target, data } = (message as any).payload;
       this.events.push({ type, timestamp, target, ...data });
       this.analyzeContextualPatterns();
+    });
+
+    // Signal d'attention (engagement / lecture / distraction) : le climat
+    // attentionnel façonne réellement l'organisme (traits + hostilité ressentie
+    // alimentant le NeuralMesh). Métriques scalaires uniquement, aucun contenu.
+    this.messageBus.on(MessageType.ATTENTION_EVENT, (message: MessageEvent | unknown) => {
+      const payload = (message as any)?.payload;
+      if (payload?.type) this.handleAttentionEvent(payload);
     });
 
     // Signal de menace observé sur une page → alimente le Cortex ET, si la

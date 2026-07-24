@@ -23,6 +23,9 @@ export enum MessageType {
   GET_INVITATION_HISTORY = 'GET_INVITATION_HISTORY',
   INVITATION_HISTORY_RESULT = 'INVITATION_HISTORY_RESULT',
   INTERACTION_DETECTED = 'INTERACTION_DETECTED',
+  // Signal d'attention (engagement/lecture/distraction) — métriques scalaires
+  // uniquement, jamais de texte ni d'URL en clair (privacy-first).
+  ATTENTION_EVENT = 'ATTENTION_EVENT',
   // --- Health checks et monitoring ---
   GET_HEALTH_METRICS = 'GET_HEALTH_METRICS',
   HEALTH_METRICS_RESPONSE = 'HEALTH_METRICS_RESPONSE',

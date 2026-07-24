@@ -33,6 +33,7 @@ SYMBIONT traite les données suivantes **exclusivement sur votre appareil** :
 - **Ce que nous NE collectons PAS** : URLs complètes, historique de navigation, données de formulaires
 - **Traitement** : Hashage cryptographique local, aucune donnée brute conservée
 - **Finalité** : Permettre à l'organisme digital d'évoluer selon vos habitudes
+- **Signaux d'attention** : le niveau d'engagement (focus profond, flux de lecture, distraction) est mesuré **localement** sous forme de **métriques scalaires uniquement** (niveau de focus, vitesse de lecture, motif d'engagement). Le **texte de la page n'est jamais transmis** au service worker ni stocké : l'analyse du contenu lu reste confinée à la page et sert seulement à calculer ces métriques abstraites.
 
 #### 2. **Métriques de Performance**
 - **Ce que nous mesurons** : Temps de chargement, utilisation CPU/mémoire de l'extension
