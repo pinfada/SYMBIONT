@@ -104,6 +104,54 @@ export class OrganismStateManager {
         }
       }
     });
+
+    // Pont vers l'organisme réel du background : le viewer reflète désormais
+    // l'organisme qui évolue effectivement (traits, générations, mutations),
+    // et non plus une simulation locale découplée.
+    if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener((message: any) => {
+        if (message?.type === 'ORGANISM_UPDATE' && message.payload?.state) {
+          this.syncFromBackgroundOrganism(message.payload.state);
+        }
+        return false;
+      });
+    }
+  }
+
+  /**
+   * Projette l'organisme canonique du background (schéma traits/générations)
+   * sur l'état d'affichage du viewer. Normalise les échelles (0..1 → 0..100).
+   */
+  private syncFromBackgroundOrganism(bg: any): void {
+    if (!bg || typeof bg !== 'object') return;
+
+    const to100 = (v: unknown): number | null => {
+      if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+      return v <= 1 ? Math.round(v * 100) : Math.round(v);
+    };
+
+    const energy = to100(bg.energy);
+    const consciousness = to100(bg.consciousness);
+    const generation = typeof bg.generation === 'number' ? bg.generation : null;
+    const mutationCount = Array.isArray(bg.mutations) ? bg.mutations.length : null;
+
+    if (energy !== null) this.state.energy = Math.max(0, Math.min(100, energy));
+    if (consciousness !== null) this.state.consciousness = Math.max(0, Math.min(100, consciousness));
+    if (generation !== null) this.state.evolutionStage = Math.max(1, Math.min(10, generation));
+    if (mutationCount !== null) this.state.experience = mutationCount * 10;
+
+    // Humeur dérivée de l'énergie et de la conscience réelles
+    this.state.mood = this.deriveMood(this.state.energy, this.state.consciousness);
+    this.state.lastUpdate = Date.now();
+    this.notifyListeners();
+  }
+
+  private deriveMood(energy: number, consciousness: number): OrganismState['mood'] {
+    if (energy < 25) return 'tired';
+    if (energy < 45) return 'hungry';
+    if (consciousness > 75) return 'meditating';
+    if (consciousness > 55) return 'excited';
+    return 'curious';
   }
 
   /**

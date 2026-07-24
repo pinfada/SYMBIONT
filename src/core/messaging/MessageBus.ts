@@ -25,8 +25,15 @@ function isOrganismMutation(obj: unknown): obj is OrganismMutation {
     'trigger' in obj && typeof (obj as any).trigger === 'string';
 }
 
-function isBehaviorData(obj: Record<string, unknown>): boolean {
-  return obj && typeof obj.url === 'string' && typeof obj.visitCount === 'number';
+// Un message PAGE_VISIT ne porte que l'URL visitée (+ éventuellement le titre) ;
+// le comptage de visites est géré côté stockage, pas dans le payload.
+function isPageVisit(obj: any): boolean {
+  return !!obj && typeof obj.url === 'string';
+}
+
+// Un message SCROLL_EVENT porte l'URL et une profondeur de défilement normalisée.
+function isScrollEvent(obj: any): boolean {
+  return !!obj && typeof obj.url === 'string' && typeof obj.scrollDepth === 'number';
 }
 
 function isMurmur(obj: unknown): obj is Murmur {
@@ -53,8 +60,9 @@ function validatePayload(type: MessageType, payload: any): boolean {
     case MessageType.ORGANISM_MUTATE:
       return isOrganismMutation(payload);
     case MessageType.PAGE_VISIT:
+      return isPageVisit(payload);
     case MessageType.SCROLL_EVENT:
-      return isBehaviorData(payload);
+      return isScrollEvent(payload);
     case MessageType.MURMUR:
       return isMurmur(payload);
     case MessageType.GENERATE_INVITATION:
@@ -174,7 +182,7 @@ export class MessageBus {
     if (typeof chrome === 'undefined' || !chrome.runtime) {
       logger.warn('[MessageBus] Chrome runtime non disponible - mode test/développement');
       return;
-    }
+    }
     chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
       if (this.shouldProcessMessage(message)) {
         this.enqueueMessage(message);
@@ -316,16 +324,16 @@ export class MessageBus {
     if (handlers) {
       handlers.forEach(handler => handler({ type, payload }));
     }
-  }
+  }
   private handleMessage(message: MessageEvent | unknown, targetFrame: string): void {
     // Handle cross-frame messages
     logger.info('Handling message:', message);
-  }
+  }
   private onMessage(message: MessageEvent | unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
     // Handle incoming message
     logger.info('Received message:', message);
     return true;
-  }
+  }
   private sendToFrame(handleMessage: (msg: any) => any, targetFrame: MessageTarget, payload: any): void {
     // Send message to frame
     logger.info('Sending to frame:', targetFrame, payload);

@@ -233,6 +233,34 @@ class BackgroundService {
     }
   }
 
+  /**
+   * Garantit la présence d'un organisme en mémoire : le charge depuis le
+   * stockage s'il existe, sinon en crée un nouveau et le persiste.
+   * Idempotent — ne fait rien si l'organisme est déjà chargé.
+   */
+  private async ensureOrganism(): Promise<void> {
+    if (this.organism) return;
+
+    if (this.isStorageReady()) {
+      try {
+        this.organism = await this.storage!.getOrganism();
+      } catch (error) {
+        logger.error('[BackgroundService] ensureOrganism: load failed', error);
+      }
+    }
+
+    if (!this.organism) {
+      this.organism = this.createNewOrganism();
+      if (this.isStorageReady()) {
+        try {
+          await this.debouncer!.saveOrganism(this.organism);
+        } catch (error) {
+          logger.error('[BackgroundService] ensureOrganism: save failed', error);
+        }
+      }
+    }
+  }
+
   private createNewOrganism(): OrganismState {
     const visualDNA = this.generateVisualDNA();
     return {
@@ -427,8 +455,13 @@ class BackgroundService {
       // Enregistre l'événement dans l'historique
       this.events.push({ type: 'visit', timestamp: Date.now(), url });
 
+      // S'assurer qu'un organisme existe pour recevoir l'évolution :
+      // sinon la navigation resterait sans effet tant que le popup n'a pas
+      // été ouvert. On charge depuis le stockage ou on en crée un.
+      await this.ensureOrganism();
+
       // Update organism based on behavior
-      this.updateOrganismTraits(url, title);
+      await this.updateOrganismTraits(url, title);
       this.analyzeContextualPatterns();
     });
 
@@ -524,12 +557,24 @@ class BackgroundService {
           timestamps: timestamps || { detected: Date.now(), emitted: Date.now() }
         });
 
-        // Alimenter le NeuralMesh avec les données de jitter DOM
+        // Alimenter le NeuralMesh avec les données de jitter DOM et relire
+        // sa sortie (activité neuronale, état de résonance interne) pour la
+        // propager au popup — le réseau n'est plus un cul-de-sac calculatoire.
+        let neuralActivity = 0;
+        let neuralResonanceSignal: string | null = null;
         if (this.organism && jitter) {
-          // Récupérer ou créer une instance du NeuralMesh via l'OrganismFactory
           const neuralMesh = await this._organismFactory.getNeuralMesh();
           if (neuralMesh && typeof neuralMesh.feedDOMJitter === 'function') {
             neuralMesh.feedDOMJitter(jitter);
+            // Propagation puis lecture de l'activité résultante
+            if (typeof neuralMesh.propagate === 'function') {
+              neuralMesh.propagate();
+            }
+            if (typeof neuralMesh.getNeuralActivity === 'function') {
+              neuralActivity = neuralMesh.getNeuralActivity();
+            }
+            const neuralState = neuralMesh.getResonanceState?.();
+            neuralResonanceSignal = neuralState?.signal ?? null;
           }
         }
 
@@ -540,6 +585,8 @@ class BackgroundService {
             resonanceLevel: resonance,
             jitterAverage: metrics?.averageJitter || 0,
             shadowActivityCount: shadowActivity,
+            neuralActivity,
+            neuralResonanceSignal,
             timestamp: Date.now()
           }
         });

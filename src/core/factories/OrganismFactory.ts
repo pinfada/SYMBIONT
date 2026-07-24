@@ -32,10 +32,20 @@ export class OrganismFactory {
     return new NeuralMesh();
   }
 
-  // Méthode d'instance pour obtenir le NeuralMesh (singleton lazy)
+  // Méthode d'instance pour obtenir le NeuralMesh (singleton lazy).
+  // On l'initialise dès la création : sans initialize(), le réseau reste
+  // sans nœuds ni connexions et propagate()/adaptToResonance() n'opèrent
+  // sur rien. L'initialisation crée le réseau par défaut (capteurs → sorties).
   async getNeuralMesh(): Promise<INeuralMesh> {
     if (!this.neuralMeshInstance) {
-      this.neuralMeshInstance = OrganismFactory.createNeuralMesh();
+      const mesh = OrganismFactory.createNeuralMesh();
+      try {
+        await mesh.initialize();
+      } catch (error) {
+        // On garde l'instance même si l'init échoue (mode dégradé)
+        console.warn('[OrganismFactory] NeuralMesh initialize failed:', error);
+      }
+      this.neuralMeshInstance = mesh;
     }
     return this.neuralMeshInstance;
   }

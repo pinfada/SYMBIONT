@@ -33,7 +33,7 @@ export class ScrollTracker extends EventTarget {
   // Scroll tracking state
   private lastScrollPosition: number = 0;
   private lastScrollTime: number = 0;
-  private scrollHistory: Array<{position: number, timestamp: number, velocity: number}> = [];
+  private scrollHistory: Array<{position: number, timestamp: number, velocity: number}> = [];
   private scrollSessions: Array<{start: number, end: number, distance: number}> = [];
   
   // Metrics tracking
@@ -240,7 +240,7 @@ export class ScrollTracker extends EventTarget {
         metrics: this.calculateMetrics()
       });
     }
-  }
+  }
   private handleScrollResume(): void {
     this.isPaused = false;
     this.emitScrollEvent({
@@ -251,7 +251,7 @@ export class ScrollTracker extends EventTarget {
       direction: 'down',
       metrics: this.calculateMetrics()
     });
-  }
+  }
   private updateScrollData(position: number, timestamp: number, velocity: number, direction: 'up' | 'down'): void {
     // Update total distance
     const distance = Math.abs(position - this.lastScrollPosition);
@@ -432,14 +432,30 @@ export class ScrollTracker extends EventTarget {
 
   private emitScrollEvent(event: ScrollEvent): void {
     this.dispatchEvent(new CustomEvent('scroll_event', { detail: event }));
-    
-    // Send to background if message bus available
+
+    // Send to background if message bus available. On enrichit le payload
+    // avec l'URL et une profondeur de défilement normalisée (0..1), requises
+    // par le handler SCROLL_EVENT du background pour mettre à jour le
+    // comportement associé à la page.
     if (this.messageBus) {
       this.messageBus.sendToBackground({
         type: 'SCROLL_EVENT',
-        payload: event
+        payload: {
+          ...event,
+          url: (typeof window !== 'undefined' && window.location) ? window.location.href : '',
+          scrollDepth: this.computeScrollDepth()
+        }
       });
     }
+  }
+
+  /** Profondeur de défilement normalisée entre 0 (haut) et 1 (bas de page). */
+  private computeScrollDepth(): number {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return 0;
+    const doc = document.documentElement;
+    const scrollable = (doc.scrollHeight || 0) - window.innerHeight;
+    if (scrollable <= 0) return 0;
+    return Math.min(1, Math.max(0, window.scrollY / scrollable));
   }
 
   // Public API

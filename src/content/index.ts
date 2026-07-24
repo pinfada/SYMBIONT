@@ -182,6 +182,18 @@ class ContentScript {
     // Catégorisation de la page
     const pageCategory = this.domAnalyzer.categorizeContent();
     
+    // Signale la visite de page au background : c'est ce message qui
+    // alimente l'évolution des traits de l'organisme selon la navigation
+    // (updateOrganismTraits) et crée l'entrée comportementale associée.
+    this.messageBus.sendToBackground({
+      type: 'PAGE_VISIT',
+      payload: {
+        url: this.pageData.url,
+        title: this.pageData.title,
+        category: pageCategory
+      }
+    });
+
     // Envoi de l'analyse initiale
     this.messageBus.sendToBackground({
       type: 'PAGE_ANALYSIS_COMPLETE',
