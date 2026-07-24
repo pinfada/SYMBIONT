@@ -530,15 +530,6 @@ export class NetworkLatencyCollector {
   }
 
   /**
-   * Simule une latence réseau pour les tests
-   */
-  simulateLatency(min: number = 10, max: number = 100, jitter: number = 0.2): void {
-    const baseLatency = min + Math.random() * (max - min);
-    const jitteredLatency = baseLatency * (1 + (Math.random() - 0.5) * jitter);
-    this.recordLatency(jitteredLatency);
-  }
-
-  /**
    * Collecte un fragment mémoire depuis les données réseau
    */
   private collectNetworkFragment(

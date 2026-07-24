@@ -1,18 +1,57 @@
 // Prédiction comportementale
 import { OrganismState, PageContext, ActionPrediction } from '../../shared/types/organism';
 
-export class BehaviorPredictor {
-  predict(data: unknown[]): any {
-    // Prédiction comportementale simple - à implémenter
-    return { confidence: 0.5, prediction: 'unknown' };
-  }
-  analyzeBehavior(sequence: unknown[]): any {
-    // Analyse de séquence comportementale - à implémenter
-    return { pattern: 'none', score: 0 };
+export class BehaviorPredictor {
+  /**
+   * Prédit l'événement le plus probable à partir de la distribution
+   * réelle des événements observés (fréquence relative).
+   */
+  predict(data: unknown[]): { confidence: number; prediction: string } {
+    if (!Array.isArray(data) || data.length === 0) {
+      return { confidence: 0, prediction: 'unknown' };
+    }
+
+    const counts = new Map<string, number>();
+    for (const item of data) {
+      const key = this.eventKey(item);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+
+    const [topKey, topCount] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    return {
+      prediction: topKey,
+      confidence: Math.min(0.95, topCount / data.length)
+    };
+  }
+  /**
+   * Analyse une séquence d'événements : détecte le bigramme (paire
+   * d'événements consécutifs) le plus récurrent et son poids relatif.
+   */
+  analyzeBehavior(sequence: unknown[]): { pattern: string; score: number } {
+    if (!Array.isArray(sequence) || sequence.length < 2) {
+      return { pattern: 'none', score: 0 };
+    }
+
+    const bigrams = new Map<string, number>();
+    for (let i = 1; i < sequence.length; i++) {
+      const key = `${this.eventKey(sequence[i - 1])}→${this.eventKey(sequence[i])}`;
+      bigrams.set(key, (bigrams.get(key) || 0) + 1);
+    }
+
+    const [topPattern, count] = [...bigrams.entries()].sort((a, b) => b[1] - a[1])[0];
+    return {
+      pattern: topPattern,
+      score: Math.min(1, count / (sequence.length - 1))
+    };
   }
 
-  updateModel(): void {
-    // Model learning logic
+  private eventKey(item: unknown): string {
+    if (typeof item === 'string') return item;
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>;
+      return String(obj.type ?? obj.action ?? obj.name ?? 'event');
+    }
+    return String(item);
   }
 
   // Nouvelle méthode pour prédire basée sur l'organisme et le contexte

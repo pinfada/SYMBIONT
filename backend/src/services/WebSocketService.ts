@@ -416,7 +416,7 @@ export class WebSocketService {
     const timeout = 5 * 60 * 1000; // 5 minutes
     
     for (const [socketId, socket] of this.connectedUsers.entries()) {
-      if (now - socket.handshake.time > timeout && !socket.connected) {
+      if (now - new Date(socket.handshake.time).getTime() > timeout && !socket.connected) {
         this.handleDisconnection(socket, 'timeout');
       }
     }

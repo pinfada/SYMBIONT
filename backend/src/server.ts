@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
+import { randomBytes } from 'crypto';
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
 
@@ -97,7 +98,10 @@ class SymbiontServer {
     // API routes
     this.app.use('/api/auth', this.createAuthRoutes());
     this.app.use('/api/organisms', authMiddleware, organismRoutes);
-    this.app.use('/api/social', authMiddleware, this.createSocialRoutes());
+    const invitationRoutes = this.createInvitationRoutes();
+    this.app.use('/api/social/invitations', authMiddleware, invitationRoutes);
+    // Alias aligné sur les anciens clients qui appelaient /api/invitations
+    this.app.use('/api/invitations', authMiddleware, invitationRoutes);
     this.app.use('/api/metrics', authMiddleware, this.createMetricsRoutes());
   }
   
@@ -106,58 +110,92 @@ class SymbiontServer {
     
     router.post('/register', async (req: Request, res: Response) => {
       try {
-        const { email, password } = req.body;
-        const user = await this.auth.register(email, password);
-        res.json({ success: true, user });
+        const { email, password, username } = req.body;
+        if (!email || !password) {
+          res.status(400).json({ success: false, error: 'email et password requis' });
+          return;
+        }
+        const user = await this.auth.register(email, password, username);
+        res.status(201).json({ success: true, data: user });
       } catch (error: any) {
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ success: false, error: error.message });
       }
     });
-    
+
     router.post('/login', async (req: Request, res: Response) => {
       try {
         const { email, password } = req.body;
         const result = await this.auth.login(email, password);
-        res.json(result);
+        res.json({ success: true, data: result });
       } catch (error: any) {
-        res.status(401).json({ error: error.message });
+        res.status(401).json({ success: false, error: error.message });
       }
     });
-    
+
     router.post('/refresh', async (req: Request, res: Response) => {
       try {
         const { refreshToken } = req.body;
         const result = await this.auth.refreshToken(refreshToken);
-        res.json(result);
+        res.json({ success: true, data: result });
       } catch (error: any) {
-        res.status(401).json({ error: error.message });
+        res.status(401).json({ success: false, error: error.message });
       }
     });
     
     return router;
   }
   
-  private createSocialRoutes(): any {
+  private createInvitationRoutes(): any {
     const router = express.Router();
-    
-    router.post('/invitations', async (req: Request, res: Response) => {
+
+    // Création d'une invitation — code généré côté serveur
+    router.post('/', async (req: Request, res: Response) => {
       try {
-        const invitation = await this.db.createInvitation(req.body);
-        res.json(invitation);
+        const code = randomBytes(4).toString('hex').toUpperCase();
+        const invitation = await this.db.createInvitation({
+          code,
+          inviterId: req.user?.userId,
+          expiresAt: req.body?.expiresAt,
+          metadata: req.body?.metadata
+        });
+        res.status(201).json({ success: true, data: invitation });
       } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ success: false, error: error.message });
       }
     });
-    
-    router.get('/invitations/:code', async (req: Request, res: Response) => {
+
+    // Vérification d'une invitation par code
+    router.get('/:code', async (req: Request, res: Response) => {
       try {
         const invitation = await this.db.getInvitation(req.params.code);
-        res.json(invitation);
+        if (!invitation) {
+          res.status(404).json({ success: false, error: 'Invitation introuvable' });
+          return;
+        }
+        res.json({ success: true, data: invitation });
       } catch (error: any) {
-        res.status(404).json({ error: error.message });
+        res.status(500).json({ success: false, error: error.message });
       }
     });
-    
+
+    // Consommation d'une invitation
+    router.post('/use', async (req: Request, res: Response) => {
+      try {
+        const { code } = req.body || {};
+        if (!code) {
+          res.status(400).json({ success: false, error: 'Champ "code" requis' });
+          return;
+        }
+        const invitation = await this.db.consumeInvitation(
+          String(code),
+          req.user!.userId
+        );
+        res.json({ success: true, data: invitation });
+      } catch (error: any) {
+        res.status(400).json({ success: false, error: error.message });
+      }
+    });
+
     return router;
   }
   
@@ -166,19 +204,19 @@ class SymbiontServer {
     
     router.post('/events', async (req: Request, res: Response) => {
       try {
-        await this.db.logMetricEvent(req.body);
+        await this.db.logMetricEvent({ ...req.body, userId: req.user?.userId });
         res.json({ success: true });
       } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ success: false, error: error.message });
       }
     });
-    
+
     router.get('/dashboard', async (req: Request, res: Response) => {
       try {
         const metrics = await this.db.getMetricsDashboard();
-        res.json(metrics);
+        res.json({ success: true, data: metrics });
       } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ success: false, error: error.message });
       }
     });
     

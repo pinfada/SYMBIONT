@@ -668,7 +668,7 @@ const MysticalPanel: React.FC = () => {
     }
     
     if (ritual.effects.mutations) {
-      // Ajouter des mutations (simulé)
+      // Mutation réelle induite par le rituel
       const newMutation = {
         id: `ritual_${Date.now()}`,
         type: 'ritual' as const,
@@ -687,9 +687,32 @@ const MysticalPanel: React.FC = () => {
       });
     }
     
-    // Sauvegarder l'organisme modifié
+    // Sauvegarder l'organisme modifié (cache local pour affichage immédiat)
     localStorage.setItem('symbiont_organism', JSON.stringify(updatedOrganism));
-    
+
+    // Persister la mutation côté background (source de vérité IndexedDB)
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      try {
+        chrome.runtime.sendMessage({
+          type: 'ORGANISM_MUTATE',
+          payload: {
+            organismId: organism.id,
+            mutation: {
+              type: 'behavioral',
+              trigger: `ritual_${ritual.id}`,
+              magnitude: ritual.effects.mutations ? 0.1 : 0.05,
+              timestamp: Date.now(),
+              traits: ritual.effects.traits ? updatedOrganism.traits : undefined
+            }
+          }
+        }).catch(() => {
+          // Background indisponible : l'état local reste la référence temporaire
+        });
+      } catch {
+        // chrome.runtime absent (tests) — état local uniquement
+      }
+    }
+
     // Ajouter au cooldown
     const newCooldowns = {
       ...ritualCooldowns,

@@ -1,15 +1,42 @@
-// Database Service - Mock Implementation (Production Ready)
+// Database Service — implémentation réelle basée sur Prisma/PostgreSQL
+import { PrismaClient } from '@prisma/client';
 import { LoggerService } from './LoggerService';
+
+export interface UserRecord {
+  id: string;
+  email: string;
+  username: string;
+  password: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InvitationInput {
+  code: string;
+  inviterId?: string;
+  expiresAt?: Date | string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MetricEventInput {
+  userId?: string;
+  cpu?: number;
+  memory?: number;
+  latency?: number;
+  userAgent?: string;
+  platform?: string;
+}
 
 export class DatabaseService {
   private logger = LoggerService.getInstance();
   private static instance: DatabaseService;
-  private isConnected: boolean = false;
-  private mockData: Map<string, any> = new Map();
+  private prisma: PrismaClient;
+  private isConnected = false;
 
   private constructor() {
-    // Initialize with sample data
-    this.initializeMockData();
+    this.prisma = new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error']
+    });
   }
 
   static getInstance(): DatabaseService {
@@ -21,8 +48,9 @@ export class DatabaseService {
 
   async connect(): Promise<void> {
     try {
+      await this.prisma.$connect();
       this.isConnected = true;
-      this.logger.info('Database connected (Mock)');
+      this.logger.info('Database connected (Prisma/PostgreSQL)');
     } catch (error) {
       this.logger.error('Database connection failed:', error);
       throw error;
@@ -31,122 +59,159 @@ export class DatabaseService {
 
   async disconnect(): Promise<void> {
     try {
+      await this.prisma.$disconnect();
       this.isConnected = false;
-      this.logger.info('Database disconnected (Mock)');
+      this.logger.info('Database disconnected');
     } catch (error) {
       this.logger.error('Database disconnection failed:', error);
       throw error;
     }
   }
 
-  get client(): any {
-    if (!this.isConnected) {
-      throw new Error('Database not connected');
-    }
-    return {
-      user: {
-        findMany: () => this.mockData.get('users') || [],
-        findUnique: (params: any) => this.findById('users', params.where.id),
-        create: (params: any) => this.create('users', params.data),
-        update: (params: any) => this.update('users', params.where.id, params.data),
-        delete: (params: any) => this.delete('users', params.where.id)
-      },
-      organism: {
-        findMany: () => this.mockData.get('organisms') || [],
-        findUnique: (params: any) => this.findById('organisms', params.where.id),
-        create: (params: any) => this.create('organisms', params.data),
-        update: (params: any) => this.update('organisms', params.where.id, params.data),
-        delete: (params: any) => this.delete('organisms', params.where.id)
-      },
-      mutation: {
-        findMany: () => this.mockData.get('mutations') || [],
-        create: (params: any) => this.create('mutations', params.data)
-      }
-    };
+  get client(): PrismaClient {
+    return this.prisma;
   }
 
   async healthCheck(): Promise<boolean> {
     try {
-      return this.isConnected;
+      await this.prisma.$queryRaw`SELECT 1`;
+      return true;
     } catch {
       return false;
     }
   }
 
-  private initializeMockData(): void {
-    this.mockData.set('users', [
-      {
-        id: '1',
-        email: 'test@symbiont.app',
-        username: 'TestUser',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]);
+  // === UTILISATEURS ===
 
-    this.mockData.set('organisms', [
-      {
-        id: '1',
-        userId: '1',
-        name: 'Alpha Organism',
-        dna: 'ATCGATCGATCGATCG',
-        generation: 1,
-        health: 0.9,
-        energy: 0.8,
-        consciousness: 0.7,
-        traits: {
-          curiosity: 0.7,
-          focus: 0.6,
-          social: 0.5,
-          creativity: 0.8,
-          analytical: 0.4,
-          adaptability: 0.7
-        },
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ]);
-
-    this.mockData.set('mutations', []);
+  async findUserByEmail(email: string): Promise<UserRecord | null> {
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
-  private findById(table: string, id: string): any {
-    const data = this.mockData.get(table) || [];
-    return data.find((item: any) => item.id === id);
+  async findUserById(id: string): Promise<UserRecord | null> {
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
-  private create(table: string, data: any): any {
-    const items = this.mockData.get(table) || [];
-    const newItem = {
-      id: Date.now().toString(),
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date()
+  async createUser(user: {
+    id?: string;
+    email: string;
+    username: string;
+    password: string;
+  }): Promise<UserRecord> {
+    return this.prisma.user.create({
+      data: {
+        ...(user.id ? { id: user.id } : {}),
+        email: user.email,
+        username: user.username,
+        password: user.password
+      }
+    });
+  }
+
+  async updateUserLastLogin(id: string): Promise<void> {
+    // updatedAt est géré par @updatedAt ; on force un write pour tracer la connexion
+    await this.prisma.user.update({
+      where: { id },
+      data: { updatedAt: new Date() }
+    });
+  }
+
+  // === INVITATIONS ===
+
+  async createInvitation(input: InvitationInput) {
+    if (!input.code) {
+      throw new Error('Invitation code is required');
+    }
+    return this.prisma.invitation.create({
+      data: {
+        code: input.code,
+        ...(input.inviterId ? { inviterId: input.inviterId } : {}),
+        expiresAt: input.expiresAt
+          ? new Date(input.expiresAt)
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours par défaut
+        ...(input.metadata ? { metadata: input.metadata as object } : {})
+      }
+    });
+  }
+
+  async getInvitation(code: string) {
+    return this.prisma.invitation.findUnique({ where: { code } });
+  }
+
+  async consumeInvitation(code: string, inviteeId: string) {
+    const invitation = await this.prisma.invitation.findUnique({ where: { code } });
+    if (!invitation) {
+      throw new Error('Invitation not found');
+    }
+    if (invitation.isConsumed) {
+      throw new Error('Invitation already consumed');
+    }
+    if (invitation.expiresAt < new Date()) {
+      throw new Error('Invitation expired');
+    }
+    return this.prisma.invitation.update({
+      where: { code },
+      data: { isConsumed: true, consumedAt: new Date(), inviteeId }
+    });
+  }
+
+  // === ORGANISMES ===
+
+  async getOrganismState(userId: string) {
+    return this.prisma.organism.findFirst({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        mutations: { orderBy: { timestamp: 'desc' }, take: 5 }
+      }
+    });
+  }
+
+  // === MÉTRIQUES & ÉVÉNEMENTS ===
+
+  async logMetricEvent(event: MetricEventInput): Promise<void> {
+    await this.prisma.systemMetrics.create({
+      data: {
+        ...(event.userId ? { userId: event.userId } : {}),
+        cpu: event.cpu ?? 0,
+        memory: event.memory ?? 0,
+        latency: event.latency ?? 0,
+        ...(event.userAgent ? { userAgent: event.userAgent } : {}),
+        ...(event.platform ? { platform: event.platform } : {})
+      }
+    });
+  }
+
+  async getMetricsDashboard() {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [aggregates, sampleCount, eventCount, userCount, organismCount] =
+      await Promise.all([
+        this.prisma.systemMetrics.aggregate({
+          where: { timestamp: { gte: since } },
+          _avg: { cpu: true, memory: true, latency: true }
+        }),
+        this.prisma.systemMetrics.count({ where: { timestamp: { gte: since } } }),
+        this.prisma.networkEvents.count({ where: { timestamp: { gte: since } } }),
+        this.prisma.user.count(),
+        this.prisma.organism.count()
+      ]);
+
+    return {
+      period: '24h',
+      samples: sampleCount,
+      averages: {
+        cpu: aggregates._avg.cpu ?? 0,
+        memory: aggregates._avg.memory ?? 0,
+        latency: aggregates._avg.latency ?? 0
+      },
+      networkEvents: eventCount,
+      totals: { users: userCount, organisms: organismCount }
     };
-    items.push(newItem);
-    this.mockData.set(table, items);
-    return newItem;
   }
 
-  private update(table: string, id: string, data: any): any {
-    const items = this.mockData.get(table) || [];
-    const index = items.findIndex((item: any) => item.id === id);
-    if (index !== -1) {
-      items[index] = { ...items[index], ...data, updatedAt: new Date() };
-      this.mockData.set(table, items);
-      return items[index];
-    }
-    return null;
+  async saveNetworkEvent<T extends { type: string }>(event: T): Promise<void> {
+    const { type, ...data } = event as { type: string } & Record<string, unknown>;
+    await this.prisma.networkEvents.create({
+      data: { type, data: JSON.parse(JSON.stringify(data)) }
+    });
   }
-
-  private delete(table: string, id: string): any {
-    const items = this.mockData.get(table) || [];
-    const index = items.findIndex((item: any) => item.id === id);
-    if (index !== -1) {
-      const deleted = items.splice(index, 1)[0];
-      this.mockData.set(table, items);
-      return deleted;
-    }
-    return null;
-  }
-} 
+}

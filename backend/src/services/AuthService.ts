@@ -29,7 +29,6 @@ export class AuthService {
   private static instance: AuthService;
   private readonly jwtSecret: string;
   private readonly jwtRefreshSecret: string;
-  private mockUsers: Map<string, User> = new Map();
   private db = DatabaseService.getInstance();
   private logger = LoggerService.getInstance();
   private activeSessions: Map<string, { userId: string, token: string, expiresAt: number }> = new Map();
@@ -49,8 +48,6 @@ export class AuthService {
     
     this.jwtSecret = jwtSecret;
     this.jwtRefreshSecret = refreshSecret;
-    
-    this.initializeMockUsers();
   }
 
   static getInstance(): AuthService {
@@ -105,8 +102,7 @@ export class AuthService {
 
   async register(email: string, password: string, username?: string): Promise<Omit<User, 'password'>> {
     try {
-      // Check if user exists in database first, fallback to mock
-      const existingUser = await this.db.findUserByEmail(email).catch(() => this.mockUsers.get(email));
+      const existingUser = await this.db.findUserByEmail(email);
       if (existingUser) {
         throw new Error('User already exists');
       }
@@ -122,12 +118,7 @@ export class AuthService {
         updatedAt: new Date()
       };
 
-      // Try to save to database, fallback to mock
-      try {
-        await this.db.createUser(user);
-      } catch {
-        this.mockUsers.set(email, user);
-      }
+      await this.db.createUser(user);
 
       this.logger.info(`User registered: ${email}`);
       
@@ -141,14 +132,8 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<AuthResult> {
     try {
-      // Try database first, fallback to mock
-      let user: User | undefined;
-      try {
-        user = await this.db.findUserByEmail(email);
-      } catch {
-        user = this.mockUsers.get(email);
-      }
-      
+      const user = await this.db.findUserByEmail(email);
+
       if (!user || !(await this.verifyPassword(password, user.password))) {
         throw new Error('Invalid credentials');
       }
@@ -201,13 +186,7 @@ export class AuthService {
         throw new Error('Invalid refresh token');
       }
 
-      // Get user
-      let user: User | undefined;
-      try {
-        user = await this.db.findUserById(decoded.userId);
-      } catch {
-        user = Array.from(this.mockUsers.values()).find(u => u.id === decoded.userId);
-      }
+      const user = await this.db.findUserById(decoded.userId);
 
       if (!user) {
         throw new Error('User not found');
@@ -263,15 +242,6 @@ export class AuthService {
       return { valid: true, userId: decoded.userId };
     } catch (error) {
       return { valid: false };
-    }
-  }
-
-  private async initializeMockUsers(): Promise<void> {
-    // Add test user
-    try {
-      await this.register('test@symbiont.app', 'password123', 'testuser');
-    } catch {
-      // User might already exist
     }
   }
 

@@ -11,8 +11,9 @@ import MetricsPanel from './components/MetricsPanel';
 import MysticalPanel from './components/MysticalPanel';
 import SocialPanel from './components/SocialPanel';
 import SettingsPanel from './components/SettingsPanel';
+import PredictionPanel from './components/PredictionPanel';
 
-type ViewType = 'organism' | 'network' | 'metrics' | 'mystical' | 'social' | 'settings';
+type ViewType = 'organism' | 'network' | 'metrics' | 'prediction' | 'mystical' | 'social' | 'settings';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('organism');
@@ -25,6 +26,7 @@ const App: React.FC = () => {
     { id: 'organism', label: 'Organisme', icon: '🧬', view: 'organism' as ViewType },
     { id: 'network', label: 'Réseau', icon: '🌐', view: 'network' as ViewType },
     { id: 'metrics', label: 'Stats', icon: '📊', view: 'metrics' as ViewType },
+    { id: 'prediction', label: 'Prédiction', icon: '🔮', view: 'prediction' as ViewType },
     { id: 'mystical', label: 'Rituels', icon: '✨', view: 'mystical' as ViewType },
     { id: 'social', label: 'Social', icon: '👥', view: 'social' as ViewType },
     { id: 'settings', label: 'Params', icon: '⚙️', view: 'settings' as ViewType },
@@ -178,6 +180,19 @@ const App: React.FC = () => {
           </div>
         );
 
+      case 'prediction':
+        return (
+          <div>
+            <h2 style={appStyles.sectionTitle}>
+              <span>🔮</span>
+              <span>Prédictions Comportementales</span>
+            </h2>
+            <Suspense fallback={<LoadingComponent message="Analyse des comportements..." />}>
+              <PredictionPanel />
+            </Suspense>
+          </div>
+        );
+
       case 'mystical':
         return (
           <div>
@@ -237,6 +252,7 @@ const App: React.FC = () => {
         {navButtons.map((btn) => (
           <button
             key={btn.id}
+            data-testid={`nav-${btn.id}`}
             onClick={() => setCurrentView(btn.view)}
             style={appStyles.navButton(currentView === btn.view)}
             onMouseEnter={(e) => {

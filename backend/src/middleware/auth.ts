@@ -1,50 +1,36 @@
-// Authentication Middleware
-interface Request {
-  headers: { authorization?: string };
-  user?: { userId: string; email: string; username: string };
+// Authentication Middleware — vérification JWT réelle via AuthService
+import { Request, Response, NextFunction } from 'express';
+import { AuthService, JWTPayload } from '../services/AuthService';
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: JWTPayload;
+  }
 }
 
-interface Response {
-  status: (code: number) => Response;
-  json: (data: any) => void;
-}
-
-interface NextFunction {
-  (error?: any): void;
-}
-
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Token manquant' });
+    const auth = AuthService.getInstance();
+    const token = auth.extractTokenFromHeader(req.headers.authorization);
+
+    if (!token) {
+      res.status(401).json({ error: 'Token manquant' });
+      return;
     }
 
-    const token = authHeader.substring(7);
-    
-    // Mock validation - replace with real JWT verification
-    const payload = await verifyToken(token);
-    
+    const payload = auth.verifyToken(token);
     if (!payload) {
-      return res.status(401).json({ error: 'Token invalide' });
+      res.status(401).json({ error: 'Token invalide ou expiré' });
+      return;
     }
 
     req.user = payload;
     next();
-  } catch (error) {
-    res.status(401).json({ error: 'Erreur d\'authentification' });
+  } catch {
+    res.status(401).json({ error: "Erreur d'authentification" });
   }
 };
-
-async function verifyToken(token: string): Promise<{ userId: string; email: string; username: string } | null> {
-  // Mock implementation
-  if (token && token.length > 10) {
-    return {
-      userId: 'user_123',
-      email: 'user@example.com',
-      username: 'testuser'
-    };
-  }
-  return null;
-} 

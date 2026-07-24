@@ -43,18 +43,6 @@ export const healthMonitor = new BasicHealthMonitor(async (msg) => {
   await hybridStorage.store('symbiont_health_alert_' + Date.now(), { msg, timestamp: Date.now() });
 });
 
-// --- Exemple d'utilisation du ResilientMessageBus ---
-(async () => {
-  const message = {
-    type: 'ORGANISM_UPDATE',
-    payload: { state: { id: 'demo', traits: { focus: 1 } }, timestamp: Date.now() }
-  };
-  const result = await resilientBus.send(message);
-  if (!result.success) {
-    logger.warn('Message ORGANISM_UPDATE fallback, voir la queue persistante.');
-  }
-})();
-
 // Utilitaires pour chrome.storage.local (asynchrone)
 async function getStorage(key: string): Promise<unknown> {
   // Utilise le stockage hybride pour la récupération
@@ -83,7 +71,7 @@ class BackgroundService {
   private events: SequenceEvent[] = [];
   private collectiveThresholds = [10, 50, 100, 250, 500];
   private reachedThresholds: number[] = [];
-  private security: SecurityManager = new SecurityManager();
+  private security: SecurityManager = new SecurityManager();
   private _organismFactory: OrganismFactory;
   private initialized: boolean = false;
   private networkLatencyCollector: NetworkLatencyCollector;
@@ -355,6 +343,60 @@ class BackgroundService {
           logger.warn('[BackgroundService] Sent temporary organism (storage not ready)');
         }
       }
+    });
+
+    // Handle organism mutations (rituels, échanges P2P, effets mystiques)
+    this.messageBus.on(MessageType.ORGANISM_MUTATE, async (message: MessageEvent | unknown) => {
+      const payload = (message as any)?.payload;
+      const mutation = payload?.mutation;
+      if (!mutation) return;
+
+      // S'assurer qu'un organisme existe
+      if (!this.organism && this.isStorageReady()) {
+        this.organism = await this.storage!.getOrganism();
+      }
+      if (!this.organism) return;
+
+      // Appliquer les valeurs de traits calculées par l'émetteur
+      if (mutation.traits && typeof mutation.traits === 'object') {
+        for (const [trait, value] of Object.entries(mutation.traits)) {
+          if (
+            typeof value === 'number' &&
+            Number.isFinite(value) &&
+            (this.organism.traits as Record<string, number>)[trait] !== undefined
+          ) {
+            (this.organism.traits as Record<string, number>)[trait] = value;
+          }
+        }
+      }
+
+      const record = {
+        type: (['visual', 'behavioral', 'cognitive'].includes(mutation.type)
+          ? mutation.type
+          : 'behavioral') as 'visual' | 'behavioral' | 'cognitive',
+        trigger: String(mutation.trigger || 'unknown'),
+        magnitude: typeof mutation.magnitude === 'number' ? mutation.magnitude : 0.5,
+        timestamp: typeof mutation.timestamp === 'number' ? mutation.timestamp : Date.now()
+      };
+
+      this.organism.mutations = [...(this.organism.mutations || []), record];
+      this.organism.lastMutation = record.timestamp;
+
+      // Persister puis diffuser le nouvel état
+      if (this.isStorageReady()) {
+        try {
+          await this.storage!.addMutation(record);
+          await this.debouncer!.saveOrganism(this.organism);
+        } catch (error) {
+          logger.error('[BackgroundService] Failed to persist mutation:', error);
+        }
+      }
+
+      await resilientBus.send({
+        type: MessageType.ORGANISM_UPDATE,
+        payload: { state: this.organism, mutations: [] }
+      });
+      logger.info(`[BackgroundService] Mutation applied: ${record.trigger}`);
     });
 
     // Handle page visits
