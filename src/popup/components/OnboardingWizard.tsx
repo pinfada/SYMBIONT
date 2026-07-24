@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getContextualMurmure } from '../../shared/NarrationService';
+import { InvitationStep } from './InvitationStep';
 
 const steps = [
   'intro',
@@ -15,21 +16,10 @@ const AVATARS = ['🌱', '🦋', '🧬', '🌟', '🪐'];
 
 export const OnboardingWizard: React.FC<{ onFinish?: () => void }> = ({ onFinish }) => {
   const [step, setStep] = useState(0);
-  const [inviteCode, setInviteCode] = useState('');
-  const [inviteError, setInviteError] = useState<string | null>(null);
   const [color, setColor] = useState(COLORS[0]);
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const context = { hour: new Date().getHours(), firstLogin: step === 0 };
   const murmure = getContextualMurmure(context, steps[step]);
-
-  function handleValidateInvite() {
-    if (!inviteCode.trim()) {
-      setInviteError('Veuillez entrer un code.');
-      return;
-    }
-    setInviteError(null);
-    setStep(3); // Passe à l'étape personnalisation
-  }
 
   function handlePrev() {
     if (step > 0) setStep(step - 1);
@@ -59,23 +49,9 @@ export const OnboardingWizard: React.FC<{ onFinish?: () => void }> = ({ onFinish
       )}
       {step === 2 && (
         <>
-          <h2>Rituel d&lsquoinvitation</h2>
           <div style={{ margin: '18px 0', color: '#00e0ff', fontStyle: 'italic' }}>{murmure}</div>
-          <div>Entrez votre code d&lsquoinvitation pour activer votre organisme.</div>
-          <input
-            type="text"
-            value={inviteCode}
-            onChange={e => setInviteCode(e.target.value)}
-            placeholder="Code d'invitation"
-            style={{ marginTop: 16, padding: '8px 12px', borderRadius: 8, border: '1.5px solid #00e0ff', fontSize: 16, minWidth: 180 }}
-            autoFocus
-          />
-          {inviteError && <div style={{ color: '#ff4b6e', marginTop: 8 }}>{inviteError}</div>}
-          <button
-            onClick={handleValidateInvite}
-            style={{ marginTop: 24 }}
-            disabled={!inviteCode.trim()}
-          >Valider</button>
+          {/* Validation réelle via le service d'invitation du background */}
+          <InvitationStep onActivated={() => setStep(3)} />
           <button onClick={handlePrev} style={{ marginTop: 12, background: 'none', color: '#888', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}>Précédent</button>
         </>
       )}

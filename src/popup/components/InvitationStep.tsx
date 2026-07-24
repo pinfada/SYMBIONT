@@ -1,27 +1,71 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useMessaging } from '../hooks/useMessaging';
+import { MessageType } from '@shared/messaging/MessageBus';
+import { generateSecureUUID } from '@shared/utils/uuid';
 
 interface InvitationStepProps {
   onActivated: () => void;
 }
 
+/**
+ * Étape d'onboarding : validation d'un code d'invitation via le
+ * vrai InvitationService du background (CHECK_INVITATION puis
+ * CONSUME_INVITATION), avec timeout si le background ne répond pas.
+ */
 export const InvitationStep: React.FC<InvitationStepProps> = ({ onActivated }) => {
+  const messaging = useMessaging();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const failWith = (message: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setError(message);
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedCode = code.trim().toUpperCase();
+    if (!trimmedCode) return;
+
     setLoading(true);
     setError(null);
-    // Simulation de validation (à remplacer par appel réel au service d'invitation)
-    setTimeout(() => {
-      if (code.trim().length >= 6) {
-        onActivated();
-      } else {
-        setError('Code d’invitation invalide.');
+
+    // Sécurité : si le background ne répond pas, sortir de l'état loading
+    timeoutRef.current = setTimeout(() => {
+      failWith('Le service d’invitation ne répond pas. Réessayez.');
+    }, 5000);
+
+    messaging.subscribe(MessageType.INVITATION_CHECKED, (msg: any) => {
+      if (!msg.payload?.valid) {
+        failWith('Code d’invitation invalide ou déjà utilisé.');
+        return;
       }
-      setLoading(false);
-    }, 800);
+
+      const receiverId = generateSecureUUID();
+      messaging.send(MessageType.CONSUME_INVITATION, { code: trimmedCode, receiverId });
+      messaging.subscribe(MessageType.INVITATION_CONSUMED, (msg2: any) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        // Le background renvoie l'invitation consommée en cas de succès,
+        // ou { error } en cas d'échec.
+        if (msg2.payload && !msg2.payload.error) {
+          setLoading(false);
+          onActivated();
+        } else {
+          failWith(msg2.payload?.error || 'Erreur lors de l’activation de l’invitation.');
+        }
+      });
+    });
+
+    messaging.send(MessageType.CHECK_INVITATION, { code: trimmedCode });
   };
 
   return (
@@ -44,4 +88,4 @@ export const InvitationStep: React.FC<InvitationStepProps> = ({ onActivated }) =
       </form>
     </section>
   );
-}; 
+};

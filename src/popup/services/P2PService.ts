@@ -324,6 +324,7 @@ class P2PService {
       this.announcePresence();
       this.checkForPeers();
       this.cleanupDisconnectedPeers();
+      this.persistPeerRegistry();
     }, 2000); // Toutes les 2 secondes pour une découverte plus rapide
 
     // Annonce initiale immédiate
@@ -795,6 +796,31 @@ class P2PService {
 
   private saveOrganism(): void {
     localStorage.setItem('symbiont_organism', JSON.stringify(this.myOrganism));
+  }
+
+  /**
+   * Persiste un instantané des pairs réellement connectés dans
+   * chrome.storage.local, pour que le background (service worker,
+   * sans accès à localStorage ni WebRTC) puisse s'appuyer sur le
+   * réseau P2P réel (ex: rituel de Communion de Fréquence).
+   */
+  private persistPeerRegistry(): void {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+
+    const registry = Array.from(this.peers.values())
+      .filter(p => p.status === 'connected')
+      .map(p => ({
+        id: p.id,
+        displayName: p.displayName || p.id.substring(0, 8),
+        hasEncryption: p.hasEncryption === true,
+        lastSeen: p.lastSeen,
+        generation: p.organism?.generation || 1,
+        consciousness: p.organism?.consciousness || 0
+      }));
+
+    chrome.storage.local.set({
+      symbiont_p2p_peer_registry: { peers: registry, updatedAt: Date.now() }
+    });
   }
 
   private cleanupDisconnectedPeers(): void {

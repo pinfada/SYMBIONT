@@ -6,10 +6,14 @@ import { ResonanceAnalyzer, ResonanceState } from './extensions/ResonanceAnalyze
 export class NeuralMesh implements INeuralMesh {
   private nodes: Map<string, { type: string; activation: number; bias: number }> = new Map();
   private connections: Map<string, Map<string, number>> = new Map();
-  private activations: Map<string, number> = new Map();
+  private activations: Map<string, number> = new Map();
   private learningRate: number = 0.01;
   private resonanceAnalyzer: ResonanceAnalyzer;
   private currentResonanceState: ResonanceState | null = null;
+  // Mesure réelle du coût de calcul : moyenne mobile exponentielle
+  // de la durée des dernières propagations (ms)
+  private avgPropagationMs: number = 0;
+  private propagationSamples: number = 0;
 
   constructor() {
     // Initialize empty network
@@ -60,6 +64,7 @@ export class NeuralMesh implements INeuralMesh {
    * Propage l'activation à travers le réseau avec protection contre NaN/Infinity
    */
   propagate(): void {
+    const propagationStart = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     // Reset non-input activations
     for (const [nodeId, node] of this.nodes) {
       if (node.type !== 'input') {
@@ -123,6 +128,14 @@ export class NeuralMesh implements INeuralMesh {
         this.activations.set(nodeId, 0);
       }
     }
+
+    // Enregistrer la durée réelle de cette propagation (EMA α=0.2)
+    const propagationEnd = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const duration = propagationEnd - propagationStart;
+    this.propagationSamples++;
+    this.avgPropagationMs = this.propagationSamples === 1
+      ? duration
+      : this.avgPropagationMs * 0.8 + duration * 0.2;
   }
 
   /**
@@ -274,21 +287,33 @@ export class NeuralMesh implements INeuralMesh {
   }
 
   /**
-   * Get CPU usage estimation
+   * Get CPU usage — basé sur la durée réellement mesurée des propagations.
+   * Ratio normalisé : 16 ms (un frame à 60 fps) = charge maximale.
    */
   async getCPUUsage(): Promise<number> {
-    // Mock implementation - in real scenario, measure actual computation time
-    const complexity = this.nodes.size * this.connections.size;
-    return Math.min(1, complexity / 1000);
+    if (this.propagationSamples === 0) {
+      return 0; // Aucune propagation encore exécutée : pas de charge mesurée
+    }
+    const FRAME_BUDGET_MS = 16;
+    return Math.min(1, this.avgPropagationMs / FRAME_BUDGET_MS);
   }
 
   /**
-   * Get memory usage estimation
+   * Get memory usage — empreinte réelle mesurée en sérialisant l'état
+   * effectif du réseau (nœuds + connexions + activations), rapportée à 1 MB.
    */
   async getMemoryUsage(): Promise<number> {
-    // Mock implementation - in real scenario, measure actual memory footprint
-    const memorySize = (this.nodes.size + this.connections.size) * 64; // bytes approximation
-    return Math.min(1, memorySize / (1024 * 1024)); // Convert to MB ratio
+    let bytes = 0;
+    try {
+      // Taille réelle de l'état sérialisé (UTF-16 ≈ 2 octets/caractère)
+      bytes = JSON.stringify(this.saveState()).length * 2;
+    } catch {
+      // État non sérialisable (cycle improbable) : approximation structurelle
+      let connectionCount = 0;
+      for (const map of this.connections.values()) connectionCount += map.size;
+      bytes = (this.nodes.size + connectionCount + this.activations.size) * 64;
+    }
+    return Math.min(1, bytes / (1024 * 1024));
   }
 
   /**

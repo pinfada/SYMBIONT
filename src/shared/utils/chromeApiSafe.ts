@@ -101,14 +101,11 @@ class ChromeApiSafe {
             }
           }
         } else {
-          console.warn('Chrome runtime not available - simulating response');
-          // Simulate response in test/dev mode
+          // Hors environnement extension (tests, dev web) : aucune donnée
+          // simulée — on répond null pour que l'appelant gère l'absence.
+          console.warn('Chrome runtime not available - no response');
           if (callback) {
-            setTimeout(() => {
-              // Return mock data based on message type
-              const mockResponse = this.getMockResponse(message);
-              callback(mockResponse);
-            }, 10);
+            setTimeout(() => callback(null), 0);
           }
         }
       },
@@ -158,27 +155,6 @@ class ChromeApiSafe {
    */
   isExtensionEnvironment(): boolean {
     return this.isAvailable;
-  }
-
-  /**
-   * Get mock response for development/test mode
-   */
-  private getMockResponse(message: any): any {
-    switch (message.type) {
-      case 'GET_BEHAVIOR_PATTERNS':
-        return [
-          { pattern: 'navigation', frequency: 45 },
-          { pattern: 'interaction', frequency: 30 },
-          { pattern: 'scrolling', frequency: 25 }
-        ];
-      case 'GET_RECENT_ACTIVITY':
-        return [
-          { timestamp: Date.now() - 60000, action: 'page_view', url: 'test.com' },
-          { timestamp: Date.now() - 30000, action: 'click', element: 'button' }
-        ];
-      default:
-        return null;
-    }
   }
 }
 

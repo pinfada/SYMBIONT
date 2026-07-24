@@ -1,8 +1,24 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { OrganismState } from '@shared/types/organism';
 import { logger } from '@shared/utils/secureLogger';
+import { SecureRandom } from '@shared/utils/secureRandom';
+import { generateSecureUUID } from '@shared/utils/uuid';
 import { MessageBus } from '@/core/messaging/MessageBus';
 import { MessageType } from '@shared/messaging/MessageBus';
+
+/**
+ * Génère un ADN visuel unique (même alphabet que le background,
+ * cf. BackgroundService.generateVisualDNA) pour un organisme créé
+ * localement quand le background n'est pas joignable.
+ */
+function generateVisualDNA(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 64; i++) {
+    result += chars.charAt(Math.floor(SecureRandom.random() * chars.length));
+  }
+  return result;
+}
 
 export interface OrganismContextType {
   organism: OrganismState | null;
@@ -82,13 +98,16 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // Si pas de données, créer un organisme par défaut temporaire
+        // Si pas de données, créer un vrai organisme local temporaire :
+        // ADN unique généré, id UUID. Il sera remplacé par l'organisme
+        // persistant du background dès que celui-ci répond (ORGANISM_UPDATE).
         const now = Date.now();
+        const dna = generateVisualDNA();
         const defaultOrganism = {
             // Propriétés requises par OrganismState
-            id: 'default-organism',
+            id: generateSecureUUID(),
             generation: 1,
-            dna: 'MOCKDNA123456789ABCDEF',
+            dna,
             traits: {
               curiosity: 0.5,
               focus: 0.5,
@@ -110,7 +129,7 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
             energy: 0.8,
             consciousness: 0.5,
             createdAt: now,
-            visualDNA: 'MOCKDNA123456789ABCDEF'
+            visualDNA: dna
         };
 
         // Sauvegarder l'organisme par défaut dans localStorage
@@ -120,11 +139,12 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
 
       } catch (error) {
         logger.error('Error loading organism:', error);
-        // En cas d'erreur, créer quand même un organisme par défaut
+        // En cas d'erreur, créer quand même un organisme local réel
+        const fallbackDna = generateVisualDNA();
         const fallbackOrganism = {
-          id: 'fallback-organism',
+          id: generateSecureUUID(),
           generation: 1,
-          dna: 'FALLBACK123456789ABCDEF',
+          dna: fallbackDna,
           traits: {
             curiosity: 0.5, focus: 0.5, rhythm: 0.5, empathy: 0.5, creativity: 0.5,
             resilience: 0.5, adaptability: 0.5, memory: 0.5, intuition: 0.5
@@ -138,7 +158,7 @@ export function OrganismProvider({ children }: { children: ReactNode }) {
           energy: 0.8,
           consciousness: 0.5,
           createdAt: Date.now(),
-          visualDNA: 'FALLBACK123456789ABCDEF'
+          visualDNA: fallbackDna
         };
         setOrganism(fallbackOrganism);
       } finally {

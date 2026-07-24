@@ -23,11 +23,13 @@ safeGetClasses(element)
 #### ✅ Gestion des Imports Asynchrones
 ```typescript
 // ✅ Avant : Erreur d'initialisation
-const { RealDataService } = require('../services/RealDataService');
+const { P2PService } = require('../services/P2PService');
 
 // ✅ Après : Import dynamique sécurisé
-const { RealDataService } = await import('../services/RealDataService');
+const { P2PService } = await import('../services/P2PService');
 ```
+> Note : l'ancien `RealDataService` (dispositif de bascule mock↔réel) a été
+> supprimé — les données réelles sont désormais l'unique chemin de code.
 
 ### 2. Performance et Optimisation
 

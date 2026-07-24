@@ -12,7 +12,7 @@ import {
   CortexState,
   ResourceBudget,
 } from '../CortexTypes';
-import { generateSecureUUID } from '@shared/utils/secureRandom';
+import { generateSecureUUID } from '@shared/utils/uuid';
 
 const BUFFER_FLUSH_SIZE = 20;
 const MAX_TOTAL_ENTRIES = 1000;
@@ -70,20 +70,26 @@ export class CognitiveTelemetry {
     type: CognitiveEventType,
     details?: Record<string, unknown>,
   ): Promise<void> {
+    const stateTransition = details?.stateTransition as
+      | { from: CortexState; to: CortexState }
+      | undefined;
+
     const entry: CognitiveLogEntry = {
       id: generateSecureUUID(),
       timestamp: Date.now(),
       type,
       durationMs: (details?.durationMs as number) ?? 0,
-      signalId: details?.signalId as string | undefined,
-      tabId: details?.tabId as number | undefined,
-      diagnosticSummary: details?.diagnosticSummary as string | undefined,
-      resourceSnapshot: details?.resourceSnapshot as ResourceBudget | undefined,
-      decision: details?.decision as string | undefined,
-      stateTransition: details?.stateTransition as
-        | { from: CortexState; to: CortexState }
-        | undefined,
-      metadata: details,
+      ...(details?.signalId !== undefined ? { signalId: details.signalId as string } : {}),
+      ...(details?.tabId !== undefined ? { tabId: details.tabId as number } : {}),
+      ...(details?.diagnosticSummary !== undefined
+        ? { diagnosticSummary: details.diagnosticSummary as string }
+        : {}),
+      ...(details?.resourceSnapshot !== undefined
+        ? { resourceSnapshot: details.resourceSnapshot as ResourceBudget }
+        : {}),
+      ...(details?.decision !== undefined ? { decision: details.decision as string } : {}),
+      ...(stateTransition !== undefined ? { stateTransition } : {}),
+      ...(details !== undefined ? { metadata: details } : {}),
     };
 
     this.updateRunningMetrics(type, details);

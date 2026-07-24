@@ -11,7 +11,6 @@ export interface FeatureFlags {
   USE_BACKEND_API: boolean;
   ENABLE_DEBUG_LOGGING: boolean;
   ENABLE_PERFORMANCE_PROFILING: boolean;
-  ENABLE_MOCK_DATA: boolean;
   ENABLE_SECURITY_AUDIT: boolean;
   ENABLE_ADVANCED_ANALYTICS: boolean;
   ENABLE_A_B_TESTING: boolean;
@@ -67,14 +66,14 @@ class FeatureFlagService {
    * Initialise les flags selon l'environnement
    */
   private initializeFlags(): FeatureFlags {
+    // Les données réelles sont le seul mode : plus aucun mock dans le code.
     const baseFlags: FeatureFlags = {
-      USE_REAL_METRICS: false,
-      USE_REAL_DNA: false,
-      USE_REAL_BEHAVIOR: false,
-      USE_BACKEND_API: false,
+      USE_REAL_METRICS: true,
+      USE_REAL_DNA: true,
+      USE_REAL_BEHAVIOR: true,
+      USE_BACKEND_API: true,
       ENABLE_DEBUG_LOGGING: false,
       ENABLE_PERFORMANCE_PROFILING: false,
-      ENABLE_MOCK_DATA: true,
       ENABLE_SECURITY_AUDIT: false,
       ENABLE_ADVANCED_ANALYTICS: false,
       ENABLE_A_B_TESTING: false
@@ -86,25 +85,18 @@ class FeatureFlagService {
           ...baseFlags,
           ENABLE_DEBUG_LOGGING: true,
           ENABLE_PERFORMANCE_PROFILING: true,
-          ENABLE_MOCK_DATA: true,
           ENABLE_SECURITY_AUDIT: true,
-          // Possibilité d'activer vraies données en dev pour tests
-          USE_REAL_METRICS: this.getEnvBoolean('USE_REAL_METRICS', false),
-          USE_REAL_DNA: this.getEnvBoolean('USE_REAL_DNA', false),
-          USE_REAL_BEHAVIOR: this.getEnvBoolean('USE_REAL_BEHAVIOR', false),
-          USE_BACKEND_API: this.getEnvBoolean('USE_BACKEND_API', false)
+          // Possibilité de désactiver certaines sources réelles en dev
+          USE_REAL_METRICS: this.getEnvBoolean('USE_REAL_METRICS', true),
+          USE_REAL_DNA: this.getEnvBoolean('USE_REAL_DNA', true),
+          USE_REAL_BEHAVIOR: this.getEnvBoolean('USE_REAL_BEHAVIOR', true),
+          USE_BACKEND_API: this.getEnvBoolean('USE_BACKEND_API', true)
         };
 
       case 'staging':
         return {
           ...baseFlags,
-          USE_REAL_METRICS: true,
-          USE_REAL_DNA: true,
-          USE_REAL_BEHAVIOR: true,
-          USE_BACKEND_API: true,
-          ENABLE_DEBUG_LOGGING: false,
           ENABLE_PERFORMANCE_PROFILING: true,
-          ENABLE_MOCK_DATA: false,
           ENABLE_SECURITY_AUDIT: true,
           ENABLE_ADVANCED_ANALYTICS: true,
           ENABLE_A_B_TESTING: true
@@ -113,14 +105,6 @@ class FeatureFlagService {
       case 'production':
         return {
           ...baseFlags,
-          USE_REAL_METRICS: true,
-          USE_REAL_DNA: true,
-          USE_REAL_BEHAVIOR: true,
-          USE_BACKEND_API: true,
-          ENABLE_DEBUG_LOGGING: false,
-          ENABLE_PERFORMANCE_PROFILING: false,
-          ENABLE_MOCK_DATA: false,
-          ENABLE_SECURITY_AUDIT: false,
           ENABLE_ADVANCED_ANALYTICS: true,
           ENABLE_A_B_TESTING: false // Désactivé par défaut en prod
         };
@@ -311,13 +295,12 @@ class FeatureFlagService {
   }
 
   /**
-   * Validation de sécurité - vérifie qu'on n'utilise pas de données mock en prod
+   * Validation de sécurité - vérifie qu'aucun flag dangereux n'est actif en prod
    */
   validateProductionSafety(): void {
     if (!this.isProduction()) return;
 
     const unsafeFlags = [
-      'ENABLE_MOCK_DATA',
       'ENABLE_DEBUG_LOGGING'
     ];
 

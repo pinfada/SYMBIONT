@@ -10,6 +10,7 @@ import {
   AnomalyResult,
   AnomalyFactor,
   SignatureMatch,
+  SignaturePattern,
 } from '../CortexTypes';
 import { ActiveRAGStore } from '../rag/ActiveRAGStore';
 import { AdversarialDefense } from './AdversarialDefense';
@@ -196,9 +197,7 @@ export class AnomalyScorer {
     return Math.min(0.95, confidence);
   }
 
-  private buildQuickPattern(
-    signal: CortexSignal,
-  ): { version: number; featureVector: Float32Array; dominantCategory: string; textualHint: string } {
+  private buildQuickPattern(signal: CortexSignal): SignaturePattern {
     // Construction rapide d'un pattern partiel pour le matching
     const vec = new Float32Array(48);
 

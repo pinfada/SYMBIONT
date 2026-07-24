@@ -67,13 +67,13 @@ class SimplePersistentQueue {
   }
 }
 
-export class ResilientMessageBus {
+export class ResilientMessageBus {
   private connectionState: 'connected' | 'degraded' | 'offline' = 'offline'
   private messageQueue = new SimplePersistentQueue()
   private failureStrategies: Map<string, FailureStrategy> = new Map()
-  private circuitBreaker = new SimpleCircuitBreaker()
-  private failureQueue: Message[] = []
-  private isConnected: boolean = false;
+  private circuitBreaker = new SimpleCircuitBreaker()
+  private failureQueue: Message[] = []
+  private isConnected: boolean = false;
   private connectionAttempts: number = 0;
 
   constructor() {
@@ -111,9 +111,9 @@ export class ResilientMessageBus {
     const maxRetries = strategy?.maxRetries || 2
     while (retries <= maxRetries) {
       try {
-        // Simule l'envoi (à remplacer par chrome.runtime.sendMessage ou autre)
-        await this.simulateSend(message)
+        await this.deliver(message)
         this.circuitBreaker.recordSuccess()
+        await this.flushQueuedMessages()
         return { success: true }
       } catch (_error) {
         this.circuitBreaker.recordFailure()
@@ -127,9 +127,37 @@ export class ResilientMessageBus {
       }
     }
     return { success: false, queued: true, error: 'Unknown error' }
-  }
-  private async simulateSend(message: Message) {
-    return { success: true, id: `sim_${Date.now()}` }
+  }
+  /**
+   * Livraison réelle via chrome.runtime.sendMessage.
+   * Rejette si l'API n'est pas disponible ou si aucun destinataire
+   * (ex: popup fermé) n'est à l'écoute — la stratégie de retry/queue
+   * prend alors le relais.
+   */
+  private async deliver(message: Message): Promise<void> {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      throw new Error('chrome.runtime.sendMessage unavailable')
+    }
+    await chrome.runtime.sendMessage(message)
+  }
+
+  /**
+   * Rejoue les messages mis en file pendant une indisponibilité,
+   * dès qu'une livraison réussit à nouveau.
+   */
+  private async flushQueuedMessages(): Promise<void> {
+    const pending = await this.messageQueue.getAll()
+    if (pending.length === 0) return
+    let msg = await this.messageQueue.dequeue()
+    while (msg) {
+      try {
+        await this.deliver(msg)
+      } catch {
+        await this.messageQueue.enqueue(msg)
+        return
+      }
+      msg = await this.messageQueue.dequeue()
+    }
   }
 
   private getBackoff(type: string = 'immediate', attempt: number) {
@@ -151,13 +179,5 @@ export class ResilientMessageBus {
   private async processLocally(msg: Message) {
     logger.info('[ResilientMessageBus] fallback processLocally', msg)
     await swLocalStorage.setItem('symbiont_local_processing', JSON.stringify(msg))
-  }
-  private _attemptConnection(): Promise<boolean> {
-    return Promise.resolve(true)
-  }
-  private _processMessage(_message: Message): void {
-    // Traitement du message
   }
-}
-
-// TODO: Exporter/brancher sur le bus de messages principal 
+} 
