@@ -1,6 +1,7 @@
 import { OrganismState, OrganismMutation } from '../../shared/types/organism';
 import { SecureRandom } from '../../shared/utils/secureRandom';
 import { logger } from '../../shared/utils/secureLogger';
+import { SecurityManager } from '../../background/SecurityManager';
 
 interface BehaviorData {
   url: string;
@@ -13,6 +14,26 @@ interface BehaviorData {
     timestamp: number;
     data: unknown;
   }>;
+}
+
+// Enregistrement chiffré d'un comportement : l'URL et la charge utile
+// sensibles sont dans `enc` (AES-GCM) ; seuls la clé hashée et les compteurs
+// non-identifiants restent en clair pour le tri/les index.
+interface EncryptedBehaviorRecord {
+  urlHash: string;
+  visitCount: number;
+  lastVisit: number;
+  enc: string;
+}
+
+// Enregistrement chiffré d'organisme : l'état complet est dans `enc` ;
+// id/generation/createdAt restent en clair (non-identifiants, requis pour
+// la clé primaire et les index).
+interface EncryptedOrganismRecord {
+  id: string;
+  generation?: number;
+  createdAt?: number;
+  enc: string;
 }
 
 /**
@@ -51,7 +72,8 @@ class StorageInstanceManager {
 export class SymbiontStorage {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'symbiont-db';
-  private readonly DB_VERSION = 3;
+  private readonly DB_VERSION = 4;
+  private security: SecurityManager | null = null;
   private readonly OPERATION_TIMEOUT: number;
   private readonly MAX_STORAGE_SIZE_MB = 50; // Maximum storage size in MB
   private quotaWarningIssued = false;
@@ -668,10 +690,19 @@ export class SymbiontStorage {
             organismStore.createIndex('createdAt', 'createdAt', { unique: false });
           }
 
-          // Store pour les comportements
+          // Store pour les comportements — clé = hash d'URL (jamais l'URL en clair).
+          // Migration v4 : l'ancien store était indexé par URL en clair ; on le
+          // recrée avec une clé hashée, purgeant du même coup les URLs en clair
+          // héritées (les comportements se re-collectent à la navigation).
+          if (db.objectStoreNames.contains('behaviors')) {
+            const existingStore = (event.target as IDBOpenDBRequest).transaction?.objectStore('behaviors');
+            if (existingStore && existingStore.keyPath !== 'urlHash') {
+              db.deleteObjectStore('behaviors');
+            }
+          }
           if (!db.objectStoreNames.contains('behaviors')) {
-            console.log(`[SymbiontStorage:${this.contextId}] Creating behaviors store`);
-            const behaviorStore = db.createObjectStore('behaviors', { keyPath: 'url' });
+            console.log(`[SymbiontStorage:${this.contextId}] Creating behaviors store (hashed keys)`);
+            const behaviorStore = db.createObjectStore('behaviors', { keyPath: 'urlHash' });
             behaviorStore.createIndex('lastVisit', 'lastVisit', { unique: false });
             behaviorStore.createIndex('visitCount', 'visitCount', { unique: false });
           }
@@ -732,10 +763,40 @@ export class SymbiontStorage {
     });
   }
 
+  // === Chiffrement au repos (AES-GCM via SecurityManager) ===
+
+  /** Instancie paresseusement le gestionnaire de chiffrement. */
+  private getSecurity(): SecurityManager {
+    if (!this.security) {
+      this.security = new SecurityManager();
+    }
+    return this.security;
+  }
+
+  /** Chiffre un objet en chaîne base64 (IV + ciphertext AES-GCM). */
+  private encryptPayload(obj: unknown): Promise<string> {
+    return this.getSecurity().encryptSensitiveData(obj);
+  }
+
+  /** Déchiffre une chaîne produite par encryptPayload. */
+  private async decryptPayload<T>(enc: string): Promise<T | null> {
+    try {
+      return (await this.getSecurity().decryptSensitiveData(enc)) as T;
+    } catch (error) {
+      logger.error('[SymbiontStorage] Failed to decrypt payload:', error);
+      return null;
+    }
+  }
+
+  /** Hash SHA-256 d'une URL, utilisé comme clé de stockage non réversible. */
+  private hashUrl(url: string): Promise<string> {
+    return this.getSecurity().hash(url);
+  }
+
   async getOrganism(id?: string): Promise<OrganismState | null> {
     if (!this.db) throw new Error('Database not initialized');
 
-    const getPromise = new Promise<OrganismState | null>((resolve, reject) => {
+    const getPromise = new Promise<EncryptedOrganismRecord | OrganismState | null>((resolve, reject) => {
       const transaction = this.db!.transaction(['organisms'], 'readonly');
       const store = transaction.objectStore('organisms');
 
@@ -754,16 +815,33 @@ export class SymbiontStorage {
       }
     });
 
-    return this.withTimeout(getPromise);
+    const record = await this.withTimeout(getPromise);
+    if (!record) return null;
+
+    // Enregistrement chiffré (nouveau format)
+    if ((record as EncryptedOrganismRecord).enc) {
+      return this.decryptPayload<OrganismState>((record as EncryptedOrganismRecord).enc);
+    }
+    // Enregistrement hérité en clair (pré-v4) : renvoyé tel quel, il sera
+    // ré-écrit chiffré au prochain saveOrganism.
+    return record as OrganismState;
   }
 
   async saveOrganism(organism: OrganismState): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
+    const enc = await this.encryptPayload(organism);
+    const record: EncryptedOrganismRecord = {
+      id: organism.id,
+      enc,
+      ...(organism.generation !== undefined ? { generation: organism.generation } : {}),
+      ...((organism as any).createdAt !== undefined ? { createdAt: (organism as any).createdAt } : {})
+    };
+
     const savePromise = new Promise<void>((resolve, reject) => {
       const transaction = this.db!.transaction(['organisms'], 'readwrite');
       const store = transaction.objectStore('organisms');
-      const request = store.put(organism);
+      const request = store.put(record);
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
@@ -774,25 +852,38 @@ export class SymbiontStorage {
 
   async getBehavior(url: string): Promise<BehaviorData | null> {
     if (!this.db) throw new Error('Database not initialized');
-    
-    return new Promise((resolve, reject) => {
+
+    const urlHash = await this.hashUrl(url);
+    const record = await new Promise<EncryptedBehaviorRecord | null>((resolve, reject) => {
       const transaction = this.db!.transaction(['behaviors'], 'readonly');
       const store = transaction.objectStore('behaviors');
-      const request = store.get(url);
-      
+      const request = store.get(urlHash);
+
       request.onsuccess = () => resolve(request.result || null);
       request.onerror = () => reject(request.error);
     });
+
+    if (!record?.enc) return null;
+    return this.decryptPayload<BehaviorData>(record.enc);
   }
 
   async saveBehavior(behavior: BehaviorData): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    
+
+    const urlHash = await this.hashUrl(behavior.url);
+    const enc = await this.encryptPayload(behavior);
+    const record: EncryptedBehaviorRecord = {
+      urlHash,
+      visitCount: behavior.visitCount,
+      lastVisit: behavior.lastVisit,
+      enc
+    };
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['behaviors'], 'readwrite');
       const store = transaction.objectStore('behaviors');
-      const request = store.put(behavior);
-      
+      const request = store.put(record);
+
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
@@ -932,27 +1023,36 @@ export class SymbiontStorage {
    */
   async getBehaviorPatterns(): Promise<BehaviorData[]> {
     if (!this.db) throw new Error('Database not initialized');
-    return new Promise((resolve, reject) => {
+
+    // Collecte des enregistrements chiffrés, puis déchiffrement hors transaction
+    const records = await new Promise<EncryptedBehaviorRecord[]>((resolve, reject) => {
       const transaction = this.db!.transaction(['behaviors'], 'readonly');
       const store = transaction.objectStore('behaviors');
       const request = store.openCursor();
-      const results: BehaviorData[] = [];
+      const collected: EncryptedBehaviorRecord[] = [];
       request.onsuccess = (event) => {
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {
-          results.push(cursor.value);
+          collected.push(cursor.value);
           cursor.continue();
         } else {
-          // Tri par visitCount décroissant puis lastVisit décroissant
-          results.sort((a, b) => {
-            if (b.visitCount !== a.visitCount) return b.visitCount - a.visitCount;
-            return b.lastVisit - a.lastVisit;
-          });
-          resolve(results);
+          resolve(collected);
         }
       };
       request.onerror = () => reject(request.error);
     });
+
+    const decrypted = await Promise.all(
+      records.map(r => (r.enc ? this.decryptPayload<BehaviorData>(r.enc) : Promise.resolve(null)))
+    );
+    const results = decrypted.filter((b): b is BehaviorData => b !== null);
+
+    // Tri par visitCount décroissant puis lastVisit décroissant
+    results.sort((a, b) => {
+      if (b.visitCount !== a.visitCount) return b.visitCount - a.visitCount;
+      return b.lastVisit - a.lastVisit;
+    });
+    return results;
   }
 
   /**
@@ -961,29 +1061,37 @@ export class SymbiontStorage {
   async getRecentActivity(periodMs: number = 24 * 60 * 60 * 1000): Promise<any[]> {
     if (!this.db) throw new Error('Database not initialized');
     const since = Date.now() - periodMs;
-    return new Promise((resolve, reject) => {
+
+    const records = await new Promise<EncryptedBehaviorRecord[]>((resolve, reject) => {
       const transaction = this.db!.transaction(['behaviors'], 'readonly');
       const store = transaction.objectStore('behaviors');
       const request = store.openCursor();
-      const recent: unknown[] = [];
+      const collected: EncryptedBehaviorRecord[] = [];
       request.onsuccess = (event) => {
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {
-          const behavior: BehaviorData = cursor.value;
-          // On prend toutes les interactions récentes de ce comportement
-          const filtered = (behavior.interactions || []).filter(i => i.timestamp >= since);
-          for (const i of filtered) {
-            recent.push({ ...i, url: behavior.url });
-          }
+          collected.push(cursor.value);
           cursor.continue();
         } else {
-          // Tri par timestamp décroissant
-          recent.sort((a, b) => (b as any).timestamp - (a as any).timestamp);
-          resolve(recent);
+          resolve(collected);
         }
       };
       request.onerror = () => reject(request.error);
     });
+
+    const recent: unknown[] = [];
+    for (const record of records) {
+      if (!record.enc) continue;
+      const behavior = await this.decryptPayload<BehaviorData>(record.enc);
+      if (!behavior) continue;
+      const filtered = (behavior.interactions || []).filter(i => i.timestamp >= since);
+      for (const i of filtered) {
+        recent.push({ ...i, url: behavior.url });
+      }
+    }
+
+    recent.sort((a, b) => (b as any).timestamp - (a as any).timestamp);
+    return recent;
   }
 
   /**

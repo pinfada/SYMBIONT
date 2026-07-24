@@ -23,8 +23,8 @@ console.log(`🌐 SYMBIONT P2P Signaling Server`);
 console.log(`================================`);
 
 wss.on('connection', (ws, req) => {
-  const clientIp = req.socket.remoteAddress;
-  console.log(`✅ Nouveau pair connecté: ${clientIp}`);
+  // Vie privée : ni IP ni organisme ne sont conservés côté serveur.
+  console.log(`✅ Nouveau pair connecté`);
 
   let peerId = null;
 
@@ -34,28 +34,25 @@ wss.on('connection', (ws, req) => {
 
       switch(data.type) {
         case 'announce':
-          // Un pair s'annonce au réseau
+          // Un pair s'annonce — on ne conserve que le peerId de routage
           peerId = data.peerId;
           peers.set(peerId, {
             ws: ws,
-            organism: data.organism,
             lastSeen: Date.now()
           });
 
-          console.log(`📢 Pair annoncé: ${peerId} (${data.organism?.name || 'Unknown'})`);
-          console.log(`   Génération: ${data.organism?.generation || 0}`);
-          console.log(`   Conscience: ${Math.round((data.organism?.consciousness || 0) * 100)}%`);
+          console.log(`📢 Pair annoncé: ${peerId}`);
 
-          // Notifier tous les autres pairs
-          broadcastToPeers(data, peerId);
+          // Notifier les autres pairs (peerId uniquement)
+          broadcastToPeers({ type: 'announce', peerId, timestamp: Date.now() }, peerId);
 
           // Envoyer la liste des pairs existants au nouveau
           sendPeersList(ws, peerId);
           break;
 
         case 'discovery':
-          // Diffuser la découverte aux autres
-          broadcastToPeers(data, peerId);
+          // Relayer l'existence du pair sans charge utile
+          broadcastToPeers({ type: 'discovery', peerId, timestamp: Date.now() }, peerId);
           break;
 
         case 'offer':
@@ -119,8 +116,7 @@ function sendPeersList(ws, excludePeerId) {
   peers.forEach((peer, id) => {
     if (id !== excludePeerId) {
       peersList.push({
-        peerId: id,
-        organism: peer.organism
+        peerId: id
       });
     }
   });

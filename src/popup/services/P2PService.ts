@@ -141,10 +141,8 @@ class P2PService {
         this.handleSignalingMessage(event.data);
       };
       logger.info('P2P: BroadcastChannel initialisé avec succès');
-      console.log('P2P: BroadcastChannel prêt pour la découverte locale');
     } catch (e) {
       logger.warn('P2P: BroadcastChannel non disponible:', e);
-      console.warn('P2P: BroadcastChannel error:', e);
     }
 
     // Méthode 2: WebSocket pour signaling global
@@ -175,13 +173,13 @@ class P2PService {
           this.signalingSocket!.onopen = () => {
             clearTimeout(timeout);
             logger.info(`P2P: ✅ Connecté au serveur de signaling ${server}`);
-            console.log(`P2P: Connected to signaling server: ${server}`);
 
-            // S'annoncer au serveur
+            // Vie privée : on ne transmet au serveur QUE le peerId de routage.
+            // L'organisme (traits, ADN, conscience) n'est jamais envoyé au
+            // signaling — il ne circule qu'en pair-à-pair chiffré (DataChannel).
             this.signalingSocket?.send(JSON.stringify({
               type: 'announce',
-              peerId: this.myId,
-              organism: this.myOrganism
+              peerId: this.myId
             }));
 
             // Envoyer un ping régulièrement pour maintenir la connexion
@@ -249,7 +247,6 @@ class P2PService {
 
         this.signalingSocket.onclose = () => {
           logger.warn(`P2P: Déconnecté du serveur ${server}`);
-          console.warn('P2P: Disconnected from signaling server');
           // Tentative de reconnexion après 5 secondes
           setTimeout(() => this.connectToSignalingServer(), 5000);
         };
@@ -258,13 +255,11 @@ class P2PService {
 
       } catch (e) {
         logger.warn(`P2P: Impossible de se connecter à ${server}:`, e);
-        console.warn(`P2P: Failed to connect to ${server}`, e);
       }
     }
 
     if (!this.signalingSocket || this.signalingSocket.readyState !== WebSocket.OPEN) {
       logger.warn('P2P: Aucun serveur de signaling disponible, mode local uniquement');
-      console.warn('P2P: No signaling server available, local mode only');
     }
   }
 
@@ -302,12 +297,13 @@ class P2PService {
       });
     }
 
-    // 2. WebSocket si connecté
+    // 2. WebSocket : ne transmettre QUE le peerId au serveur de signaling
+    // (aucune donnée d'organisme ne quitte la machine via le serveur)
     if (this.signalingSocket?.readyState === WebSocket.OPEN) {
       this.signalingSocket.send(JSON.stringify({
         type: 'discovery',
         channel,
-        data
+        peerId: this.myId
       }));
     }
 
@@ -335,22 +331,28 @@ class P2PService {
   }
 
   private announcePresence(): void {
-    const announcement = {
+    // L'annonce LOCALE (BroadcastChannel + localStorage, même machine)
+    // peut contenir l'organisme pour la découverte entre onglets ; l'annonce
+    // RÉSEAU (serveur de signaling) est réduite au seul peerId de routage.
+    const localAnnouncement = {
       type: 'announce',
       peerId: this.myId,
       organism: this.myOrganism,
       timestamp: Date.now()
     };
 
-    console.log('P2P: Annonce de présence, ID:', this.myId);
-    logger.info('P2P: Announcing presence with ID:', this.myId);
+    logger.info('P2P: Announcing presence');
 
-    // Diffuser sur tous les canaux
-    this.broadcastDiscovery('symbiont-network', announcement);
+    // Canaux locaux (le WS interne à broadcastDiscovery n'envoie que le peerId)
+    this.broadcastDiscovery('symbiont-network', localAnnouncement);
 
-    // Aussi annoncer via WebSocket si connecté
+    // Annonce réseau minimale — peerId uniquement
     if (this.signalingSocket?.readyState === WebSocket.OPEN) {
-      this.signalingSocket.send(JSON.stringify(announcement));
+      this.signalingSocket.send(JSON.stringify({
+        type: 'announce',
+        peerId: this.myId,
+        timestamp: Date.now()
+      }));
     }
   }
 

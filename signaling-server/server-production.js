@@ -114,11 +114,12 @@ let stats = {
 };
 
 wss.on('connection', (ws, req) => {
-  const clientIp = req.socket.remoteAddress || req.headers['x-forwarded-for'];
+  // Vie privée : l'origine sert au contrôle CORS, mais ni l'IP ni aucune
+  // donnée d'organisme ne sont stockées ou journalisées côté serveur.
   const origin = req.headers.origin || 'unknown';
 
   stats.totalConnections++;
-  console.log(`✅ Nouveau pair connecté: ${clientIp} (origine: ${origin})`);
+  console.log(`✅ Nouveau pair connecté (origine: ${origin})`);
 
   let peerId = null;
   let pingInterval;
@@ -154,34 +155,29 @@ wss.on('connection', (ws, req) => {
             }
           }
 
+          // Vie privée : on ne conserve QUE le peerId (identifiant de routage
+          // éphémère). Aucun organisme, aucune IP. Les données d'organisme
+          // ne transitent qu'en pair-à-pair chiffré (DataChannel WebRTC).
           peers.set(peerId, {
             ws: ws,
-            organism: data.organism,
-            lastSeen: Date.now(),
-            origin: origin,
-            ip: clientIp
+            lastSeen: Date.now()
           });
 
           stats.peersConnected = peers.size;
 
           console.log(`📢 Pair annoncé: ${peerId}`);
-          if (data.organism) {
-            console.log(`   Nom: ${data.organism.name || 'Sans nom'}`);
-            console.log(`   Génération: ${data.organism.generation || 0}`);
-            console.log(`   Conscience: ${Math.round((data.organism.consciousness || 0) * 100)}%`);
-          }
 
-          // Notifier tous les autres pairs
-          broadcastToPeers(data, peerId);
+          // Notifier les autres pairs de la présence (peerId uniquement)
+          broadcastToPeers({ type: 'announce', peerId, timestamp: Date.now() }, peerId);
 
           // Envoyer la liste des pairs existants au nouveau
           sendPeersList(ws, peerId);
           break;
 
         case 'discovery':
-          // Diffuser la découverte aux autres
+          // Relayer uniquement l'existence du pair, sans charge utile
           if (peerId) {
-            broadcastToPeers(data, peerId);
+            broadcastToPeers({ type: 'discovery', peerId, timestamp: Date.now() }, peerId);
             stats.messagesRelayed++;
           }
           break;
@@ -287,7 +283,7 @@ function broadcastToPeers(message, excludePeerId) {
   }
 }
 
-// Envoyer la liste des pairs existants
+// Envoyer la liste des pairs existants (peerId uniquement — pas d'organisme)
 function sendPeersList(ws, excludePeerId) {
   const peersList = [];
 
@@ -295,7 +291,6 @@ function sendPeersList(ws, excludePeerId) {
     if (id !== excludePeerId) {
       peersList.push({
         peerId: id,
-        organism: peer.organism,
         lastSeen: peer.lastSeen
       });
     }

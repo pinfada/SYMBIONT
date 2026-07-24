@@ -501,7 +501,7 @@ export class FrequencyCommunionRitual implements IRitual {
             const shouldBypass = bypassPatterns.some(p => p.test(urlStr));
 
             if (shouldBypass && window.symbiontP2P) {
-              console.log('[SYMBIONT] Routing through P2P:', urlStr);
+              // Vie privée : ne jamais journaliser l'URL routée
               const route = routes.sort((a, b) => b.reliability - a.reliability)[0];
 
               return window.symbiontP2P.relay({

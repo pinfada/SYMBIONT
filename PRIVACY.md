@@ -1,6 +1,6 @@
 # 🔒 Politique de Confidentialité - SYMBIONT
 
-**Dernière mise à jour : 1er février 2026**
+**Dernière mise à jour : 24 juillet 2026**
 
 ## 📋 Table des Matières
 
@@ -18,7 +18,9 @@
 
 SYMBIONT ("nous", "notre", "nos") est une extension Chrome qui respecte profondément votre vie privée. Cette politique de confidentialité explique comment nous traitons les informations lorsque vous utilisez notre extension.
 
-**Principe fondamental : SYMBIONT fonctionne entièrement localement sur votre navigateur. Nous ne collectons, ne stockons et ne transmettons AUCUNE donnée personnelle vers des serveurs externes.**
+**Principe fondamental : SYMBIONT fonctionne localement sur votre navigateur. Aucune donnée personnelle, comportementale (URLs, navigation) ni aucun état d'organisme n'est transmis à un serveur.**
+
+La seule exception est la fonctionnalité **P2P optionnelle** : si vous l'activez, un serveur de *signaling* (relais de mise en relation) est contacté pour permettre à deux navigateurs de se découvrir. Ce relais ne reçoit **qu'un identifiant de routage éphémère** (`peerId`) et les messages techniques d'établissement de connexion (SDP/ICE). Il ne reçoit, ni ne stocke, ni ne journalise votre organisme, vos traits, votre ADN, votre IP ou votre activité. Une fois les pairs connectés, tout échange se fait **directement de navigateur à navigateur**, chiffré (WebRTC/DTLS + chiffrement applicatif de bout en bout).
 
 ## Données Collectées
 
@@ -40,7 +42,7 @@ SYMBIONT traite les données suivantes **exclusivement sur votre appareil** :
 #### 3. **État de l'Organisme**
 - **Données** : Traits de personnalité, niveau d'énergie, génération, mutations
 - **Format** : Données numériques abstraites sans lien avec votre identité
-- **Stockage** : Chrome Storage API local, chiffré avec AES-256-GCM
+- **Stockage** : IndexedDB local, **chiffré au repos avec AES-256-GCM** (clé générée localement via WebCrypto, jamais transmise). Un cache d'affichage non sensible (traits/génération) peut aussi résider en `localStorage` local, jamais transmis.
 
 #### 4. **Détection d'Éléments Web**
 - **Vision Spectrale** : Analyse des éléments DOM invisibles (trackers, pixels)
@@ -56,8 +58,9 @@ SYMBIONT traite les données suivantes **exclusivement sur votre appareil** :
 - ❌ Cookies ou identifiants de session
 - ❌ Données bancaires ou financières
 - ❌ Localisation géographique
-- ❌ Adresse IP
 - ❌ Captures d'écran ou enregistrements
+
+> **Note sur l'adresse IP (P2P uniquement)** : toute connexion réseau expose techniquement votre IP au serveur contacté et aux serveurs STUN (Google) utilisés pour la traversée de NAT WebRTC. Le serveur de signaling de SYMBIONT **ne stocke ni ne journalise aucune IP**. Si vous n'activez pas le P2P, aucun serveur n'est contacté et votre IP n'est exposée à personne via l'extension.
 
 ## Utilisation des Données
 
@@ -99,10 +102,10 @@ SYMBIONT traite les données suivantes **exclusivement sur votre appareil** :
 
 ### 📍 Localisation des Données
 
-- **Stockage Principal** : Chrome Storage API (local)
-- **Cache Temporaire** : IndexedDB (local, rotation 7 jours)
+- **Stockage Principal** : IndexedDB local (chiffré AES-256-GCM)
+- **Clés & préférences** : Chrome Storage API (local, sandboxé)
 - **Mémoire** : RAM uniquement pendant l'utilisation
-- **Serveurs Externes** : AUCUN
+- **Serveurs Externes** : aucun, sauf le relais de signaling P2P si vous activez cette fonction (peerId éphémère uniquement)
 
 ## Partage des Données
 
@@ -110,20 +113,26 @@ SYMBIONT traite les données suivantes **exclusivement sur votre appareil** :
 
 Si vous activez le partage P2P :
 
-1. **Ce qui est partagé** :
+1. **Ce qui est partagé (directement entre pairs, chiffré)** :
    - Code d'invitation (UUID aléatoire)
    - Traits de l'organisme (valeurs numériques)
    - Génération et mutations (nombres)
 
-2. **Ce qui n'est PAS partagé** :
+2. **Ce qui transite par le serveur de signaling** :
+   - Uniquement un `peerId` de routage éphémère + les messages techniques SDP/ICE
+   - **Jamais** l'organisme, les traits, l'ADN ni aucune activité
+
+3. **Ce qui n'est PAS partagé** :
    - Aucune donnée personnelle
    - Aucun historique de navigation
    - Aucune information identifiable
 
-3. **Contrôle** :
+4. **Contrôle** :
    - Activation manuelle uniquement
    - Révocation possible à tout moment
-   - Connexions chiffrées de bout en bout
+   - Connexions chiffrées de bout en bout (WebRTC/DTLS + couche applicative)
+
+> **Identifiant P2P** : un `peerId` (UUID aléatoire) est généré et conservé localement pour le routage. Il ne contient aucune information personnelle mais reste stable tant que vous ne réinitialisez pas l'extension.
 
 ### 🚫 Tiers
 
@@ -172,10 +181,10 @@ SYMBIONT **n'utilise PAS de cookies** pour le tracking ou l'analyse.
 
 ### 📊 Technologies de Stockage
 
-- **Chrome Storage API** : État de l'organisme (local uniquement)
-- **IndexedDB** : Cache temporaire (local uniquement)
-- **SessionStorage** : Données de session (effacées à la fermeture)
-- **Pas de localStorage** : Pour éviter les fuites cross-origin
+- **IndexedDB** : État de l'organisme et données comportementales, **chiffrés au repos (AES-256-GCM)** ; les URLs ne sont stockées que sous forme de **hash SHA-256** (jamais en clair)
+- **Chrome Storage API** : clés de chiffrement et préférences (local, sandboxé)
+- **localStorage** : caches d'affichage locaux (état d'organisme non sensible, `peerId` de routage, contacts P2P) — **jamais transmis à un serveur**
+- **SessionStorage** : données de session (effacées à la fermeture)
 
 ## Enfants
 
@@ -218,11 +227,11 @@ Pour les résidents de l'UE, vous pouvez contacter votre autorité locale :
 
 ### 📊 Statistiques de Confidentialité
 
-- **Données collectées** : 0 KB de données personnelles
-- **Serveurs externes contactés** : 0
+- **Données personnelles collectées** : 0 KB
+- **Données comportementales/organisme transmises à un serveur** : 0
+- **Serveurs contactés** : uniquement le relais de signaling **si le P2P est activé** (peerId éphémère seulement) ; sinon 0
 - **Trackers tiers** : 0
 - **Cookies utilisés** : 0
-- **Dernière fuite de données** : Jamais
 
 ## Résumé Exécutif
 
@@ -234,9 +243,13 @@ Pour les résidents de l'UE, vous pouvez contacter votre autorité locale :
 
 ### ❌ CE QUE SYMBIONT NE FAIT PAS
 - ❌ Ne collecte pas de données personnelles
-- ❌ Ne transmet rien vers des serveurs
+- ❌ Ne transmet ni vos URLs, ni votre navigation, ni votre organisme à un serveur
 - ❌ Ne vend pas vos données
 - ❌ Ne vous track pas
+
+### 🧩 Permissions et capacités à connaître
+- **Détection d'extensions** (permission `management`) : la fonction d'organisme « conscient » compte et classe les extensions installées comme signaux d'environnement. Ce traitement est **entièrement local** et n'est jamais transmis. Vous pouvez ignorer cette fonction ; aucune liste d'extensions ne quitte votre appareil.
+- **Injection de content script** (`<all_urls>`) : nécessaire à l'observation locale du DOM (Vision Spectrale, résonance). Aucune donnée de page n'est transmise.
 
 ## Déclaration Finale
 
