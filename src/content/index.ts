@@ -8,6 +8,7 @@ import { InteractionCollector } from './collectors/InteractionCollector';
 import { DOMAnalyzer } from './observers/DOMAnalyzer';
 import { DOMResonanceSensor } from './observers/DOMResonanceSensor';
 import { ScrollTracker } from './observers/ScrollTracker';
+import { ThreatObserver } from './observers/ThreatObserver';
 import { AttentionMonitor } from './monitors/AttentionMonitor';
 import { logger } from '@shared/utils/secureLogger';
 // Import du gestionnaire de contre-mesures pour les rituels
@@ -42,6 +43,7 @@ class ContentScript {
   private domAnalyzer: DOMAnalyzer;
   private domResonanceSensor: DOMResonanceSensor;
   private scrollTracker: ScrollTracker;
+  private threatObserver: ThreatObserver;
   private attentionMonitor: AttentionMonitor;
   
   // État local
@@ -72,6 +74,7 @@ class ContentScript {
     this.domAnalyzer = new DOMAnalyzer();
     this.domResonanceSensor = new DOMResonanceSensor();
     this.scrollTracker = new ScrollTracker(this.messageBus);
+    this.threatObserver = new ThreatObserver();
     this.attentionMonitor = new AttentionMonitor(this.messageBus);
     
     this.initialize();
@@ -130,6 +133,8 @@ class ContentScript {
 
     // Démarrage du capteur de résonance DOM
     this.domResonanceSensor.start();
+    this.threatObserver.start();
+    this.listenFingerprintDetector();
     logger.info('🌊 DOM Resonance Sensor activated');
   }
 
@@ -224,6 +229,46 @@ class ContentScript {
     } catch {
       // Jamais bloquer la page pour un murmure
     }
+  }
+
+  /**
+   * Écoute les signaux du détecteur de fingerprinting (monde MAIN) transmis
+   * par window.postMessage, et les relaie au background comme THREAT_SIGNAL
+   * (source css_fingerprint). Seul le FAIT qu'une API d'identification a été
+   * appelée est transmis — jamais le contenu lu.
+   */
+  private listenFingerprintDetector(): void {
+    window.addEventListener('message', (event: MessageEvent) => {
+      if (event.source !== window) return;
+      const data = event.data;
+      if (!data || data.__symbiont !== 'symbiont-fp' || typeof data.kind !== 'string') return;
+
+      const metadata: Record<string, unknown> = {};
+      if (data.kind === 'canvasRead') {
+        metadata.canvasRead = true;
+        metadata.canvasSmall = data.canvasSmall === true;
+      } else if (data.kind === 'audioFingerprint') {
+        metadata.audioFingerprint = true;
+      } else if (data.kind === 'webglProbe') {
+        metadata.webglProbe = true;
+      } else {
+        return;
+      }
+
+      try {
+        chrome.runtime.sendMessage({
+          type: 'THREAT_SIGNAL',
+          payload: {
+            source: 'css_fingerprint',
+            metadata,
+            url: window.location.href,
+            timestamp: Date.now()
+          }
+        });
+      } catch {
+        /* contexte invalidé */
+      }
+    });
   }
 
   private setupPerformanceObserver(): void {

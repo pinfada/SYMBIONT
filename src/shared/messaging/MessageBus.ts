@@ -39,6 +39,8 @@ export enum MessageType {
   RUN_DREAM_NOW = 'RUN_DREAM_NOW',
   // Chuchotement contextuel injecté dans la page (perception de structure invisible)
   WHISPER = 'WHISPER',
+  // Signal de menace observé sur la page (alimente le Cortex)
+  THREAT_SIGNAL = 'THREAT_SIGNAL',
   CONTEXTUAL_INVITATION = 'CONTEXTUAL_INVITATION',
   SECRET_RITUAL_TRIGGERED = 'SECRET_RITUAL_TRIGGERED',
   SECRET_CODE_ENTERED = 'SECRET_CODE_ENTERED',

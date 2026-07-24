@@ -21,6 +21,11 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Apprentissage hebbien** : passe périodique nourrie des comportements réels, appliquant des mutations de traits à l'organisme canonique.
 - **Sommeil Analytique branché** : le cycle circadien est démarré dans le background (`circadianCycle.start()`), déclenchant réellement la synthèse onirique (vectorisation 32D → clustering par résonance adaptative → identification d'entités d'ombre cross-domain). Auparavant tout le moteur existait mais n'était jamais démarré (`OrganismVitalSystems`, seul appelant, non instancié).
 
+### 🛡️ Détection de menaces réellement alimentée
+- **Capteurs de menace côté page** (`ThreatObserver`, monde isolé) : scripts injectés dynamiquement (eval/Function/atob, obfuscation, chaînes encodées, scripts tiers), iframes cachés, requêtes réseau tierces / gros payloads / beacons. Le Cortex recevait jusqu'ici uniquement des signaux de résonance DOM ; ses règles (injection, obfuscation, exfiltration…) peuvent enfin se déclencher.
+- **Détecteur de fingerprinting en monde MAIN** (`fp-detector.js`, content script `world: MAIN`) : hooke `canvas.toDataURL/getImageData`, `WebGL getParameter` (UNMASKED renderer/vendor), `AudioContext` → détecte les tentatives d'identification par empreinte. Ne lit jamais le contenu, signale seulement l'appel.
+- **Câblage menace → Cortex → communication** : chaque signal devient un `CortexSignal` (source + métadonnées) soumis à l'analyse ; les menaces **fortes et immédiates** (fingerprinting canvas/audio, script obfusqué, iframe caché tiers) sont chuchotées dans la page, avec seuils conservateurs (canvas : petit canvas uniquement) et cooldown de 30 min par domaine+catégorie pour éviter les faux positifs et le bruit.
+
 ### 🗣️ Communication autonome (le symbiont parle seul, sobrement)
 - **Fin du bruit** : suppression des murmures poétiques aléatoires émis à chaque visite (« Pourquoi cette boucle ? ») — pollution sans lien avec la perception réelle.
 - **Chuchotement contextuel dans la page** : quand tu navigues sur un site appartenant à une infrastructure invisible déjà perçue par le rêve, le symbiont chuchote un message discret et auto-disparaissant DANS la page (Shadow DOM isolé), sans ouvrir le popup ni aucun bouton. Cooldown de 6 h par cluster pour ne jamais polluer.

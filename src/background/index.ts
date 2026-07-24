@@ -105,6 +105,8 @@ class BackgroundService {
   private notifiedClusters: Set<string> = new Set();
   private readonly SHADOW_HIGH_IMPACT = 0.66;   // seuil de notification système
   private readonly WHISPER_COOLDOWN = 6 * 60 * 60 * 1000; // 6h par cluster
+  private threatWhisperCooldown: Map<string, number> = new Map();
+  private readonly THREAT_WHISPER_COOLDOWN = 30 * 60 * 1000; // 30 min par domaine+type
 
   constructor() {
     this.messageBus = new MessageBus('background');
@@ -394,6 +396,87 @@ class BackgroundService {
       });
       return;
     }
+  }
+
+  /**
+   * Traite un signal de menace observé par le content (script injecté,
+   * obfuscation, iframe caché, fingerprinting, réseau tiers). Il est soumis
+   * au Cortex (source réelle enfin fournie) et, s'il est fort et immédiat,
+   * chuchoté à l'utilisateur sur la page concernée.
+   */
+  private async handleThreatSignal(payload: any): Promise<void> {
+    const source = payload.source as string;
+    const metadata = (payload.metadata || {}) as Record<string, unknown>;
+    let domain = '';
+    let urlHash = '';
+    try {
+      domain = new URL(payload.url).hostname;
+      urlHash = await this.security.hash(domain);
+    } catch { /* url absente */ }
+
+    // 1) Alimenter le Cortex avec un vrai CortexSignal (source + métadonnées)
+    if (this.cortexOrchestrator) {
+      const signal: CortexSignal = {
+        id: createCortexSignalId(),
+        timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : Date.now(),
+        source: (['dom_mutation', 'script_injection', 'network_request', 'behavior_anomaly', 'css_fingerprint', 'webrtc_probe'].includes(source)
+          ? source
+          : 'behavior_anomaly') as CortexSignal['source'],
+        tabId: typeof payload.tabId === 'number' ? payload.tabId : -1,
+        payload: { type: 'threat_observation', urlHash, metadata },
+        resonanceSnapshot: { level: 0, state: 'normal', shadowMutationRatio: 0, jitter: 0 }
+      };
+      try {
+        await this.cortexOrchestrator.processSignal(signal);
+      } catch (error) {
+        logger.error('[BackgroundService] Cortex processSignal (threat) failed:', error);
+      }
+    }
+
+    // 2) Décider si c'est une menace FORTE à signaler tout de suite à l'utilisateur.
+    // Seuils conservateurs pour éviter les faux positifs (beaucoup de sites ont
+    // des scripts tiers ; on ne parle que pour l'obfuscation, l'eval, les
+    // iframes cachés tiers et le fingerprinting avéré).
+    const whisper = this.threatWhisperMessage(metadata);
+    if (whisper && domain) {
+      const key = `${domain}|${whisper.category}`;
+      const now = Date.now();
+      if (now - (this.threatWhisperCooldown.get(key) || 0) >= this.THREAT_WHISPER_COOLDOWN) {
+        this.threatWhisperCooldown.set(key, now);
+        void this.messageBus.send({
+          type: MessageType.WHISPER,
+          payload: { text: whisper.text, domain, severity: whisper.severity }
+        });
+      }
+    }
+  }
+
+  /**
+   * Traduit des métadonnées de menace en message utilisateur — uniquement pour
+   * les signaux forts et concrets. Retourne null si rien ne mérite d'alerter.
+   */
+  private threatWhisperMessage(m: Record<string, unknown>): { text: string; category: string; severity: string } | null {
+    // Canvas : on ne chuchote que pour un petit canvas (signature typique du
+    // fingerprinting) ; les gros canvas sont probablement des usages légitimes.
+    if (m.canvasRead && m.canvasSmall) {
+      return { text: "Ce site lit une empreinte de ton navigateur (canvas) pour t'identifier de façon persistante.", category: 'fingerprint', severity: 'high' };
+    }
+    if (m.audioFingerprint) {
+      return { text: "Ce site sonde ton moteur audio pour t'identifier (fingerprinting).", category: 'fingerprint', severity: 'high' };
+    }
+    if (m.webglProbe) {
+      return { text: "Ce site interroge ta carte graphique pour t'identifier (fingerprinting WebGL).", category: 'fingerprint', severity: 'normal' };
+    }
+    if (typeof m.obfuscationDepth === 'number' && m.obfuscationDepth >= 2) {
+      return { text: "Un script fortement obfusqué s'exécute sur cette page — prudence.", category: 'obfuscation', severity: 'high' };
+    }
+    if (m.hasEval) {
+      return { text: "Un script de cette page exécute du code généré dynamiquement (eval).", category: 'eval', severity: 'normal' };
+    }
+    if (m.hiddenIframe && m.isThirdParty) {
+      return { text: "Un cadre invisible d'un tiers est chargé en arrière-plan sur ce site.", category: 'hidden_iframe', severity: 'normal' };
+    }
+    return null;
   }
 
   /**
@@ -706,6 +789,14 @@ class BackgroundService {
       const { type, timestamp, target, data } = (message as any).payload;
       this.events.push({ type, timestamp, target, ...data });
       this.analyzeContextualPatterns();
+    });
+
+    // Signal de menace observé sur une page → alimente le Cortex ET, si la
+    // menace est forte et immédiate, chuchote dans la page.
+    this.messageBus.on(MessageType.THREAT_SIGNAL, async (message: MessageEvent | unknown) => {
+      const payload = (message as any)?.payload;
+      if (!payload?.source) return;
+      await this.handleThreatSignal(payload);
     });
 
     // Réveil Lucide : le popup demande le dernier rapport de vigilance

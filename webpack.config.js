@@ -9,11 +9,13 @@ module.exports = {
   mode: process.env.NODE_ENV || 'production',
   entry: {
     content: './src/content/index.ts',
-    popup: './src/popup/index.tsx'
+    popup: './src/popup/index.tsx',
+    'fp-detector': './src/content/fp-detector.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name]/index.js',
+    // fp-detector est chargé comme content script MAIN → fichier à la racine.
+    filename: (pathData) => (pathData.chunk.name === 'fp-detector' ? 'fp-detector.js' : '[name]/index.js'),
     clean: false
   },
   resolve: {
