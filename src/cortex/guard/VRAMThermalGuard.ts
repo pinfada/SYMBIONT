@@ -193,8 +193,10 @@ export class VRAMThermalGuard {
         this.metricsProvider.getCPUUsage(),
         this.metricsProvider.getMemoryUsage(),
       ]);
+      // cpu et memory sont déjà normalisés (0-1) par le metricsProvider ;
+      // ne pas re-diviser (sinon la pression mémoire est écrasée à ~0).
       this.lastCpuLoad = cpu;
-      this.lastMemoryPressure = memory / 100;
+      this.lastMemoryPressure = memory;
     } catch {
       // Silencieux — les anciennes valeurs restent valides
     }

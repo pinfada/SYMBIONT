@@ -170,11 +170,22 @@ export class OracleModel {
   private ensureWorker(): Worker | null {
     if (this.worker && this.workerReady) return this.worker;
 
+    // Un service worker MV3 ne peut pas créer de Worker imbriqué : dans ce
+    // contexte (pas de constructeur Worker, ou pas de chrome.runtime.getURL),
+    // on renvoie null → OracleModel bascule sur son analyse main-thread.
+    if (typeof Worker === 'undefined') {
+      this.workerReady = false;
+      return null;
+    }
+
     try {
-      this.worker = new Worker(
-        new URL('./CortexWorker', import.meta.url),
-        { type: 'module' },
-      );
+      // Câblage aligné sur neural-worker : bundle classique construit par
+      // webpack.workers.js (dist/cortex-worker.js), chargé via getURL.
+      const runtime = (globalThis as any).chrome?.runtime;
+      const workerUrl = runtime?.getURL
+        ? runtime.getURL('cortex-worker.js')
+        : 'cortex-worker.js';
+      this.worker = new Worker(workerUrl);
 
       this.worker.onmessage = (event: MessageEvent<CortexWorkerResponse>) => {
         this.handleWorkerResponse(event.data);

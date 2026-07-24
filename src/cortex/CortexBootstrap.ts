@@ -5,7 +5,7 @@
  * puis les branche sur le MessageBus existant.
  */
 
-import { MessageBus, MessageType } from '@shared/messaging/MessageBus';
+import { MessageType } from '@shared/messaging/MessageBus';
 import { CortexOrchestrator, CortexOrchestratorDeps } from './CortexOrchestrator';
 import { DynamicThresholdEngine } from './threshold/DynamicThresholdEngine';
 import { DraftModel } from './models/DraftModel';
@@ -20,8 +20,14 @@ import { CognitiveTelemetry } from './telemetry/CognitiveTelemetry';
 import { PolicyEngine } from './policy/PolicyEngine';
 import { CortexSignal } from './CortexTypes';
 
+// Type structural minimal : accepte aussi bien le MessageBus de core que
+// celui de shared (le Cortex n'utilise que .on pour l'abonnement CORTEX_SIGNAL).
+interface CortexMessageBusLike {
+  on(type: MessageType, handler: (msg: unknown) => void | Promise<void>): void;
+}
+
 interface CortexBootstrapDeps {
-  messageBus: MessageBus;
+  messageBus: CortexMessageBusLike;
   securityManager: { encryptSensitiveData(data: unknown): Promise<string> };
   storage: { store(key: string, data: unknown): Promise<void>; retrieve(key: string): Promise<unknown> };
   metricsProvider: { getCPUUsage(): Promise<number>; getMemoryUsage(): Promise<number> };

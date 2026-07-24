@@ -26,6 +26,14 @@ import { bulkheadManager } from '../shared/patterns/BulkheadManager';
 import { initializeRituals, RitualBootstrap } from '../core/rituals/RitualBootstrap';
 import { RitualType } from '../core/rituals/interfaces/IRitual';
 
+// --- Import du Cortex (détection cognitive de menaces) ---
+import { CortexBootstrap } from '../cortex/CortexBootstrap';
+import type { CortexOrchestrator } from '../cortex/CortexOrchestrator';
+import { createCortexSignalId } from '../cortex/CortexTypes';
+import type { CortexSignal } from '../cortex/CortexTypes';
+import RealMetricsService from '../core/services/RealMetricsService';
+import { backpressureController } from '../core/metabolic/BackpressureController';
+
 // --- Instanciation des modules sociaux (Phase 3) ---
 import { DistributedOrganismNetwork } from '../social/distributed-organism-network';
 import { CollectiveIntelligence } from '../social/collective-intelligence';
@@ -76,6 +84,8 @@ class BackgroundService {
   private initialized: boolean = false;
   private networkLatencyCollector: NetworkLatencyCollector;
   private ritualBootstrap: RitualBootstrap | null = null;
+  private cortex: CortexBootstrap | null = null;
+  private cortexOrchestrator: CortexOrchestrator | null = null;
 
   constructor() {
     this.messageBus = new MessageBus('background');
@@ -203,6 +213,9 @@ class BackgroundService {
       // Démarrer les health checks automatiques
       healthCheckManager.start();
 
+      // Démarrer le Cortex (détection de menaces) — non bloquant
+      void this.startCortex();
+
       // Initialiser le système de rituels SI l'organisme est actif
       if (this.activated && this.organism) {
         try {
@@ -230,6 +243,75 @@ class BackgroundService {
       } catch (handlerError) {
         logger.error('Failed to setup message handlers:', handlerError);
       }
+    }
+  }
+
+  /**
+   * Démarre le Cortex (détection cognitive de menaces). Non bloquant et
+   * défensif : c'est un sous-système auxiliaire, son échec ne doit pas
+   * empêcher le fonctionnement de l'organisme. L'Oracle tourne en fallback
+   * main-thread (un service worker MV3 ne peut pas créer de Worker imbriqué).
+   */
+  private async startCortex(): Promise<void> {
+    if (this.cortex) return;
+    try {
+      const cortex = new CortexBootstrap();
+      this.cortexOrchestrator = await cortex.initialize({
+        messageBus: this.messageBus,
+        securityManager: this.security,
+        storage: { store: setStorage, retrieve: getStorage },
+        metricsProvider: RealMetricsService.getInstance(),
+        backpressure: backpressureController
+      });
+      this.cortex = cortex;
+      logger.info('[BackgroundService] Cortex engine started');
+    } catch (error) {
+      logger.error('[BackgroundService] Cortex failed to start (non-critical):', error);
+    }
+  }
+
+  /**
+   * Construit un CortexSignal à partir d'un événement de résonance DOM réel
+   * et le soumet à l'orchestrateur pour analyse (draft → oracle).
+   */
+  private async feedCortexResonance(payload: any): Promise<void> {
+    if (!this.cortexOrchestrator) return;
+    try {
+      const totalMutations = payload?.metrics?.totalMutations ?? 0;
+      const shadowMutations = payload?.metrics?.shadowMutations ?? 0;
+      const stateLevel = payload?.state?.level;
+      const validStates = ['quiet', 'normal', 'active', 'critical'];
+
+      let urlHash = '';
+      try {
+        if (payload?.url) urlHash = await this.security.hash(new URL(payload.url).hostname);
+      } catch { /* url absente/invalide : urlHash reste vide */ }
+
+      const signal: CortexSignal = {
+        id: createCortexSignalId(),
+        timestamp: payload?.timestamps?.detected ?? Date.now(),
+        source: 'dom_mutation',
+        tabId: typeof payload?.tabId === 'number' ? payload.tabId : -1,
+        payload: {
+          type: 'dom_resonance',
+          mutationCount: totalMutations,
+          urlHash,
+          metadata: {
+            shadowActivity: payload?.shadowActivity ?? 0,
+            jitter: payload?.jitter ?? 0
+          }
+        },
+        resonanceSnapshot: {
+          level: payload?.resonance ?? 0,
+          state: validStates.includes(stateLevel) ? stateLevel : 'normal',
+          shadowMutationRatio: totalMutations > 0 ? shadowMutations / totalMutations : 0,
+          jitter: payload?.metrics?.averageJitter ?? payload?.jitter ?? 0
+        }
+      };
+
+      await this.cortexOrchestrator.processSignal(signal);
+    } catch (error) {
+      logger.error('[BackgroundService] feedCortexResonance failed:', error);
     }
   }
 
@@ -577,6 +659,9 @@ class BackgroundService {
             neuralResonanceSignal = neuralState?.signal ?? null;
           }
         }
+
+        // Soumettre l'événement au Cortex pour analyse de menace (draft → oracle)
+        void this.feedCortexResonance((message as any).payload);
 
         // Notifier le popup de l'état de résonance
         await resilientBus.send({
