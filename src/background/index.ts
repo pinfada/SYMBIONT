@@ -7,7 +7,6 @@ import { StorageDebouncer } from '../core/storage/StorageDebouncer';
 // import { NavigationObserver } from '../content/observers/NavigationObserver'; // Déplacé vers content script
 import { OrganismMutation } from '../shared/types/organism';
 import { InvitationService } from './services/InvitationService';
-import { MurmureService } from './services/MurmureService';
 import { PatternDetector, SequenceEvent } from '../core/PatternDetector';
 import { SecurityManager } from './SecurityManager';
 import { OrganismFactory } from '../core/factories/OrganismFactory';
@@ -87,7 +86,6 @@ class BackgroundService {
   // private _navigationObserver: NavigationObserver;
   public organism: OrganismState | null = null;
   private invitationService: InvitationService | null = null;
-  private murmureService: MurmureService;
   private activated: boolean = false;
   private events: SequenceEvent[] = [];
   private collectiveThresholds = [10, 50, 100, 250, 500];
@@ -102,10 +100,14 @@ class BackgroundService {
   private hebbian: HebbieanLearningSystem = new HebbieanLearningSystem();
   private geneticMutator: GeneticMutator = new GeneticMutator();
   private circadianStarted: boolean = false;
+  // Clusters d'infrastructure invisible perçus (id → domaines + impact + dernier chuchotement)
+  private shadowClusters: Map<string, { domains: string[]; impact: number; confidence: number; lastWhisper: number }> = new Map();
+  private notifiedClusters: Set<string> = new Set();
+  private readonly SHADOW_HIGH_IMPACT = 0.66;   // seuil de notification système
+  private readonly WHISPER_COOLDOWN = 6 * 60 * 60 * 1000; // 6h par cluster
 
   constructor() {
     this.messageBus = new MessageBus('background');
-    this.murmureService = new MurmureService();
     this._organismFactory = new OrganismFactory();
     this.networkLatencyCollector = new NetworkLatencyCollector();
     // N'initialise PAS immédiatement - attendre le premier message
@@ -277,12 +279,17 @@ class BackgroundService {
       await circadianCycle.start();
       this.circadianStarted = true;
 
-      // Réveil Lucide : à chaque synthèse, diffuser le rapport de vigilance
+      // Charger la mémoire des clusters déjà notifiés (pas de re-notification)
+      try {
+        const saved = await getStorage('symbiont_notified_clusters');
+        if (Array.isArray(saved)) this.notifiedClusters = new Set(saved as string[]);
+      } catch { /* premier démarrage */ }
+
+      // Réveil Lucide : à chaque synthèse, diffuser le rapport ET décider,
+      // de façon autonome, s'il faut alerter l'utilisateur (sans qu'il agisse).
       circadianCycle.onDreamReport((report: DreamReport) => {
-        void resilientBus.send({
-          type: MessageType.DREAM_REPORT,
-          payload: report
-        });
+        void resilientBus.send({ type: MessageType.DREAM_REPORT, payload: report });
+        void this.handleShadowPerception(report);
       });
 
       logger.info('[BackgroundService] Circadian dream cycle started');
@@ -312,6 +319,80 @@ class BackgroundService {
       logger.info('[BackgroundService] Cortex engine started');
     } catch (error) {
       logger.error('[BackgroundService] Cortex failed to start (non-critical):', error);
+    }
+  }
+
+  /**
+   * Traite un rapport de synthèse onirique : met à jour la carte des clusters
+   * d'infrastructure invisible perçus, et — de façon autonome — notifie
+   * l'utilisateur UNIQUEMENT pour une découverte nouvelle à fort impact.
+   * L'utilisateur n'a rien à faire : le symbiont décide seul quand parler.
+   */
+  private async handleShadowPerception(report: DreamReport): Promise<void> {
+    if (!report?.shadowEntities?.length) return;
+
+    for (const entity of report.shadowEntities) {
+      const existing = this.shadowClusters.get(entity.id);
+      this.shadowClusters.set(entity.id, {
+        domains: entity.domains || [],
+        impact: entity.impact,
+        confidence: entity.confidence,
+        lastWhisper: existing?.lastWhisper ?? 0
+      });
+
+      // Notification système : rare, réservée aux découvertes NOUVELLES à fort
+      // impact, et dédupliquée à vie par cluster (jamais deux fois le même).
+      const isNew = !this.notifiedClusters.has(entity.id);
+      const strong = entity.impact >= this.SHADOW_HIGH_IMPACT && entity.confidence >= 0.7;
+      if (isNew && strong && (entity.domains?.length || 0) >= 2) {
+        this.notifiedClusters.add(entity.id);
+        try {
+          await setStorage('symbiont_notified_clusters', Array.from(this.notifiedClusters));
+        } catch { /* best-effort */ }
+
+        if (typeof chrome !== 'undefined' && chrome.notifications?.create) {
+          chrome.notifications.create(`symbiont_shadow_${entity.id}`, {
+            type: 'basic',
+            iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+            title: 'SYMBIONT · structure invisible perçue',
+            message: `${entity.domains.length} sites que tu as croisés partagent la même infrastructure de surveillance cachée.`,
+            priority: 1
+          });
+        }
+        logger.info('[BackgroundService] Shadow infrastructure surfaced to user', {
+          domains: entity.domains.length,
+          impact: entity.impact
+        });
+      }
+    }
+  }
+
+  /**
+   * Si le domaine courant appartient à un cluster d'ombre perçu, le symbiont
+   * chuchote dans la page — au moment où c'est pertinent — sans bouton ni
+   * ouverture du popup. Cooldown par cluster pour ne jamais polluer.
+   */
+  private maybeWhisperShadow(domain: string): void {
+    if (!domain) return;
+    const now = Date.now();
+
+    for (const cluster of this.shadowClusters.values()) {
+      if (!cluster.domains.includes(domain)) continue;
+      if (now - cluster.lastWhisper < this.WHISPER_COOLDOWN) return;
+
+      cluster.lastWhisper = now;
+      const others = Math.max(0, cluster.domains.length - 1);
+      const text = others > 0
+        ? `Ce site partage une infrastructure invisible avec ${others} autre${others > 1 ? 's' : ''} que tu as croisé${others > 1 ? 's' : ''}.`
+        : `Ce site porte une signature de surveillance que j'ai déjà perçue ailleurs.`;
+
+      // Envoi vers le content script du (des) onglet(s) concerné(s) ; le content
+      // n'affiche que si le domaine correspond réellement à la page.
+      void this.messageBus.send({
+        type: MessageType.WHISPER,
+        payload: { text, domain, severity: cluster.impact >= this.SHADOW_HIGH_IMPACT ? 'high' : 'normal' }
+      });
+      return;
     }
   }
 
@@ -586,6 +667,12 @@ class BackgroundService {
       // sinon la navigation resterait sans effet tant que le popup n'a pas
       // été ouvert. On charge depuis le stockage ou on en crée un.
       await this.ensureOrganism();
+
+      // Perception au moment pertinent : si ce domaine appartient à une
+      // infrastructure invisible déjà perçue, le symbiont chuchote dans la page.
+      try {
+        this.maybeWhisperShadow(new URL(url).hostname);
+      } catch { /* url invalide */ }
 
       // Update organism based on behavior
       await this.updateOrganismTraits(url, title);
@@ -1275,12 +1362,12 @@ class BackgroundService {
         mutations: await this.storage!.getRecentMutations(5),
       },
     });
-    // Générer et envoyer un murmure contextuel
-    const murmure = this.murmureService.generateMurmur(pattern);
-    await resilientBus.send({
-      type: MessageType.MURMUR,
-      payload: { text: murmure, pattern, timestamp: Date.now() }
-    });
+    // NOTE: le murmure poétique aléatoire à chaque visite a été retiré.
+    // Le symbiont ne parle plus « pour meubler » : sa communication est
+    // réservée à la perception de la structure invisible du web (chuchotement
+    // contextuel + notification rare), décidée de façon autonome. `pattern`
+    // reste utilisé pour l'évolution/les rituels, pas pour du bruit.
+    void pattern;
   }
 
   private async hasVisitedDomain(domain: string): Promise<boolean> {

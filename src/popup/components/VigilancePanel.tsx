@@ -38,13 +38,11 @@ const VigilancePanel: React.FC = () => {
   const messaging = useMessaging();
   const [report, setReport] = useState<DreamReport | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dreaming, setDreaming] = useState(false);
 
   useEffect(() => {
     const handler = (message: any) => {
       setReport(message.payload ?? null);
       setLoading(false);
-      setDreaming(false);
     };
     messaging.subscribe(MessageType.DREAM_REPORT, handler);
     messaging.send(MessageType.GET_DREAM_REPORT, {});
@@ -58,13 +56,6 @@ const VigilancePanel: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const dreamNow = () => {
-    setDreaming(true);
-    messaging.send(MessageType.RUN_DREAM_NOW, {});
-    // Réponse via DREAM_REPORT ; filet de sécurité
-    setTimeout(() => setDreaming(false), 8000);
-  };
-
   const riskColor = (impact: number): string => {
     if (impact >= 0.66) return '#ff4b6e';
     if (impact >= 0.33) return '#ffb700';
@@ -75,34 +66,21 @@ const VigilancePanel: React.FC = () => {
 
   return (
     <div className="vigilance-panel" data-testid="vigilance-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ color: '#8899a6', fontSize: 13 }}>
-          {loading ? 'Lecture du dernier rêve…'
-            : report
-              ? `${report.fragmentsAnalyzed} fragments analysés · ${report.clustersIdentified} clusters`
-              : 'Aucune synthèse encore'}
-        </span>
-        <button
-          onClick={dreamNow}
-          disabled={dreaming}
-          data-testid="dream-now-btn"
-          style={{
-            background: '#00e0ff', color: '#111', border: 'none', borderRadius: 6,
-            padding: '6px 12px', fontWeight: 700, cursor: dreaming ? 'default' : 'pointer',
-            opacity: dreaming ? 0.6 : 1
-          }}
-        >
-          {dreaming ? 'Rêve en cours…' : '🌙 Rêver maintenant'}
-        </button>
+      <div style={{ color: '#8899a6', fontSize: 13, marginBottom: 12 }}>
+        {loading ? 'Lecture du dernier rêve…'
+          : report
+            ? `Dernier rêve : ${report.fragmentsAnalyzed} fragments analysés · ${report.clustersIdentified} clusters`
+            : 'L’organisme n’a pas encore rêvé'}
       </div>
 
       {!loading && shadowEntities.length === 0 && (
         <div style={{ color: '#8899a6', fontSize: 13, lineHeight: 1.6, padding: '12px 0' }}>
-          <p>Aucune infrastructure de surveillance corrélée détectée.</p>
+          <p>Aucune infrastructure de surveillance corrélée pour l’instant.</p>
           <p style={{ fontSize: 12, opacity: 0.8 }}>
-            Le Sommeil Analytique corrèle les domaines visités pendant les phases
-            d’inactivité. Naviguez, puis laissez l’organisme rêver — ou déclenchez
-            une synthèse immédiate avec les fragments déjà collectés.
+            Ce journal est passif : l’organisme rêve seul pendant tes phases
+            d’inactivité, corrèle les domaines croisés, et te chuchote dans la
+            page — ou t’envoie une notification — uniquement quand il perçoit une
+            structure invisible qui te concerne. Rien à ouvrir, rien à cliquer.
           </p>
         </div>
       )}

@@ -19,7 +19,13 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **État unifié** : le viewer du popup reflète l'organisme canonique du background via `ORGANISM_UPDATE`.
 - **Cortex démarré** : le moteur de détection de menaces s'exécute dans le background et analyse les signaux de résonance DOM réels (Oracle en fallback main-thread, un service worker MV3 ne pouvant pas créer de Worker imbriqué).
 - **Apprentissage hebbien** : passe périodique nourrie des comportements réels, appliquant des mutations de traits à l'organisme canonique.
-- **Sommeil Analytique branché** : le cycle circadien est démarré dans le background (`circadianCycle.start()`), déclenchant réellement la synthèse onirique (vectorisation 32D → clustering par résonance adaptative → identification d'entités d'ombre cross-domain). Le rapport de vigilance (« Réveil Lucide ») est diffusé au popup et affiché dans un nouvel onglet **Vigilance**, avec déclenchement manuel sûr (fragments réels uniquement). Auparavant tout le moteur existait mais n'était jamais démarré (`OrganismVitalSystems`, seul appelant, non instancié).
+- **Sommeil Analytique branché** : le cycle circadien est démarré dans le background (`circadianCycle.start()`), déclenchant réellement la synthèse onirique (vectorisation 32D → clustering par résonance adaptative → identification d'entités d'ombre cross-domain). Auparavant tout le moteur existait mais n'était jamais démarré (`OrganismVitalSystems`, seul appelant, non instancié).
+
+### 🗣️ Communication autonome (le symbiont parle seul, sobrement)
+- **Fin du bruit** : suppression des murmures poétiques aléatoires émis à chaque visite (« Pourquoi cette boucle ? ») — pollution sans lien avec la perception réelle.
+- **Chuchotement contextuel dans la page** : quand tu navigues sur un site appartenant à une infrastructure invisible déjà perçue par le rêve, le symbiont chuchote un message discret et auto-disparaissant DANS la page (Shadow DOM isolé), sans ouvrir le popup ni aucun bouton. Cooldown de 6 h par cluster pour ne jamais polluer.
+- **Notification système rare** : uniquement pour une découverte **nouvelle et à fort impact** (≥ 2 domaines corrélés, impact ≥ 0.66, confiance ≥ 0.7), dédupliquée à vie par cluster. Nouvelle permission `notifications`.
+- **Panneau Vigilance passif** : le bouton « Rêver maintenant » est retiré ; le panneau devient un journal en lecture seule. L'organisme rêve seul pendant les phases d'inactivité et décide seul quand parler.
 
 > **Écart assumé** : `NeuralCoreEngine` (wrapper complet) reste volontairement non instancié — il maintiendrait un organisme parallèle (échelle 0-1, memory bank propre) qui rouvrirait la divergence d'état corrigée. Seul son cœur d'apprentissage (`HebbieanLearningSystem` + `GeneticMutator`) est branché, sur l'organisme canonique unique.
 

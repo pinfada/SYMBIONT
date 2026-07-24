@@ -37,6 +37,8 @@ export enum MessageType {
   DREAM_REPORT = 'DREAM_REPORT',
   GET_DREAM_REPORT = 'GET_DREAM_REPORT',
   RUN_DREAM_NOW = 'RUN_DREAM_NOW',
+  // Chuchotement contextuel injecté dans la page (perception de structure invisible)
+  WHISPER = 'WHISPER',
   CONTEXTUAL_INVITATION = 'CONTEXTUAL_INVITATION',
   SECRET_RITUAL_TRIGGERED = 'SECRET_RITUAL_TRIGGERED',
   SECRET_CODE_ENTERED = 'SECRET_CODE_ENTERED',

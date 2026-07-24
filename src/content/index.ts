@@ -150,6 +150,12 @@ class ContentScript {
     
     // Communication avec background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      // Chuchotement contextuel : le symbiont perçoit une structure invisible
+      // sur CE site. On l'affiche discrètement dans la page, sans interaction.
+      if (message?.type === 'WHISPER' && message.payload) {
+        this.showWhisper(message.payload);
+        return false;
+      }
       this.messageBus.emit(message.type, {
         message,
         sender,
@@ -157,6 +163,67 @@ class ContentScript {
       });
       return true; // keep channel open for async
     });
+  }
+
+  /**
+   * Affiche un murmure discret et auto-disparaissant DANS la page (Shadow DOM
+   * isolé, styles inline via CSSOM pour ne pas heurter la CSP de la page).
+   * N'affiche que si le domaine correspond réellement à la page courante.
+   */
+  private showWhisper(payload: { text: string; domain?: string; severity?: string }): void {
+    try {
+      if (payload.domain && window.location.hostname !== payload.domain) return;
+      if (document.getElementById('symbiont-whisper-host')) return; // un seul à la fois
+
+      const host = document.createElement('div');
+      host.id = 'symbiont-whisper-host';
+      host.style.cssText = 'all: initial; position: fixed; z-index: 2147483647; bottom: 20px; right: 20px;';
+      const shadow = host.attachShadow({ mode: 'closed' });
+
+      const box = document.createElement('div');
+      const accent = payload.severity === 'high' ? '#ff7597' : '#00e0ff';
+      Object.assign(box.style, {
+        maxWidth: '320px',
+        font: '13px/1.5 system-ui, -apple-system, sans-serif',
+        color: '#e6edf3',
+        background: 'rgba(13,17,23,0.96)',
+        border: `1px solid ${accent}55`,
+        borderLeft: `3px solid ${accent}`,
+        borderRadius: '10px',
+        padding: '12px 14px',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.45)',
+        opacity: '0',
+        transform: 'translateY(6px)',
+        transition: 'opacity .4s ease, transform .4s ease',
+        pointerEvents: 'none'
+      } as CSSStyleDeclaration);
+
+      const title = document.createElement('div');
+      Object.assign(title.style, { color: accent, fontWeight: '600', marginBottom: '4px', fontSize: '12px' } as CSSStyleDeclaration);
+      title.textContent = '🕸️ SYMBIONT perçoit';
+      const text = document.createElement('div');
+      text.textContent = payload.text;
+
+      box.appendChild(title);
+      box.appendChild(text);
+      shadow.appendChild(box);
+      (document.body || document.documentElement).appendChild(host);
+
+      // Apparition
+      requestAnimationFrame(() => {
+        box.style.opacity = '1';
+        box.style.transform = 'translateY(0)';
+      });
+
+      // Disparition automatique après ~7s
+      setTimeout(() => {
+        box.style.opacity = '0';
+        box.style.transform = 'translateY(6px)';
+        setTimeout(() => host.remove(), 500);
+      }, 7000);
+    } catch {
+      // Jamais bloquer la page pour un murmure
+    }
   }
 
   private setupPerformanceObserver(): void {

@@ -250,6 +250,7 @@ Pour les résidents de l'UE, vous pouvez contacter votre autorité locale :
 ### 🧩 Permissions et capacités à connaître
 - **Détection d'extensions** (permission `management`) : la fonction d'organisme « conscient » compte et classe les extensions installées comme signaux d'environnement. Ce traitement est **entièrement local** et n'est jamais transmis. Vous pouvez ignorer cette fonction ; aucune liste d'extensions ne quitte votre appareil.
 - **Injection de content script** (`<all_urls>`) : nécessaire à l'observation locale du DOM (Vision Spectrale, résonance). Aucune donnée de page n'est transmise.
+- **Notifications** (permission `notifications`) : le symbiont peut vous avertir, **rarement**, quand il perçoit une infrastructure de surveillance invisible reliant plusieurs sites que vous avez croisés. Ces alertes sont calculées **localement** (analyse onirique cross-domain) ; aucune donnée n'est transmise. Le contenu se limite à un décompte agrégé (« N sites partagent la même infrastructure cachée »).
 
 ## Déclaration Finale
 
