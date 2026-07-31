@@ -170,6 +170,32 @@ class MockWebGLRenderingContext {
   deleteBuffer = jest.fn();
   deleteTexture = jest.fn();
   getError = jest.fn(() => 0);
+  // Constantes de chaînes d'info (VENDOR/RENDERER/VERSION/GLSL)
+  VENDOR = 0x1F00;
+  RENDERER = 0x1F01;
+  VERSION = 0x1F02;
+  SHADING_LANGUAGE_VERSION = 0x8B8C;
+  // Méthodes en fonctions simples (survivent à resetMocks, cf. getContext)
+  getParameter = (p: number) => {
+    // Ces paramètres renvoient une chaîne en WebGL ; les autres, un nombre.
+    return [0x1F00, 0x1F01, 0x1F02, 0x8B8C].includes(p) ? 'Mock WebGL 1.0' : 4096;
+  };
+  getSupportedExtensions = () => [] as string[];
+  isContextLost = () => false;
+  getExtension = (name: string) => {
+    if (name === 'WEBGL_lose_context') {
+      return { loseContext: () => undefined, restoreContext: () => undefined };
+    }
+    return null;
+  };
+  // VAO (WebGL2)
+  createVertexArray = () => ({});
+  deleteVertexArray = () => undefined;
+  bindVertexArray = () => undefined;
+  activeTexture = () => undefined;
+  generateMipmap = () => undefined;
+  pixelStorei = () => undefined;
+  scissor = () => undefined;
   ARRAY_BUFFER = 0x8892;
   ELEMENT_ARRAY_BUFFER = 0x8893;
   STATIC_DRAW = 0x88E4;
@@ -197,12 +223,16 @@ class MockWebGLRenderingContext {
   NO_ERROR = 0;
 }
 
-HTMLCanvasElement.prototype.getContext = jest.fn((contextType: string) => {
-  if (contextType === 'webgl' || contextType === 'experimental-webgl') {
+// Fonction SIMPLE (pas jest.fn) : `resetMocks: true` efface l'implémentation
+// des jest.fn avant chaque test, ce qui faisait renvoyer `undefined` à
+// getContext. Une fonction ordinaire survit au reset ; les tests qui ont
+// besoin de l'espionner peuvent toujours utiliser jest.spyOn.
+HTMLCanvasElement.prototype.getContext = function (contextType: string) {
+  if (contextType === 'webgl' || contextType === 'webgl2' || contextType === 'experimental-webgl') {
     return new MockWebGLRenderingContext();
   }
   return null;
-}) as any;
+} as any;
 
 // Crypto pour les tests. jsdom expose déjà `crypto` (getRandomValues) mais
 // SANS SubtleCrypto ; et il l'expose en getter sans setter, donc un
@@ -270,13 +300,15 @@ global.localStorage = localStorageMock as any;
 // Mock sessionStorage
 global.sessionStorage = localStorageMock as any;
 
-// Mock requestAnimationFrame
-global.requestAnimationFrame = jest.fn((cb) => {
-  setTimeout(cb, 16);
-  return 1;
-}) as any;
+// Mock requestAnimationFrame — fonction simple (survit à resetMocks, qui
+// sinon efface l'implémentation et fait renvoyer undefined au lieu d'un id).
+global.requestAnimationFrame = function (cb: FrameRequestCallback) {
+  return setTimeout(() => cb(Date.now()), 16) as unknown as number;
+} as any;
 
-global.cancelAnimationFrame = jest.fn();
+global.cancelAnimationFrame = function (id: number) {
+  clearTimeout(id);
+} as any;
 
 // Mock IntersectionObserver
 class MockIntersectionObserver {
