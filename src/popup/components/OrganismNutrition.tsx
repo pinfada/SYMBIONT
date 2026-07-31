@@ -17,6 +17,8 @@ interface NutritionSource {
 export const OrganismNutrition: React.FC = () => {
   const [state, setState] = useState<OrganismState>(organismStateManager.getState());
   const [showHelp, setShowHelp] = useState(false);
+  const [feeding, setFeeding] = useState<string | null>(null);
+  const [, setTick] = useState(0); // force le rafraîchissement des cooldowns
 
   const nutritionSources: NutritionSource[] = [
     {
@@ -52,8 +54,33 @@ export const OrganismNutrition: React.FC = () => {
     const unsubscribe = organismStateManager.subscribe((newState) => {
       setState(newState);
     });
-    return unsubscribe;
+    // Tic 1s : fait défiler les compteurs de cooldown en direct
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => { unsubscribe(); clearInterval(interval); };
   }, []);
+
+  // Nourrir manuellement : applique le gain à l'organisme VISIBLE, réinitialise
+  // la faim, déclenche le cooldown de la source et une animation de retour.
+  const feed = (source: NutritionSource): void => {
+    if (!isSourceAvailable(source)) return;
+
+    const s = organismStateManager.getState();
+    void organismStateManager.updateState({
+      energy: Math.min(100, s.energy + source.energyGain),
+      experience: (s.experience || 0) + source.xpGain,
+      lastFeedTime: Date.now(),
+      mood: 'happy',
+    });
+
+    try {
+      const feedHistory = JSON.parse(localStorage.getItem('feed_history') || '{}');
+      feedHistory[source.id] = Date.now();
+      localStorage.setItem('feed_history', JSON.stringify(feedHistory));
+    } catch { /* stockage indisponible : cooldown non persisté */ }
+
+    setFeeding(source.id);
+    setTimeout(() => setFeeding(null), 1500);
+  };
 
 
   const getTimeUntilNextFeed = (source: NutritionSource): string => {
@@ -193,6 +220,16 @@ export const OrganismNutrition: React.FC = () => {
                     ⏱️ {timeRemaining}
                   </span>
                 </div>
+
+                <button
+                  className="feed-button"
+                  onClick={() => feed(source)}
+                  disabled={!available}
+                >
+                  {feeding === source.id
+                    ? '✨ Nourri !'
+                    : available ? '🍽️ Nourrir' : `⏳ ${timeRemaining}`}
+                </button>
               </div>
 
             </div>
