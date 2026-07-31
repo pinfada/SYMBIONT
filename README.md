@@ -24,9 +24,9 @@
 
 <div align="center">
 
-![Quatre organismes SYMBIONT aux personnalités distinctes](docs/assets/organism-gallery.png)
+![Six organismes SYMBIONT fractals aux silhouettes uniques](docs/assets/organism-gallery.png)
 
-*Chaque organisme est unique : sa forme, sa couleur et sa pulsation naissent de son ADN et de ses traits. Rendu WebGL réel du moteur `OrganismRenderer`.*
+*Chaque organisme est **unique** : sa silhouette fractale, son protoplasme, son noyau et sa couleur sont générés de façon déterministe à partir de son ADN et de ses traits — deux organismes ne se ressemblent jamais. Rendu WebGL réel du moteur `OrganismRenderer` (aucune retouche).*
 
 </div>
 

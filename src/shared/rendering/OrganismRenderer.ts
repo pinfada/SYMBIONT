@@ -37,6 +37,13 @@ export interface OrganismRenderData {
   };
   /** Horloge d'animation en secondes ; fournie par l'appelant pour un rendu déterministe. */
   time?: number;
+  /**
+   * Graine d'unicité (0-1) dérivée de l'ADN de l'organisme : gouverne la
+   * silhouette fractale de la membrane et la position du noyau. Deux
+   * organismes de même couleur mais d'ADN différent ont des formes
+   * distinctes et reproductibles. Défaut : dérivée de `id`.
+   */
+  seed?: number;
 }
 
 export interface OrganismRenderOptions {
@@ -62,62 +69,111 @@ attribute vec2 a_position;
 
 uniform float u_time;
 uniform float u_scale;
-uniform float u_traits[5]; // curiosity, focus, rhythm, empathy, creativity
+uniform float u_energy;
 
 varying vec2 v_position;
 
 void main() {
   v_position = a_position;
-
-  // Déformation organique de la membrane pilotée par les traits
-  vec2 pos = a_position * u_scale;
-  float angle = atan(pos.y, pos.x);
-  float wobble =
-      sin(angle * 5.0 + u_time * (0.6 + u_traits[2] * 1.4)) * u_traits[0] * 0.06
-    + sin(angle * 9.0 - u_time * (0.4 + u_traits[3])) * u_traits[4] * 0.045;
-  pos *= 1.0 + wobble;
-
-  gl_Position = vec4(pos, 0.0, 1.0);
+  // Respiration globale de l'organisme (indexée sur l'énergie)
+  float breathe = 1.0 + sin(u_time * 1.2) * 0.02 * (0.5 + u_energy);
+  gl_Position = vec4(a_position * breathe * u_scale, 0.0, 1.0);
 }
 `;
 
+// Membrane fractale unique + protoplasme (domain warping) + noyau vivant.
+// Tout le corps de l'organisme est défini dans le fragment shader : la
+// géométrie n'est qu'un disque support, la forme réelle naît de la
+// silhouette semée par l'ADN (u_seed).
 const FRAGMENT_SHADER = `
 precision highp float;
 
 varying vec2 v_position;
 
 uniform float u_time;
+uniform float u_energy;
+uniform float u_seed;
+uniform float u_traits[5]; // curiosity, focus, rhythm, empathy, creativity
 uniform vec3 u_primaryColor;
 uniform vec3 u_secondaryColor;
-uniform float u_energy;
-uniform float u_traits[5];
+uniform vec3 u_accentColor;
+
+float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  float a = hash(i), b = hash(i + vec2(1.0, 0.0)), c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 5; i++){ v += a * noise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; }
+  return v;
+}
+
+// Bruit "ridged" -> filaments fractals internes
+float ridged(vec2 p){
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++){ v += a * (1.0 - abs(2.0 * noise(p) - 1.0)); p *= 2.07; a *= 0.5; }
+  return v;
+}
 
 void main() {
-  float dist = length(v_position);
+  vec2 pos = v_position;
+  float r = length(pos);
+  float ang = atan(pos.y, pos.x);
+  float t = u_time;
+  float seed = u_seed;
 
-  // Motif organique interne : anneaux + interférences liées aux traits
-  float pattern = sin(dist * 9.0 - u_time * 1.8) * 0.5 + 0.5;
-  pattern += sin(v_position.x * (4.0 + u_traits[0] * 8.0) + u_time * 0.7)
-           * sin(v_position.y * (4.0 + u_traits[1] * 8.0) - u_time * 0.5) * 0.25;
+  // --- Silhouette de membrane unique, semée par l'ADN ---
+  float lobes = 3.0 + floor(u_traits[4] * 5.0);        // créativité -> nombre de lobes
+  float wob =
+      0.11 * sin(lobes * ang + seed * 6.28 + t * 0.25)
+    + 0.06 * sin((lobes + 3.0) * ang - seed * 17.0 - t * 0.18)
+    + 0.035 * sin((lobes + 7.0) * ang + seed * 33.0);
+  wob *= (0.55 + u_traits[0] * 0.7);                    // curiosité -> amplitude
+  float R = 0.60 + wob;
 
-  // Mélange de couleurs gouverné par la créativité
-  vec3 color = mix(u_primaryColor, u_secondaryColor, clamp(pattern * (0.4 + u_traits[4] * 0.8), 0.0, 1.0));
+  float d = r - R;                                     // < 0 : à l'intérieur
+  float mask = smoothstep(0.015, -0.02, d);
+  if (mask <= 0.001) discard;
 
-  // Pulsation énergétique (respiration de l'organisme)
-  float pulse = sin(u_time * (2.0 + u_traits[2] * 3.0)) * 0.15 + 0.85;
-  color *= pulse * (0.35 + clamp(u_energy, 0.0, 1.0) * 0.65);
+  // --- Protoplasme fractal (domain warping) ---
+  vec2 q = vec2(fbm(pos * 2.4 + t * 0.15), fbm(pos * 2.4 - t * 0.12 + 5.2));
+  float proto = fbm(pos * 3.2 + q * 1.8 + seed * 10.0);
+  float veins = pow(ridged(pos * 3.6 + q * 1.2 + seed * 4.0), 2.2);
 
-  // Noyau lumineux + halo doux en périphérie
-  float core = smoothstep(0.35, 0.0, dist) * 0.35;
-  color += u_primaryColor * core;
-  float alpha = smoothstep(1.0, 0.62, dist);
+  // --- Noyau décentré, propre à l'organisme ---
+  vec2 nuc = vec2(cos(seed * 6.28), sin(seed * 6.28)) * 0.14;
+  float nd = length(pos - nuc);
+  float nucleus = smoothstep(0.22, 0.0, nd);
+  float nucleusCore = smoothstep(0.08, 0.0, nd);
 
-  // Sortie en alpha prémultiplié (cohérent avec le blending ONE, ONE_MINUS_SRC_ALPHA)
-  gl_FragColor = vec4(color * alpha, alpha);
+  // --- Composition couleur ---
+  vec3 col = mix(u_secondaryColor, u_primaryColor, clamp(proto * 1.1, 0.0, 1.0));
+  col += u_accentColor * veins * (0.35 + u_traits[1] * 0.5);   // focus -> filaments nets
+  col = mix(col, u_accentColor, nucleus * 0.45);
+  col += u_accentColor * nucleusCore * 0.9;                    // noyau lumineux
+
+  // Anneau de membrane : contour vivant, pas un halo flou
+  float rim = smoothstep(0.05, 0.0, abs(d));
+  col += u_primaryColor * rim * 0.8;
+
+  // Pulsation énergétique
+  float pulse = 0.82 + 0.18 * sin(t * (1.6 + u_traits[2] * 2.4));
+  col *= pulse * (0.5 + clamp(u_energy, 0.0, 1.0) * 0.6);
+
+  float edge = smoothstep(0.0, -0.05, d);
+  col *= (0.75 + 0.25 * edge);
+
+  // Sortie en alpha prémultiplié (cohérent avec ONE, ONE_MINUS_SRC_ALPHA)
+  gl_FragColor = vec4(col * mask, mask);
 }
 `;
 
-const CIRCLE_SEGMENTS = 96;
+const CIRCLE_SEGMENTS = 128;
 
 export type OrganismCanvas = HTMLCanvasElement | OffscreenCanvas;
 
@@ -173,8 +229,8 @@ export class OrganismRenderer {
 
       this.positionAttrib = gl.getAttribLocation(program, 'a_position');
       for (const name of [
-        'u_time', 'u_scale', 'u_traits', 'u_energy',
-        'u_primaryColor', 'u_secondaryColor',
+        'u_time', 'u_scale', 'u_energy', 'u_seed', 'u_traits',
+        'u_primaryColor', 'u_secondaryColor', 'u_accentColor',
       ]) {
         this.uniforms[name] = gl.getUniformLocation(program, name);
       }
@@ -217,18 +273,27 @@ export class OrganismRenderer {
     ].map((t) => Math.min(1, Math.max(0, t)));
 
     const color = data.visualState?.color ?? [0.0, 0.878, 1.0];
+    // Secondaire = ombre profonde de teinte identique (pas de délavage vers
+    // le gris) ; accent = version lumineuse pour noyau et filaments.
     const secondary: [number, number, number] = [
-      Math.min(1, color[0] * 0.4 + 0.37),
-      Math.min(1, color[1] * 0.5 + 0.38),
-      Math.min(1, color[2] * 0.6 + 0.35),
+      color[0] * 0.28, color[1] * 0.28, color[2] * 0.28,
+    ];
+    const accent: [number, number, number] = [
+      Math.min(1, color[0] * 1.25 + 0.12),
+      Math.min(1, color[1] * 1.25 + 0.12),
+      Math.min(1, color[2] * 1.25 + 0.12),
     ];
 
+    const seed = data.seed ?? (data.id ? hashSeed(data.id) : 0);
+
     gl.uniform1f(this.uniforms['u_time'] ?? null, data.time ?? 0);
-    gl.uniform1f(this.uniforms['u_scale'] ?? null, Math.min(1, Math.max(0.1, data.visualState?.scale ?? 0.85)));
-    gl.uniform1fv(this.uniforms['u_traits'] ?? null, traitsArray);
+    gl.uniform1f(this.uniforms['u_scale'] ?? null, Math.min(1, Math.max(0.1, data.visualState?.scale ?? 0.9)));
     gl.uniform1f(this.uniforms['u_energy'] ?? null, data.energy ?? 0.5);
+    gl.uniform1f(this.uniforms['u_seed'] ?? null, seed);
+    gl.uniform1fv(this.uniforms['u_traits'] ?? null, traitsArray);
     gl.uniform3f(this.uniforms['u_primaryColor'] ?? null, color[0], color[1], color[2]);
     gl.uniform3f(this.uniforms['u_secondaryColor'] ?? null, secondary[0], secondary[1], secondary[2]);
+    gl.uniform3f(this.uniforms['u_accentColor'] ?? null, accent[0], accent[1], accent[2]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.enableVertexAttribArray(this.positionAttrib);
@@ -326,4 +391,18 @@ export class OrganismRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
   }
+}
+
+/**
+ * Dérive une graine déterministe [0,1) d'une chaîne d'ADN (UUID de
+ * l'organisme). Deux ADN différents → silhouettes différentes ; le même
+ * ADN → toujours la même forme. Hash FNV-1a 32 bits.
+ */
+export function hashSeed(dna: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < dna.length; i++) {
+    h ^= dna.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return ((h >>> 0) % 100000) / 100000;
 }
