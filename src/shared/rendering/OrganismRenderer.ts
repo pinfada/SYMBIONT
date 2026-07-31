@@ -129,12 +129,17 @@ void main() {
 
   // --- Silhouette de membrane unique, semée par l'ADN ---
   float lobes = 3.0 + floor(u_traits[4] * 5.0);        // créativité -> nombre de lobes
+  float phase = seed * 6.28 + t * 0.22;
+  // Ondulation organique de base (amplitude douce liée à l'empathie)
   float wob =
-      0.11 * sin(lobes * ang + seed * 6.28 + t * 0.25)
-    + 0.06 * sin((lobes + 3.0) * ang - seed * 17.0 - t * 0.18)
-    + 0.035 * sin((lobes + 7.0) * ang + seed * 33.0);
-  wob *= (0.55 + u_traits[0] * 0.7);                    // curiosité -> amplitude
-  float R = 0.60 + wob;
+      0.085 * sin(lobes * ang + phase)
+    + 0.05 * sin((lobes + 3.0) * ang - seed * 17.0 - t * 0.16)
+    + 0.03 * sin((lobes + 7.0) * ang + seed * 33.0);
+  wob *= (0.6 + u_traits[3] * 0.5);
+  // Tentacules pointus : pics étroits vers l'extérieur, longueur = curiosité
+  float spike = pow(max(0.0, sin(lobes * ang + phase)), 5.0);
+  float tentacle = spike * (0.04 + u_traits[0] * 0.22);
+  float R = 0.55 + wob + tentacle;
 
   float d = r - R;                                     // < 0 : à l'intérieur
   float mask = smoothstep(0.015, -0.02, d);
@@ -145,17 +150,20 @@ void main() {
   float proto = fbm(pos * 3.2 + q * 1.8 + seed * 10.0);
   float veins = pow(ridged(pos * 3.6 + q * 1.2 + seed * 4.0), 2.2);
 
-  // --- Noyau décentré, propre à l'organisme ---
+  // --- Noyau décentré : taille et éclat indexés sur l'énergie ---
   vec2 nuc = vec2(cos(seed * 6.28), sin(seed * 6.28)) * 0.14;
   float nd = length(pos - nuc);
-  float nucleus = smoothstep(0.22, 0.0, nd);
-  float nucleusCore = smoothstep(0.08, 0.0, nd);
+  float nucSize  = 0.15 + u_energy * 0.11 + (seed - 0.5) * 0.03;
+  float coreSize = 0.045 + u_energy * 0.06;
+  float nucPulse = 0.82 + 0.18 * sin(t * (2.0 + u_traits[2] * 3.0));
+  float nucleus = smoothstep(nucSize, 0.0, nd);
+  float nucleusCore = smoothstep(coreSize, 0.0, nd) * nucPulse;
 
   // --- Composition couleur ---
   vec3 col = mix(u_secondaryColor, u_primaryColor, clamp(proto * 1.1, 0.0, 1.0));
   col += u_accentColor * veins * (0.35 + u_traits[1] * 0.5);   // focus -> filaments nets
   col = mix(col, u_accentColor, nucleus * 0.45);
-  col += u_accentColor * nucleusCore * 0.9;                    // noyau lumineux
+  col += u_accentColor * nucleusCore * (0.7 + u_energy * 0.7); // noyau lumineux (éclat = énergie)
 
   // Anneau de membrane : contour vivant, pas un halo flou
   float rim = smoothstep(0.05, 0.0, abs(d));
