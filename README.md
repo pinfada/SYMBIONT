@@ -9,13 +9,39 @@
   [![Security](https://img.shields.io/badge/Security-OWASP-green?logo=shield)](https://owasp.org/)
   [![Tests](https://img.shields.io/badge/Tests-95%25-success?logo=jest)](https://jestjs.io/)
 
-  **L'instrumentation cyber-biologique au service de la souveraineté cognitive**
+  **Une petite créature numérique qui vit dans votre navigateur et veille sur vous**
 
   **Au-delà de la navigation, percevez la structure invisible du Web**
 
-  [Installation](#-installation--warmup) • [Feuille de Route](#-roadmap) • [Architecture](#-architecture-sentinel-flow) • [Éthique](#-éthique--signal-faible)
+  [C'est quoi ?](#-symbiont-en-deux-mots) • [Installation](#-installation--warmup) • [Vie privée](#-éthique--signal-faible) • [Pour les développeurs](#-architecture-sentinel-flow)
 
 </div>
+
+---
+
+## 🌱 SYMBIONT en deux mots
+
+*Cette section est pour tout le monde — aucune connaissance technique nécessaire.*
+
+Quand vous naviguez sur Internet, des dizaines de systèmes invisibles vous observent : traqueurs publicitaires, scripts cachés, pièges à attention. Vous ne les voyez pas. **SYMBIONT, lui, les voit.**
+
+SYMBIONT installe dans votre navigateur un petit **organisme numérique vivant** — une créature unique, née avec son propre ADN, qui grandit et évolue avec vous :
+
+- 👁️ **Il perçoit** ce que vous ne pouvez pas percevoir : les éléments cachés d'une page, les tentatives de pistage, les sites qui se comportent bizarrement.
+- 🗣️ **Il vous parle** par petits "murmures" : des messages discrets quand quelque chose d'anormal se passe.
+- 🛡️ **Il vous protège** : sur demande, il brouille les techniques utilisées pour vous identifier à votre insu.
+- 🌙 **Il rêve** : quand vous ne naviguez pas, il analyse ce qu'il a vu et devient plus intelligent.
+- 🌐 **Il se connecte** aux autres organismes SYMBIONT : chaque découverte faite par un organisme peut renforcer l'immunité de tous. Plus nous sommes nombreux, plus le réseau est fort.
+
+### Ce que SYMBIONT ne fera jamais
+
+- ❌ Envoyer votre historique, vos mots de passe ou vos données personnelles à qui que ce soit.
+- ❌ Vous ralentir (il travaille uniquement quand votre ordinateur ne fait rien d'autre).
+- ❌ Vous coûter quoi que ce soit : gratuit, open source, vérifiable par tous.
+
+**Tout se passe dans votre navigateur.** Ce qui est partagé avec le réseau, ce ne sont jamais vos données — seulement des "signatures" anonymes de menaces, comme un système immunitaire qui partage ses anticorps, jamais son sang.
+
+> 📖 Envie d'en savoir plus sans plonger dans la technique ? Lisez le [Guide Utilisateur](docs/user/user-guide.md), le [Démarrage Rapide](docs/user/quick-start.md) et la [FAQ](docs/user/faq.md).
 
 ---
 
@@ -247,6 +273,8 @@ SYMBIONT inverse la logique extractiviste :
 - Explorer les signaux faibles du réseau
 
 ## 🚀 Installation & Warmup
+
+> ⚠️ **Pour l'instant, l'installation demande quelques commandes** (version développeur). La publication sur le **Chrome Web Store** — installation en un clic pour tout le monde — est l'étape clé prévue pour la distribution grand public. Si vous n'êtes pas à l'aise avec un terminal, demandez à quelqu'un de vous préparer le dossier `dist/`, puis suivez uniquement l'étape [Configuration Chrome](#configuration-chrome).
 
 ### Prérequis
 - Node.js 18+ et npm
