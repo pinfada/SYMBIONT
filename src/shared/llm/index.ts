@@ -13,6 +13,16 @@ export type { LocalModelInfo } from './modelCatalog';
 export { llmPreferences } from './llmPreferences';
 export type { LLMPreferences } from './llmPreferences';
 export { LocalLLMEngine } from './LocalLLMEngine';
+export {
+  analyzeContent,
+  buildAnalysisPrompt,
+  parseReport,
+  levelFromScore,
+} from './ContentAnalysis';
+export type { ReliabilityReport, ReliabilityLevel, ChatCapable } from './ContentAnalysis';
+export { feedReliabilityToOrganism, vigilanceDelta } from './organismSignal';
+export { extractActivePageText } from './pageText';
+export type { PageText } from './pageText';
 export type {
   ChatMessage,
   ChatRole,

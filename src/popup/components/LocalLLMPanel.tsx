@@ -21,6 +21,10 @@ import {
   type LLMPreferences,
   LocalLLMEngine,
   type ChatMessage,
+  analyzeContent,
+  extractActivePageText,
+  feedReliabilityToOrganism,
+  type ReliabilityReport,
 } from '@shared/llm';
 
 const C = {
@@ -52,6 +56,8 @@ const LocalLLMPanel: React.FC = () => {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [report, setReport] = useState<ReliabilityReport | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -145,6 +151,35 @@ const LocalLLMPanel: React.FC = () => {
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
 
+  // Analyse de fiabilité de la page active (v2) : le LLM local lit le texte de
+  // la page et renvoie un score + des signaux de désinformation, qui nudgent
+  // la vigilance de l'organisme. Rien ne quitte le poste.
+  const analyzePage = useCallback(async () => {
+    const engine = engineRef.current;
+    if (!engine || !engine.isReady() || analyzing) return;
+    setAnalyzing(true);
+    setError(null);
+    setReport(null);
+    try {
+      const page = await extractActivePageText();
+      if (!page.text || page.text.length < 40) {
+        setError("Pas assez de texte lisible sur cette page pour l'analyser.");
+        return;
+      }
+      const r = await analyzeContent(engine, page.text, page.domain ? { domain: page.domain } : {});
+      setReport(r);
+      void feedReliabilityToOrganism(r);
+    } catch (e) {
+      logger.error('LocalLLMPanel: analyse de page échouée', e as Error);
+      setError("L'analyse de la page a échoué.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [analyzing]);
+
+  const levelColor = (lvl: ReliabilityReport['level']): string =>
+    lvl === 'faible' ? C.danger : lvl === 'moyenne' ? '#f59e0b' : '#22c55e';
+
   // --- Rendu ---
 
   if (uiState === 'detecting') {
@@ -224,6 +259,78 @@ const LocalLLMPanel: React.FC = () => {
   // uiState === 'ready'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 220px)', minHeight: 320 }}>
+      {/* Analyse de fiabilité de la page active */}
+      <button
+        style={{ ...s.primaryBtn, marginBottom: 8 }}
+        onClick={() => void analyzePage()}
+        disabled={analyzing}
+      >
+        {analyzing ? 'Analyse en cours…' : '🔍 Analyser la page active'}
+      </button>
+      {report && (
+        <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                background: `conic-gradient(${levelColor(report.level)} 0% ${report.score}%, rgba(255,255,255,0.08) ${report.score}% 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: '0 0 auto',
+              }}
+            >
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  background: C.panel,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: levelColor(report.level),
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                {report.score}
+              </div>
+            </div>
+            <div>
+              <div style={{ color: levelColor(report.level), fontWeight: 600, fontSize: 14 }}>
+                Fiabilité {report.level}
+              </div>
+              {report.domain && <div style={{ color: C.dim, fontSize: 12 }}>{report.domain}</div>}
+            </div>
+          </div>
+          <p style={{ color: C.text, fontSize: 12, margin: '0 0 8px', lineHeight: 1.5 }}>{report.summary}</p>
+          {report.signals.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {report.signals.map((sg, i) => (
+                <span
+                  key={i}
+                  style={{
+                    background: 'rgba(239,68,68,0.15)',
+                    color: levelColor(report.level),
+                    fontSize: 11,
+                    padding: '3px 8px',
+                    borderRadius: 10,
+                  }}
+                >
+                  {sg}
+                </span>
+              ))}
+            </div>
+          )}
+          <p style={{ color: C.dim, fontSize: 11, margin: '10px 0 0' }}>
+            ↳ signal transmis à l&apos;organisme (vigilance +)
+          </p>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: C.dim, fontSize: 12 }}>
           {getModelInfo(engineRef.current?.getModelId() ?? '')?.label ?? 'Modèle'} • local
