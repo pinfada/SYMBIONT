@@ -324,6 +324,12 @@ describe('Regression Tests - Critical Improvements', () => {
   });
 
   describe('6. Performance Optimizations', () => {
+    beforeEach(() => {
+      // resetMocks wipes the module-level `now: () => 1000` impl before each
+      // test; restore a real monotonic clock so processing-time math is valid.
+      mockPerformance.now.mockImplementation(() => Date.now());
+    });
+
     it('should process only recent resources (max 10)', () => {
       const collector = new NetworkLatencyCollector();
 

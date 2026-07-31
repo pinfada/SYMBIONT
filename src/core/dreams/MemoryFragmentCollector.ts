@@ -67,7 +67,7 @@ export class MemoryFragmentCollector {
       friction: data.friction,
       latency: data.timestamps.emitted - data.timestamps.detected,
       trackers: this.extractTrackersFromMutations(data.mutations),
-      hiddenElements: data.hiddenElements,
+      hiddenElements: this.sanitizeHiddenElements(data.hiddenElements),
       protocolSignature: 'unknown',
       resourceTimings: []
     };
@@ -197,6 +197,24 @@ export class MemoryFragmentCollector {
     }
 
     return null;
+  }
+
+  /**
+   * Sanitizes hidden DOM elements into a non-identifying, abstract form.
+   *
+   * Only the element count and a generic type marker are retained; raw
+   * attributes such as `id` (which may embed personal data, e.g. "user-email")
+   * are stripped. This mirrors how DOM mutations are reduced to abstract
+   * tracker signatures and upholds the project's no-PII persistence guarantee.
+   */
+  private sanitizeHiddenElements(hiddenElements: any[]): Array<{ type: string }> {
+    if (!Array.isArray(hiddenElements)) {
+      return [];
+    }
+
+    return hiddenElements.map(element => ({
+      type: typeof element?.type === 'string' ? element.type : 'hidden'
+    }));
   }
 
   /**

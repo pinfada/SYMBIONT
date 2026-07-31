@@ -18,75 +18,95 @@ global.chrome = {
 } as any;
 
 // Mock btoa and atob for Node.js environment
-global.btoa = jest.fn().mockImplementation((str) => Buffer.from(str, 'binary').toString('base64'));
-global.atob = jest.fn().mockImplementation((str) => Buffer.from(str, 'base64').toString('binary'));
+global.btoa = jest.fn();
+global.atob = jest.fn();
 
 // Mock service-worker-adapter before importing SecurityManager
 const mockCryptoSubtle = {
-  generateKey: jest.fn().mockResolvedValue({ 
-    type: 'secret', 
-    extractable: true, 
-    algorithm: { name: 'AES-GCM', length: 256 }, 
-    usages: ['encrypt', 'decrypt'] 
-  } as CryptoKey),
-  importKey: jest.fn().mockResolvedValue({ 
-    type: 'secret', 
-    extractable: true, 
-    algorithm: { name: 'AES-GCM', length: 256 }, 
-    usages: ['encrypt', 'decrypt'] 
-  } as CryptoKey),
-  exportKey: jest.fn().mockResolvedValue(new ArrayBuffer(32)),
-  encrypt: jest.fn().mockImplementation(async (algorithm, key, data) => {
+  generateKey: jest.fn(),
+  importKey: jest.fn(),
+  exportKey: jest.fn(),
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
+  digest: jest.fn()
+};
+
+const mockCryptoGetRandomValues = jest.fn();
+
+// Mock implementations applied fresh in beforeEach because the jest config sets
+// resetMocks/clearMocks/restoreMocks = true, which wipes any implementation set
+// at module scope before each test runs.
+const mockKey = {
+  type: 'secret',
+  extractable: true,
+  algorithm: { name: 'AES-GCM', length: 256 },
+  usages: ['encrypt', 'decrypt']
+} as CryptoKey;
+
+function applyCryptoMockImplementations(): void {
+  global.btoa = jest.fn().mockImplementation((str) => Buffer.from(str, 'binary').toString('base64'));
+  global.atob = jest.fn().mockImplementation((str) => Buffer.from(str, 'base64').toString('binary'));
+
+  mockCryptoSubtle.generateKey.mockResolvedValue(mockKey);
+  mockCryptoSubtle.importKey.mockResolvedValue(mockKey);
+  mockCryptoSubtle.exportKey.mockResolvedValue(new ArrayBuffer(32));
+
+  mockCryptoSubtle.encrypt.mockImplementation(async (algorithm, key, data) => {
     // Validate parameters
     if (!algorithm || !key || !data) {
       throw new Error('Missing required parameters for encryption');
     }
-    
-    // Ensure data is an ArrayBuffer or can be converted to one
+
+    // Ensure data is an ArrayBuffer or can be converted to one.
+    // Use ArrayBuffer.isView (realm-agnostic) instead of `instanceof Uint8Array`
+    // because the module encodes via Node's TextEncoder, producing a typed array
+    // from a different realm than the test's Uint8Array under jsdom.
     let dataBuffer = data;
     if (!(data instanceof ArrayBuffer)) {
-      if (data instanceof Uint8Array) {
+      if (ArrayBuffer.isView(data)) {
         dataBuffer = data.buffer;
       } else {
         throw new Error('Data must be ArrayBuffer or Uint8Array');
       }
     }
-    
+
     // Simulate realistic encryption result with proper buffer
     const inputLength = dataBuffer.byteLength || 0;
     const ciphertext = new Uint8Array(inputLength + 16); // Add some auth tag bytes
     ciphertext.fill(0xBB);
-    
+
     // Add some variation based on input
     for (let i = 0; i < Math.min(inputLength, ciphertext.length); i++) {
       ciphertext[i] = (ciphertext[i] + i) % 256;
     }
-    
+
     return ciphertext.buffer;
-  }),
-  decrypt: jest.fn().mockImplementation(async () => {
+  });
+
+  mockCryptoSubtle.decrypt.mockImplementation(async () => {
     const testData = JSON.stringify({ foo: 'bar', n: 42 });
     return new TextEncoder().encode(testData).buffer;
-  }),
-  digest: jest.fn().mockImplementation(async (algorithm, data) => {
+  });
+
+  mockCryptoSubtle.digest.mockImplementation(async (_algorithm, _data) => {
     // Create a realistic hash-like result
     const hash = new Uint8Array(32);
     for (let i = 0; i < 32; i++) {
       hash[i] = (0xCD + i) % 256;
     }
     return hash.buffer;
-  })
-};
+  });
 
-const mockCryptoGetRandomValues = jest.fn().mockImplementation((arr) => {
-  // Fill with deterministic values for testing
-  if (arr && arr.length) {
-    for (let i = 0; i < arr.length; i++) {
-      arr[i] = i % 256;
+  mockCryptoGetRandomValues.mockImplementation((arr) => {
+    // Fill with deterministic values for testing
+    if (arr && arr.length) {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = i % 256;
+      }
     }
-  }
-  return arr;
-});
+    return arr;
+  });
+}
 
 // Mock the service worker adapter
 const mockSwCryptoAPI = {
@@ -99,20 +119,29 @@ jest.mock('../src/background/service-worker-adapter', () => ({
 }));
 
 import { SecurityManager } from '../src/background/SecurityManager'
+import { bulkheadManager } from '../src/shared/patterns/BulkheadManager'
 
 describe('SecurityManager', () => {
   let security: SecurityManager;
-  
+
   beforeEach(async () => {
     jest.clearAllMocks();
-    
-    // Reset all crypto mocks
-    mockCryptoSubtle.generateKey.mockClear();
-    mockCryptoSubtle.encrypt.mockClear();
-    mockCryptoSubtle.decrypt.mockClear();
-    mockCryptoSubtle.digest.mockClear();
-    mockCryptoGetRandomValues.mockClear();
-    
+
+    // Re-apply mock implementations (wiped by resetMocks between tests)
+    applyCryptoMockImplementations();
+
+    // The bulkheadManager is a module singleton whose circuit-breaker state
+    // leaks across tests. Reset it so a deliberate-failure test doesn't leave
+    // the breaker open for the next one.
+    const bulkheads = (bulkheadManager as any).bulkheads as Map<string, any>;
+    if (bulkheads) {
+      for (const bulkhead of bulkheads.values()) {
+        bulkhead.circuitBreakerOpen = false;
+        bulkhead.activeRequests = 0;
+        bulkhead.lastFailureTime = 0;
+      }
+    }
+
     // Create SecurityManager with manual initialization to avoid chrome.storage issues
     security = new SecurityManager(true); // Skip auto-init
     
@@ -233,7 +262,11 @@ describe('SecurityManager', () => {
       
       expect(typeof hash).toBe('string');
       expect(hash.length).toBeGreaterThan(0);
-      expect(mockCryptoSubtle.digest).toHaveBeenCalledWith('SHA-256', expect.any(Uint8Array));
+      // Realm-agnostic check: the module encodes with Node's TextEncoder, so the
+      // typed array passed to digest is not an instanceof the test-realm Uint8Array.
+      const digestCall = mockCryptoSubtle.digest.mock.calls[0];
+      expect(digestCall[0]).toBe('SHA-256');
+      expect(ArrayBuffer.isView(digestCall[1])).toBe(true);
     });
 
     it('produit des hashs cohérents', async () => {

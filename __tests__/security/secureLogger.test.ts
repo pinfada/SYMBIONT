@@ -2,7 +2,7 @@
  * Tests pour le système de logging sécurisé
  */
 
-import { SecureLogger, LogLevel, logger } from '../../src/shared/utils/secureLogger';
+import { SecureLogger, LogLevel } from '../../src/shared/utils/secureLogger';
 
 describe('SecureLogger', () => {
   let loggerInstance: SecureLogger;
@@ -74,7 +74,7 @@ describe('SecureLogger', () => {
 
       loggerInstance.info('Test with sensitive data', sensitiveData);
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       const lastLog = logs[logs.length - 1];
       
       expect(lastLog.data.password).toBe('[REDACTED]');
@@ -89,7 +89,7 @@ describe('SecureLogger', () => {
       
       loggerInstance.warn(sensitiveString);
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       const lastLog = logs[logs.length - 1];
       
       expect(lastLog.message).toContain('[REDACTED]');
@@ -109,7 +109,7 @@ describe('SecureLogger', () => {
 
       loggerInstance.info('Nested data test', nestedData);
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       const lastLog = logs[logs.length - 1];
       
       expect(lastLog.data.user.name).toBe('John');
@@ -126,7 +126,7 @@ describe('SecureLogger', () => {
 
       loggerInstance.info('Array data test', arrayData);
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       const lastLog = logs[logs.length - 1];
       
       expect(lastLog.data[0].id).toBe(1);
@@ -150,7 +150,7 @@ describe('SecureLogger', () => {
       loggerInstance.warn('warn message');   // Should pass
       loggerInstance.error('error message'); // Should pass
 
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       expect(logs.length).toBe(3); // debug filtered out
       expect(logs[0].level).toBe(LogLevel.INFO);
       expect(logs[1].level).toBe(LogLevel.WARN);
@@ -163,13 +163,13 @@ describe('SecureLogger', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      logger.setLevel(LogLevel.DEBUG);
+      loggerInstance.setLevel(LogLevel.DEBUG);
       
       loggerInstance.debug('debug');
       loggerInstance.info('info');
       loggerInstance.warn('warn');
       loggerInstance.error('error');
-      logger.fatal('fatal');
+      loggerInstance.fatal('fatal');
 
       expect(debugSpy).toHaveBeenCalled();
       expect(infoSpy).toHaveBeenCalled();
@@ -191,7 +191,7 @@ describe('SecureLogger', () => {
     it('should store logs with proper structure', () => {
       loggerInstance.info('test message', { name: 'value' }, 'TestContext');
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       const log = logs[0];
       
       expect(log.timestamp).toBeGreaterThan(0);
@@ -208,7 +208,7 @@ describe('SecureLogger', () => {
       loggerInstance.info('message 3');
       loggerInstance.info('message 4'); // Should cause oldest to be removed
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       expect(logs.length).toBe(3);
       expect(logs[0].message).toBe('message 2');
       expect(logs[2].message).toBe('message 4');
@@ -220,11 +220,11 @@ describe('SecureLogger', () => {
       loggerInstance.warn('warn');
       loggerInstance.error('error');
 
-      const errorLogs = logger.getLogs(LogLevel.ERROR);
+      const errorLogs = loggerInstance.getLogs(LogLevel.ERROR);
       expect(errorLogs.length).toBe(1);
       expect(errorLogs[0].level).toBe(LogLevel.ERROR);
 
-      const warnAndAbove = logger.getLogs(LogLevel.WARN);
+      const warnAndAbove = loggerInstance.getLogs(LogLevel.WARN);
       expect(warnAndAbove.length).toBe(2);
     });
   });
@@ -259,7 +259,7 @@ describe('SecureLogger', () => {
       
       expect(consoleSpy).not.toHaveBeenCalled();
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       expect(logs.length).toBe(1); // Still stored
     });
   });
@@ -274,23 +274,23 @@ describe('SecureLogger', () => {
     });
 
     it('should change log level dynamically', () => {
-      logger.setLevel(LogLevel.WARN);
+      loggerInstance.setLevel(LogLevel.WARN);
       
       loggerInstance.debug('debug'); // Should be filtered
       loggerInstance.info('info');   // Should be filtered
       loggerInstance.warn('warn');   // Should pass
       
-      const logs = logger.getLogs();
+      const logs = loggerInstance.getLogs();
       expect(logs.length).toBe(1);
       expect(logs[0].level).toBe(LogLevel.WARN);
     });
 
     it('should enable/disable console dynamically', () => {
-      logger.enableConsole(false);
+      loggerInstance.enableConsole(false);
       loggerInstance.info('test');
       expect(consoleSpy).not.toHaveBeenCalled();
       
-      logger.enableConsole(true);
+      loggerInstance.enableConsole(true);
       loggerInstance.info('test2');
       expect(consoleSpy).toHaveBeenCalled();
     });
@@ -299,18 +299,18 @@ describe('SecureLogger', () => {
       loggerInstance.info('message 1');
       loggerInstance.info('message 2');
       
-      expect(logger.getLogs().length).toBe(2);
+      expect(loggerInstance.getLogs().length).toBe(2);
       
-      logger.clearLogs();
+      loggerInstance.clearLogs();
       
-      expect(logger.getLogs().length).toBe(0);
+      expect(loggerInstance.getLogs().length).toBe(0);
     });
 
     it('should export logs as JSON', () => {
       loggerInstance.info('message 1', { data: 'test' });
       loggerInstance.warn('message 2');
       
-      const exported = logger.exportLogs();
+      const exported = loggerInstance.exportLogs();
       const parsed = JSON.parse(exported);
       
       expect(Array.isArray(parsed)).toBe(true);

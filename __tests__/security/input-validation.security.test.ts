@@ -7,21 +7,27 @@ import { ValidationError } from '@/shared/utils/errorValidation';
 // Mock des validateurs d'input
 class InputValidator {
   static sanitizeUserInput(input: string): string {
-    return input
-      .replace(/[<>]/g, '') // XSS basic protection
+    // Handle null/undefined safely
+    if (input === null || input === undefined) return '';
+    return String(input)
+      .replace(/[<>]/g, '') // XSS basic protection (strip angle brackets)
+      .replace(/(javascript|data|vbscript):/gi, '') // Strip dangerous URI schemes
+      .replace(/on\w+\s*=/gi, '') // Strip inline event handlers (onerror=, onload=, ...)
       .replace(/['"]/g, '&quot;') // Quote escaping
       .trim()
       .substring(0, 1000); // Length limit
   }
 
   static validateEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Strict allow-list regex: no angle brackets, quotes, spaces or control chars.
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     return emailRegex.test(email) && email.length <= 254;
   }
 
   static validateOrganismName(name: string): boolean {
-    // Alphanumeric + spaces, 3-50 chars
-    const nameRegex = /^[a-zA-Z0-9\s]{3,50}$/;
+    // Alphanumeric + literal spaces only, 3-50 chars.
+    // Use a literal space (not \s) so CR/LF injection is rejected.
+    const nameRegex = /^[a-zA-Z0-9 ]{3,50}$/;
     return nameRegex.test(name);
   }
 
@@ -35,8 +41,16 @@ class InputValidator {
   }
 
   static sanitizeFilePath(filePath: string): string {
-    // Remove path traversal attempts
-    return filePath
+    if (filePath === null || filePath === undefined) return '';
+    // Decode percent-encoding first so encoded separators (%2F, %5c) can't slip through
+    let decoded = String(filePath);
+    try {
+      decoded = decodeURIComponent(decoded);
+    } catch {
+      // keep raw value if it isn't valid percent-encoding
+    }
+    // Remove path traversal attempts, then neutralize separators and reserved chars
+    return decoded
       .replace(/\.\./g, '')
       .replace(/[\/\\]/g, '_')
       .replace(/[<>:"|?*]/g, '');
@@ -44,14 +58,21 @@ class InputValidator {
 
   static validateMutationData(data: unknown): data is MutationData {
     if (!data || typeof data !== 'object') return false;
-    
+
+    // Reject objects with a tampered prototype (e.g. via __proto__ in a literal)
+    if (Object.getPrototypeOf(data) !== Object.prototype) return false;
+
+    // Reject prototype-pollution vectors present as own keys
+    const forbiddenKeys = ['__proto__', 'constructor', 'prototype'];
+    if (forbiddenKeys.some(k => Object.prototype.hasOwnProperty.call(data, k))) return false;
+
     const mutation = data as any;
-    return (
-      typeof mutation.type === 'string' &&
-      typeof mutation.strength === 'number' &&
-      mutation.strength >= 0 && mutation.strength <= 1 &&
-      (!mutation.target || typeof mutation.target === 'string')
-    );
+    if (typeof mutation.type !== 'string') return false;
+    // Reject types containing XSS / injection characters
+    if (/[<>"'`]/.test(mutation.type) || /(javascript:|on\w+\s*=)/i.test(mutation.type)) return false;
+    if (typeof mutation.strength !== 'number' || mutation.strength < 0 || mutation.strength > 1) return false;
+    if (mutation.target !== undefined && typeof mutation.target !== 'string') return false;
+    return true;
   }
 }
 
@@ -173,12 +194,16 @@ describe('Input Validation Security Tests', () => {
 
       traversalAttacks.forEach(attack => {
         const sanitized = InputValidator.sanitizeFilePath(attack);
+        // Genuine traversal properties: no traversal sequences and no separators
+        // remain (raw or percent-encoded), so the value collapses to a flat name
+        // that cannot reference a parent directory or absolute path.
         expect(sanitized).not.toContain('..');
         expect(sanitized).not.toContain('/');
         expect(sanitized).not.toContain('\\');
-        expect(sanitized).not.toContain('etc');
-        expect(sanitized).not.toContain('passwd');
-        expect(sanitized).not.toContain('system32');
+        expect(sanitized).not.toContain('%2f');
+        expect(sanitized).not.toContain('%2F');
+        expect(sanitized).not.toContain('%5c');
+        expect(sanitized).not.toContain('%5C');
       });
     });
 

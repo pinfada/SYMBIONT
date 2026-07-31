@@ -44,6 +44,13 @@ export class OrganismCore implements IOrganismCore {
     // Validation d'entrée
     const validation = this.validateInput(dna, initialTraits);
     if (!validation.isValid) {
+      // Report to the centralized error handler before failing hard.
+      errorHandler.logSimpleError(
+        'OrganismCore',
+        'constructor',
+        new Error(validation.errors.join(', ')),
+        'error'
+      );
       throw new Error(`OrganismCore creation failed: ${validation.errors.join(', ')}`);
     }
 
@@ -421,6 +428,18 @@ export class OrganismCore implements IOrganismCore {
    * Mutate organism with given rate
    */
   mutate(rate: number = 0.01): void {
+    // Validation du taux de mutation : signalée au gestionnaire d'erreurs
+    // centralisé sans interrompre le système (opération non bloquante).
+    if (typeof rate !== 'number' || !Number.isFinite(rate) || rate < 0 || rate > 1) {
+      errorHandler.logSimpleError(
+        'OrganismCore',
+        'mutate',
+        new Error(`Invalid mutation rate: ${rate}`),
+        'warning'
+      );
+      return;
+    }
+
     const traits = this.traitService.getAllTraits();
     const mutations: { [key: string]: number } = {};
     
@@ -469,6 +488,19 @@ export class OrganismCore implements IOrganismCore {
    * Set traits (partial update)
    */
   setTraits(traits: Partial<OrganismTraits>): void {
+    // Signale les valeurs de traits invalides au gestionnaire d'erreurs
+    // centralisé. TraitService clampe/ignore ensuite les valeurs de façon
+    // sûre, donc l'opération reste non bloquante.
+    Object.entries(traits).forEach(([key, value]) => {
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+        errorHandler.logSimpleError(
+          'OrganismCore',
+          'setTraits',
+          new Error(`Invalid trait value for ${key}: ${String(value)}`),
+          'warning'
+        );
+      }
+    });
     this.traitService.updateTraits(traits, 'external_update');
   }
 

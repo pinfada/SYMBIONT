@@ -21,49 +21,79 @@ global.chrome = {
   storage: mockChromeStorage
 } as any;
 
-// Mock btoa and atob for Node.js environment
-global.btoa = jest.fn().mockImplementation((str) => Buffer.from(str, 'binary').toString('base64'));
-global.atob = jest.fn().mockImplementation((str) => Buffer.from(str, 'base64').toString('binary'));
+// Mock btoa and atob for Node.js environment (implementations applied in beforeEach)
+global.btoa = jest.fn();
+global.atob = jest.fn();
 
 // Mock service-worker-adapter before importing SecurityManager
 const mockCryptoSubtle = {
-  generateKey: jest.fn().mockResolvedValue({ 
-    type: 'secret', 
-    extractable: true, 
-    algorithm: { name: 'AES-GCM', length: 256 }, 
-    usages: ['encrypt', 'decrypt'] 
-  } as CryptoKey),
-  importKey: jest.fn().mockResolvedValue({ 
-    type: 'secret', 
-    extractable: true, 
-    algorithm: { name: 'AES-GCM', length: 256 }, 
-    usages: ['encrypt', 'decrypt'] 
-  } as CryptoKey),
-  exportKey: jest.fn().mockResolvedValue(new ArrayBuffer(32)),
-  encrypt: jest.fn().mockImplementation(async (algorithm, key, data) => {
-    // Simulate realistic encryption result
-    const ciphertext = new Uint8Array(data.byteLength + 16); // Add some auth tag bytes
-    ciphertext.fill(0xBB);
-    return ciphertext.buffer;
-  }),
-  decrypt: jest.fn().mockImplementation(async () => {
-    const testData = JSON.stringify({ secure: 'data' });
-    return new TextEncoder().encode(testData).buffer;
-  }),
-  digest: jest.fn().mockImplementation(async () => {
-    const hash = new Uint8Array(32);
-    hash.fill(0xCD);
-    return hash.buffer;
-  })
+  generateKey: jest.fn(),
+  importKey: jest.fn(),
+  exportKey: jest.fn(),
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
+  digest: jest.fn()
 };
 
-const mockCryptoGetRandomValues = jest.fn().mockImplementation((arr) => {
-  // Fill with deterministic values for testing
-  for (let i = 0; i < arr.length; i++) {
-    arr[i] = i % 256;
-  }
-  return arr;
-});
+const mockCryptoGetRandomValues = jest.fn();
+
+// The jest config sets resetMocks/clearMocks/restoreMocks = true, wiping any
+// implementation set at module scope before each test. Re-apply them per test.
+const mockKey = {
+  type: 'secret',
+  extractable: true,
+  algorithm: { name: 'AES-GCM', length: 256 },
+  usages: ['encrypt', 'decrypt']
+} as CryptoKey;
+
+function applyCryptoMockImplementations(): void {
+  global.btoa = jest.fn().mockImplementation((str) => Buffer.from(str, 'binary').toString('base64'));
+  global.atob = jest.fn().mockImplementation((str) => Buffer.from(str, 'base64').toString('binary'));
+
+  mockCryptoSubtle.generateKey.mockResolvedValue(mockKey);
+  mockCryptoSubtle.importKey.mockResolvedValue(mockKey);
+  mockCryptoSubtle.exportKey.mockResolvedValue(new ArrayBuffer(32));
+
+  // Round-tripping encrypt/decrypt: echo the plaintext bytes as the "ciphertext"
+  // (realm-agnostic via ArrayBuffer.isView) so encrypt→decrypt returns the
+  // original object, exercising the real serialization path in SecurityManager.
+  const toBytes = (data: any): Uint8Array => {
+    if (ArrayBuffer.isView(data)) {
+      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    }
+    return new Uint8Array(data ?? []);
+  };
+
+  mockCryptoSubtle.encrypt.mockImplementation(async (_algorithm, _key, data) => {
+    return toBytes(data).slice().buffer;
+  });
+
+  mockCryptoSubtle.decrypt.mockImplementation(async (_algorithm, _key, data) => {
+    return toBytes(data).slice().buffer;
+  });
+
+  mockCryptoSubtle.digest.mockImplementation(async (_algorithm, data) => {
+    // Input-dependent digest so distinct inputs yield distinct hashes.
+    const bytes = toBytes(data);
+    const hash = new Uint8Array(32);
+    hash.fill(0xCD);
+    for (let i = 0; i < bytes.length; i++) {
+      hash[i % 32] = (hash[i % 32] + bytes[i] + i) % 256;
+    }
+    hash[0] = (hash[0] + bytes.length) % 256;
+    return hash.buffer;
+  });
+
+  mockCryptoGetRandomValues.mockImplementation((arr) => {
+    // Fill with deterministic values for testing
+    if (arr && arr.length) {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = i % 256;
+      }
+    }
+    return arr;
+  });
+}
 
 jest.mock('../../src/background/service-worker-adapter', () => ({
   swCryptoAPI: {
@@ -73,20 +103,31 @@ jest.mock('../../src/background/service-worker-adapter', () => ({
 }));
 
 import { SecurityManager } from '../../src/background/SecurityManager';
+import { bulkheadManager } from '../../src/shared/patterns/BulkheadManager';
+
+// Reset the shared bulkheadManager singleton's circuit-breaker state so failures
+// in one test (or one loop iteration) don't leak into the next.
+function resetBulkheads(): void {
+  const bulkheads = (bulkheadManager as any).bulkheads as Map<string, any>;
+  if (bulkheads) {
+    for (const bulkhead of bulkheads.values()) {
+      bulkhead.circuitBreakerOpen = false;
+      bulkhead.activeRequests = 0;
+      bulkhead.lastFailureTime = 0;
+    }
+  }
+}
 
 describe('SecurityManager - Tests de Sécurité', () => {
   let security: SecurityManager;
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Reset all crypto mocks
-    mockCryptoSubtle.generateKey.mockClear();
-    mockCryptoSubtle.encrypt.mockClear();
-    mockCryptoSubtle.decrypt.mockClear();
-    mockCryptoSubtle.digest.mockClear();
-    mockCryptoGetRandomValues.mockClear();
-    
+
+    // Re-apply mock implementations (wiped by resetMocks between tests)
+    applyCryptoMockImplementations();
+    resetBulkheads();
+
     security = new SecurityManager(true); // Skip auto-init
     
     // Mock encryption key
@@ -262,8 +303,15 @@ describe('SecurityManager - Tests de Sécurité', () => {
         'corrupted-data-that-looks-valid-but-isnt',
         'eyJpbnZhbGlkIjoidGVzdCJ9', // Valid base64 but invalid encrypted data
       ];
-      
+
+      // Simulate the WebCrypto AES-GCM authentication failure that corrupted or
+      // tampered ciphertext produces, so the decrypt path surfaces its security error.
+      mockCryptoSubtle.decrypt.mockRejectedValue(new Error('Operation failed: authentication tag mismatch'));
+
       for (const data of corruptedData) {
+        // Reset the shared circuit breaker so each corrupted input is tested
+        // against the real decrypt path rather than a tripped breaker.
+        resetBulkheads();
         await expect(security.decryptSensitiveData(data))
           .rejects
           .toThrow('Échec du déchiffrement des données');

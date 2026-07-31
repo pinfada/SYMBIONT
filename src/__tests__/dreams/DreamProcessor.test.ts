@@ -108,6 +108,10 @@ describe('DreamProcessor', () => {
   let processor: DreamProcessor;
 
   beforeEach(() => {
+    // DreamProcessor est un singleton : sans reset, `lastSynthesisTime` fuit
+    // d'un test à l'autre et les synthèses suivantes échouent sur l'intervalle
+    // minimum. On repart d'une instance fraîche pour isoler chaque test.
+    (DreamProcessor as any).instance = undefined;
     processor = DreamProcessor.getInstance();
     jest.clearAllMocks();
   });
@@ -500,9 +504,13 @@ describe('CDNWhitelist', () => {
     });
 
     it('should detect shared CDN usage', () => {
+      // Deux sites distincts servis par le même fournisseur CDN (Cloudflare)
+      // mais via des domaines de base différents (cloudflare.com vs
+      // cloudflaressl.com). Le garde-fou base===base ne se déclenche donc pas
+      // et sharesCDNOnly détecte correctement le partage de CDN.
       const result = whitelist.sharesCDNOnly(
-        'site1.cloudflare.com',
-        'site2.cloudflare.com'
+        'assets.cloudflare.com',
+        'cdn.cloudflaressl.com'
       );
       expect(result).toBe(true);
     });

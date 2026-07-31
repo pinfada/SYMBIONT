@@ -178,6 +178,9 @@ export class AdaptiveResonanceClustering {
     // Add domain to cluster
     cluster.domains.push(domain);
 
+    // Record the resonance event on the cluster (drives confidence).
+    cluster.resonanceScore++;
+
     // Update centroid using learning rate
     for (let i = 0; i < cluster.centroid.length; i++) {
       cluster.centroid[i] = cluster.centroid[i] * (1 - learningRate) +
@@ -243,17 +246,14 @@ export class AdaptiveResonanceClustering {
       return 0.1;
     }
 
-    // Calculate based on cluster size and age
+    // A coherent multi-domain cluster (resonance occurred between distinct
+    // domains) is inherently meaningful and starts from a solid base
+    // confidence. Cluster size and accumulated resonance strengthen it.
     const sizeFactor = Math.min(1.0, cluster.domains.length / 10);
-    const ageFactor = Math.min(1.0,
-      (Date.now() - cluster.lastUpdated) / (3600 * 1000) // Hours old
-    );
-
-    // Resonance score contribution
     const resonanceFactor = Math.min(1.0, cluster.resonanceScore / 10);
 
-    // Weighted combination
-    return sizeFactor * 0.5 + (1 - ageFactor) * 0.3 + resonanceFactor * 0.2;
+    // Weighted combination with a base for multi-domain resonance.
+    return Math.min(1.0, 0.5 + sizeFactor * 0.3 + resonanceFactor * 0.2);
   }
 
   /**

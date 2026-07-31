@@ -1,83 +1,92 @@
 /**
  * Tests pour les utilitaires de génération sécurisée de nombres aléatoires
+ *
+ * jsdom expose déjà un vrai `crypto.getRandomValues` (et l'installe via un
+ * getter non remplaçable par simple affectation). On teste donc les propriétés
+ * observables — format, plage, distribution — plutôt que d'espionner un mock
+ * privé qui ne s'appliquerait pas de façon fiable. Pour les scénarios
+ * « fallback », on retire temporairement `crypto` et on vérifie le repli
+ * déterministe ainsi que l'avertissement émis via le `logger` (et non
+ * `console.warn`, conformément à l'implémentation courante).
  */
 
 import { SecureRandom } from '../../src/shared/utils/secureRandom';
+import { logger } from '../../src/shared/utils/secureLogger';
 
-// Mock crypto.getRandomValues pour les tests
-const mockGetRandomValues = jest.fn();
-Object.defineProperty(global, 'crypto', {
-  value: {
-    getRandomValues: mockGetRandomValues,
-  },
-  writable: true,
-});
+const UUID_V4_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Exécute `fn` avec `crypto` temporairement indisponible, puis restaure le
+ * descripteur d'origine (le getter jsdom).
+ */
+function withoutCrypto(fn: () => void): void {
+  const originalDesc = Object.getOwnPropertyDescriptor(global, 'crypto');
+  Object.defineProperty(global, 'crypto', {
+    value: undefined,
+    configurable: true,
+    writable: true,
+  });
+  try {
+    fn();
+  } finally {
+    if (originalDesc) {
+      Object.defineProperty(global, 'crypto', originalDesc);
+    }
+  }
+}
 
 describe('SecureRandom', () => {
-  beforeEach(() => {
-    mockGetRandomValues.mockClear();
-  });
-
   describe('random()', () => {
     it('should return a number between 0 and 1', () => {
-      // Mock crypto.getRandomValues to return a known value
-      mockGetRandomValues.mockImplementation((array) => {
-        array[0] = 0x80000000; // Half of MAX_UINT32
-        return array;
-      });
-
       const result = SecureRandom.random();
+      expect(typeof result).toBe('number');
       expect(result).toBeGreaterThanOrEqual(0);
       expect(result).toBeLessThan(1);
-      expect(typeof result).toBe('number');
     });
 
     it('should use crypto.getRandomValues when available', () => {
-      mockGetRandomValues.mockImplementation((array) => {
-        array[0] = 0x12345678;
-        return array;
-      });
-
+      const spy = jest.spyOn(global.crypto, 'getRandomValues');
       SecureRandom.random();
-      expect(mockGetRandomValues).toHaveBeenCalledWith(expect.any(Uint32Array));
+      expect(spy).toHaveBeenCalledWith(expect.any(Uint32Array));
+      spy.mockRestore();
     });
 
-    it('should fall back to Math.random when crypto is not available', () => {
-      // Temporarily remove crypto
-      const originalCrypto = global.crypto;
-      delete (global as any).crypto;
+    it('should produce a broad spread of distinct values', () => {
+      const values = new Set<number>();
+      for (let i = 0; i < 200; i++) {
+        values.add(SecureRandom.random());
+      }
+      // Un vrai CSPRNG ne doit pas se répéter ; on tolère de rares collisions.
+      expect(values.size).toBeGreaterThan(190);
+    });
 
-      const mathRandomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('should use a deterministic fallback and warn when crypto is unavailable', () => {
+      const warnSpy = jest.spyOn(logger, 'warn').mockImplementation();
+      const errorSpy = jest.spyOn(logger, 'error').mockImplementation();
 
-      const result = SecureRandom.random();
+      withoutCrypto(() => {
+        const result = SecureRandom.random();
+        expect(typeof result).toBe('number');
+        expect(result).toBeGreaterThanOrEqual(0);
+        expect(result).toBeLessThan(1);
+        expect(errorSpy).toHaveBeenCalled();
+        expect(warnSpy).toHaveBeenCalled();
+      });
 
-      expect(result).toBe(0.5);
-      expect(mathRandomSpy).toHaveBeenCalled();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'SecureRandom: crypto.getRandomValues non disponible, utilisation de Math.random()'
-      );
-
-      // Restore
-      global.crypto = originalCrypto;
-      mathRandomSpy.mockRestore();
-      consoleWarnSpy.mockRestore();
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
     });
   });
 
   describe('randomInt()', () => {
-    beforeEach(() => {
-      mockGetRandomValues.mockImplementation((array) => {
-        array[0] = 0x40000000; // Quarter of MAX_UINT32
-        return array;
-      });
-    });
-
     it('should return integer within specified range', () => {
-      const result = SecureRandom.randomInt(5, 15);
-      expect(Number.isInteger(result)).toBe(true);
-      expect(result).toBeGreaterThanOrEqual(5);
-      expect(result).toBeLessThan(15);
+      for (let i = 0; i < 50; i++) {
+        const result = SecureRandom.randomInt(5, 15);
+        expect(Number.isInteger(result)).toBe(true);
+        expect(result).toBeGreaterThanOrEqual(5);
+        expect(result).toBeLessThan(15);
+      }
     });
 
     it('should throw error if min >= max', () => {
@@ -91,18 +100,13 @@ describe('SecureRandom', () => {
   });
 
   describe('randomFloat()', () => {
-    beforeEach(() => {
-      mockGetRandomValues.mockImplementation((array) => {
-        array[0] = 0x40000000; // Quarter of MAX_UINT32 (0.25)
-        return array;
-      });
-    });
-
     it('should return float within specified range', () => {
-      const result = SecureRandom.randomFloat(1.0, 3.0);
-      expect(typeof result).toBe('number');
-      expect(result).toBeGreaterThanOrEqual(1.0);
-      expect(result).toBeLessThan(3.0);
+      for (let i = 0; i < 50; i++) {
+        const result = SecureRandom.randomFloat(1.0, 3.0);
+        expect(typeof result).toBe('number');
+        expect(result).toBeGreaterThanOrEqual(1.0);
+        expect(result).toBeLessThan(3.0);
+      }
     });
 
     it('should throw error if min >= max', () => {
@@ -114,53 +118,38 @@ describe('SecureRandom', () => {
 
   describe('randomBytes()', () => {
     it('should return Uint8Array of specified length', () => {
-      mockGetRandomValues.mockImplementation((array) => {
-        for (let i = 0; i < array.length; i++) {
-          array[i] = i % 256;
-        }
-        return array;
-      });
-
+      const spy = jest.spyOn(global.crypto, 'getRandomValues');
       const result = SecureRandom.randomBytes(10);
       expect(result).toBeInstanceOf(Uint8Array);
       expect(result.length).toBe(10);
-      expect(mockGetRandomValues).toHaveBeenCalledWith(expect.any(Uint8Array));
+      expect(spy).toHaveBeenCalledWith(expect.any(Uint8Array));
+      spy.mockRestore();
     });
 
-    it('should fall back when crypto is not available', () => {
-      const originalCrypto = global.crypto;
-      delete (global as any).crypto;
+    it('should use a deterministic fallback and warn when crypto is unavailable', () => {
+      const warnSpy = jest.spyOn(logger, 'warn').mockImplementation();
+      const errorSpy = jest.spyOn(logger, 'error').mockImplementation();
 
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      const mathRandomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+      withoutCrypto(() => {
+        const result = SecureRandom.randomBytes(5);
+        expect(result).toBeInstanceOf(Uint8Array);
+        expect(result.length).toBe(5);
+        expect(errorSpy).toHaveBeenCalled();
+        expect(warnSpy).toHaveBeenCalled();
+      });
 
-      const result = SecureRandom.randomBytes(5);
-      
-      expect(result).toBeInstanceOf(Uint8Array);
-      expect(result.length).toBe(5);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'SecureRandom: crypto.getRandomValues non disponible, génération fallback'
-      );
-
-      // Restore
-      global.crypto = originalCrypto;
-      consoleWarnSpy.mockRestore();
-      mathRandomSpy.mockRestore();
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
     });
   });
 
   describe('choice()', () => {
-    beforeEach(() => {
-      mockGetRandomValues.mockImplementation((array) => {
-        array[0] = 0x40000000; // Should select index 1 of 4 elements
-        return array;
-      });
-    });
-
     it('should return an element from the array', () => {
       const array = ['a', 'b', 'c', 'd'];
-      const result = SecureRandom.choice(array);
-      expect(array).toContain(result);
+      for (let i = 0; i < 50; i++) {
+        const result = SecureRandom.choice(array);
+        expect(array).toContain(result);
+      }
     });
 
     it('should throw error for empty array', () => {
@@ -172,52 +161,37 @@ describe('SecureRandom', () => {
 
   describe('uuid()', () => {
     it('should return valid UUID v4 format', () => {
-      mockGetRandomValues.mockImplementation((array) => {
-        for (let i = 0; i < array.length; i++) {
-          array[i] = i + 0x10;
-        }
-        return array;
-      });
-
       const result = SecureRandom.uuid();
       expect(typeof result).toBe('string');
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-      );
+      expect(result).toMatch(UUID_V4_REGEX);
     });
 
-    it('should fall back to Math.random when crypto is not available', () => {
-      const originalCrypto = global.crypto;
-      delete (global as any).crypto;
+    it('should produce unique UUIDs', () => {
+      const ids = new Set<string>();
+      for (let i = 0; i < 100; i++) {
+        ids.add(SecureRandom.uuid());
+      }
+      expect(ids.size).toBe(100);
+    });
 
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      const mathRandomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    it('should use a deterministic fallback and warn when crypto is unavailable', () => {
+      const warnSpy = jest.spyOn(logger, 'warn').mockImplementation();
+      const errorSpy = jest.spyOn(logger, 'error').mockImplementation();
 
-      const result = SecureRandom.uuid();
-      
-      expect(typeof result).toBe('string');
-      expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-      );
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'SecureRandom: crypto.getRandomValues non disponible, UUID fallback'
-      );
+      withoutCrypto(() => {
+        const result = SecureRandom.uuid();
+        expect(typeof result).toBe('string');
+        expect(result).toMatch(UUID_V4_REGEX);
+        expect(errorSpy).toHaveBeenCalled();
+        expect(warnSpy).toHaveBeenCalled();
+      });
 
-      // Restore
-      global.crypto = originalCrypto;
-      consoleWarnSpy.mockRestore();
-      mathRandomSpy.mockRestore();
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
     });
   });
 
   describe('randomString()', () => {
-    beforeEach(() => {
-      mockGetRandomValues.mockImplementation((array) => {
-        array[0] = 0x10000000; // Should select predictable characters
-        return array;
-      });
-    });
-
     it('should return string of specified length', () => {
       const result = SecureRandom.randomString(10);
       expect(typeof result).toBe('string');
@@ -235,13 +209,6 @@ describe('SecureRandom', () => {
   });
 
   describe('randomId()', () => {
-    beforeEach(() => {
-      mockGetRandomValues.mockImplementation((array) => {
-        array[0] = 0x10000000;
-        return array;
-      });
-    });
-
     it('should return ID with prefix', () => {
       const result = SecureRandom.randomId('test', 6);
       expect(result).toMatch(/^test_[A-Za-z0-9]{6}$/);

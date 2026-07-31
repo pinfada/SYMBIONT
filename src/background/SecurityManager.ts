@@ -322,7 +322,7 @@ export class SecurityManager {
    * Contrôle d'accès par rôle (user/admin), ressource, etc.
    */
   validateDataAccess(request: { userId: string; resource: string; role?: 'user' | 'admin' }, requiredRole: 'user' | 'admin' = 'user'): boolean {
-    if (!request.userId || !request.resource) return false
+    if (!request || !request.userId || !request.resource) return false
     if (requiredRole === 'admin' && request.role !== 'admin') return false
     return true
   }
