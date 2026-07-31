@@ -2,7 +2,8 @@
 
 <div align="center">
 
-  [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
+  [![Firefox](https://img.shields.io/badge/Firefox-140+-FF7139?logo=firefoxbrowser&logoColor=white)](https://www.mozilla.org/firefox/)
+  [![Chrome](https://img.shields.io/badge/Chrome-120+-4285F4?logo=googlechrome&logoColor=white)](https://www.google.com/chrome/)
   [![WebRTC](https://img.shields.io/badge/WebRTC-P2P-333333?logo=webrtc)](https://webrtc.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
@@ -13,7 +14,7 @@
 
   **Au-delà de la navigation, percevez la structure invisible du Web**
 
-  [C'est quoi ?](#-symbiont-en-deux-mots) • [Installation](#-installation--warmup) • [Vie privée](#-éthique--signal-faible) • [Pour les développeurs](#-architecture-sentinel-flow)
+  [C'est quoi ?](#-symbiont-en-deux-mots) • [Navigateurs](#-navigateurs-supportés) • [Installation](#-installation--warmup) • [Vie privée](#-éthique--signal-faible) • [Pour les développeurs](#-architecture-sentinel-flow)
 
 </div>
 
@@ -272,33 +273,50 @@ SYMBIONT inverse la logique extractiviste :
 - Découvrir les connexions invisibles entre domaines
 - Explorer les signaux faibles du réseau
 
+## 🌐 Navigateurs supportés
+
+SYMBIONT est une extension **Manifest V3** compatible avec les deux grandes familles de navigateurs.
+
+| Navigateur | Statut | Installation | Notes |
+|------------|--------|--------------|-------|
+| 🦊 **Firefox** 140+ | ✅ Supporté (canal recommandé) | `.xpi` signé, distribué sur GitHub + **mises à jour automatiques** | Rendu WebGL et maille P2P WebRTC pleinement fonctionnels dans la page d'événements |
+| 🦊 **Firefox pour Android** 140+ | ⚠️ Expérimental | via collection AMO | Non validé pour la release initiale |
+| 🌐 **Chrome / Chromium** 120+ | ✅ Supporté | Mode développeur (dossier `dist/`) | Le P2P WebRTC tourne en mode découverte seule (limite service worker MV3) |
+| 🌐 **Edge / Brave / Opera** 120+ | ✅ Compatible | Comme Chrome (base Chromium) | Non testé formellement |
+| 🦁 **Safari** | ❌ Non supporté | — | Architecture d'extension incompatible |
+
+> **Pourquoi Firefox est le canal recommandé pour la distribution de masse** : Firefox permet de distribuer un `.xpi` **signé par Mozilla** tout en l'hébergeant soi-même (ici, sur GitHub) *avec* mises à jour automatiques — sans passer par un store. Chrome, à l'inverse, réserve l'installation grand public au Chrome Web Store. Détails techniques : [`docs/audits/firefox-port-audit.md`](docs/audits/firefox-port-audit.md).
+
 ## 🚀 Installation & Warmup
 
-> ⚠️ **Pour l'instant, l'installation demande quelques commandes** (version développeur). La publication sur le **Chrome Web Store** — installation en un clic pour tout le monde — est l'étape clé prévue pour la distribution grand public. Si vous n'êtes pas à l'aise avec un terminal, demandez à quelqu'un de vous préparer le dossier `dist/`, puis suivez uniquement l'étape [Configuration Chrome](#configuration-chrome).
+> ⚠️ **Aujourd'hui, l'installation se fait depuis GitHub.** Sur Firefox, l'installation d'un `.xpi` signé se fait en un clic (voir ci-dessous) — accessible aux non-techniciens. Sur Chrome, elle demande le mode développeur.
 
-### Prérequis
+### Prérequis (build depuis les sources)
 - Node.js 18+ et npm
-- Chrome 120+ (Manifest V3 support)
+- Firefox 140+ **ou** Chrome 120+ (support Manifest V3)
 
-### Installation Développement
+### Installation Firefox (recommandé)
 
+**Utilisateur — depuis une release :** ouvrir le fichier `.xpi` de la [dernière release](https://github.com/pinfada/SYMBIONT/releases) directement dans Firefox → installation en un clic. Les mises à jour sont ensuite automatiques.
+
+**Développeur — depuis les sources :**
 ```bash
-# Cloner le repository
 git clone https://github.com/pinfada/SYMBIONT.git
 cd SYMBIONT
-
-# Installer les dépendances
 npm install
-
-# Compiler l'extension
-npm run build
-
-# (Optionnel) Lancer en mode développement
-npm run dev
+npm run build:firefox   # build + manifest Firefox dérivé
 ```
+Puis : `about:debugging` → **Ce Firefox** → **Charger un module complémentaire temporaire** → sélectionner `dist/manifest.json`.
 
-### Configuration Chrome
+### Installation Chrome / Chromium
 
+```bash
+git clone https://github.com/pinfada/SYMBIONT.git
+cd SYMBIONT
+npm install
+npm run build           # build + manifest Chrome
+```
+Puis :
 1. Ouvrir `chrome://extensions`
 2. Activer le **Mode Développeur**
 3. **Charger l'extension non empaquetée** → sélectionner `dist/`
@@ -350,7 +368,7 @@ node scripts/migrate-math-random.js # Migration Math.random
 - **IndexedDB** : Persistance hybride avec cache LRU
 
 ### Sécurité & Performance
-- **Manifest V3** : Derniers standards Chrome
+- **Manifest V3** : cross-navigateur (Firefox page d'événements / Chrome service worker)
 - **FIPS 140-2** : Génération aléatoire certifiée
 - **Thermal Throttling** : Protection contre la surchauffe
 - **AbortController** : Annulation gracieuse des opérations
