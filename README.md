@@ -22,6 +22,8 @@
 
 ## 🌱 SYMBIONT en deux mots
 
+> 🧭 **Vision & cap produit** : [`docs/VISION.md`](docs/VISION.md) — pourquoi SYMBIONT n'est ni un bloqueur ni un feed, mais un *symbiote au sens propre*.
+
 <div align="center">
 
 ![Six organismes SYMBIONT fractals aux silhouettes uniques](docs/assets/organism-gallery.png)
