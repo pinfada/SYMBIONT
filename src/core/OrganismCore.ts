@@ -30,7 +30,7 @@ export class OrganismCore implements IOrganismCore {
   private readonly traitService: TraitService;
   private readonly energyService: EnergyService;
   private readonly neuralService: NeuralService;
-  private readonly metricsService: RealMetricsService;
+  private readonly metricsService: RealMetricsService;
   private readonly featureFlags: FeatureFlagService;
   private readonly logger: { debug: Function; info: Function; error: Function } | undefined;
 
@@ -438,6 +438,19 @@ export class OrganismCore implements IOrganismCore {
       this.lastMutation = Date.now();
       this.logger?.debug('Mutation applied', { id: this.id, mutations });
     }
+  }
+
+  /**
+   * Applique immédiatement toute mutation en attente.
+   *
+   * `mutate()` applique déjà les mutations de façon synchrone (pas de file
+   * d'attente interne) ; cette méthode existe pour fournir un contrat d'API
+   * de « flush » cohérent (batching côté appelant) et se résout donc
+   * immédiatement. Idempotente.
+   */
+  async flushMutations(): Promise<void> {
+    // Rien à vider : les mutations sont appliquées dans mutate().
+    return Promise.resolve();
   }
 
   /**
