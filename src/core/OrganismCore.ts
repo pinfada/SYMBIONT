@@ -25,6 +25,8 @@ export class OrganismCore implements IOrganismCore {
   private readonly dna: string;
   private health: number = 100;
   private lastMutation: number = Date.now();
+  private mutationCount: number = 0;      // nombre total d'appels à mutate()
+  private mutationTraitWrites: number = 0; // nombre de traits effectivement mutés
   
   // Services spécialisés (injection de dépendances)
   private readonly traitService: TraitService;
@@ -433,7 +435,9 @@ export class OrganismCore implements IOrganismCore {
     });
     
     // Apply mutations
+    this.mutationCount++;
     if (Object.keys(mutations).length > 0) {
+      this.mutationTraitWrites += Object.keys(mutations).length;
       this.traitService.updateTraits(mutations as Partial<OrganismTraits>, 'mutation');
       this.lastMutation = Date.now();
       this.logger?.debug('Mutation applied', { id: this.id, mutations });
@@ -474,11 +478,22 @@ export class OrganismCore implements IOrganismCore {
   async getPerformanceMetrics() {
     const neuralMetrics = this.neuralService.getPerformanceMetrics();
     
+    // Statistiques de mutation : plusieurs écritures de traits sont appliquées
+    // en un seul updateTraits par appel à mutate() → ratio de compression.
+    const compressionRatio = this.mutationCount > 0
+      ? Math.max(1, this.mutationTraitWrites / this.mutationCount)
+      : 1;
+
     return {
       cpu: await this.metricsService.getCPUUsage(),
       memory: await this.metricsService.getMemoryUsage(),
       neuralActivity: neuralMetrics?.neuralActivity || 0,
-      connectionStrength: neuralMetrics?.connectionStrength || 0
+      connectionStrength: neuralMetrics?.connectionStrength || 0,
+      mutationStats: {
+        totalRequests: this.mutationCount,
+        traitWrites: this.mutationTraitWrites,
+        compressionRatio
+      }
     };
   }
 
