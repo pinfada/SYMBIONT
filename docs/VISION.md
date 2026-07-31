@@ -77,6 +77,11 @@ C'est l'exact inverse de l'engagement : au lieu de maximiser ce que tu ingères,
 il **minimise** ce qu'il te fait remonter, et n'garde que le signal qui te
 transforme. Le symbiote te rend **plus lucide en te faisant lire moins**.
 
+> 🔬 **Première brique construite & testée** : le module `src/shared/comprehension/`
+> opérationnalise ce mécanisme (modèle de croyances accrété + classement de
+> relation par le LLM local, invariant anti-feed testé). Détail et protocole de
+> falsification : [`comprehension-delta.md`](comprehension-delta.md).
+
 ---
 
 ## Les 3 paris de connaissance (l'honnêteté du projet)
