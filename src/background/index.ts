@@ -1,6 +1,7 @@
 // src/background/index.ts
 // Point d'entrée background (Neural Core) — service worker Chrome / page d'événements Firefox
 import './persistent-service-worker'; // cycle de vie : heartbeat chrome.alarms + sauvegarde d'état
+import { installCognitiveOffscreen } from './CognitiveOffscreen'; // v3 : moteur LLM offscreen
 import { MessageBus } from '../core/messaging/MessageBus';
 import { MessageType } from '../shared/messaging/MessageBus';
 import { IndexedDBCoordinator } from '../core/storage/IndexedDBCoordinator';
@@ -1322,6 +1323,9 @@ async function getBackgroundService(): Promise<BackgroundService> {
   }
   return _backgroundServiceInstance;
 }
+
+// v3 : écoute ENSURE_OFFSCREEN_LLM du popup pour créer/garantir l'offscreen LLM.
+installCognitiveOffscreen();
 
 // Setup listener pour déclencher l'initialisation au premier message
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {

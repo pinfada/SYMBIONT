@@ -13,6 +13,12 @@
 
 import { logger } from '@/shared/utils/secureLogger';
 import { OrganismRenderer } from '@/shared/rendering/OrganismRenderer';
+import { installOffscreenLLM } from './offscreen-llm';
+
+// Le même document offscreen héberge aussi le moteur LLM (WebGPU) : le modèle y
+// reste chargé même popup fermé. Coûte juste un listener tant qu'aucun modèle
+// n'est demandé (WebLLM n'est importé qu'au premier chargement).
+installOffscreenLLM();
 
 const RENDER_WIDTH = 400;
 const RENDER_HEIGHT = 300;

@@ -96,17 +96,34 @@ l'organisme. Le texte de la page ne quitte jamais le poste.
 | Analyse de fiabilité | `src/shared/llm/ContentAnalysis.ts` |
 | Pont vers l'organisme | `src/shared/llm/organismSignal.ts` |
 | Extraction du texte de page | `src/shared/llm/pageText.ts` |
+| Moteur offscreen (persiste popup fermé) | `src/background/offscreen-llm.ts` |
+| Protocole popup ↔ offscreen | `src/shared/llm/offscreenProtocol.ts` |
+| Client offscreen + repli in-popup | `src/shared/llm/OffscreenLLMClient.ts`, `cognitiveEngine.ts` |
+| Coordination du document offscreen (bail) | `src/background/CognitiveOffscreen.ts` |
 | UI (onglet 🧠 Cognition) | `src/popup/components/LocalLLMPanel.tsx` |
 
 Le runtime WebLLM (~6 Mo) est chargé en `import()` dynamique : webpack le place
 dans un chunk séparé, donc le bundle initial du popup reste léger et le gros
 paquet n'arrive que si l'utilisateur ouvre l'onglet et active le module.
 
-### Feuille de route
+### Où tourne le moteur ? (v3)
 
-En v1/v2 le moteur tourne dans le **popup** (l'analyse est déclenchée à la
-demande). Une prochaine itération pourra le déplacer vers le **document
-offscreen** pour une analyse **en tâche de fond** (score de fiabilité
-automatique par page, détection de réseaux de bots), directement câblée à
-l'organisme. L'abstraction du moteur (`LocalLLMEngine`) est déjà prête pour ce
-déménagement.
+Le moteur vit désormais dans le **document offscreen** : le modèle **reste
+chargé même quand le popup est fermé**, et une génération/analyse **continue en
+arrière-plan**. Le popup n'est qu'un client léger qui dialogue avec l'offscreen
+par messages runtime (protocole corrélé par `id`).
+
+- MV3 n'autorise **qu'un seul** document offscreen : il est **partagé** avec le
+  rendu WebGL. Le module cognitif pose un « **bail** » tant qu'un modèle est
+  chargé, pour que le pont WebGL ne ferme pas le document sous ses pieds
+  (`CognitiveOffscreen.ts` + garde dans `OffscreenWebGL.ts`).
+- Si l'offscreen est **injoignable**, repli **transparent** sur un moteur
+  in-popup (`createCognitiveEngine()`), avec un délai de garde. L'onglet indique
+  où tourne le moteur (`offscreen (persistant)` ou `popup`).
+- **Aucune nouvelle permission invasive** : pas de lecture automatique de toutes
+  les pages ; l'analyse reste déclenchée à la demande.
+
+> ⚠️ Le chemin offscreen + WebGPU se **vérifie en conditions réelles** (Chrome/
+> Edge récent, extension chargée non empaquetée) : l'environnement de CI ne peut
+> pas exécuter WebGPU. La logique (protocole, client, repli, bail) est couverte
+> par des tests unitaires.

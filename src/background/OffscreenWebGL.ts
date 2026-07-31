@@ -8,6 +8,7 @@
 import { logger } from '@/shared/utils/secureLogger';
 import { SecureRandom } from '@/shared/utils/secureRandom';
 import { hasOffscreenAPI } from '@/shared/utils/browser-env';
+import { isOffscreenLLMLeaseHeld } from './CognitiveOffscreen';
 
 interface RenderResponse {
   success: boolean;
@@ -105,6 +106,14 @@ export class ServiceWorkerWebGLBridge {
 
   async cleanup(): Promise<void> {
     if (this.offscreenCreated) {
+      // v3 : ne pas fermer le document offscreen si le moteur LLM y tient un
+      // modèle chargé (bail). On abandonne juste notre référence WebGL.
+      if (isOffscreenLLMLeaseHeld()) {
+        this.offscreenCreated = false;
+        this.pendingRequests.clear();
+        logger.info('Offscreen WebGL released (LLM lease held, document kept alive)');
+        return;
+      }
       try {
         await chrome.offscreen.closeDocument();
         this.offscreenCreated = false;

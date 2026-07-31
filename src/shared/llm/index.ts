@@ -23,6 +23,16 @@ export type { ReliabilityReport, ReliabilityLevel, ChatCapable } from './Content
 export { feedReliabilityToOrganism, vigilanceDelta } from './organismSignal';
 export { extractActivePageText } from './pageText';
 export type { PageText } from './pageText';
+export { createCognitiveEngine } from './cognitiveEngine';
+export type { CognitiveEngine } from './cognitiveEngine';
+export { OffscreenLLMClient } from './OffscreenLLMClient';
+export {
+  LLM_TARGET,
+  ENSURE_OFFSCREEN_LLM,
+  isLLMRequest,
+  isLLMResponse,
+} from './offscreenProtocol';
+export type { LLMRequest, LLMResponse, LLMResult } from './offscreenProtocol';
 export type {
   ChatMessage,
   ChatRole,

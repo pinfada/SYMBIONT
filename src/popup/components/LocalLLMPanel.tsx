@@ -19,9 +19,9 @@ import {
   getModelInfo,
   llmPreferences,
   type LLMPreferences,
-  LocalLLMEngine,
+  createCognitiveEngine,
+  type CognitiveEngine,
   type ChatMessage,
-  analyzeContent,
   extractActivePageText,
   feedReliabilityToOrganism,
   type ReliabilityReport,
@@ -47,7 +47,7 @@ interface Bubble {
 }
 
 const LocalLLMPanel: React.FC = () => {
-  const engineRef = useRef<LocalLLMEngine | null>(null);
+  const engineRef = useRef<CognitiveEngine | null>(null);
   const [support, setSupport] = useState<WebGPUSupport | null>(null);
   const [uiState, setUiState] = useState<UIState>('detecting');
   const [prefs, setPrefs] = useState<LLMPreferences>(llmPreferences.get());
@@ -89,7 +89,7 @@ const LocalLLMPanel: React.FC = () => {
     setUiState('loading');
     setProgress({ pct: 0, text: 'Initialisation…' });
     await llmPreferences.update({ enabled: true, modelId, downloadConsented: true });
-    const engine = engineRef.current ?? new LocalLLMEngine();
+    const engine = engineRef.current ?? (await createCognitiveEngine());
     engineRef.current = engine;
     try {
       await engine.load(modelId, (p) => {
@@ -166,7 +166,7 @@ const LocalLLMPanel: React.FC = () => {
         setError("Pas assez de texte lisible sur cette page pour l'analyser.");
         return;
       }
-      const r = await analyzeContent(engine, page.text, page.domain ? { domain: page.domain } : {});
+      const r = await engine.analyze(page.text, page.domain ? { domain: page.domain } : {});
       setReport(r);
       void feedReliabilityToOrganism(r);
     } catch (e) {
@@ -333,7 +333,8 @@ const LocalLLMPanel: React.FC = () => {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ color: C.dim, fontSize: 12 }}>
-          {getModelInfo(engineRef.current?.getModelId() ?? '')?.label ?? 'Modèle'} • local
+          {getModelInfo(engineRef.current?.getModelId() ?? '')?.label ?? 'Modèle'} •{' '}
+          {engineRef.current?.location === 'offscreen' ? 'offscreen (persistant)' : 'popup'}
         </span>
         <button
           style={s.linkBtn}
