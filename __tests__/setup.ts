@@ -204,20 +204,32 @@ HTMLCanvasElement.prototype.getContext = jest.fn((contextType: string) => {
   return null;
 }) as any;
 
-// Mock crypto for secure random
-global.crypto = {
-  getRandomValues: jest.fn((array: Uint8Array | Uint32Array) => {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
-    return array;
-  }),
-  randomUUID: jest.fn(() => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  }))
-} as any;
+// Crypto pour les tests. jsdom expose déjà `crypto` (getRandomValues) mais
+// SANS SubtleCrypto ; et il l'expose en getter sans setter, donc un
+// `global.crypto = {…}` est silencieusement ignoré. On greffe donc `subtle`
+// (vrai WebCrypto de Node : SHA-256, etc.) sur l'objet crypto existant.
+const nodeWebCrypto: Crypto | undefined = (() => {
+  try { return (require('crypto').webcrypto) as Crypto; } catch { return undefined; }
+})();
+if (!global.crypto) {
+  // Environnement sans crypto : mock minimal.
+  (global as any).crypto = {
+    getRandomValues: (array: Uint8Array | Uint32Array) => {
+      for (let i = 0; i < array.length; i++) array[i] = Math.floor(Math.random() * 256);
+      return array;
+    },
+    randomUUID: () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    }),
+    subtle: nodeWebCrypto?.subtle,
+  };
+} else if (!(global.crypto as { subtle?: unknown }).subtle && nodeWebCrypto?.subtle) {
+  try {
+    Object.defineProperty(global.crypto, 'subtle', { value: nodeWebCrypto.subtle, configurable: true });
+  } catch { /* propriété non configurable : on laisse tel quel */ }
+}
 
 // Mock performance API
 global.performance = {

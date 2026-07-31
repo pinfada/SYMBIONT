@@ -34,6 +34,7 @@ export class WebGLBatcher {
   private config: WebGLBatcherConfig;
   private pendingDrawCalls: Map<string, WebGLDrawCall[]> = new Map();
   private frameId: number | null = null;
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
   
   // Buffers réutilisables
   private vertexBuffer: WebGLBuffer | null = null;
@@ -123,22 +124,44 @@ export class WebGLBatcher {
    * Planifie le rendu du frame
    */
   private scheduleFrameRender(): void {
-    if (this.frameId !== null) {
-      return; // Already scheduled
-    }
-
-    // Check if we should render immediately
-    const shouldRenderImmediately = this.shouldRenderImmediately();
-    
-    if (shouldRenderImmediately) {
+    // Rendu immédiat si haute priorité ou seuils atteints — même si un frame
+    // est déjà planifié (le garde `frameId !== null` ne doit PAS bloquer ce cas).
+    if (this.shouldRenderImmediately()) {
+      this.cancelScheduledRender();
       this.renderFrame();
       return;
     }
 
-    // Schedule for next animation frame
-    this.frameId = requestAnimationFrame(() => {
+    if (this.frameId !== null || this.timeoutId !== null) {
+      return; // Déjà planifié
+    }
+
+    // Planifie via requestAnimationFrame quand disponible, avec un repli
+    // setTimeout(frameTimeoutMs) qui GARANTIT le rendu (rAF peut ne pas se
+    // déclencher hors contexte visuel, p.ex. en test). Le premier qui se
+    // déclenche annule l'autre via cancelScheduledRender() dans renderFrame().
+    if (typeof requestAnimationFrame === 'function') {
+      this.frameId = requestAnimationFrame(() => {
+        this.frameId = null;
+        this.renderFrame();
+      });
+    }
+    this.timeoutId = setTimeout(() => {
+      this.timeoutId = null;
       this.renderFrame();
-    });
+    }, this.config.frameTimeoutMs);
+  }
+
+  /** Annule tout rendu planifié (rAF + timeout de repli). */
+  private cancelScheduledRender(): void {
+    if (this.frameId !== null) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = null;
+    }
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
   }
 
   /**
@@ -180,10 +203,12 @@ export class WebGLBatcher {
   private renderFrame(): void {
     const startTime = performance.now();
     
+    // Annule tout rendu encore planifié (rAF ou repli timeout) pour éviter
+    // un double rendu quand les deux mécanismes coexistent.
+    this.cancelScheduledRender();
+
     errorHandler.safeExecute(
       () => {
-        this.frameId = null;
-
         // Process each primitive type
         for (const [type, drawCalls] of this.pendingDrawCalls) {
           if (!drawCalls || drawCalls.length === 0) continue;
@@ -363,10 +388,7 @@ export class WebGLBatcher {
    * Force le rendu immédiat de tous les draw calls en attente
    */
   public flush(): void {
-    if (this.frameId) {
-      cancelAnimationFrame(this.frameId);
-      this.frameId = null;
-    }
+    this.cancelScheduledRender();
     this.renderFrame();
   }
 
@@ -398,10 +420,7 @@ export class WebGLBatcher {
    * Nettoie les ressources WebGL
    */
   public dispose(): void {
-    if (this.frameId) {
-      cancelAnimationFrame(this.frameId);
-      this.frameId = null;
-    }
+    this.cancelScheduledRender();
 
     const gl = this.gl;
     

@@ -52,13 +52,11 @@ export function safeGetClasses(element: Element | null | undefined): string[] {
   if (!element) {
     return [];
   }
-  
-  // Vérifier si c'est bien un élément DOM
-  if (!(element instanceof Element)) {
-    return [];
-  }
-  
-  // Vérifier que className existe et est une string
+
+  // Vérifier que className existe et est une string. On n'exige PAS
+  // `instanceof Element` : ce garde est redondant (une className non-string,
+  // p.ex. SVGAnimatedString, est déjà rejetée ci-dessous) et casse le
+  // duck-typing (objets testables, environnements sans DOM global).
   if (!element.className || typeof element.className !== 'string') {
     return [];
   }
