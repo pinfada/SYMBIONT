@@ -2,9 +2,14 @@ import { PerformanceMetrics, VisualMutation } from '../shared/types/organism'
 import { OrganismMemoryBank } from './OrganismMemoryBank'
 import { logger } from '@/shared/utils/secureLogger';
 import { WebGLBridgeManager } from './OffscreenWebGL';
+import { BackgroundPageWebGL } from './BackgroundPageWebGL';
+import { hasOffscreenAPI } from '@/shared/utils/browser-env';
 
-// MV3-Compatible WebGL Orchestrator
-// Routes WebGL operations to appropriate rendering contexts
+// Cross-browser WebGL Orchestrator
+// Routes WebGL operations to the best rendering context available:
+//  - background-page : in-process (Firefox event page) — no messaging, best quality
+//  - offscreen       : Chrome offscreen document (via WebGLBridgeManager)
+//  - popup / content_script : delegated rendering fallbacks
 
 interface RenderRequest {
   id: string;
@@ -15,7 +20,7 @@ interface RenderRequest {
 }
 
 interface RenderTarget {
-  type: 'offscreen' | 'popup' | 'content_script';
+  type: 'background-page' | 'offscreen' | 'popup' | 'content_script';
   available: boolean;
   performance: number; // 0-1 score
 }
@@ -24,6 +29,7 @@ export class WebGLOrchestrator {
   private renderQueue: RenderRequest[] = []
   private memoryBank: OrganismMemoryBank
   private webglBridge: WebGLBridgeManager
+  private backgroundRenderer: BackgroundPageWebGL = new BackgroundPageWebGL()
   private renderTargets: Map<string, RenderTarget> = new Map()
   private isInitialized = false
   private performanceMetrics = {
@@ -40,9 +46,16 @@ export class WebGLOrchestrator {
 
   async initialize(): Promise<void> {
     try {
-      // Initialize WebGL bridge (Offscreen API + fallbacks)
-      await this.webglBridge.initialize()
-      
+      // In-process rendering first (Firefox event page: DOM available in background)
+      const inProcessReady = BackgroundPageWebGL.isSupported() && this.backgroundRenderer.initialize()
+      if (inProcessReady) {
+        this.renderTargets.get('background-page')!.available = true
+        logger.info('In-process background rendering active (event page)')
+      } else {
+        // Chrome service worker: offscreen document bridge
+        await this.webglBridge.initialize()
+      }
+
       // Setup render target monitoring
       this.monitorRenderTargets()
       
@@ -60,12 +73,18 @@ export class WebGLOrchestrator {
 
   private initializeRenderTargets(): void {
     // Register available render targets
+    this.renderTargets.set('background-page', {
+      type: 'background-page',
+      available: false, // Detected during init (Firefox event page only)
+      performance: 1.0 // In-process: no messaging, no serialization — best quality
+    })
+
     this.renderTargets.set('offscreen', {
       type: 'offscreen',
       available: false, // Will be detected during init
-      performance: 1.0 // Highest performance
+      performance: 0.9
     })
-    
+
     this.renderTargets.set('popup', {
       type: 'popup', 
       available: false,
@@ -80,9 +99,11 @@ export class WebGLOrchestrator {
   }
 
   private async monitorRenderTargets(): Promise<void> {
-    // Check Offscreen API availability
+    // Check Offscreen API availability (Chrome only, and only if the
+    // in-process background-page target isn't already active)
     const offscreenTarget = this.renderTargets.get('offscreen')!
-    if (chrome.offscreen && typeof chrome.offscreen.createDocument === 'function') {
+    const inProcessActive = this.renderTargets.get('background-page')!.available
+    if (!inProcessActive && hasOffscreenAPI() && this.webglBridge.isUsingOffscreen()) {
       offscreenTarget.available = true
       logger.info('Offscreen API available for WebGL rendering')
     }
@@ -242,12 +263,26 @@ export class WebGLOrchestrator {
 
     try {
       switch (target.type) {
-        case 'offscreen':
-          await withTimeout(
-            this.webglBridge.renderOrganism(request as any),
+        case 'background-page': {
+          // In-process render (Firefox event page): no messaging round-trip
+          const dataUrl = this.backgroundRenderer.renderOrganism(request.data?.organism ?? request.data ?? {});
+          if (!dataUrl) {
+            throw new Error('In-process background render failed');
+          }
+          await this.publishRender(request.id, dataUrl);
+          break;
+        }
+
+        case 'offscreen': {
+          const dataUrl = await withTimeout(
+            this.webglBridge.renderOrganism(request.data?.organism ?? request.data ?? {}),
             RENDER_TIMEOUT
           );
+          if (dataUrl) {
+            await this.publishRender(request.id, dataUrl);
+          }
           break;
+        }
 
         case 'popup':
           // Send to popup via messaging with timeout
@@ -292,6 +327,29 @@ export class WebGLOrchestrator {
       }, 10000);
 
       throw error; // Re-throw pour la gestion d'erreur dans processRenderQueue
+    }
+  }
+
+  /**
+   * Publie un rendu terminé : persistance pour affichage différé
+   * (réouverture du popup) + notification temps réel si le popup est ouvert.
+   */
+  private async publishRender(organismId: string, dataUrl: string): Promise<void> {
+    try {
+      await chrome.storage.local.set({
+        symbiont_last_render: { organismId, dataUrl, timestamp: Date.now() }
+      });
+    } catch (error) {
+      logger.warn('Failed to persist render:', error);
+    }
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'ORGANISM_RENDER_READY',
+        organismId,
+        dataUrl
+      });
+    } catch {
+      // Popup fermé : personne n'écoute, le rendu persisté suffit
     }
   }
 
@@ -441,9 +499,10 @@ export class WebGLOrchestrator {
       // Stop queue processor
       this.isInitialized = false
       
-      // Cleanup WebGL bridge
+      // Cleanup WebGL bridge and in-process renderer
       await this.webglBridge.cleanup()
-      
+      this.backgroundRenderer.cleanup()
+
       // Clear render queue
       this.renderQueue = []
       

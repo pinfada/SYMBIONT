@@ -181,7 +181,7 @@ supplémentaire significatif (à valider en QA, non chiffré ici).
 | Phase | Contenu | Effort |
 |---|---|---|
 | **1. Manifest & build** — ✅ **fait** (2026-07-31, voir [`firefox-build.md`](../developer/firefox-build.md)) | Double manifest (Chrome/Firefox), `browser_specific_settings.gecko`, `background.scripts`, retrait `offscreen` côté Firefox, auto-hébergement des polices, correction des permissions (m1) | 1–2 j |
-| **2. Runtime** | Cycle de vie sur `alarms` (M2), cible de rendu background-page (M1), wrapper `browser.ts` ou polyfill (M3), vérification P2P sur page d'événements (A1) | 3–5 j |
+| **2. Runtime** — ✅ **fait** (2026-07-31) | Cycle de vie sur `alarms` (M2), cible de rendu background-page (M1) via moteur partagé `OrganismRenderer` + document offscreen Chrome réparé, helpers `browser-env.ts` (M3), garde WebRTC dans PeerNetwork (A1) | 3–5 j |
 | **3. QA & distribution** | Tests Playwright sur Firefox, signature AMO unlisted (`web-ext sign --channel unlisted`), `.xpi` en GitHub Release, `updates.json` versionné dans le repo, test du cycle d'auto-update complet | 2–3 j |
 
 **Total estimé : 6–10 jours de développement.**

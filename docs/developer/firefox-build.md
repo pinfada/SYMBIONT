@@ -67,10 +67,36 @@ par `popup.html` — hors pipeline webpack. La CSP n'autorise plus
 `fonts.googleapis.com` / `fonts.gstatic.com` : l'extension ne fait **aucune
 requête externe** pour son interface.
 
-## Limites connues (chantiers Phase 2 — voir audit)
+## Architecture de rendu cross-navigateur (Phase 2)
 
-- Rendu WebGL background : la cible offscreen n'existe pas sur Firefox ; ajouter
-  une cible « background-page » dans `WebGLOrchestrator` (fallback popup en attendant).
-- Cycle de vie : remplacer le heartbeat `setInterval` par `chrome.alarms`.
-- P2P : `RTCPeerConnection` fonctionne dans la page d'événements Firefox
-  (contrairement au service worker Chrome) — à valider en intégration.
+Le rendu background passe par un moteur unique,
+[`src/shared/rendering/OrganismRenderer.ts`](../../src/shared/rendering/OrganismRenderer.ts)
+(WebGL2 → WebGL1, antialiasing + supersampling 2x, alpha prémultiplié,
+export PNG data URL), routé par `WebGLOrchestrator` vers la meilleure cible :
+
+| Cible | Contexte | Transport |
+|---|---|---|
+| `background-page` | Page d'événements **Firefox** (DOM dans le background) | **in-process** — zéro sérialisation |
+| `offscreen` | **Chrome** (document offscreen, script externe conforme CSP) | data URL PNG via runtime messaging |
+| `popup` / `content_script` | Repli | messaging |
+
+Chaque rendu est persisté dans `chrome.storage.local` (`symbiont_last_render`)
+et diffusé via `ORGANISM_RENDER_READY` quand le popup est ouvert.
+
+Les détections d'environnement (DOM, WebRTC, offscreen, alarms) sont
+centralisées dans [`src/shared/utils/browser-env.ts`](../../src/shared/utils/browser-env.ts).
+
+## Cycle de vie background
+
+Le heartbeat repose sur `chrome.alarms` (`symbiont-heartbeat`, 1 min) — seul
+mécanisme de réveil fiable pour un service worker Chrome comme pour une page
+d'événements Firefox. L'état critique est persisté à chaque réveil car Firefox
+décharge la page d'événements sans émettre `onSuspend`.
+
+## Limites connues restantes (Phase 3 — QA)
+
+- Validation manuelle sur Firefox réel : rendu, P2P DataChannels entre deux
+  profils, cycle de suspension/réveil de la page d'événements.
+- Tests E2E Playwright à étendre à Firefox.
+- Sur Chrome, PeerNetwork tourne en mode découverte seule (pas de
+  RTCPeerConnection en service worker) — comportement journalisé, non bloquant.

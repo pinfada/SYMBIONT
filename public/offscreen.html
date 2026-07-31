@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SYMBIONT Offscreen</title>
+  <title>SYMBIONT Offscreen Renderer</title>
 </head>
 <body>
-  <canvas id="offscreen-canvas"></canvas>
-  <script src="background/OffscreenWebGL.js"></script>
+  <!-- Canvas de rendu WebGL du background Chrome (document offscreen).
+       Script externe obligatoire : la CSP interdit les scripts inline. -->
+  <canvas id="offscreen-canvas" width="400" height="300"></canvas>
+  <script src="offscreen/index.js"></script>
 </body>
 </html>
