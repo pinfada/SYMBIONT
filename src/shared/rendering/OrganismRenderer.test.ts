@@ -7,7 +7,7 @@
  * contexte — sans dépendre d'un vrai GPU.
  */
 
-import { OrganismRenderer } from './OrganismRenderer';
+import { OrganismRenderer, hashSeed } from './OrganismRenderer';
 
 // Mock GL autonome : enregistre les appels clés pour assertions
 function createMockGL(overrides: Record<string, unknown> = {}) {
@@ -152,6 +152,27 @@ describe('OrganismRenderer', () => {
     renderer.render({ energy: 0.5 }, { width: 400, height: 300 });
 
     expect(renderer.toDataURL()).toMatch(/^data:image\/png/);
+  });
+
+  describe('hashSeed (unicité par ADN)', () => {
+    it('est déterministe : même ADN → même graine', () => {
+      const dna = '7f3a9c21-4b8e-4d1a-9c2f-1e5b6a8d0c34';
+      expect(hashSeed(dna)).toBe(hashSeed(dna));
+    });
+
+    it('produit des graines différentes pour des ADN différents', () => {
+      const a = hashSeed('organism-alpha');
+      const b = hashSeed('organism-beta');
+      expect(a).not.toBe(b);
+    });
+
+    it('reste borné dans [0, 1)', () => {
+      for (const dna of ['', 'x', 'a-very-long-dna-string-0123456789', '🧬']) {
+        const s = hashSeed(dna);
+        expect(s).toBeGreaterThanOrEqual(0);
+        expect(s).toBeLessThan(1);
+      }
+    });
   });
 
   it('libère les ressources GPU au dispose', () => {

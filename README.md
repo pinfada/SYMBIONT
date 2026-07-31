@@ -22,6 +22,14 @@
 
 ## 🌱 SYMBIONT en deux mots
 
+<div align="center">
+
+![Six organismes SYMBIONT fractals aux silhouettes uniques](docs/assets/organism-gallery.png)
+
+*Chaque organisme est **unique** : sa silhouette fractale, son protoplasme, son noyau et sa couleur sont générés de façon déterministe à partir de son ADN et de ses traits — deux organismes ne se ressemblent jamais. Rendu WebGL réel du moteur `OrganismRenderer` (aucune retouche).*
+
+</div>
+
 *Cette section est pour tout le monde — aucune connaissance technique nécessaire.*
 
 Quand vous naviguez sur Internet, des dizaines de systèmes invisibles vous observent : traqueurs publicitaires, scripts cachés, pièges à attention. Vous ne les voyez pas. **SYMBIONT, lui, les voit.**

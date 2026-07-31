@@ -2,6 +2,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { organismStateManager } from '@shared/services/OrganismStateManager';
 import type { OrganismState } from '@shared/services/OrganismStateManager';
+import { OrganismRenderer } from '@shared/rendering/OrganismRenderer';
+import { SecureRandom } from '@shared/utils/secureRandom';
+import { organismPreferences, RENDER_SCALE } from '@shared/services/OrganismPreferences';
 
 // Créer une valeur par défaut pour l'état initial
 const getDefaultState = (): OrganismState => ({
@@ -48,164 +51,85 @@ export const UnifiedOrganismViewer: React.FC = () => {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    // Configuration du canvas
-    canvas.width = 200;
-    canvas.height = 200;
+    // Rendu de l'organisme via le moteur fractal partagé (WebGL) — même
+    // moteur que le rendu background, pour une identité visuelle unifiée.
+    const renderer = new OrganismRenderer(canvas);
+    if (!renderer.initialize()) return;
 
-    // Particules pour l'organisme
-    const particles: Array<{
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      size: number;
-      life: number;
-      color: string;
-    }> = [];
-
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-
-    // Créer les particules initiales
-    for (let i = 0; i < 30; i++) {
-      particles.push({
-        x: centerX + (Math.random() - 0.5) * 40,
-        y: centerY + (Math.random() - 0.5) * 40,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 3 + 1,
-        life: 1,
-        color: getParticleColor(state)
-      });
+    // Graine cosmétique stable et unique par installation → forme reproductible.
+    let seed = parseFloat(localStorage.getItem('symbiont_organism_seed') || '');
+    if (!(seed >= 0 && seed < 1)) {
+      seed = Math.floor(SecureRandom.random() * 100000) / 100000;
+      try { localStorage.setItem('symbiont_organism_seed', String(seed)); } catch { /* quota */ }
     }
 
-    // Animation
-    const animate = () => {
-      ctx.fillStyle = 'rgba(15, 20, 25, 0.1)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((particle, index) => {
-        // Mise à jour de la position
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-
-        // Attraction vers le centre
-        const dx = centerX - particle.x;
-        const dy = centerY - particle.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance > 5) {
-          particle.vx += dx * 0.001;
-          particle.vy += dy * 0.001;
-        }
-
-        // Friction
-        particle.vx *= 0.98;
-        particle.vy *= 0.98;
-
-        // Diminution de vie
-        particle.life -= 0.005;
-
-        // Dessin de la particule
-        ctx.save();
-        ctx.globalAlpha = particle.life * (state.energy / 100);
-        ctx.fillStyle = particle.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = particle.color;
-
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        // Régénération des particules mortes
-        if (particle.life <= 0) {
-          particles[index] = {
-            x: centerX + (Math.random() - 0.5) * 20,
-            y: centerY + (Math.random() - 0.5) * 20,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            size: Math.random() * 3 + 1,
-            life: 1,
-            color: getParticleColor(state)
-          };
-        }
-      });
-
-      // Noyau central pulsant
-      const pulseSize = 15 + Math.sin(Date.now() * 0.002) * 5;
-      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseSize);
-      gradient.addColorStop(0, getCoreColor(state));
-      gradient.addColorStop(0.5, getSecondaryColor(state));
-      gradient.addColorStop(1, 'rgba(0, 224, 255, 0)');
-
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, pulseSize, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Indicateur d'humeur
-      drawMoodIndicator(ctx, state, centerX, centerY);
-
-      animationRef.current = requestAnimationFrame(animate);
+    let raf = 0;
+    const start = Date.now();
+    const drawFrame = () => {
+      const s = state;
+      const prefs = organismPreferences.get();
+      renderer.render(
+        {
+          energy: s.energy / 100,
+          seed,
+          traits: traitsFromState(s, seed),
+          visualState: { color: moodToColor(s.mood), scale: 0.9 },
+          // reduce-motion : image figée (t constant) au lieu d'une animation
+          time: prefs.reduceMotion ? 0 : (Date.now() - start) / 1000,
+        },
+        { width: 200, height: 200, renderScale: RENDER_SCALE[prefs.renderQuality] },
+      );
     };
 
-    animate();
+    const loop = () => {
+      drawFrame();
+      raf = requestAnimationFrame(loop);
+    };
+
+    // Réagit aux changements de préférences (qualité / reduce-motion)
+    const unsubscribe = organismPreferences.subscribe(() => {
+      const prefs = organismPreferences.get();
+      cancelAnimationFrame(raf);
+      if (prefs.reduceMotion) {
+        drawFrame(); // une seule image, pas de boucle
+      } else {
+        loop();
+      }
+    });
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      cancelAnimationFrame(raf);
+      unsubscribe();
+      renderer.dispose();
     };
   }, [state]);
 
-  function getParticleColor(state: OrganismState): string {
-    const colors: Record<string, string> = {
-      happy: '#4fc3f7',
-      curious: '#00e0ff',
-      excited: '#00ff88',
-      meditating: '#b388ff',
-      hungry: '#ff9800',
-      tired: '#607d8b'
+  // Couleur primaire de l'organisme selon son humeur (RGB normalisé 0-1).
+  function moodToColor(mood: OrganismState['mood']): [number, number, number] {
+    const palette: Record<string, [number, number, number]> = {
+      happy: [0.31, 0.76, 0.97],
+      curious: [0.0, 0.88, 1.0],
+      excited: [0.0, 1.0, 0.53],
+      meditating: [0.70, 0.53, 1.0],
+      hungry: [1.0, 0.60, 0.0],
+      tired: [0.38, 0.49, 0.55],
     };
-    return colors[state.mood] || '#00e0ff';
+    return palette[mood] || palette.curious;
   }
 
-  function getCoreColor(state: OrganismState): string {
-    if (state.energy < 30) return 'rgba(255, 152, 0, 0.8)';
-    if (state.consciousness > 70) return 'rgba(179, 136, 255, 0.8)';
-    return 'rgba(0, 224, 255, 0.8)';
-  }
-
-  function getSecondaryColor(state: OrganismState): string {
-    if (state.energy < 30) return 'rgba(255, 87, 34, 0.4)';
-    if (state.consciousness > 70) return 'rgba(124, 77, 255, 0.4)';
-    return 'rgba(79, 195, 247, 0.4)';
-  }
-
-  function drawMoodIndicator(
-    ctx: CanvasRenderingContext2D,
-    state: OrganismState,
-    centerX: number,
-    centerY: number
-  ): void {
-    const moodEmojis: Record<string, string> = {
-      happy: '😊',
-      curious: '🤔',
-      excited: '🤩',
-      meditating: '🧘',
-      hungry: '🤤',
-      tired: '😴'
+  // Traits dérivés de l'état : forme stable et unique (via la graine),
+  // modulée par la conscience (créativité → lobes) et le comportement.
+  function traitsFromState(s: OrganismState, seed: number) {
+    const f = (o: number) => ((seed * 1000 + o) % 1);
+    return {
+      curiosity: s.behavior === 'curious' ? 0.9 : 0.35 + f(11) * 0.5,
+      focus: s.behavior === 'focused' ? 0.9 : 0.3 + f(23) * 0.5,
+      rhythm: 0.4 + f(37) * 0.5,
+      empathy: Math.min(1, s.socialInteractions / 20) * 0.6 + 0.2,
+      creativity: Math.min(1, s.consciousness / 100),
     };
-
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(moodEmojis[state.mood] || '🧬', centerX, centerY - 40);
   }
 
   const getEvolutionStars = () => {
