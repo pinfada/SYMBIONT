@@ -69,33 +69,35 @@ const App: React.FC = () => {
     },
     nav: {
       display: 'flex',
-      padding: '0 8px',
-      gap: '2px',
+      padding: '0 6px',
+      gap: '1px',
       backgroundColor: '#0a0d13',
       borderBottom: '1px solid rgba(0, 224, 255, 0.1)',
-      overflowX: 'auto' as const,
-      scrollbarWidth: 'none' as const
+      overflowX: 'hidden' as const
     },
+    // flex: 1 + minWidth: 0 → les 7 onglets se partagent équitablement la
+    // largeur du popup (400px) sans débordement ni scroll horizontal.
     navButton: (isActive: boolean) => ({
-      padding: '10px 12px',
+      flex: '1 1 0',
+      minWidth: 0,
+      padding: '8px 2px',
       backgroundColor: isActive ? 'rgba(0, 224, 255, 0.1)' : 'transparent',
       color: isActive ? '#00e0ff' : '#8899a6',
       border: 'none',
       borderBottom: isActive ? '2px solid #00e0ff' : '2px solid transparent',
       cursor: 'pointer',
-      fontSize: '11px',
+      fontSize: '9px',
       fontWeight: '500',
       transition: 'all 0.2s ease',
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
-      gap: '4px',
-      minWidth: '60px',
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.5px'
+      gap: '3px',
+      whiteSpace: 'nowrap' as const,
+      letterSpacing: '0.2px'
     }),
     navIcon: {
-      fontSize: '16px'
+      fontSize: '15px'
     },
     content: {
       flex: 1,
