@@ -3,6 +3,8 @@ import { SecureRandom } from '@shared/utils/secureRandom';
 import { logger } from '@shared/utils/secureLogger';
 import { p2pService } from '../services/P2PService';
 import { cryptoService } from '../services/CryptoService';
+import { organismStateManager } from '@shared/services/OrganismStateManager';
+import { encodeInvite, decodeInvite, isExpired, shortCode, InvitePayload } from '@shared/services/InviteCode';
 
 interface InviteData {
   code: string;
@@ -36,6 +38,9 @@ const SocialPanel: React.FC = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [generatedInvite, setGeneratedInvite] = useState<InviteData | null>(null);
+  const [generatedToken, setGeneratedToken] = useState('');
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const [acceptStatus, setAcceptStatus] = useState<{ type: 'idle' | 'success' | 'error'; msg: string }>({ type: 'idle', msg: '' });
   const [contacts, setContacts] = useState<ContactData[]>([]);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [shareLink, setShareLink] = useState('');
@@ -95,120 +100,152 @@ const SocialPanel: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Génération d'un code d'invitation avec données génétiques
+  // Génération d'un code d'invitation AUTO-PORTEUR : la charge génétique est
+  // encodée dans le token lui-même, donc utilisable sur une autre installation
+  // par simple copier-coller (aucun serveur, aucun pair connecté requis).
   const generateInvite = () => {
     const myOrganism = p2pService.getMyOrganism();
-    const code = SecureRandom.random().toString(36).substring(2, 10).toUpperCase();
+    const code = shortCode(SecureRandom.random());
+    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 jours
+
+    const payload: InvitePayload = {
+      v: 1,
+      code,
+      creatorId: myOrganism.id,
+      creatorName: myOrganism.name || 'Organisme Anonyme',
+      generation: myOrganism.generation,
+      consciousness: myOrganism.consciousness,
+      traits: myOrganism.traits,
+      expiresAt,
+    };
+
+    const token = encodeInvite(payload);
+    setGeneratedToken(token);
+    setTokenCopied(false);
 
     const invite: InviteData = {
       code,
-      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 jours
+      expiresAt,
       maxUses: 5,
       used: 0,
-      creatorId: myOrganism.id,
-      creatorName: myOrganism.name || 'Organisme Anonyme',
+      creatorId: payload.creatorId,
+      creatorName: payload.creatorName,
       sharedData: {
-        generation: myOrganism.generation,
-        consciousness: myOrganism.consciousness,
-        traits: myOrganism.traits
-      }
+        generation: payload.generation,
+        consciousness: payload.consciousness,
+        traits: payload.traits,
+      },
     };
-
     setGeneratedInvite(invite);
 
-    // Sauvegarde locale et diffusion P2P
+    // Trace locale (repli même-navigateur) + diffusion P2P best-effort
     try {
       localStorage.setItem('symbiont_invite_' + code, JSON.stringify(invite));
-
-      // Annoncer l'invitation sur le réseau P2P
-      p2pService.broadcast('discovery', {
-        type: 'invite_created',
-        code: code,
-        creator: myOrganism.name
-      });
-
-      logger.info('Invitation créée et diffusée:', code);
+      p2pService.broadcast('discovery', { type: 'invite_created', code, creator: payload.creatorName });
+      logger.info('Invitation créée:', code);
     } catch (e) {
       logger.warn('Erreur lors de la création de l\'invitation:', e);
     }
   };
 
-  // Acceptation d'une invitation avec transfert génétique
+  // Acceptation d'une invitation : décode le token auto-porteur (cross-install)
+  // ou, à défaut, retrouve un code court connu de ce navigateur.
   const acceptInvite = () => {
-    if (!inviteCode.trim()) return;
+    const raw = inviteCode.trim();
+    if (!raw) return;
+    setAcceptStatus({ type: 'idle', msg: '' });
 
-    try {
-      // Vérifier localement
-      let invite = null;
-      const stored = localStorage.getItem('symbiont_invite_' + inviteCode);
+    let shared: { generation: number; consciousness: number; traits: Record<string, number> } | null = null;
+    let creatorId = '';
+    let creatorName = '';
+    let refCode = raw;
 
-      if (stored) {
-        invite = JSON.parse(stored);
-      } else {
-        // Chercher dans les invitations P2P reçues
-        const p2pInvites = JSON.parse(localStorage.getItem('symbiont_p2p_invites') || '[]');
-        invite = p2pInvites.find((inv: InviteData) => inv.code === inviteCode);
+    // 1) Token auto-porteur — fonctionne même sur une installation vierge
+    const payload = decodeInvite(raw);
+    if (payload) {
+      if (isExpired(payload, Date.now())) {
+        setAcceptStatus({ type: 'error', msg: '⏳ Ce code d\'invitation a expiré.' });
+        return;
       }
-
-      if (invite && invite.expiresAt > Date.now() && invite.used < invite.maxUses) {
-        setAccepted(true);
-        invite.used += 1;
-
-        // Mettre à jour l'invitation
-        localStorage.setItem('symbiont_invite_' + inviteCode, JSON.stringify(invite));
-
-        // Appliquer les traits génétiques partagés
-        if (invite.sharedData) {
-          const myOrganism = p2pService.getMyOrganism();
-
-          // Héritage génétique : moyenne pondérée des traits
-          Object.keys(invite.sharedData.traits).forEach(trait => {
-            if (myOrganism.traits[trait]) {
-              myOrganism.traits[trait] = (myOrganism.traits[trait] + invite.sharedData.traits[trait]) / 2;
-            }
-          });
-
-          // Boost de conscience par connexion sociale
-          myOrganism.consciousness = Math.min(1, myOrganism.consciousness + 0.1);
-
-          // Sauvegarder l'organisme modifié
-          localStorage.setItem('symbiont_organism', JSON.stringify(myOrganism));
+      shared = { generation: payload.generation, consciousness: payload.consciousness, traits: payload.traits };
+      creatorId = payload.creatorId;
+      creatorName = payload.creatorName;
+      refCode = payload.code;
+    } else {
+      // 2) Repli : code court présent dans CE navigateur (ou reçu en P2P)
+      try {
+        const key = raw.toUpperCase();
+        let invite: InviteData | undefined;
+        const stored = localStorage.getItem('symbiont_invite_' + key);
+        if (stored) invite = JSON.parse(stored) as InviteData;
+        else {
+          const p2p: InviteData[] = JSON.parse(localStorage.getItem('symbiont_p2p_invites') || '[]');
+          invite = p2p.find((i) => i.code === key);
         }
-
-        // Ajouter le créateur aux contacts
-        const newContact: ContactData = {
-          id: invite.creatorId,
-          name: invite.creatorName,
-          status: 'offline',
-          generation: invite.sharedData?.generation || 1,
-          lastActive: Date.now(),
-          consciousness: invite.sharedData?.consciousness || 0.5,
-          energy: 0.8,
-          isP2P: false
-        };
-
-        // Sauvegarder le contact
-        const savedContacts = JSON.parse(localStorage.getItem('symbiont_contacts') || '[]');
-        savedContacts.push(newContact);
-        localStorage.setItem('symbiont_contacts', JSON.stringify(savedContacts));
-
-        setContacts(prev => [...prev, newContact]);
-
-        // Annoncer sur le réseau P2P
-        p2pService.broadcast('discovery', {
-          type: 'invite_accepted',
-          code: inviteCode,
-          acceptor: p2pService.getMyOrganism().name
-        });
-
-        logger.info('Invitation acceptée avec succès');
-      } else {
-        alert('Code d\'invitation invalide ou expiré');
+        if (invite && invite.expiresAt > Date.now() && invite.sharedData) {
+          shared = invite.sharedData;
+          creatorId = invite.creatorId;
+          creatorName = invite.creatorName;
+          refCode = invite.code;
+        }
+      } catch (e) {
+        logger.warn('Repli code court échoué', e);
       }
-    } catch (e) {
-      logger.error('Erreur lors de l\'acceptation de l\'invitation:', e);
-      alert('Erreur lors de l\'acceptation de l\'invitation');
     }
+
+    if (!shared) {
+      setAcceptStatus({ type: 'error', msg: '❌ Code invalide, expiré ou incomplet.' });
+      return;
+    }
+
+    // Appliquer l'héritage génétique à l'organisme persistant
+    try {
+      const myOrganism = p2pService.getMyOrganism();
+      Object.keys(shared.traits).forEach((trait) => {
+        if (myOrganism.traits[trait] !== undefined) {
+          myOrganism.traits[trait] = (myOrganism.traits[trait] + shared!.traits[trait]) / 2;
+        }
+      });
+      myOrganism.consciousness = Math.min(1, myOrganism.consciousness + 0.1);
+      localStorage.setItem('symbiont_organism', JSON.stringify(myOrganism));
+    } catch (e) {
+      logger.warn('Application des traits échouée', e);
+    }
+
+    // Retour visuel immédiat sur la créature affichée (+10% conscience, humeur heureuse)
+    try {
+      const s = organismStateManager.getState();
+      void organismStateManager.updateState({
+        consciousness: Math.min(100, s.consciousness + 10),
+        mood: 'happy',
+      });
+    } catch { /* état visible indisponible : héritage appliqué quand même */ }
+
+    // Ajouter le créateur aux contacts
+    const newContact: ContactData = {
+      id: creatorId || 'unknown',
+      name: creatorName || 'Lignée inconnue',
+      status: 'offline',
+      generation: shared.generation || 1,
+      lastActive: Date.now(),
+      consciousness: shared.consciousness || 0.5,
+      energy: 0.8,
+      isP2P: false,
+    };
+    try {
+      const savedContacts = JSON.parse(localStorage.getItem('symbiont_contacts') || '[]');
+      savedContacts.push(newContact);
+      localStorage.setItem('symbiont_contacts', JSON.stringify(savedContacts));
+    } catch { /* stockage plein : contact non persisté */ }
+    setContacts((prev) => [...prev, newContact]);
+
+    setAccepted(true);
+    setAcceptStatus({
+      type: 'success',
+      msg: `✅ Héritage de « ${creatorName || 'une lignée'} » accepté ! Conscience +10 %.`,
+    });
+    p2pService.broadcast('discovery', { type: 'invite_accepted', code: refCode, acceptor: p2pService.getMyOrganism().name });
+    logger.info('Invitation acceptée', { refCode });
   };
 
   // Communication P2P avec un contact
@@ -365,30 +402,42 @@ const SocialPanel: React.FC = () => {
         <button
           className="btn-primary"
           onClick={generateInvite}
-          disabled={!!generatedInvite}
         >
-          {generatedInvite ? 'Code Généré' : 'Générer Code Génétique'}
+          {generatedInvite ? 'Régénérer un Code' : 'Générer Code Génétique'}
         </button>
 
         {generatedInvite && (
           <div className="invite-card">
-            <div className="invite-code-display">
-              <span className="invite-code">{generatedInvite.code}</span>
+            <div style={{ fontSize: 12, color: '#8899a6', marginBottom: 6 }}>
+              Référence <strong style={{ color: '#00e0ff' }}>{generatedInvite.code}</strong> — partagez le code complet ci-dessous :
+            </div>
+            <div style={{
+              display: 'flex', gap: 8, alignItems: 'stretch',
+            }}>
+              <code style={{
+                flex: 1, minWidth: 0, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(0,224,255,0.25)',
+                borderRadius: 8, padding: '8px 10px', fontSize: 11, color: '#cfe9f2',
+                wordBreak: 'break-all', maxHeight: 76, overflow: 'auto', lineHeight: 1.4,
+              }}>{generatedToken}</code>
               <button
                 className="btn-copy"
-                onClick={() => copyToClipboard(generatedInvite.code)}
-                title="Copier le code"
+                onClick={() => {
+                  copyToClipboard(generatedToken);
+                  setTokenCopied(true);
+                  setTimeout(() => setTokenCopied(false), 1800);
+                }}
+                title="Copier le code complet"
+                style={{ whiteSpace: 'nowrap' }}
               >
-                📋
+                {tokenCopied ? '✅ Copié' : '📋 Copier'}
               </button>
             </div>
-            <div className="invite-details">
+            <div className="invite-details" style={{ marginTop: 8 }}>
               <span>Expire: {new Date(generatedInvite.expiresAt).toLocaleDateString()}</span>
-              <span>Utilisations: {generatedInvite.used}/{generatedInvite.maxUses}</span>
               <span>Gén. {generatedInvite.sharedData?.generation}</span>
             </div>
             <div className="invite-traits">
-              <small>Traits partagés: {Object.keys(generatedInvite.sharedData?.traits || {}).join(', ')}</small>
+              <small>Traits transmis : {Object.keys(generatedInvite.sharedData?.traits || {}).join(', ')}</small>
             </div>
           </div>
         )}
@@ -399,26 +448,34 @@ const SocialPanel: React.FC = () => {
         <p>Entrez un code pour hériter des traits génétiques d'une lignée existante.</p>
 
         <div className="input-group">
-          <input
-            type="text"
+          <textarea
             value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            placeholder="CODE GÉNÉTIQUE"
+            onChange={(e) => { setInviteCode(e.target.value); setAcceptStatus({ type: 'idle', msg: '' }); setAccepted(false); }}
+            placeholder="Collez ici le code reçu (SYMB1-…)"
             className="invite-input"
-            maxLength={8}
+            rows={2}
+            style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: 12, width: '100%' }}
           />
           <button
             className="btn-secondary"
             onClick={acceptInvite}
-            disabled={!inviteCode.trim() || accepted}
+            disabled={!inviteCode.trim()}
           >
             Accepter Héritage
           </button>
         </div>
 
-        {accepted && (
-          <div className="success-message">
-            ✅ Héritage génétique accepté ! Vos traits évoluent...
+        {acceptStatus.type !== 'idle' && (
+          <div
+            className={acceptStatus.type === 'success' ? 'success-message' : 'error-message'}
+            style={{
+              marginTop: 10, padding: '10px 12px', borderRadius: 8, fontSize: 13,
+              background: acceptStatus.type === 'success' ? 'rgba(46,230,166,0.12)' : 'rgba(239,68,68,0.12)',
+              border: `1px solid ${acceptStatus.type === 'success' ? '#2ee6a6' : '#ef4444'}`,
+              color: acceptStatus.type === 'success' ? '#2ee6a6' : '#ef4444',
+            }}
+          >
+            {acceptStatus.msg}
           </div>
         )}
       </div>
