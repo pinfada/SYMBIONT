@@ -22,6 +22,14 @@
 
 ## 🌱 SYMBIONT en deux mots
 
+<div align="center">
+
+![Quatre organismes SYMBIONT aux personnalités distinctes](docs/assets/organism-gallery.png)
+
+*Chaque organisme est unique : sa forme, sa couleur et sa pulsation naissent de son ADN et de ses traits. Rendu WebGL réel du moteur `OrganismRenderer`.*
+
+</div>
+
 *Cette section est pour tout le monde — aucune connaissance technique nécessaire.*
 
 Quand vous naviguez sur Internet, des dizaines de systèmes invisibles vous observent : traqueurs publicitaires, scripts cachés, pièges à attention. Vous ne les voyez pas. **SYMBIONT, lui, les voit.**
