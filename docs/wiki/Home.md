@@ -20,9 +20,19 @@ ses traits. Rendu WebGL réel du moteur `OrganismRenderer` (aucune retouche).*
 
 ## Navigation du wiki
 
-- **[Interface](Interface)** — les 6 pages de l'extension et ce à quoi elles servent.
-- **[Fonctionnalités vérifiées](Fonctionnalites-verifiees)** — preuves en image que les outils fonctionnent.
-- **[Navigateurs & installation](Navigateurs-et-installation)** — compatibilité et mise en route.
+Les 6 pages de l'extension, en détail avec captures :
+
+- **[🧬 Organisme](Organisme)** — la créature, sa nutrition, ses contrôles.
+- **[🌐 Réseau](Reseau)** — la maille P2P (graphe, pairs, messages, stats).
+- **[📊 Stats](Stats)** — les métriques d'évolution.
+- **[✨ Rituels](Rituels)** — les capacités actives (liste, actif, historique, secrets).
+- **[👥 Social](Social)** — codes d'invitation, guide, contacts, partage.
+- **[⚙️ Paramètres](Parametres)** — réglages de rendu.
+
+Et aussi :
+
+- **[✅ Fonctionnalités vérifiées](Fonctionnalites-verifiees)** — synthèse des tests.
+- **[🌐 Navigateurs & installation](Navigateurs-et-installation)** — compatibilité et mise en route.
 
 ---
 

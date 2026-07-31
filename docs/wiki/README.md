@@ -10,10 +10,16 @@ dans le wiki (qui est un dépôt Git séparé).
 | Fichier | Page wiki |
 |---|---|
 | `Home.md` | Accueil |
-| `Interface.md` | Interface — les 6 pages |
+| `Organisme.md` | Page Organisme |
+| `Reseau.md` | Page Réseau |
+| `Stats.md` | Page Stats |
+| `Rituels.md` | Page Rituels |
+| `Social.md` | Page Social |
+| `Parametres.md` | Page Paramètres |
 | `Fonctionnalites-verifiees.md` | Fonctionnalités vérifiées |
 | `Navigateurs-et-installation.md` | Navigateurs & installation |
 | `_Sidebar.md` | Barre latérale de navigation |
+| `images/` | Toutes les captures (chemins relatifs) |
 
 ## Publier sur le wiki GitHub
 

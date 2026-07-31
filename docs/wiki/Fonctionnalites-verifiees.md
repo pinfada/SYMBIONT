@@ -1,74 +1,43 @@
-# Fonctionnalités vérifiées
+# ✅ Fonctionnalités vérifiées
 
-Cette page réunit les **preuves en image** que les outils interactifs
-fonctionnent réellement. Chaque flux a été exécuté sur le build courant, en
-pilotant le popup de façon automatisée.
+Synthèse de l'état de vérification de chaque fonctionnalité. Toutes les captures
+du wiki sont des **rendus réels** du build courant, obtenus en pilotant le popup
+de façon automatisée (navigation + interactions).
 
----
+## Tableau récapitulatif
 
-## ✨ Rituels — action réelle sur la créature
+| Domaine | Fonctionnalité | Statut | Preuve |
+|---|---|---|---|
+| Organisme | Rendu fractal WebGL temps réel | ✅ vérifié | [page](Organisme) + tests moteur |
+| Organisme | Nutrition (sources, gains, conseils) | ✅ affiché | [page](Organisme) |
+| Organisme | Contrôles WebGL | ✅ affiché | [page](Organisme) |
+| Réseau | Graphe P2P + nœud « Moi » | ✅ affiché | [page](Reseau) |
+| Réseau | Sous-onglets Pairs / Messages / Stats | ✅ affichés | [page](Reseau) |
+| Réseau | Connexions P2P live (partage/sync) | 🧪 à valider | nécessite 2 instances connectées |
+| Stats | Métriques d'évolution | ✅ affiché | [page](Stats) |
+| Rituels | Lancement + progression en direct | ✅ vérifié | [page](Rituels) |
+| Rituels | Réaction visuelle de l'organisme | ✅ vérifié | [page](Rituels) |
+| Rituels | Dégradation gracieuse (page protégée) | ✅ vérifié | flux headless |
+| Rituels | Sous-onglets Actif / Historique / Secrets | ✅ affichés | [page](Rituels) |
+| Social | Génération de code auto-porteur | ✅ vérifié | [page](Social) |
+| Social | Acceptation **cross-installation** | ✅ vérifié | 2 contextes isolés + tests |
+| Social | Héritage + réaction de l'organisme | ✅ vérifié | [page](Social) |
+| Social | Sous-onglets Guide / Contacts / Partager | ✅ affichés | [page](Social) |
+| Paramètres | Réduire les animations (persisté) | ✅ vérifié | [page](Parametres) + tests |
+| Paramètres | Qualité du rendu → supersampling | ✅ vérifié | [page](Parametres) + tests |
 
-Lancer un rituel n'est pas décoratif : la carte passe en surbrillance avec une
-**barre de progression** en direct, et l'organisme **réagit visuellement**.
+## Couverture de tests automatisés
 
-![Rituel en cours](images/feature-ritual-active.png)
+- `OrganismRenderer.test.ts` — moteur de rendu (WebGL2→WebGL1, supersampling,
+  alpha prémultiplié, perte de contexte, unicité par ADN).
+- `OrganismPreferences.test.ts` — réglages (défauts, persistance, notification,
+  mapping qualité).
+- `InviteCode.test.ts` — codec d'invitation (round-trip, unicode, rejet des codes
+  corrompus/tronqués/expirés, expiration).
 
-*La carte « Vision Spectrale » est active (halo cyan, « 🔮 Rituel en cours… »).
-Si le scan du DOM est indisponible (page protégée), le rituel se poursuit quand
-même — le scan est un bonus, pas un prérequis bloquant.*
+## Ce qui reste à valider en conditions réelles
 
-![Réaction de l'organisme](images/feature-ritual-reaction.png)
-
-*Après le lancement, l'organisme passe en humeur « excité » : sa couleur vire au
-vert et son énergie est consommée. Le retour visuel est immédiat.*
-
----
-
-## 👥 Codes d'invitation — portables entre installations
-
-Les codes sont **auto-porteurs** : la charge génétique est encodée dans le code
-lui-même (`SYMB1-…`). Un code généré sur une machine fonctionne sur une autre
-**sans serveur ni pair connecté**, par simple copier-coller.
-
-![Génération d'un code](images/feature-invite-generate.png)
-
-*Installation A génère un code complet, affiché dans une boîte copiable
-(bouton « Copier » avec confirmation).*
-
-![Acceptation dans une autre installation](images/feature-invite-accept.png)
-
-*Installation B — au stockage totalement isolé — colle le code et l'accepte.*
-
-![L'organisme hérite](images/feature-invite-reaction.png)
-
-*L'organisme de B hérite des traits et réagit : humeur « heureux », conscience
-+10 %.*
-
-> **Vérification automatisée** : un token généré dans un contexte navigateur est
-> accepté dans un second contexte au stockage isolé (succès, aucune erreur), et
-> un code corrompu est rejeté proprement. Couvert par des tests unitaires
-> (`InviteCode.test.ts`).
-
----
-
-## Réglages qui prennent effet
-
-Les réglages de la page **Paramètres** (réduire les animations, qualité du rendu)
-sont persistés dans `chrome.storage.local` et appliqués en direct au moteur de
-rendu. Couverts par `OrganismPreferences.test.ts`.
-
----
-
-## Statut de vérification
-
-| Fonctionnalité | Statut | Preuve |
-|---|---|---|
-| Rendu fractal de l'organisme (popup) | ✅ vérifié | rendu réel, tests moteur |
-| Réglages Paramètres → rendu | ✅ vérifié | tests `OrganismPreferences` |
-| Rituels + retour visuel | ✅ vérifié | flux headless + captures |
-| Codes d'invitation cross-installation | ✅ vérifié | 2 contextes isolés + tests |
-| Actions P2P live (partage/sync entre pairs) | 🧪 à valider | nécessite 2 instances réelles connectées |
-
-*Les actions P2P en direct demandent deux navigateurs réellement connectés :
-elles seront validées lors de la QA multi-profils (voir la checklist Firefox du
-dépôt).*
+Les **connexions P2P en direct** (partage d'énergie et synchronisation de
+conscience entre deux pairs effectivement connectés) demandent deux navigateurs
+réels reliés — elles seront validées lors de la QA multi-profils Firefox décrite
+dans le dépôt. Tout le reste est vérifié ici.
