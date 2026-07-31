@@ -14,12 +14,16 @@ sa silhouette, sa couleur et sa pulsation reflètent son ADN, ses traits, son
 Connaissances.
 
 ### Nutrition de l'Organisme
-La créature se nourrit de votre navigation. Le panneau **Nutrition** montre :
-- l'**état nutritionnel** (ici « Rassasié », 75 %) et le mode de consommation,
-- les **sources de nutrition** avec leurs gains — Connaissance (+15 énergie /
-  +25 XP), Social (+20 / +15 XP), Rituel Mystique (+30 / +50 XP),
-- des **conseils** expliquant comment l'organisme évolue (pages scientifiques →
-  conscience, pages sociales → expérience sociale, rituels → énergie, etc.).
+La créature se nourrit de votre navigation **et** peut être nourrie manuellement.
+Le panneau **Nutrition** propose :
+- l'**état nutritionnel** (ici « Rassasié », 90 %) et le mode de consommation,
+- les **sources de nutrition** avec un **bouton « Nourrir »** fonctionnel :
+  Connaissance (+15 énergie / +25 XP), Social (+20 / +15 XP), Rituel Mystique
+  (+30 / +50 XP). Nourrir applique le gain à l'organisme (l'énergie monte, la
+  faim se réinitialise, l'humeur passe à « heureux »), déclenche le **cooldown**
+  de la source (compte à rebours en direct, ici « 4m 59s » après avoir nourri
+  Connaissance) et affiche un retour « ✨ Nourri ! »,
+- des **conseils** expliquant comment l'organisme évolue.
 
 ### Visualisation WebGL (contrôles)
 En bas, l'état de la visualisation : activation, humeur courante, type de page,

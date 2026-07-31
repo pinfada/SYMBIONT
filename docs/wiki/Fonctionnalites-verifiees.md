@@ -9,8 +9,8 @@ de façon automatisée (navigation + interactions).
 | Domaine | Fonctionnalité | Statut | Preuve |
 |---|---|---|---|
 | Organisme | Rendu fractal WebGL temps réel | ✅ vérifié | [page](Organisme) + tests moteur |
-| Organisme | Nutrition (sources, gains, conseils) | ✅ affiché | [page](Organisme) |
-| Organisme | Contrôles WebGL | ✅ affiché | [page](Organisme) |
+| Organisme | Nutrition — nourrissage manuel + cooldown live | ✅ vérifié | [page](Organisme) |
+| Organisme | Contrôles WebGL (interrupteur persisté) | ✅ vérifié | [page](Organisme) |
 | Réseau | Graphe P2P + nœud « Moi » | ✅ affiché | [page](Reseau) |
 | Réseau | Sous-onglets Pairs / Messages / Stats | ✅ affichés | [page](Reseau) |
 | Réseau | Connexions P2P live (partage/sync) | 🧪 à valider | nécessite 2 instances connectées |
