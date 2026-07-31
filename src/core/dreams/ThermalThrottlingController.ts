@@ -318,7 +318,7 @@ export class ThermalThrottlingController {
     }
 
     // Progressive cooling based on thermal state
-    let baseDelay = this.COOLING_PERIOD_BASE;
+    const baseDelay = this.COOLING_PERIOD_BASE;
 
     // Add jitter to prevent synchronization
     const jitter = SecureRandom.random() * 200 - 100; // ±100ms

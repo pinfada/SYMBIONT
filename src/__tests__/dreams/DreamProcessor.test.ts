@@ -10,6 +10,7 @@ import { AdaptiveResonanceClustering } from '@/core/dreams/AdaptiveResonanceClus
 import { ThermalThrottlingController } from '@/core/dreams/ThermalThrottlingController';
 import { CDNWhitelist } from '@/core/dreams/CDNWhitelist';
 import type { MemoryFragment } from '@/core/dreams/DreamProcessor';
+import { webcrypto } from 'crypto';
 
 // Mock des dépendances
 jest.mock('@/shared/utils/secureLogger');
@@ -100,7 +101,7 @@ global.indexedDB = {
 // Vrai digest WebCrypto : un digest constant (zéros) rend les signatures/
 // vecteurs dégénérés → clustering et détection CDN/shadow produisent 0.
 global.crypto = {
-  subtle: require('crypto').webcrypto.subtle,
+  subtle: webcrypto.subtle,
   getRandomValues: (arr: any) => { for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256); return arr; }
 } as any;
 

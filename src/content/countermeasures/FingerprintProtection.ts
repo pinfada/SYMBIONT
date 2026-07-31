@@ -37,7 +37,7 @@ const TIMING_JITTER_MAX_MS = 2;
 export class FingerprintProtection {
   private state: ProtectionState;
   private originalDescriptors: Map<string, PropertyDescriptor> = new Map();
-  private originalFunctions: Map<string, Function> = new Map();
+  private originalFunctions: Map<string, (...args: any[]) => any> = new Map();
   private activeProtections: Set<ProtectionTarget> = new Set();
 
   constructor() {
@@ -103,6 +103,7 @@ export class FingerprintProtection {
    * via repeated comparison), while different sessions yield different profiles.
    */
   private protectCanvas(): void {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- native method override rebinds `this` to the DOM object; instance access requires an alias
     const self = this;
 
     // Protect getImageData
@@ -196,6 +197,7 @@ export class FingerprintProtection {
    * Does NOT affect actual audio output — only the data used for fingerprinting.
    */
   private protectAudioContext(): void {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- native method override rebinds `this` to the DOM object; instance access requires an alias
     const self = this;
 
     // Protect getFloatFrequencyData
@@ -250,6 +252,7 @@ export class FingerprintProtection {
    * used in fingerprinting (RENDERER, VENDOR, SHADING_LANGUAGE_VERSION).
    */
   private protectWebGL(): void {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- native method override rebinds `this` to the DOM object; instance access requires an alias
     const self = this;
 
     // Parameters used for fingerprinting
@@ -316,6 +319,7 @@ export class FingerprintProtection {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- native method override rebinds `this` to the DOM object; instance access requires an alias
     const self = this;
     Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', {
       get() {
@@ -367,6 +371,7 @@ export class FingerprintProtection {
    * Does NOT affect setTimeout/requestAnimationFrame.
    */
   private protectTiming(): void {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- native method override rebinds `this` to the DOM object; instance access requires an alias
     const self = this;
     const origNow = performance.now.bind(performance);
     this.originalFunctions.set('performance.now', origNow);

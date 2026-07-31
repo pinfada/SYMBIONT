@@ -171,7 +171,7 @@ export class ProceduralTextureGenerator {
   }
 
   // Generate reaction-diffusion pattern for organic textures
-  private generateReactionDiffusion(width: number, height: number, traits: OrganismTraits, _seed: number): Uint8Array {
+  private generateReactionDiffusion(width: number, height: number, traits: OrganismTraits): Uint8Array {
     const data = new Uint8Array(width * height * 4);
     const gridA = new Float32Array(width * height);
     const gridB = new Float32Array(width * height);
@@ -294,7 +294,7 @@ export class ProceduralTextureGenerator {
         textureData = this.generateCellularPattern(size, size, traits, seed);
       } else if (maxTrait === traits.rhythm || maxTrait === traits.focus) {
         // Flowing, reaction-diffusion patterns
-        textureData = this.generateReactionDiffusion(size, size, traits, seed);
+        textureData = this.generateReactionDiffusion(size, size, traits);
       } else {
         // Default to fractal noise
         textureData = this.generateFractalNoise(size, size, traits, seed);

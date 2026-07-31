@@ -135,8 +135,8 @@ export class ErrorHandler {
 
   /**
    * Valide le type et les contraintes d'une valeur
-   */
-  public validateType<T>(
+   */
+  public validateType(
     value: unknown,
     expectedType: string,
     constraints: {

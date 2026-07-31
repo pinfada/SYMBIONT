@@ -30,7 +30,7 @@ if (canvas) {
   logger.error('[Offscreen] #offscreen-canvas not found');
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+chrome.runtime.onMessage.addListener((message) => {
   if (message?.target !== 'offscreen') return false;
 
   switch (message.type) {

@@ -180,7 +180,7 @@ export class SymbiontStorage {
         logger.debug(`[SymbiontStorage:${this.contextId}] Received message`, { type, from: senderId });
 
         switch (type) {
-          case 'HEARTBEAT':
+          case 'HEARTBEAT': {
             // Track heartbeats from other contexts
             activeContexts.set(senderId, {
               timestamp: Date.now(),
@@ -196,6 +196,7 @@ export class SymbiontStorage {
               }
             }
             break;
+          }
 
           case 'REQUEST_CLOSE':
             // Another context is requesting all connections to close
@@ -279,6 +280,7 @@ export class SymbiontStorage {
 
     return new Promise<void>((resolve) => {
       const acknowledgments = new Set<string>();
+      // eslint-disable-next-line prefer-const -- assigné après cleanup() qui le référence en closure (forward reference)
       let timeoutId: ReturnType<typeof setTimeout>;
 
       const cleanup = () => {
@@ -350,6 +352,7 @@ export class SymbiontStorage {
 
     return new Promise<Array<{ contextId: string; hasConnection: boolean; contextType?: string }>>((resolve) => {
       const responses: Array<{ contextId: string; hasConnection: boolean; contextType?: string }> = [];
+      // eslint-disable-next-line prefer-const -- assigné après cleanup() qui le référence en closure (forward reference)
       let timeoutId: ReturnType<typeof setTimeout>;
 
       const cleanup = () => {

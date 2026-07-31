@@ -192,7 +192,7 @@ function deepCleanForSerialization(obj: unknown, seen = new WeakSet()): unknown 
   const cleaned: Record<string, unknown> = {};
   
   for (const key in (obj as Record<string, unknown>)) {
-    if ((obj as Record<string, unknown>).hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       try {
         cleaned[key] = deepCleanForSerialization((obj as Record<string, unknown>)[key], seen);
       } catch (_error) {

@@ -82,7 +82,7 @@ export class HebbieanLearningSystem {
     
     // Analyser les clusters d'activation
     const activeNodes = Array.from(this.activations.entries())
-      .filter(([_, activation]) => activation > 0.3)
+      .filter(([, activation]) => activation > 0.3)
       .map(([nodeId]) => nodeId);
     
     if (activeNodes.length > 2) {

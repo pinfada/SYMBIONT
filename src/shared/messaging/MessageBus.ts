@@ -85,8 +85,11 @@ export interface Message {
 }
 
 export class MessageBus {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub API: signature is load-bearing
     constructor(_channel?: string) {}
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub API: signature is load-bearing
     on(_type: MessageType, _handler: (message: MessageEvent | unknown) => void): void {}
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub API: signature is load-bearing
     send(_message: MessageEvent | unknown): void {}
     subscribe(_type: MessageType, _handler: (message: MessageEvent | unknown) => void): void {
       this.on(_type, _handler);

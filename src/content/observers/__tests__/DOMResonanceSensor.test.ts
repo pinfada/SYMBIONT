@@ -19,7 +19,6 @@ global.chrome = {
 
 describe('DOMResonanceSensor', () => {
   let sensor: DOMResonanceSensor;
-  let mutationObserverMock: jest.Mock;
   let originalRequestIdleCallback: typeof requestIdleCallback;
   let originalCancelIdleCallback: typeof cancelIdleCallback;
 
@@ -33,7 +32,6 @@ describe('DOMResonanceSensor', () => {
     (global.chrome.runtime.sendMessage as jest.Mock).mockResolvedValue(undefined);
 
     // Setup MutationObserver mock
-    mutationObserverMock = jest.fn();
     global.MutationObserver = jest.fn().mockImplementation(() => ({
       observe: jest.fn(),
       disconnect: jest.fn(),

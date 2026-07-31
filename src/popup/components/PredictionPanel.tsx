@@ -8,7 +8,7 @@ const PredictionPanel: React.FC = () => {
     <div data-testid="prediction-panel">
       <h2 data-testid="prediction-title">Prédiction</h2>
       <button data-testid="next-action-btn" onClick={() => setNextAction('Aller sur le dashboard')}>Prochaine action</button>
-      {nextAction && <div data-testid="next-action">Prochaine action : <span>{nextAction}</span></div>}
+      {nextAction && <div data-testid="next-action">Prochaine action&#8239;: <span>{nextAction}</span></div>}
       <button data-testid="simulate-btn" onClick={() => setPredicted('Action prédite : Connexion au réseau')}>Simuler</button>
       {predicted && <div data-testid="predicted-action">{predicted}</div>}
       <section style={{marginTop: 20}}>

@@ -141,7 +141,7 @@ export const OrganismNutrition: React.FC = () => {
       <div className="nutrition-header">
         <h3>
           <span>🍽️</span>
-          Nutrition de l'Organisme
+          Nutrition de l&apos;Organisme
         </h3>
         <button
           className="help-button"
@@ -156,16 +156,16 @@ export const OrganismNutrition: React.FC = () => {
           <h4>Comment votre organisme se nourrit-il ?</h4>
           <p>
             Votre organisme se nourrit automatiquement de votre navigation web.
-            Il gagne de l'énergie et de l'expérience selon :
+            Il gagne de l&apos;énergie et de l&apos;expérience selon :
           </p>
           <ul>
-            <li><strong>Navigation automatique :</strong> Le type de sites visités influence l'évolution</li>
+            <li><strong>Navigation automatique :</strong> Le type de sites visités influence l&apos;évolution</li>
             <li><strong>Pages éducatives :</strong> Augmentent la conscience progressivement</li>
-            <li><strong>Rituels mystiques :</strong> Sources d'énergie manuelle puissantes</li>
-            <li><strong>Contexte social :</strong> Les réseaux sociaux apportent de l'expérience</li>
+            <li><strong>Rituels mystiques :</strong> Sources d&apos;énergie manuelle puissantes</li>
+            <li><strong>Contexte social :</strong> Les réseaux sociaux apportent de l&apos;expérience</li>
           </ul>
           <p className="help-note">
-            💡 L'organisme consomme de l'énergie en permanence.
+            💡 L&apos;organisme consomme de l&apos;énergie en permanence.
             La navigation active consomme plus (-0.5/s) que le repos (-0.2/s).
           </p>
         </div>
@@ -243,10 +243,10 @@ export const OrganismNutrition: React.FC = () => {
         <ul>
           <li>Votre organisme se nourrit automatiquement de votre navigation</li>
           <li>Les pages scientifiques augmentent la conscience (+0.3/s)</li>
-          <li>Les pages sociales apportent de l'expérience sociale</li>
-          <li>Les rituels mystiques sont la meilleure source d'énergie manuelle</li>
-          <li>L'organisme évolue tous les 100 points d'XP</li>
-          <li>L'énergie diminue naturellement (-0.5/s si actif, -0.2/s au repos)</li>
+          <li>Les pages sociales apportent de l&apos;expérience sociale</li>
+          <li>Les rituels mystiques sont la meilleure source d&apos;énergie manuelle</li>
+          <li>L&apos;organisme évolue tous les 100 points d&apos;XP</li>
+          <li>L&apos;énergie diminue naturellement (-0.5/s si actif, -0.2/s au repos)</li>
         </ul>
       </div>
 

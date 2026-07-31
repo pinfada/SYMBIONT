@@ -127,6 +127,7 @@ export class RealDataService {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- userId reserved for per-user scoping; signature kept
   private async collectUserBehaviors(_userId: string): Promise<BehaviorMetrics> {
     // Collecter données réelles de navigation - uniquement si Chrome API disponible
     const behaviorData: BehaviorMetrics = {
@@ -183,7 +184,7 @@ export class RealDataService {
     const categories = new Map<string, number>();
 
     // Compter les catégories
-    for (const [_domain, data] of behaviors.domains) {
+    for (const [, data] of behaviors.domains) {
       const count = categories.get(data.category) || 0;
       categories.set(data.category, count + data.visits);
     }
@@ -368,7 +369,7 @@ export class RealDataService {
     if (typeof chrome !== 'undefined' && chrome.webNavigation && chrome.webNavigation.onCompleted) {
       chrome.webNavigation.onCompleted.addListener((details) => {
         if (details.frameId === 0) { // Main frame seulement
-          this.trackNavigation(details.url, details.tabId);
+          this.trackNavigation(details.url);
         }
       });
     }
@@ -402,7 +403,7 @@ export class RealDataService {
     });
   }
 
-  private trackNavigation(url: string, _tabId: number): void {
+  private trackNavigation(url: string): void {
     const domain = new URL(url).hostname;
     const existing = this.behaviorMetrics.domains.get(domain) || {
       visits: 0,

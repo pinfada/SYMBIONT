@@ -240,10 +240,10 @@ export class StorageDebouncer {
     await this.flushAll();
 
     // Clear toutes les timers restantes (au cas où)
-    for (const [_, operation] of this.pendingOrganisms) {
+    for (const [, operation] of this.pendingOrganisms) {
       clearTimeout(operation.timer);
     }
-    for (const [_, operation] of this.pendingBehaviors) {
+    for (const [, operation] of this.pendingBehaviors) {
       clearTimeout(operation.timer);
     }
 

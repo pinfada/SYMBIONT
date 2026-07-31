@@ -443,6 +443,7 @@ export class QuorumSensingManager {
   /**
    * Attend qu'un lock soit libéré
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- operation fait partie de la signature d'appel
   private waitForLock(key: string, operation: 'read' | 'write'): Promise<boolean> {
     return new Promise((resolve) => {
       const requestId = `${key}_${Date.now()}`;
@@ -564,6 +565,7 @@ export class QuorumSensingManager {
   /**
    * Gère la synchronisation d'état
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- _message fait partie de la signature du handler
   private handleSyncState(_message: QuorumMessage): void {
     // Envoyer notre état complet
     this.sendHeartbeat();

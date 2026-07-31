@@ -5,7 +5,6 @@
 
 import { SecureRandom } from '@shared/utils/secureRandom';
 import { logger } from '@shared/utils/secureLogger';
-import type { ThoughtVector } from './NeuroCore';
 
 // États du cycle circadien
 export enum SleepPhase {

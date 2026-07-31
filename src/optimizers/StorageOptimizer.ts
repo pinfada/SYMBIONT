@@ -33,7 +33,7 @@ export class StorageOptimizer {
           if (item.createdAt && now - item.createdAt > maxAgeMs) {
             localStorage.removeItem(key)
           }
-        } catch {}
+        } catch { /* ignore les entrées malformées */ }
       }
     }
   }

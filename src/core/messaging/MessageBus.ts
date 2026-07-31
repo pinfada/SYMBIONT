@@ -145,7 +145,7 @@ function cleanObjectForSerialization(obj: Record<string, unknown>, seen = new We
   const cleaned: unknown = {};
   
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       try {
         (cleaned as any)[key] = cleanObjectForSerialization(obj[key] as Record<string, unknown>, seen);
       } catch (error) {
@@ -174,7 +174,7 @@ export class MessageBus {
     if (typeof chrome === 'undefined' || !chrome.runtime) {
       logger.warn('[MessageBus] Chrome runtime non disponible - mode test/développement');
       return;
-    }
+    }
     chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
       if (this.shouldProcessMessage(message)) {
         this.enqueueMessage(message);
@@ -316,16 +316,16 @@ export class MessageBus {
     if (handlers) {
       handlers.forEach(handler => handler({ type, payload }));
     }
-  }
-  private handleMessage(message: MessageEvent | unknown, targetFrame: string): void {
+  }
+  private handleMessage(message: MessageEvent | unknown): void {
     // Handle cross-frame messages
     logger.info('Handling message:', message);
-  }
-  private onMessage(message: MessageEvent | unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
+  }
+  private onMessage(message: MessageEvent | unknown): boolean {
     // Handle incoming message
     logger.info('Received message:', message);
     return true;
-  }
+  }
   private sendToFrame(handleMessage: (msg: any) => any, targetFrame: MessageTarget, payload: any): void {
     // Send message to frame
     logger.info('Sending to frame:', targetFrame, payload);

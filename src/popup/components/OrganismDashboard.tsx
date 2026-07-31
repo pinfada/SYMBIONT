@@ -40,17 +40,13 @@ export const OrganismDashboard: React.FC = () => {
           setTimeout(() => reject(new Error('Events timeout')), 3000)
         );
         
-        try {
-          const organismEvents = await Promise.race([eventsPromise, timeoutPromise]);
-          setEvents(organismEvents);
-          
-          // Nettoyer les anciens événements pour optimiser le stockage (async)
-          OrganismEventService.cleanOldEvents().catch(err => 
-            console.warn('Failed to clean old events:', err)
-          );
-        } catch (timeoutError) {
-          throw timeoutError;
-        }
+        const organismEvents = await Promise.race([eventsPromise, timeoutPromise]);
+        setEvents(organismEvents);
+
+        // Nettoyer les anciens événements pour optimiser le stockage (async)
+        OrganismEventService.cleanOldEvents().catch(err =>
+          console.warn('Failed to clean old events:', err)
+        );
         
       } catch (error) {
         console.error('Failed to initialize dashboard data:', error);
@@ -124,7 +120,7 @@ export const OrganismDashboard: React.FC = () => {
 
   return (
     <div className="organism-dashboard">
-      <h2 className="dashboard-title" data-testid="organism-dashboard-title">Tableau de bord de l'organisme</h2>
+      <h2 className="dashboard-title" data-testid="organism-dashboard-title">Tableau de bord de l&apos;organisme</h2>
       <section className="dashboard-section dashboard-section--info">
         <div className="organism-info">
           <div className="info-item">

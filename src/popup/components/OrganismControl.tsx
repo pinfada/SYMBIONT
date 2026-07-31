@@ -153,12 +153,12 @@ const OrganismControl: React.FC = () => {
 
           <div className="organism-info">
             <p className="info-text">
-              💡 Visualisation WebGL de l'activité de l'extension sur la page courante.
+              💡 Visualisation WebGL de l&apos;activité de l&apos;extension sur la page courante.
             </p>
             <ul className="behavior-list">
-              <li>🔬 <strong>Affichage visuel</strong> : Représentation 3D de l'organisme numérique</li>
-              <li>📊 <strong>État</strong> : Indicateurs d'énergie et de conscience basés sur les métriques système</li>
-              <li>⚙️ <strong>Configuration</strong> : Position et taille personnalisables de l'affichage</li>
+              <li>🔬 <strong>Affichage visuel</strong> : Représentation 3D de l&apos;organisme numérique</li>
+              <li>📊 <strong>État</strong> : Indicateurs d&apos;énergie et de conscience basés sur les métriques système</li>
+              <li>⚙️ <strong>Configuration</strong> : Position et taille personnalisables de l&apos;affichage</li>
               <li>🎨 <strong>Rendu</strong> : Animation WebGL en temps réel</li>
             </ul>
           </div>

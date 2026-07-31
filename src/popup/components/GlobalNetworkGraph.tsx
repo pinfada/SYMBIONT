@@ -454,7 +454,7 @@ export const GlobalNetworkGraph: React.FC = () => {
           <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔍</div>
           <p>Recherche de pairs en cours...</p>
           <p style={{ fontSize: '12px', marginTop: '20px' }}>
-            Assurez-vous que d'autres utilisateurs ont l'extension SYMBIONT installée
+            Assurez-vous que d&apos;autres utilisateurs ont l&apos;extension SYMBIONT installée
             et sont sur le même réseau ou connectés au serveur de signaling.
           </p>
           <div style={{ marginTop: '20px', padding: '10px', background: '#111', borderRadius: '8px' }}>

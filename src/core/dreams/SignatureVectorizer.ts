@@ -8,7 +8,6 @@
  */
 
 import { logger } from '@/shared/utils/secureLogger';
-import { SecureRandom } from '@/shared/utils/secureRandom';
 import type { MemoryFragment } from './DreamProcessor';
 
 export class SignatureVectorizer {

@@ -15,7 +15,6 @@ import {
   RitualHealth
 } from '../interfaces/IRitual';
 import { logger } from '@/shared/utils/secureLogger';
-import { SecureRandom } from '@/shared/utils/secureRandom';
 import { MessageBus, MessageType } from '@/shared/messaging/MessageBus';
 
 interface HiddenElement {
@@ -338,7 +337,7 @@ export class StructureInstinctRitual implements IRitual {
               pattern: 'embedded_json'
             });
           }
-        } catch {}
+        } catch { /* intentional: ignore parse errors */ }
       }
 
       const apis = content.match(apiPattern);
@@ -405,9 +404,6 @@ export class StructureInstinctRitual implements IRitual {
     const patterns: SemanticPattern[] = [];
     const urlPattern = /https?:\/\/[^\s"']+/gi;
     const apiPattern = /\/api\/[^\s"']*/gi;
-
-    // Grouper les éléments par type et contenu similaire
-    const grouped = new Map<string, HiddenElement[]>();
 
     for (const element of elements) {
       // Extraire les URLs et APIs
@@ -477,7 +473,7 @@ export class StructureInstinctRitual implements IRitual {
               metadata: { data: element.content }
             });
           }
-        } catch {}
+        } catch { /* intentional: ignore parse errors */ }
       }
     }
 
@@ -506,7 +502,7 @@ export class StructureInstinctRitual implements IRitual {
     }
 
     // Renforcer les patterns qui apparaissent en cluster
-    for (const [domain, clusterPatterns] of connectionClusters) {
+    for (const clusterPatterns of connectionClusters.values()) {
       if (clusterPatterns.length > 2) {
         clusterPatterns.forEach(p => {
           p.strength = Math.min(1.0, p.strength * 1.2);

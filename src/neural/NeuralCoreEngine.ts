@@ -163,8 +163,8 @@ export class NeuralCoreEngine {
       // Enrichir avec les traits de l'organisme
       const enrichedPrediction: ActionPrediction = {
         action: prediction.action || 'browse',
-        confidence: this.calculateConfidence(organism, context),
-        alternatives: this.generateSuggestions(organism, context),
+        confidence: this.calculateConfidence(organism),
+        alternatives: this.generateSuggestions(organism),
         reasoning: `Basé sur les traits: curiosité=${organism.traits.curiosity.toFixed(2)}, focus=${organism.traits.focus.toFixed(2)}`
       }
 
@@ -214,8 +214,8 @@ export class NeuralCoreEngine {
       const newValue = Math.max(0, Math.min(1, currentValue + mutation.delta))
       organism.traits[mutation.trait] = newValue
     }
-  }
-  private calculateConfidence(organism: OrganismState, context: PageContext): number {
+  }
+  private calculateConfidence(organism: OrganismState): number {
     // Base confidence sur l'expérience (nombre de mutations = expérience)
     const mutationsLength = organism.mutations ? organism.mutations.length : 0;
     const experienceBonus = Math.min(0.3, mutationsLength * 0.01)
@@ -225,8 +225,8 @@ export class NeuralCoreEngine {
     const wisdomBonus = (organism.traits.wisdom || 0.1) * 0.3
     
     return Math.min(0.95, 0.4 + experienceBonus + focusBonus + wisdomBonus)
-  }
-  private generateSuggestions(organism: OrganismState, context: PageContext): string[] {
+  }
+  private generateSuggestions(organism: OrganismState): string[] {
     const suggestions = ['browse']
     
     if (organism.traits.curiosity > 0.6) {

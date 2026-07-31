@@ -208,11 +208,9 @@ export class RealTimePerformanceMonitor {
     const start = performance.now();
     
     // Tâche intensive pour mesurer la latence CPU
-    let iterations = 0;
     const targetTime = 10; // 10ms
-    
+
     while (performance.now() - start < targetTime) {
-      iterations++;
       SecureRandom.random(); // Opération simple
     }
     

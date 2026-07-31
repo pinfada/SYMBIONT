@@ -31,10 +31,8 @@ export class SynapticRouter extends EventEmitter {
   }
 
   public async routeImpulse(impulse: NeuralImpulse): Promise<unknown> {
-    const routeKey = this.getRouteKey(impulse);
-    
     // Tentative prédictive
-    const optimizedRoute = await this.findOptimalRoute(impulse);
+    const optimizedRoute = await this.findOptimalRoute();
     
     if ((optimizedRoute as {predicted?: boolean})?.predicted) {
       logger.info(`🧠 Predicted route for ${impulse.type}`);
@@ -42,27 +40,27 @@ export class SynapticRouter extends EventEmitter {
     }
 
     // Route standard
-    const response = await this.performRouting(impulse, (optimizedRoute as {route?: string})?.route);
+    const response = await this.performRouting();
     
     // Apprentissage
-    this.learnFromRouting(routeKey, (optimizedRoute as {route?: string})?.route, response);
+    this.learnFromRouting();
     
     return response;
   }
 
   private setupLearningLoop(): void {}
-  private getRouteKey(impulse: NeuralImpulse): string { return '' }
-  private async findOptimalRoute(impulse: NeuralImpulse): Promise<{predicted?: boolean; predictedResponse?: unknown; route?: string}> { return {}; }
-  private async performRouting(impulse: NeuralImpulse, route: any): Promise<unknown> { return {}; }
-  private learnFromRouting(routeKey: string, route: any, response: any): void {}
-  route(type: string, target: string): any {
+  private getRouteKey(): string { return '' }
+  private async findOptimalRoute(): Promise<{predicted?: boolean; predictedResponse?: unknown; route?: string}> { return {}; }
+  private async performRouting(): Promise<unknown> { return {}; }
+  private learnFromRouting(): void {}
+  route(): any {
     return null;
   }
 
   addRoute(type: string, handler: any): void {
     this.routes.set(type, handler);
   }
-  processImpulse(impulse: any): any {
+  processImpulse(): any {
     return null;
   }
 

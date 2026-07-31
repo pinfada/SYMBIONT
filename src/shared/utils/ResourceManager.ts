@@ -209,7 +209,7 @@ export class ResourceManager {
 
     // Sort resources by last used time (oldest first)
     const sortedResources = Array.from(this.resources.entries())
-      .filter(([_, resource]) => resource.refCount === 0)
+      .filter(([, resource]) => resource.refCount === 0)
       .sort((a, b) => a[1].lastUsed - b[1].lastUsed);
 
     // Remove old unused resources

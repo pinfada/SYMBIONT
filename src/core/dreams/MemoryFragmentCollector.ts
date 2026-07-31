@@ -8,16 +8,8 @@
  */
 
 import { logger } from '@/shared/utils/secureLogger';
-import { generateSecureUUID } from '@/shared/utils/uuid';
 import { DreamStorage } from './DreamStorage';
 import type { MemoryFragment } from './DreamProcessor';
-
-interface FragmentSource {
-  domain: string;
-  timestamp: number;
-  data: any;
-  type: 'dom_resonance' | 'network_latency' | 'tracker_detection' | 'protocol_analysis';
-}
 
 /**
  * Singleton collector for memory fragments across the extension
@@ -189,7 +181,7 @@ export class MemoryFragmentCollector {
     const now = Date.now();
     const timeWindow = 60000; // 1 minute window for aggregation
 
-    for (const [key, fragment] of this.fragments) {
+    for (const [, fragment] of this.fragments) {
       if (fragment.domain === domain &&
           now - fragment.timestamp < timeWindow) {
         return fragment;
@@ -246,7 +238,7 @@ export class MemoryFragmentCollector {
     const fragments: MemoryFragment[] = [];
 
     // Get from memory first
-    for (const [key, fragment] of this.fragments) {
+    for (const [, fragment] of this.fragments) {
       if (now - fragment.timestamp < this.MAX_FRAGMENT_AGE) {
         fragments.push(fragment);
         if (fragments.length >= limit) break;

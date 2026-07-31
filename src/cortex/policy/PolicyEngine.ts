@@ -11,7 +11,6 @@ import {
   PolicyRule,
   CortexState,
   RecommendedAction,
-  Verdict,
 } from '../CortexTypes';
 
 export class PolicyEngine {

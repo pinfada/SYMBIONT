@@ -54,7 +54,7 @@ export class ServiceWorkerWebGLBridge {
   }
 
   private setupMessageHandling(): void {
-    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'OFFSCREEN_WEBGL_RESPONSE' && message.requestId) {
         const callback = this.pendingRequests.get(message.requestId);
         if (callback) {

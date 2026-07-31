@@ -1,12 +1,12 @@
 // Prédiction comportementale
 import { OrganismState, PageContext, ActionPrediction } from '../../shared/types/organism';
 
-export class BehaviorPredictor {
-  predict(data: unknown[]): any {
+export class BehaviorPredictor {
+  predict(): any {
     // Prédiction comportementale simple - à implémenter
     return { confidence: 0.5, prediction: 'unknown' };
-  }
-  analyzeBehavior(sequence: unknown[]): any {
+  }
+  analyzeBehavior(): any {
     // Analyse de séquence comportementale - à implémenter
     return { pattern: 'none', score: 0 };
   }

@@ -236,8 +236,8 @@ export class AttentionMonitor extends EventTarget {
     this.lastScrollPosition = currentScroll;
     
     // Calculate scroll velocity
-    const scrollTime = now - this.scrollStartTime;
-    const scrollVelocity = this.scrollDistance / (scrollTime / 1000); // pixels/second
+    const scrollTime = now - this.scrollStartTime;
+    // scroll velocity intentionally not tracked here
     
     // Reset scroll tracking after pause
     if (scrollTime > 500) {
@@ -419,7 +419,7 @@ export class AttentionMonitor extends EventTarget {
     }
     
     return visibleText.trim();
-  }
+  }
   private getElementSelector(element: Element): string {
     // Generate unique selector for element
     const classes = safeGetClasses(element);

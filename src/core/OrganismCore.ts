@@ -17,7 +17,7 @@ import { PerformanceOptimizedRandom } from '../shared/utils/PerformanceOptimized
 
 export interface OrganismDependencies {
   neuralMesh: INeuralMesh;
-  logger?: { debug: Function; info: Function; error: Function };
+  logger?: { debug: (...args: unknown[]) => void; info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
 }
 
 export class OrganismCore implements IOrganismCore {
@@ -34,7 +34,7 @@ export class OrganismCore implements IOrganismCore {
   private readonly neuralService: NeuralService;
   private readonly metricsService: RealMetricsService;
   private readonly featureFlags: FeatureFlagService;
-  private readonly logger: { debug: Function; info: Function; error: Function } | undefined;
+  private readonly logger: { debug: (...args: unknown[]) => void; info: (...args: unknown[]) => void; error: (...args: unknown[]) => void } | undefined;
 
   constructor(
     dna: string, 
@@ -71,6 +71,7 @@ export class OrganismCore implements IOrganismCore {
       this.neuralService = new NeuralService(dependencies.neuralMesh);
     } else {
       // Fallback pour compatibilité
+      // eslint-disable-next-line @typescript-eslint/no-var-requires -- lazy require preserves fallback loading semantics
       const { NeuralMesh } = require('./NeuralMesh');
       this.neuralService = new NeuralService(new NeuralMesh());
     }

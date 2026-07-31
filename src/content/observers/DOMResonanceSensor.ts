@@ -1,5 +1,4 @@
 import { logger } from '@/shared/utils/secureLogger';
-import { SecureRandom } from '@/shared/utils/secureRandom';
 
 /**
  * DOMResonanceSensor - Détection de signaux faibles via l'analyse de friction DOM

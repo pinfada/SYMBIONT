@@ -9,18 +9,11 @@
  */
 
 import { logger } from '@/shared/utils/secureLogger';
-import { generateSecureUUID } from '@/shared/utils/uuid';
 import type { DreamReport, SurveillanceSignature, MemoryFragment } from './DreamProcessor';
 
 interface StoredReport extends DreamReport {
   compressed: boolean;
   size: number;
-}
-
-interface StorageQuota {
-  used: number;
-  total: number;
-  percentage: number;
 }
 
 /**

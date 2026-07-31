@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import { GlobalNetworkGraph } from './GlobalNetworkGraph';
-import { PluginManager, Plugin } from '../../core/PluginManager';
+import { GlobalNetworkGraph } from './GlobalNetworkGraph';
+import { PluginManager } from '../../core/PluginManager';
 
 describe('GlobalNetworkGraph (plugins)', () => {
   it('affiche les visualisations plugins', () => {

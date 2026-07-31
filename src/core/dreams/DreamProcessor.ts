@@ -9,7 +9,6 @@
  */
 
 import { logger } from '@/shared/utils/secureLogger';
-import { SecureRandom } from '@/shared/utils/secureRandom';
 import { generateSecureUUID } from '@/shared/utils/uuid';
 import { ThermalThrottlingController } from './ThermalThrottlingController';
 import { SignatureVectorizer } from './SignatureVectorizer';

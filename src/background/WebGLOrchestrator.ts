@@ -295,7 +295,7 @@ export class WebGLOrchestrator {
           );
           break;
 
-        case 'content_script':
+        case 'content_script': {
           // Send to active tab's content script with timeout
           const tabs = await chrome.tabs.query({ active: true });
           if (tabs[0]?.id) {
@@ -310,6 +310,7 @@ export class WebGLOrchestrator {
             throw new Error('No active tab found for content script rendering');
           }
           break;
+        }
 
         default:
           throw new Error(`Unknown render target type: ${target.type}`);

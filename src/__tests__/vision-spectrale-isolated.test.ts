@@ -3,7 +3,7 @@
  * Vérification de non-régression après refactoring
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import type { HiddenElementData, CategorizedElements } from '../../types/hiddenElements';
 
 // Fonctions extraites de MysticalPanel pour tests isolés
@@ -43,7 +43,7 @@ export function categorizeHiddenElements(elements: HiddenElementData[]): Categor
 
 export function sanitizeHostname(hostname: string): string {
   return hostname
-    .replace(/[<>\"'&]/g, '')
+    .replace(/[<>"'&]/g, '')
     .slice(0, 100);
 }
 

@@ -220,7 +220,7 @@ class P2PService {
                 });
                 break;
 
-              case 'peer_left':
+              case 'peer_left': {
                 // Un pair s'est déconnecté
                 logger.info(`P2P: Pair déconnecté: ${data.peerId}`);
                 const peer = this.peers.get(data.peerId);
@@ -229,6 +229,7 @@ class P2PService {
                   this.peers.delete(data.peerId);
                 }
                 break;
+              }
 
               case 'pong':
                 // Réponse au ping
@@ -666,7 +667,7 @@ class P2PService {
       }
 
       switch (message.type) {
-        case 'key_exchange':
+        case 'key_exchange': {
           // Stocker la clé publique du pair
           const publicKey = message.data.publicKey;
           if (publicKey) {
@@ -676,6 +677,7 @@ class P2PService {
             logger.info(`P2P: Clé publique reçue de ${peerId}, chiffrement E2E activé 🔐`);
           }
           break;
+        }
 
         case 'organism_update':
           peer.organism = message.data;
@@ -686,11 +688,11 @@ class P2PService {
           break;
 
         case 'consciousness_sync':
-          this.handleConsciousnessSync(peerId, message.data);
+          this.handleConsciousnessSync(peerId);
           break;
 
         case 'mutation_exchange':
-          this.handleMutationExchange(peerId, message.data);
+          this.handleMutationExchange(peerId);
           break;
 
         case 'chat':
@@ -710,7 +712,7 @@ class P2PService {
     logger.info(`P2P: Énergie reçue de ${peerId}: +${amount}`);
   }
 
-  private handleConsciousnessSync(peerId: string, _data: any): void {
+  private handleConsciousnessSync(peerId: string): void {
     const peer = this.peers.get(peerId);
     if (peer && peer.organism) {
       const avg = (this.myOrganism.consciousness + peer.organism.consciousness) / 2;
@@ -720,7 +722,7 @@ class P2PService {
     }
   }
 
-  private handleMutationExchange(peerId: string, _data: any): void {
+  private handleMutationExchange(peerId: string): void {
     this.myOrganism.mutations++;
     // Mutation d'un trait aléatoire
     const traits = Object.keys(this.myOrganism.traits);

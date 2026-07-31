@@ -217,7 +217,7 @@ export class SecureErrorHandler {
     }
 
     // Supprimer les paths absolus qui pourraient révéler la structure
-    sanitized = sanitized.replace(/[A-Z]:\\[^\\]+\\.*|\/[^\/]+\/.*/, '[PATH_REDACTED]');
+    sanitized = sanitized.replace(/[A-Z]:\\[^\\]+\\.*|\/[^/]+\/.*/, '[PATH_REDACTED]');
     
     // Supprimer les stack traces détaillées
     const lines = sanitized.split('\n');
@@ -279,7 +279,7 @@ export class SecureErrorHandler {
       .slice(0, this.MAX_STACK_DEPTH)
       .map(line => {
         // Supprimer les paths absolus
-        return line.replace(/[A-Z]:\\[^\\]+\\.*|\/[^\/]+\/.*/, '[PATH]');
+        return line.replace(/[A-Z]:\\[^\\]+\\.*|\/[^/]+\/.*/, '[PATH]');
       });
 
     return sanitizedLines.join('\n');

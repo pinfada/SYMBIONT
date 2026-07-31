@@ -91,7 +91,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({
               Annuler
             </button>
             <p id="cancel-help" className="sr-only">
-              Annule l'opération en cours
+              Annule l&apos;opération en cours
             </p>
           </div>
         )}

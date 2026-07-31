@@ -1,8 +1,9 @@
 import type { NavigationChange } from '../../content/index';
 
-export class NavigationObserver {
+export class NavigationObserver {
   private _handler: ((change: NavigationChange) => void) | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- constructor signature is load-bearing
   constructor(_messageBus?: any) {}
 
   observe(handler: (change: NavigationChange) => void): void {

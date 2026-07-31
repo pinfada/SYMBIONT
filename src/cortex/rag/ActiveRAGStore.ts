@@ -10,9 +10,7 @@ import {
   SignaturePattern,
   SignatureMatch,
   SignatureStatus,
-  FEATURE_VECTOR_SIZE,
   cosineSimilarity,
-  createEmptySignaturePattern,
   CandidateSignature,
 } from '../CortexTypes';
 import { generateSecureUUID } from '@shared/utils/uuid';

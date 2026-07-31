@@ -17,7 +17,6 @@ import { neuromodulation } from './Neuromodulation';
 import { backpressureController } from './BackpressureController';
 import { DreamProcessor } from '@/core/dreams/DreamProcessor';
 import { MemoryFragmentCollector } from '@/core/dreams/MemoryFragmentCollector';
-import type { MemoryFragment } from '@/core/dreams/DreamProcessor';
 
 export type CircadianPhase = 'active' | 'idle' | 'sleep' | 'dream';
 

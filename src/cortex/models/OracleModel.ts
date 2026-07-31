@@ -21,7 +21,6 @@ import { CircuitBreaker } from '@shared/patterns/CircuitBreaker';
 
 const CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3;
 const CIRCUIT_BREAKER_RESET_TIMEOUT = 60_000;
-const FALLBACK_BUDGET_DIVISOR = 4;
 
 export class OracleModel {
   private worker: Worker | null = null;
@@ -125,7 +124,6 @@ export class OracleModel {
 
   private analyzeOnMainThread(input: OracleInput): DiagnosticResult {
     const startTime = performance.now();
-    const reducedBudget = (input.budget.maxAllowedDurationMs || 3000) / FALLBACK_BUDGET_DIVISOR;
 
     // Analyse simplifiée sur le thread principal
     let score = 0;
@@ -184,7 +182,7 @@ export class OracleModel {
         this.workerReady = false;
         this.circuitBreaker.recordFailure();
         // Rejeter toutes les requêtes pendantes
-        for (const [id, req] of this.pendingRequests) {
+        for (const [, req] of this.pendingRequests) {
           clearTimeout(req.timeout);
           req.reject(new Error('Worker crashed'));
         }
@@ -220,7 +218,7 @@ export class OracleModel {
   }
 
   async shutdown(): Promise<void> {
-    for (const [id, req] of this.pendingRequests) {
+    for (const [, req] of this.pendingRequests) {
       clearTimeout(req.timeout);
       req.reject(new Error('OracleModel shutting down'));
     }

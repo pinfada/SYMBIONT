@@ -134,7 +134,7 @@ class NetworkService {
       if (savedOrganism) {
         try {
           organismData = JSON.parse(savedOrganism);
-        } catch {}
+        } catch { /* ignore parse errors */ }
       }
 
       const myOrganism: NetworkOrganism = {
@@ -534,11 +534,12 @@ class NetworkService {
           to.energy = Math.min(1, to.energy + 0.1);
           from.energy = Math.max(0, from.energy - 0.05);
           break;
-        case 'consciousness_sync':
+        case 'consciousness_sync': {
           const avgConsciousness = (from.consciousness + to.consciousness) / 2;
           from.consciousness = avgConsciousness;
           to.consciousness = avgConsciousness;
           break;
+        }
         case 'mutation_exchange':
           to.mutations++;
           break;

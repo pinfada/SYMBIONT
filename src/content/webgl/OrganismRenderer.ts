@@ -482,7 +482,6 @@ export class OrganismRenderer {
    */
   private pulsateOrganism(intensity: number): void {
     const pulseDuration = 1000;
-    const originalSize = this.state.size;
 
     const pulse = () => {
       const elapsed = performance.now() % pulseDuration;
@@ -534,7 +533,6 @@ export class OrganismRenderer {
 
     for (let i = 0; i < this.particleCount; i++) {
       const angle = (i / this.particleCount) * Math.PI * 2;
-      const radius = 30 + i * 0.5;
 
       this.particles[i * 6 + 2] = Math.cos(angle) * intensity * 2; // vx
       this.particles[i * 6 + 3] = Math.sin(angle) * intensity * 2; // vy
@@ -576,7 +574,6 @@ export class OrganismRenderer {
       if (elapsed > duration) return;
 
       // Couleurs oniriques changeantes
-      const hue = (elapsed / 100) % 360;
       this.state.color = {
         r: Math.sin(elapsed * 0.001) * 0.5 + 0.5,
         g: Math.sin(elapsed * 0.0012) * 0.5 + 0.5,

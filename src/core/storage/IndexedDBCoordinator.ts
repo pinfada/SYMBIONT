@@ -45,7 +45,7 @@ export class IndexedDBCoordinator {
   private primaryStorage: SymbiontStorage | null = null;
   private isPrimaryContext = false;
   private initPromise: Promise<void> | null = null;
-  private pendingRequests = new Map<string, { resolve: Function; reject: Function; timeout: NodeJS.Timeout }>();
+  private pendingRequests = new Map<string, { resolve: (value: unknown) => void; reject: (reason?: unknown) => void; timeout: NodeJS.Timeout }>();
 
   private constructor() {
     // Private constructor pour singleton
@@ -449,7 +449,7 @@ export class IndexedDBCoordinator {
     logger.info('[IndexedDBCoordinator] Closing');
 
     // Nettoyer les requêtes en attente
-    for (const [_requestId, pending] of this.pendingRequests) {
+    for (const [, pending] of this.pendingRequests) {
       clearTimeout(pending.timeout);
       pending.reject(new Error('Coordinator closing'));
     }

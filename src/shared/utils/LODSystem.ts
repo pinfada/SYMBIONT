@@ -96,6 +96,7 @@ export class LODManager {
     return levels;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- traits reserved for future detail tuning; signature kept
   private createLODMesh(vertexCount: number, detail: number, _traits: any): WebGLMesh | undefined {
     // Create a circle mesh with varying detail
     const segments = Math.max(6, Math.floor(vertexCount / 2));

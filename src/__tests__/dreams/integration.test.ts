@@ -81,12 +81,11 @@ global.indexedDB = {
 } as any;
 
 describe('Dream System Integration Test', () => {
-  let processor: DreamProcessor;
   let collector: MemoryFragmentCollector;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    processor = DreamProcessor.getInstance();
+    DreamProcessor.getInstance();
     collector = MemoryFragmentCollector.getInstance();
     collector.reset();
   });

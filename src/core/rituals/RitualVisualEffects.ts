@@ -105,7 +105,7 @@ export class RitualVisualEffectsManager {
 
     switch (ritualType) {
       case RitualType.TEMPORAL_DEPHASING:
-        return this.createDephasingUniforms(effectName, intensity, params);
+        return this.createDephasingUniforms(effectName, intensity);
 
       case RitualType.FREQUENCY_COMMUNION:
         return this.createCommunionUniforms(effectName, intensity, params);
@@ -123,8 +123,7 @@ export class RitualVisualEffectsManager {
    */
   private createDephasingUniforms(
     effectName: string,
-    intensity: number,
-    params: any
+    intensity: number
   ): Record<string, any> {
     switch (effectName) {
       case 'VAPORIZE':
@@ -345,13 +344,14 @@ export class RitualVisualEffectsManager {
           1.0 - effect.shaderUniforms.u_effectIntensity * progress * 0.3;
         break;
 
-      case 'MIRROR_MULTIPLY':
+      case 'MIRROR_MULTIPLY': {
         const mirrorAlpha = effect.shaderUniforms.u_mirrorAlpha;
         for (let i = 0; i < mirrorAlpha.length; i++) {
           mirrorAlpha[i] = 0.5 * effect.shaderUniforms.u_effectIntensity *
                           Math.sin(progress * Math.PI);
         }
         break;
+      }
 
       case 'NEURAL_PULSE':
         effect.shaderUniforms.u_pulseRadius = progress * 2.0;
@@ -363,11 +363,12 @@ export class RitualVisualEffectsManager {
         effect.shaderUniforms.u_phaseOffset = progress * Math.PI * 2;
         break;
 
-      case 'INSIGHT_FLASH':
+      case 'INSIGHT_FLASH': {
         const flashProgress = Math.min(progress * 5, 1.0); // Flash rapide
         effect.shaderUniforms.u_brightnessBoost =
           effect.shaderUniforms.u_effectIntensity * 2.0 * (1.0 - flashProgress);
         break;
+      }
     }
   }
 
@@ -388,7 +389,7 @@ export class RitualVisualEffectsManager {
       case 'ease-in-out':
         return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
-      case 'bounce':
+      case 'bounce': {
         const n1 = 7.5625;
         const d1 = 2.75;
         if (t < 1 / d1) {
@@ -400,6 +401,7 @@ export class RitualVisualEffectsManager {
         } else {
           return n1 * (t -= 2.625 / d1) * t + 0.984375;
         }
+      }
 
       default:
         return t;

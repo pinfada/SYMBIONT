@@ -175,7 +175,7 @@ export class SecurityManager {
   async encryptSensitiveData(data: unknown): Promise<string> {
     return bulkheadManager.execute('crypto-operations', async () => {
       return this._encryptSensitiveData(data);
-    }, 'encryptSensitiveData');
+    });
   }
 
   private async _encryptSensitiveData(data: unknown): Promise<string> {
@@ -214,7 +214,7 @@ export class SecurityManager {
   async decryptSensitiveData(data: unknown): Promise<unknown> {
     return bulkheadManager.execute('crypto-operations', async () => {
       return this._decryptSensitiveData(data);
-    }, 'decryptSensitiveData');
+    });
   }
 
   private async _decryptSensitiveData(data: unknown): Promise<unknown> {
@@ -264,7 +264,7 @@ export class SecurityManager {
   async anonymizeForSharing(data: BehaviorPattern): Promise<unknown> {
     return bulkheadManager.execute('data-anonymization', async () => {
       return this._anonymizeForSharing(data);
-    }, 'anonymizeForSharing');
+    });
   }
 
   private async _anonymizeForSharing(data: BehaviorPattern): Promise<unknown> {

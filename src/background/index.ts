@@ -196,10 +196,10 @@ class BackgroundService {
       }
 
       // Setup message handlers - ALWAYS do this, but they will have defensive checks
-      this.setupMessageHandlers(storageInitialized);
+      this.setupMessageHandlers();
 
       // Start periodic tasks
-      this.startPeriodicTasks(storageInitialized);
+      this.startPeriodicTasks();
 
       // Démarrer la collecte de latence réseau avec callback vers NeuralMesh
       this.networkLatencyCollector.start(async (latency) => {
@@ -291,9 +291,9 @@ class BackgroundService {
     return this.storage !== null && this.debouncer !== null;
   }
 
-  private setupMessageHandlers(_storageInitialized: boolean = false): void {
+  private setupMessageHandlers(): void {
     // Handle GET_ORGANISM request from popup
-    this.messageBus.on(MessageType.GET_ORGANISM, async (_message: MessageEvent | unknown) => {
+    this.messageBus.on(MessageType.GET_ORGANISM, async () => {
       logger.info('[BackgroundService] GET_ORGANISM request received');
 
       // Si l'organisme existe, l'envoyer immédiatement
@@ -528,15 +528,6 @@ class BackgroundService {
 
           // Déclencher les rituels si disponibles
           if (this.ritualBootstrap && metrics) {
-            const ritualContext = {
-              organism: this.organism,
-              resonanceLevel: resonance,
-              networkPressure: metrics.networkPressure || 0,
-              domOppression: metrics.domOppression || shadowActivity / 100,
-              frictionIndex: metrics.frictionIndex || jitter / 100,
-              timestamp: Date.now()
-            };
-
             // Déclencher le rituel approprié selon les conditions
             if (metrics.frictionIndex > 0.7) {
               await this.ritualBootstrap.triggerRitual(RitualType.TEMPORAL_DEPHASING, 'High friction detected');
@@ -1142,7 +1133,7 @@ class BackgroundService {
     return newDNA.join('');
   }
 
-  private startPeriodicTasks(_storageInitialized: boolean = false): void {
+  private startPeriodicTasks(): void {
     // Health decay - organism needs attention (TOUTES LES 5 MINUTES au lieu de 1 minute)
     setInterval(() => {
       if (this.organism && (this.organism.health ?? 0) > 0) {
@@ -1334,9 +1325,9 @@ async function getBackgroundService(): Promise<BackgroundService> {
 
 // Setup listener pour déclencher l'initialisation au premier message
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-  chrome.runtime.onMessage.addListener((_message, _sender, _sendResponse) => {
+  chrome.runtime.onMessage.addListener(() => {
     // Initialiser le service au premier message
-    getBackgroundService().then(_service => {
+    getBackgroundService().then(() => {
       logger.debug('[Background] Service initialized via lazy loading');
       // Le message sera traité par les handlers du MessageBus du service
     }).catch(error => {
