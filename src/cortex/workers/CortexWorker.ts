@@ -14,6 +14,8 @@ import {
   CandidateSignature,
   SignaturePattern,
   ThreatSignature,
+  ThreatCategory,
+  CortexSignal,
   Verdict,
   RecommendedAction,
   FEATURE_VECTOR_SIZE,
@@ -22,7 +24,9 @@ import {
 
 // ─── Worker message handler ─────────────────────────────────────────
 
-const ctx = self as unknown as DedicatedWorkerGlobalScope;
+// Le tsconfig cible le DOM (pas la lib webworker) : on type le scope
+// du worker via l'interface Worker, qui expose postMessage/addEventListener.
+const ctx = self as unknown as Worker;
 
 ctx.addEventListener('message', (event: MessageEvent<CortexWorkerMessage>) => {
   const msg = event.data;
@@ -114,7 +118,7 @@ function handleOracleAnalyze(id: string, input: OracleInput): void {
       verdict: finalVerdict,
       confidence: finalConfidence,
       explanation: buildExplanation(temporalResult, structuralResult, historicalResult, adversarialResult),
-      candidateSignature: candidate,
+      ...(candidate !== undefined && { candidateSignature: candidate }),
       recommendedAction: determineAction(finalVerdict, finalConfidence),
       processingTimeMs: elapsed,
       resourceCost: {
@@ -179,8 +183,8 @@ interface PassResult {
 }
 
 function analyzeTemporalCorrelation(
-  signal: typeof import('../CortexTypes').CortexSignal extends never ? never : any,
-  recentSignals: any[],
+  signal: CortexSignal,
+  recentSignals: CortexSignal[],
 ): PassResult {
   let score = 0;
   let confidence = 0.3;
@@ -266,6 +270,38 @@ function deepAdversarialCheck(signal: any): PassResult {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
+/**
+ * Construit un DiagnosticResult partiel pour les sorties anticipées
+ * (budget temps épuisé ou confiance suffisante avant la fin des passes).
+ * Pas de signature candidate sur ces chemins : elle n'est générée
+ * qu'en Pass 5, après la vérification adversariale.
+ */
+function buildResult(
+  input: OracleInput,
+  temporal: PassResult,
+  structural: PassResult | null,
+  historical: PassResult | null,
+  adversarial: PassResult | null,
+  elapsed: number,
+): DiagnosticResult {
+  const confidence = computeFinalConfidence(temporal, structural, historical, adversarial);
+  const verdict = computeVerdict(confidence, temporal, structural ?? temporal);
+  return {
+    level: 'oracle',
+    signalId: input.signal.id,
+    verdict,
+    confidence,
+    explanation: buildExplanation(temporal, structural, historical, adversarial),
+    recommendedAction: determineAction(verdict, confidence),
+    processingTimeMs: elapsed,
+    resourceCost: {
+      cpuTimeMs: elapsed,
+      peakMemoryDeltaBytes: 0,
+      workerUsed: true,
+    },
+  };
+}
+
 function computeFinalConfidence(...passes: (PassResult | null)[]): number {
   const valid = passes.filter((p): p is PassResult => p !== null);
   if (valid.length === 0) return 0;
@@ -333,7 +369,7 @@ function generateCandidateSignature(input: OracleInput, confidence: number): Can
   };
 }
 
-function inferCategory(signal: any): string {
+function inferCategory(signal: any): ThreatCategory {
   if (signal.source === 'css_fingerprint' || signal.source === 'webrtc_probe') return 'fingerprinter';
   if (signal.source === 'script_injection') {
     if (signal.payload.metadata?.hasEval) return 'obfuscated_script';

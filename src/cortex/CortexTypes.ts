@@ -5,7 +5,7 @@
  * par les sous-systèmes du moteur cognitif.
  */
 
-import { generateSecureUUID } from '@shared/utils/secureRandom';
+import { generateSecureUUID } from '@shared/utils/uuid';
 
 // ─── États du moteur ────────────────────────────────────────────────
 

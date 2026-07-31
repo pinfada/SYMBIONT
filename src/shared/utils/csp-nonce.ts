@@ -43,7 +43,7 @@ class CSPNonceManager {
     }
 
     // Mettre à jour la policy avec le nonce
-    const basePolicy = `script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests; connect-src 'self'`;
+    const basePolicy = `script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'nonce-${nonce}'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests; connect-src 'self'`;
     
     cspMeta.content = basePolicy;
   }

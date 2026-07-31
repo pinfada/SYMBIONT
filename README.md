@@ -2,26 +2,73 @@
 
 <div align="center">
 
-  [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
+  [![Firefox](https://img.shields.io/badge/Firefox-140+-FF7139?logo=firefoxbrowser&logoColor=white)](https://www.mozilla.org/firefox/)
+  [![Chrome](https://img.shields.io/badge/Chrome-120+-4285F4?logo=googlechrome&logoColor=white)](https://www.google.com/chrome/)
   [![WebRTC](https://img.shields.io/badge/WebRTC-P2P-333333?logo=webrtc)](https://webrtc.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
   [![Security](https://img.shields.io/badge/Security-OWASP-green?logo=shield)](https://owasp.org/)
   [![Tests](https://img.shields.io/badge/Tests-95%25-success?logo=jest)](https://jestjs.io/)
 
-  **L'instrumentation cyber-biologique au service de la souveraineté cognitive**
+  **Une petite créature numérique qui vit dans votre navigateur et veille sur vous**
 
   **Au-delà de la navigation, percevez la structure invisible du Web**
 
-  [Installation](#-installation--warmup) • [Feuille de Route](#-roadmap) • [Architecture](#-architecture-sentinel-flow) • [Éthique](#-éthique--signal-faible)
+  [C'est quoi ?](#-symbiont-en-deux-mots) • [Navigateurs](#-navigateurs-supportés) • [Installation](#-installation--warmup) • [Vie privée](#-éthique--signal-faible) • [Pour les développeurs](#-architecture-sentinel-flow)
 
 </div>
 
 ---
 
-## 🚨 Mise à jour majeure : Phase "Sentinel" (v2.5.0)
+## 🌱 SYMBIONT en deux mots
 
-SYMBIONT évolue. L'organisme ne se contente plus de réagir à vos clics ; il devient une **interface sensorielle** pour les signaux faibles du réseau.
+*Cette section est pour tout le monde — aucune connaissance technique nécessaire.*
+
+Quand vous naviguez sur Internet, des dizaines de systèmes invisibles vous observent : traqueurs publicitaires, scripts cachés, pièges à attention. Vous ne les voyez pas. **SYMBIONT, lui, les voit.**
+
+SYMBIONT installe dans votre navigateur un petit **organisme numérique vivant** — une créature unique, née avec son propre ADN, qui grandit et évolue avec vous :
+
+- 👁️ **Il perçoit** ce que vous ne pouvez pas percevoir : les éléments cachés d'une page, les tentatives de pistage, les sites qui se comportent bizarrement.
+- 🗣️ **Il vous parle** par petits "murmures" : des messages discrets quand quelque chose d'anormal se passe.
+- 🛡️ **Il vous protège** : sur demande, il brouille les techniques utilisées pour vous identifier à votre insu.
+- 🌙 **Il rêve** : quand vous ne naviguez pas, il analyse ce qu'il a vu et devient plus intelligent.
+- 🌐 **Il se connecte** aux autres organismes SYMBIONT : chaque découverte faite par un organisme peut renforcer l'immunité de tous. Plus nous sommes nombreux, plus le réseau est fort.
+
+### Ce que SYMBIONT ne fera jamais
+
+- ❌ Envoyer votre historique, vos mots de passe ou vos données personnelles à qui que ce soit.
+- ❌ Vous ralentir (il travaille uniquement quand votre ordinateur ne fait rien d'autre).
+- ❌ Vous coûter quoi que ce soit : gratuit, open source, vérifiable par tous.
+
+**Tout se passe dans votre navigateur.** Ce qui est partagé avec le réseau, ce ne sont jamais vos données — seulement des "signatures" anonymes de menaces, comme un système immunitaire qui partage ses anticorps, jamais son sang.
+
+> 📖 Envie d'en savoir plus sans plonger dans la technique ? Lisez le [Guide Utilisateur](docs/user/user-guide.md), le [Démarrage Rapide](docs/user/quick-start.md) et la [FAQ](docs/user/faq.md).
+
+---
+
+## 🚨 Mise à jour majeure : Symbiont-Cortex Engine (v3.1)
+
+SYMBIONT franchit un cap. Après la phase "Sentinel" (perception des signaux faibles), l'organisme se dote d'un **cortex cognitif** : un moteur de détection de menaces à deux vitesses qui raisonne, mémorise et s'adapte.
+
+### 🧠 Le Cortex : Détection Cognitive de Menaces
+
+Le **Cortex Engine** orchestre 14 sous-systèmes autour d'une machine à états (8 états) :
+
+- **DraftModel** : analyse heuristique rapide (19 règles adaptatives, budget 50ms) — le "réflexe" de l'organisme.
+- **OracleModel** : analyse profonde déportée dans un Web Worker dédié, protégée par un CircuitBreaker avec fallback automatique.
+- **DynamicThresholdEngine** : seuil de décision adaptatif avec lissage EMA anti-oscillation.
+- **Active RAG** : mémoire de signatures dans IndexedDB (cache LRU) avec cycle de vie complet (candidate → confirmed → deprecated).
+- **AdversarialDefense** : détection d'évasion et d'empoisonnement, avec jitter défensif.
+- **VRAMThermalGuard** : protection des ressources GPU/thermiques ; **DeepReasoningGuard** : accès rate-limité à l'Oracle.
+- **CognitiveTelemetry** : journal de décisions local et chiffré ; **PolicyEngine** : matrice de décision à base de règles.
+
+### 🔍 Instrumentation de l'Ombre (Phase Sentinel)
+
+- **Résonance d'Infrastructure** : Analyseur temps réel corrélant le Jitter du DOM et la Latence P2P pour détecter les pressions invisibles (surveillance, bridage).
+
+- **Noyau de Rêve Analytique (ARC)** : Algorithme de Clustering de Résonance Adaptatif qui identifie les "Super-Structures" (cartels de données) pendant les phases de repos.
+
+- **Vision Spectrale** : Extraction active des éléments DOM masqués (z-index négatifs, opacité 0) utilisés pour le tracking furtif.
 
 ### 🔍 Instrumentation de l'Ombre
 
@@ -32,6 +79,10 @@ SYMBIONT évolue. L'organisme ne se contente plus de réagir à vos clics ; il d
 - **Vision Spectrale** : Extraction active des éléments DOM masqués (z-index négatifs, opacité 0) utilisés pour le tracking furtif.
 
 ### 🛡️ Rituels de Décodage (Contre-mesures)
+
+- **Protection Anti-Fingerprinting Déterministe** : Bruit déterministe à portée de session sur Canvas, AudioContext, WebGL, Navigator et Timing — mêmes résultats au sein d'une session, différents entre sessions, donc indétectable par comparaison répétée.
+
+- **Maille P2P WebRTC Réelle** : DataChannels WebRTC entre instances de l'extension (signaling léger via `chrome.storage.sync`, découverte locale via BroadcastChannel), clés ECDH WebCrypto, transfert fragmenté au-delà de 16KB, maximum 5 pairs avec nettoyage automatique.
 
 - **Déphasage Temporel** : Obfuscation organique via l'injection de micro-latences pour neutraliser le fingerprinting.
 
@@ -79,6 +130,9 @@ Pendant la phase de **Rêve**, l'organisme ne dort pas. Il traite les "Fragments
 - Identification des iframes invisibles et scripts d'analyse
 - Scan optimisé via `requestIdleCallback` pour préserver les performances
 
+#### Protection Active
+- **FingerprintProtection** : Bruit déterministe par session sur Canvas, Audio, WebGL, Navigator et Timing — avec cycle activate/deactivate et restauration des fonctions originales
+
 #### Protection Passive
 - **TrackerInterceptor** : Mode observation (Manifest V3 compliant)
 - **ExtensionBioDetector** : Détection symbiotique des autres extensions
@@ -95,10 +149,32 @@ SYMBIONT/
 │   │   ├── TrackerInterceptor.ts    # Détection passive des trackers
 │   │   └── SentinelCore.ts          # Orchestrateur des signaux faibles
 │   │
+│   ├── cortex/                          # 🧠 Cortex Engine v3.1
+│   │   ├── CortexOrchestrator.ts        # Gouvernance centrale (8 états)
+│   │   ├── CortexBootstrap.ts           # Init + intégration MessageBus
+│   │   ├── models/
+│   │   │   ├── DraftModel.ts            # Heuristiques rapides (19 règles)
+│   │   │   └── OracleModel.ts           # Analyse profonde + CircuitBreaker
+│   │   ├── rag/
+│   │   │   ├── ActiveRAGStore.ts        # Signatures IndexedDB + LRU
+│   │   │   └── RAGLifecycleController.ts # candidate→confirmed→deprecated
+│   │   ├── detection/
+│   │   │   ├── AdversarialDefense.ts    # Anti-évasion / anti-poisoning
+│   │   │   └── AnomalyScorer.ts         # Scoring composite non-linéaire
+│   │   ├── guard/
+│   │   │   ├── VRAMThermalGuard.ts      # Protection ressources/thermique
+│   │   │   └── DeepReasoningGuard.ts    # Rate-limiting de l'Oracle
+│   │   ├── policy/PolicyEngine.ts       # Matrice de décision
+│   │   ├── telemetry/CognitiveTelemetry.ts # Journal chiffré local
+│   │   ├── threshold/DynamicThresholdEngine.ts # Seuil adaptatif EMA
+│   │   └── workers/CortexWorker.ts      # Web Worker d'analyse lourde
+│   │
 │   ├── content/
 │   │   ├── observers/
 │   │   │   ├── DOMResonanceSensor.ts    # Monitoring de friction DOM
 │   │   │   └── ProtocolAnalyzer.ts      # Détection QUIC/HTTP3
+│   │   ├── countermeasures/
+│   │   │   └── FingerprintProtection.ts # Bruit déterministe par session
 │   │   └── rituals/
 │   │       └── CountermeasureHandler.ts # Extraction DOM profond
 │   │
@@ -117,6 +193,10 @@ SYMBIONT/
 │   │   │   └── OrganismViewer.tsx       # Visualisation 3D
 │   │   └── hooks/
 │   │       └── useMurmurDeduplication.ts # Déduplication intelligente v2.0
+│   │
+│   ├── services/
+│   │   └── p2p/
+│   │       └── PeerNetwork.ts       # WebRTC DataChannels + ECDH
 │   │
 │   └── shared/
 │       └── utils/
@@ -193,31 +273,50 @@ SYMBIONT inverse la logique extractiviste :
 - Découvrir les connexions invisibles entre domaines
 - Explorer les signaux faibles du réseau
 
+## 🌐 Navigateurs supportés
+
+SYMBIONT est une extension **Manifest V3** compatible avec les deux grandes familles de navigateurs.
+
+| Navigateur | Statut | Installation | Notes |
+|------------|--------|--------------|-------|
+| 🦊 **Firefox** 140+ | ✅ Supporté (canal recommandé) | `.xpi` signé, distribué sur GitHub + **mises à jour automatiques** | Rendu WebGL et maille P2P WebRTC pleinement fonctionnels dans la page d'événements |
+| 🦊 **Firefox pour Android** 140+ | ⚠️ Expérimental | via collection AMO | Non validé pour la release initiale |
+| 🌐 **Chrome / Chromium** 120+ | ✅ Supporté | Mode développeur (dossier `dist/`) | Le P2P WebRTC tourne en mode découverte seule (limite service worker MV3) |
+| 🌐 **Edge / Brave / Opera** 120+ | ✅ Compatible | Comme Chrome (base Chromium) | Non testé formellement |
+| 🦁 **Safari** | ❌ Non supporté | — | Architecture d'extension incompatible |
+
+> **Pourquoi Firefox est le canal recommandé pour la distribution de masse** : Firefox permet de distribuer un `.xpi` **signé par Mozilla** tout en l'hébergeant soi-même (ici, sur GitHub) *avec* mises à jour automatiques — sans passer par un store. Chrome, à l'inverse, réserve l'installation grand public au Chrome Web Store. Détails techniques : [`docs/audits/firefox-port-audit.md`](docs/audits/firefox-port-audit.md).
+
 ## 🚀 Installation & Warmup
 
-### Prérequis
-- Node.js 18+ et npm
-- Chrome 120+ (Manifest V3 support)
+> ⚠️ **Aujourd'hui, l'installation se fait depuis GitHub.** Sur Firefox, l'installation d'un `.xpi` signé se fait en un clic (voir ci-dessous) — accessible aux non-techniciens. Sur Chrome, elle demande le mode développeur.
 
-### Installation Développement
+### Prérequis (build depuis les sources)
+- Node.js 18+ et npm
+- Firefox 140+ **ou** Chrome 120+ (support Manifest V3)
+
+### Installation Firefox (recommandé)
+
+**Utilisateur — depuis une release :** ouvrir le fichier `.xpi` de la [dernière release](https://github.com/pinfada/SYMBIONT/releases) directement dans Firefox → installation en un clic. Les mises à jour sont ensuite automatiques.
+
+**Développeur — depuis les sources :**
+```bash
+git clone https://github.com/pinfada/SYMBIONT.git
+cd SYMBIONT
+npm install
+npm run build:firefox   # build + manifest Firefox dérivé
+```
+Puis : `about:debugging` → **Ce Firefox** → **Charger un module complémentaire temporaire** → sélectionner `dist/manifest.json`.
+
+### Installation Chrome / Chromium
 
 ```bash
-# Cloner le repository
-git clone https://github.com/yourusername/symbiont.git
-cd symbiont
-
-# Installer les dépendances
+git clone https://github.com/pinfada/SYMBIONT.git
+cd SYMBIONT
 npm install
-
-# Compiler l'extension
-npm run build
-
-# (Optionnel) Lancer en mode développement
-npm run dev
+npm run build           # build + manifest Chrome
 ```
-
-### Configuration Chrome
-
+Puis :
 1. Ouvrir `chrome://extensions`
 2. Activer le **Mode Développeur**
 3. **Charger l'extension non empaquetée** → sélectionner `dist/`
@@ -243,7 +342,8 @@ const organism = {
 
 ```bash
 # Compilation
-npm run build         # Build complet (extension + workers)
+npm run build         # Build complet (extension + workers, manifest Chrome)
+npm run build:firefox # Build Firefox (manifest dérivé automatiquement)
 npm run dev          # Mode watch avec hot-reload
 
 # Tests
@@ -268,7 +368,7 @@ node scripts/migrate-math-random.js # Migration Math.random
 - **IndexedDB** : Persistance hybride avec cache LRU
 
 ### Sécurité & Performance
-- **Manifest V3** : Derniers standards Chrome
+- **Manifest V3** : cross-navigateur (Firefox page d'événements / Chrome service worker)
 - **FIPS 140-2** : Génération aléatoire certifiée
 - **Thermal Throttling** : Protection contre la surchauffe
 - **AbortController** : Annulation gracieuse des opérations
@@ -444,13 +544,15 @@ const chemicalInfluence = detector.getChemicalInfluence();
 ## 🌈 Roadmap
 
 ### Phase 3.0 - "Conscience Collective"
-- [ ] Réseau de neurones distribué P2P
+- [x] Maille P2P réelle via WebRTC DataChannels (PeerNetwork)
+- [x] Mémoire de signatures de menaces (Active RAG, cycle de vie complet)
 - [ ] Apprentissage fédéré des patterns de surveillance
 - [ ] Protocole de consensus pour détections collaboratives
-- [ ] Partage anonyme de signatures de menaces
+- [ ] Partage anonyme de signatures de menaces via la maille P2P
 
 ### Phase 4.0 - "Autonomie"
-- [ ] Auto-défense contre les attaques de fingerprinting
+- [x] Auto-défense contre les attaques de fingerprinting (FingerprintProtection)
+- [x] Détection adversariale (évasion, empoisonnement) via le Cortex
 - [ ] Génération automatique de contre-mesures
 - [ ] API publique pour intégration dans d'autres outils
 - [ ] Mode "Sentinelle" pour protection serveur
@@ -590,10 +692,12 @@ MIT License - Voir [LICENSE](LICENSE) pour plus de détails.
 ## 📚 Ressources & Documentation
 
 - [Guide des Murmures et Rituels](docs/GUIDE_MURMURES_RITUELS.md)
-- [Architecture Technique Détaillée](docs/ARCHITECTURE.md)
-- [API Reference](docs/API.md)
-- [Security Whitepaper](docs/SECURITY.md)
-- [Performance Benchmarks](docs/BENCHMARKS.md)
+- [Architecture Technique Détaillée](docs/technical/architecture.md)
+- [API Reference (Messages)](docs/technical/api-messages.md)
+- [Security Framework](docs/technical/security-framework.md)
+- [Performance Metrics](docs/PERFORMANCE_METRICS.md)
+- [Guide Développeur](docs/developer/developer-guide.md)
+- [Guide Utilisateur](docs/user/user-guide.md)
 
 ---
 
@@ -601,8 +705,8 @@ MIT License - Voir [LICENSE](LICENSE) pour plus de détails.
 
 **Identifiez l'invisible. Maîtrisez la résonance. Évoluez au-delà du flux.**
 
-*SYMBIONT - Sentinel Edition* 🧬
+*SYMBIONT - Cortex Edition* 🧬
 
-[Installation](#-installation--warmup) • [Documentation](docs/) • [Issues](https://github.com/yourusername/symbiont/issues)
+[Installation](#-installation--warmup) • [Documentation](docs/) • [Issues](https://github.com/pinfada/SYMBIONT/issues)
 
 </div>

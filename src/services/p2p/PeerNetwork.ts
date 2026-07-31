@@ -80,8 +80,21 @@ export class PeerNetwork {
     iceCandidatePoolSize: 2,
   };
 
+  /**
+   * WebRTC availability. RTCPeerConnection does NOT exist in Chrome MV3
+   * service workers (window-context API) — it does exist in Firefox event
+   * pages. Without it, the mesh degrades gracefully to local discovery
+   * (BroadcastChannel) and presence announcements only.
+   */
+  private readonly webrtcAvailable = typeof RTCPeerConnection !== 'undefined';
+
   constructor() {
     this.localPeerId = crypto.randomUUID();
+  }
+
+  /** True when full WebRTC DataChannel connections can be established. */
+  static isWebRTCSupported(): boolean {
+    return typeof RTCPeerConnection !== 'undefined';
   }
 
   // ---- Lifecycle ----
@@ -91,6 +104,13 @@ export class PeerNetwork {
    * Must be called before any other method.
    */
   async start(): Promise<void> {
+    if (!this.webrtcAvailable) {
+      logger.warn(
+        '[PeerNetwork] RTCPeerConnection unavailable in this context '
+        + '(Chrome MV3 service worker) — P2P DataChannels disabled, '
+        + 'running in discovery-only mode. Full mesh requires an event page (Firefox).'
+      );
+    }
     await this.generateKeyPair();
     this.setupBroadcastChannel();
     this.setupStorageListener();
@@ -293,6 +313,7 @@ export class PeerNetwork {
   }
 
   private async handleOffer(signal: SignalingMessage): Promise<void> {
+    if (!this.webrtcAvailable) return;
     const pc = new RTCPeerConnection(this.rtcConfig);
     this.connections.set(signal.from, pc);
 
@@ -356,6 +377,7 @@ export class PeerNetwork {
    */
   async connectToPeer(peerId: string): Promise<boolean> {
     if (this.destroyed) return false;
+    if (!this.webrtcAvailable) return false;
     if (this.connections.has(peerId)) return true;
 
     if (this.connections.size >= MAX_PEERS) {

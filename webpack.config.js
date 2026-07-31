@@ -9,7 +9,8 @@ module.exports = {
   mode: process.env.NODE_ENV || 'production',
   entry: {
     content: './src/content/index.ts',
-    popup: './src/popup/index.tsx'
+    popup: './src/popup/index.tsx',
+    offscreen: './src/background/offscreen-entry.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -102,6 +103,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: 'manifest.json', to: 'manifest.json', noErrorOnMissing: true },
+        { from: 'public/offscreen.html', to: 'offscreen.html' },
         // { from: 'src/assets', to: 'assets', noErrorOnMissing: true },
       ]
     })

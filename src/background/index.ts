@@ -1,5 +1,6 @@
 // src/background/index.ts
-// Point d'entrée Service Worker (Neural Core)
+// Point d'entrée background (Neural Core) — service worker Chrome / page d'événements Firefox
+import './persistent-service-worker'; // cycle de vie : heartbeat chrome.alarms + sauvegarde d'état
 import { MessageBus } from '../core/messaging/MessageBus';
 import { MessageType } from '../shared/messaging/MessageBus';
 import { IndexedDBCoordinator } from '../core/storage/IndexedDBCoordinator';
@@ -83,7 +84,7 @@ class BackgroundService {
   private events: SequenceEvent[] = [];
   private collectiveThresholds = [10, 50, 100, 250, 500];
   private reachedThresholds: number[] = [];
-  private security: SecurityManager = new SecurityManager();
+  private security: SecurityManager = new SecurityManager();
   private _organismFactory: OrganismFactory;
   private initialized: boolean = false;
   private networkLatencyCollector: NetworkLatencyCollector;
