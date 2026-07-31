@@ -4,6 +4,7 @@ import { organismStateManager } from '@shared/services/OrganismStateManager';
 import type { OrganismState } from '@shared/services/OrganismStateManager';
 import { OrganismRenderer } from '@shared/rendering/OrganismRenderer';
 import { SecureRandom } from '@shared/utils/secureRandom';
+import { organismPreferences, RENDER_SCALE } from '@shared/services/OrganismPreferences';
 
 // Créer une valeur par défaut pour l'état initial
 const getDefaultState = (): OrganismState => ({
@@ -66,24 +67,41 @@ export const UnifiedOrganismViewer: React.FC = () => {
 
     let raf = 0;
     const start = Date.now();
-    const animate = () => {
+    const drawFrame = () => {
       const s = state;
+      const prefs = organismPreferences.get();
       renderer.render(
         {
           energy: s.energy / 100,
           seed,
           traits: traitsFromState(s, seed),
           visualState: { color: moodToColor(s.mood), scale: 0.9 },
-          time: (Date.now() - start) / 1000,
+          // reduce-motion : image figée (t constant) au lieu d'une animation
+          time: prefs.reduceMotion ? 0 : (Date.now() - start) / 1000,
         },
-        { width: 200, height: 200, renderScale: 2 },
+        { width: 200, height: 200, renderScale: RENDER_SCALE[prefs.renderQuality] },
       );
-      raf = requestAnimationFrame(animate);
     };
-    animate();
+
+    const loop = () => {
+      drawFrame();
+      raf = requestAnimationFrame(loop);
+    };
+
+    // Réagit aux changements de préférences (qualité / reduce-motion)
+    const unsubscribe = organismPreferences.subscribe(() => {
+      const prefs = organismPreferences.get();
+      cancelAnimationFrame(raf);
+      if (prefs.reduceMotion) {
+        drawFrame(); // une seule image, pas de boucle
+      } else {
+        loop();
+      }
+    });
 
     return () => {
       cancelAnimationFrame(raf);
+      unsubscribe();
       renderer.dispose();
     };
   }, [state]);

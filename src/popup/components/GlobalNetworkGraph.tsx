@@ -282,7 +282,7 @@ export const GlobalNetworkGraph: React.FC = () => {
             const isSelected = selectedPeer === node.id;
 
             let fill = '#666666';
-            if (node.isMe) fill = '#ffb700';
+            if (node.isMe) fill = '#00e0ff';          // « Moi » : couleur d'identité de l'organisme
             else if (node.status === 'connected') fill = '#2ee6a6';
             else if (node.status === 'disconnected') fill = '#ef4444';
 
@@ -326,7 +326,7 @@ export const GlobalNetworkGraph: React.FC = () => {
                   fill={fill}
                   stroke={isSelected ? '#ffffff' : 'none'}
                   strokeWidth={isSelected ? 3 : 0}
-                  filter={node.status === 'connected' ? 'url(#connectedGlow)' : ''}
+                  filter={(node.status === 'connected' || node.isMe) ? 'url(#connectedGlow)' : ''}
                   opacity={node.energy || 1}
                   style={{ cursor: node.isPeer ? 'pointer' : 'default' }}
                   onMouseEnter={() => setHoveredNode(node.id)}
