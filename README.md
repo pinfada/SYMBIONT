@@ -19,9 +19,29 @@
 
 ---
 
-## 🚨 Mise à jour majeure : Phase "Sentinel" (v2.5.0)
+## 🚨 Mise à jour majeure : Symbiont-Cortex Engine (v3.1)
 
-SYMBIONT évolue. L'organisme ne se contente plus de réagir à vos clics ; il devient une **interface sensorielle** pour les signaux faibles du réseau.
+SYMBIONT franchit un cap. Après la phase "Sentinel" (perception des signaux faibles), l'organisme se dote d'un **cortex cognitif** : un moteur de détection de menaces à deux vitesses qui raisonne, mémorise et s'adapte.
+
+### 🧠 Le Cortex : Détection Cognitive de Menaces
+
+Le **Cortex Engine** orchestre 14 sous-systèmes autour d'une machine à états (8 états) :
+
+- **DraftModel** : analyse heuristique rapide (19 règles adaptatives, budget 50ms) — le "réflexe" de l'organisme.
+- **OracleModel** : analyse profonde déportée dans un Web Worker dédié, protégée par un CircuitBreaker avec fallback automatique.
+- **DynamicThresholdEngine** : seuil de décision adaptatif avec lissage EMA anti-oscillation.
+- **Active RAG** : mémoire de signatures dans IndexedDB (cache LRU) avec cycle de vie complet (candidate → confirmed → deprecated).
+- **AdversarialDefense** : détection d'évasion et d'empoisonnement, avec jitter défensif.
+- **VRAMThermalGuard** : protection des ressources GPU/thermiques ; **DeepReasoningGuard** : accès rate-limité à l'Oracle.
+- **CognitiveTelemetry** : journal de décisions local et chiffré ; **PolicyEngine** : matrice de décision à base de règles.
+
+### 🔍 Instrumentation de l'Ombre (Phase Sentinel)
+
+- **Résonance d'Infrastructure** : Analyseur temps réel corrélant le Jitter du DOM et la Latence P2P pour détecter les pressions invisibles (surveillance, bridage).
+
+- **Noyau de Rêve Analytique (ARC)** : Algorithme de Clustering de Résonance Adaptatif qui identifie les "Super-Structures" (cartels de données) pendant les phases de repos.
+
+- **Vision Spectrale** : Extraction active des éléments DOM masqués (z-index négatifs, opacité 0) utilisés pour le tracking furtif.
 
 ### 🔍 Instrumentation de l'Ombre
 
@@ -32,6 +52,10 @@ SYMBIONT évolue. L'organisme ne se contente plus de réagir à vos clics ; il d
 - **Vision Spectrale** : Extraction active des éléments DOM masqués (z-index négatifs, opacité 0) utilisés pour le tracking furtif.
 
 ### 🛡️ Rituels de Décodage (Contre-mesures)
+
+- **Protection Anti-Fingerprinting Déterministe** : Bruit déterministe à portée de session sur Canvas, AudioContext, WebGL, Navigator et Timing — mêmes résultats au sein d'une session, différents entre sessions, donc indétectable par comparaison répétée.
+
+- **Maille P2P WebRTC Réelle** : DataChannels WebRTC entre instances de l'extension (signaling léger via `chrome.storage.sync`, découverte locale via BroadcastChannel), clés ECDH WebCrypto, transfert fragmenté au-delà de 16KB, maximum 5 pairs avec nettoyage automatique.
 
 - **Déphasage Temporel** : Obfuscation organique via l'injection de micro-latences pour neutraliser le fingerprinting.
 
@@ -79,6 +103,9 @@ Pendant la phase de **Rêve**, l'organisme ne dort pas. Il traite les "Fragments
 - Identification des iframes invisibles et scripts d'analyse
 - Scan optimisé via `requestIdleCallback` pour préserver les performances
 
+#### Protection Active
+- **FingerprintProtection** : Bruit déterministe par session sur Canvas, Audio, WebGL, Navigator et Timing — avec cycle activate/deactivate et restauration des fonctions originales
+
 #### Protection Passive
 - **TrackerInterceptor** : Mode observation (Manifest V3 compliant)
 - **ExtensionBioDetector** : Détection symbiotique des autres extensions
@@ -95,10 +122,32 @@ SYMBIONT/
 │   │   ├── TrackerInterceptor.ts    # Détection passive des trackers
 │   │   └── SentinelCore.ts          # Orchestrateur des signaux faibles
 │   │
+│   ├── cortex/                          # 🧠 Cortex Engine v3.1
+│   │   ├── CortexOrchestrator.ts        # Gouvernance centrale (8 états)
+│   │   ├── CortexBootstrap.ts           # Init + intégration MessageBus
+│   │   ├── models/
+│   │   │   ├── DraftModel.ts            # Heuristiques rapides (19 règles)
+│   │   │   └── OracleModel.ts           # Analyse profonde + CircuitBreaker
+│   │   ├── rag/
+│   │   │   ├── ActiveRAGStore.ts        # Signatures IndexedDB + LRU
+│   │   │   └── RAGLifecycleController.ts # candidate→confirmed→deprecated
+│   │   ├── detection/
+│   │   │   ├── AdversarialDefense.ts    # Anti-évasion / anti-poisoning
+│   │   │   └── AnomalyScorer.ts         # Scoring composite non-linéaire
+│   │   ├── guard/
+│   │   │   ├── VRAMThermalGuard.ts      # Protection ressources/thermique
+│   │   │   └── DeepReasoningGuard.ts    # Rate-limiting de l'Oracle
+│   │   ├── policy/PolicyEngine.ts       # Matrice de décision
+│   │   ├── telemetry/CognitiveTelemetry.ts # Journal chiffré local
+│   │   ├── threshold/DynamicThresholdEngine.ts # Seuil adaptatif EMA
+│   │   └── workers/CortexWorker.ts      # Web Worker d'analyse lourde
+│   │
 │   ├── content/
 │   │   ├── observers/
 │   │   │   ├── DOMResonanceSensor.ts    # Monitoring de friction DOM
 │   │   │   └── ProtocolAnalyzer.ts      # Détection QUIC/HTTP3
+│   │   ├── countermeasures/
+│   │   │   └── FingerprintProtection.ts # Bruit déterministe par session
 │   │   └── rituals/
 │   │       └── CountermeasureHandler.ts # Extraction DOM profond
 │   │
@@ -117,6 +166,10 @@ SYMBIONT/
 │   │   │   └── OrganismViewer.tsx       # Visualisation 3D
 │   │   └── hooks/
 │   │       └── useMurmurDeduplication.ts # Déduplication intelligente v2.0
+│   │
+│   ├── services/
+│   │   └── p2p/
+│   │       └── PeerNetwork.ts       # WebRTC DataChannels + ECDH
 │   │
 │   └── shared/
 │       └── utils/
@@ -203,8 +256,8 @@ SYMBIONT inverse la logique extractiviste :
 
 ```bash
 # Cloner le repository
-git clone https://github.com/yourusername/symbiont.git
-cd symbiont
+git clone https://github.com/pinfada/SYMBIONT.git
+cd SYMBIONT
 
 # Installer les dépendances
 npm install
@@ -444,13 +497,15 @@ const chemicalInfluence = detector.getChemicalInfluence();
 ## 🌈 Roadmap
 
 ### Phase 3.0 - "Conscience Collective"
-- [ ] Réseau de neurones distribué P2P
+- [x] Maille P2P réelle via WebRTC DataChannels (PeerNetwork)
+- [x] Mémoire de signatures de menaces (Active RAG, cycle de vie complet)
 - [ ] Apprentissage fédéré des patterns de surveillance
 - [ ] Protocole de consensus pour détections collaboratives
-- [ ] Partage anonyme de signatures de menaces
+- [ ] Partage anonyme de signatures de menaces via la maille P2P
 
 ### Phase 4.0 - "Autonomie"
-- [ ] Auto-défense contre les attaques de fingerprinting
+- [x] Auto-défense contre les attaques de fingerprinting (FingerprintProtection)
+- [x] Détection adversariale (évasion, empoisonnement) via le Cortex
 - [ ] Génération automatique de contre-mesures
 - [ ] API publique pour intégration dans d'autres outils
 - [ ] Mode "Sentinelle" pour protection serveur
@@ -590,10 +645,12 @@ MIT License - Voir [LICENSE](LICENSE) pour plus de détails.
 ## 📚 Ressources & Documentation
 
 - [Guide des Murmures et Rituels](docs/GUIDE_MURMURES_RITUELS.md)
-- [Architecture Technique Détaillée](docs/ARCHITECTURE.md)
-- [API Reference](docs/API.md)
-- [Security Whitepaper](docs/SECURITY.md)
-- [Performance Benchmarks](docs/BENCHMARKS.md)
+- [Architecture Technique Détaillée](docs/technical/architecture.md)
+- [API Reference (Messages)](docs/technical/api-messages.md)
+- [Security Framework](docs/technical/security-framework.md)
+- [Performance Metrics](docs/PERFORMANCE_METRICS.md)
+- [Guide Développeur](docs/developer/developer-guide.md)
+- [Guide Utilisateur](docs/user/user-guide.md)
 
 ---
 
@@ -601,8 +658,8 @@ MIT License - Voir [LICENSE](LICENSE) pour plus de détails.
 
 **Identifiez l'invisible. Maîtrisez la résonance. Évoluez au-delà du flux.**
 
-*SYMBIONT - Sentinel Edition* 🧬
+*SYMBIONT - Cortex Edition* 🧬
 
-[Installation](#-installation--warmup) • [Documentation](docs/) • [Issues](https://github.com/yourusername/symbiont/issues)
+[Installation](#-installation--warmup) • [Documentation](docs/) • [Issues](https://github.com/pinfada/SYMBIONT/issues)
 
 </div>
