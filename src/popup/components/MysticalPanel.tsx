@@ -3,11 +3,36 @@ import { useOrganism } from '../hooks/useOrganism';
 import { logger } from '@shared/utils/secureLogger';
 import { useMurmurDeduplication, type MurmurAction } from '../hooks/useMurmurDeduplication';
 import { SecureRandom } from '@/shared/utils/secureRandom';
+import { organismStateManager } from '@shared/services/OrganismStateManager';
 import type {
   HiddenElementData,
   HiddenElementsResponse,
   CategorizedElements
 } from '@/types/hiddenElements';
+
+// Fait réagir l'organisme VISIBLE (organismStateManager, échelle 0-100) à un
+// rituel, pour un retour visuel immédiat sur la créature. Les effets des
+// rituels sont en échelle 0-1 → conversion ×100.
+function reactVisibleOrganism(patch: {
+  energyDelta?: number;          // en points 0-100
+  consciousnessDelta?: number;   // en points 0-100
+  mood?: 'happy' | 'curious' | 'excited' | 'meditating' | 'hungry' | 'tired';
+}): void {
+  try {
+    const s = organismStateManager.getState();
+    const next: Partial<Pick<typeof s, 'energy' | 'consciousness' | 'mood'>> = {};
+    if (patch.energyDelta !== undefined) {
+      next.energy = Math.max(0, Math.min(100, s.energy + patch.energyDelta));
+    }
+    if (patch.consciousnessDelta !== undefined) {
+      next.consciousness = Math.max(0, Math.min(100, s.consciousness + patch.consciousnessDelta));
+    }
+    if (patch.mood) next.mood = patch.mood;
+    void organismStateManager.updateState(next);
+  } catch {
+    /* organismStateManager indisponible : le rituel fonctionne quand même */
+  }
+}
 
 interface Ritual {
   id: string;
@@ -618,14 +643,17 @@ const MysticalPanel: React.FC = () => {
         addMurmur('Les voiles du DOM se dissipent...', 'info');
 
       } catch (error) {
+        // Le scan DOM peut échouer (page protégée chrome://, popup, aucun
+        // content script). Ce n'est PAS bloquant : le rituel se poursuit et
+        // applique ses effets — la révélation du DOM est un bonus, pas un
+        // prérequis. Pas de return ici.
         visionSpectraleInProgress.current = false;
 
-        logger.error('Failed to initiate Vision Spectrale', {
+        logger.warn('Vision Spectrale: scan DOM indisponible, le rituel continue', {
           error: error instanceof Error ? error.message : String(error)
         });
 
-        addNotification('⚠️ Erreur lors de l\'activation de Vision Spectrale');
-        return;
+        addMurmur('🔍 Scan indisponible sur cette page — rituel poursuivi', 'info');
       }
     }
 
@@ -650,6 +678,9 @@ const MysticalPanel: React.FC = () => {
       };
       localStorage.setItem('symbiont_organism', JSON.stringify(updatedOrganism));
     }
+
+    // Retour visuel : la créature consomme son énergie et passe en état excité
+    reactVisibleOrganism({ energyDelta: -ritual.cost, mood: 'excited' });
   };
 
   const completeRitual = (ritualId: string) => {
@@ -689,7 +720,14 @@ const MysticalPanel: React.FC = () => {
     
     // Sauvegarder l'organisme modifié
     localStorage.setItem('symbiont_organism', JSON.stringify(updatedOrganism));
-    
+
+    // Retour visuel : appliquer les effets sur la créature visible
+    reactVisibleOrganism({
+      consciousnessDelta: (ritual.effects.consciousness ?? 0) * 100,
+      energyDelta: (ritual.effects.energy ?? 0) * 100,
+      mood: 'happy',
+    });
+
     // Ajouter au cooldown
     const newCooldowns = {
       ...ritualCooldowns,
@@ -803,11 +841,19 @@ const MysticalPanel: React.FC = () => {
         const check = canPerformRitual(ritual);
         const isOnCooldown = ritualCooldowns[ritual.id] && ritualCooldowns[ritual.id] > Date.now();
         const cooldownMs = isOnCooldown ? ritualCooldowns[ritual.id] - Date.now() : 0;
-        
+        const isActive = currentSession?.ritualId === ritual.id && !currentSession.completed;
+        const sessionBusy = !!currentSession && !currentSession.completed;
+        const activeProgress = isActive ? Math.round(currentSession!.progress * 100) : 0;
+
         return (
-          <div 
-            key={ritual.id} 
-            className={`ritual-card ${!check.canPerform ? 'disabled' : ''} ${ritual.type}`}
+          <div
+            key={ritual.id}
+            className={`ritual-card ${!check.canPerform ? 'disabled' : ''} ${ritual.type} ${isActive ? 'active-ritual' : ''}`}
+            style={isActive ? {
+              borderColor: '#00e0ff',
+              boxShadow: '0 0 0 1px #00e0ff, 0 0 24px rgba(0, 224, 255, 0.35)',
+              transition: 'box-shadow 0.3s ease',
+            } : undefined}
           >
             <div className="ritual-header">
               <span className="ritual-icon">{ritual.icon}</span>
@@ -842,24 +888,43 @@ const MysticalPanel: React.FC = () => {
               </div>
             )}
             
-            {isOnCooldown && (
+            {isActive && (
+              <div className="ritual-progress-inline" style={{ margin: '10px 0' }}>
+                <div style={{
+                  height: 6, borderRadius: 3, background: 'rgba(0, 224, 255, 0.15)', overflow: 'hidden',
+                }}>
+                  <div style={{
+                    width: `${activeProgress}%`, height: '100%',
+                    background: 'linear-gradient(90deg, #00e0ff, #4fc3f7)',
+                    transition: 'width 0.3s linear',
+                  }} />
+                </div>
+                <span style={{ fontSize: 11, color: '#00e0ff' }}>🔮 Rituel en cours… {activeProgress}%</span>
+              </div>
+            )}
+
+            {isOnCooldown && !isActive && (
               <div className="cooldown-display">
                 <span>⏳ {Math.ceil(cooldownMs / 60000)}min restantes</span>
               </div>
             )}
-            
-            {!check.canPerform && !isOnCooldown && (
+
+            {!check.canPerform && !isOnCooldown && !isActive && (
               <div className="requirement-warning">
                 ⚠️ {check.reason}
               </div>
             )}
-            
-            <button 
+
+            <button
               className="ritual-button"
               onClick={() => ritual.type === 'secret' ? handleSecretRitual(ritual) : startRitual(ritual)}
-              disabled={!check.canPerform}
+              disabled={!check.canPerform || sessionBusy}
             >
-              {ritual.type === 'secret' ? 'Entrer Code' : 'Commencer'}
+              {isActive
+                ? `⏳ En cours… ${activeProgress}%`
+                : sessionBusy
+                  ? 'Un rituel est déjà actif'
+                  : ritual.type === 'secret' ? 'Entrer Code' : 'Commencer'}
             </button>
           </div>
         );
