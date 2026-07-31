@@ -15,7 +15,7 @@ import {
   createEmptySignaturePattern,
   CandidateSignature,
 } from '../CortexTypes';
-import { generateSecureUUID } from '@shared/utils/secureRandom';
+import { generateSecureUUID } from '@shared/utils/uuid';
 
 const DB_NAME = 'symbiont-cortex-rag';
 const DB_VERSION = 1;

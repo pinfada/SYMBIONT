@@ -465,8 +465,17 @@ export class CortexOrchestrator {
 
   async getMetrics(): Promise<CortexMetrics> {
     const metrics = await this.deps.telemetry.getAggregatedMetrics();
-    const signatureStats = await this.deps.ragStore.getSignatureCount();
-    return { ...metrics, signatureStats };
+    const counts = await this.deps.ragStore.getSignatureCount();
+    return {
+      ...metrics,
+      signatureStats: {
+        candidates: counts.candidate,
+        probation: counts.probation,
+        confirmed: counts.confirmed,
+        deprecated: counts.deprecated,
+        quarantined: counts.quarantined,
+      },
+    };
   }
 
   isReinforcedReflex(): boolean {
