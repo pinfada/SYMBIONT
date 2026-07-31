@@ -12,7 +12,10 @@ import MysticalPanel from './components/MysticalPanel';
 import SocialPanel from './components/SocialPanel';
 import SettingsPanel from './components/SettingsPanel';
 
-type ViewType = 'organism' | 'network' | 'metrics' | 'mystical' | 'social' | 'settings';
+// Chargé en lazy : le gros chunk WebLLM ne part que si l'onglet est ouvert.
+const LocalLLMPanel = React.lazy(() => import('./components/LocalLLMPanel'));
+
+type ViewType = 'organism' | 'network' | 'metrics' | 'mystical' | 'social' | 'cognition' | 'settings';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('organism');
@@ -27,6 +30,7 @@ const App: React.FC = () => {
     { id: 'metrics', label: 'Stats', icon: '📊', view: 'metrics' as ViewType },
     { id: 'mystical', label: 'Rituels', icon: '✨', view: 'mystical' as ViewType },
     { id: 'social', label: 'Social', icon: '👥', view: 'social' as ViewType },
+    { id: 'cognition', label: 'Cognition', icon: '🧠', view: 'cognition' as ViewType },
     { id: 'settings', label: 'Params', icon: '⚙️', view: 'settings' as ViewType },
   ];
 
@@ -200,6 +204,19 @@ const App: React.FC = () => {
             </h2>
             <Suspense fallback={<LoadingComponent message="Chargement du réseau social..." />}>
               <SocialPanel />
+            </Suspense>
+          </div>
+        );
+
+      case 'cognition':
+        return (
+          <div>
+            <h2 style={appStyles.sectionTitle}>
+              <span>🧠</span>
+              <span>Cognition locale</span>
+            </h2>
+            <Suspense fallback={<LoadingComponent message="Chargement du module cognitif…" />}>
+              <LocalLLMPanel />
             </Suspense>
           </div>
         );
