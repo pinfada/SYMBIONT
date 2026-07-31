@@ -191,7 +191,7 @@ export const GlobalNetworkGraph: React.FC = () => {
     <div className="network-graph-container">
       <div className="p2p-status">
         <div className="status-badge" style={{
-          background: connectedPeers > 0 ? '#00ff00' : '#ff0000',
+          background: connectedPeers > 0 ? '#2ee6a6' : '#ef4444',
           padding: '8px 16px',
           borderRadius: '20px',
           color: '#fff',
@@ -220,9 +220,9 @@ export const GlobalNetworkGraph: React.FC = () => {
         <defs>
           {/* Gradient pour les connexions P2P */}
           <linearGradient id="p2pGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#00ff00" stopOpacity="0.3" />
-            <stop offset="50%" stopColor="#00ff00" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#00ff00" stopOpacity="0.3" />
+            <stop offset="0%" stopColor="#00e0ff" stopOpacity="0.3" />
+            <stop offset="50%" stopColor="#00e0ff" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#00e0ff" stopOpacity="0.3" />
           </linearGradient>
 
           {/* Glow pour les pairs connectés */}
@@ -258,14 +258,14 @@ export const GlobalNetworkGraph: React.FC = () => {
               </line>
 
               {/* Flux de données */}
-              <circle r="4" fill="#00ff00">
+              <circle r="4" fill="#00e0ff">
                 <animateMotion
                   dur="2s"
                   repeatCount="indefinite"
                   path={`M0,0 L${peer.x},${peer.y}`}
                 />
               </circle>
-              <circle r="4" fill="#00ff00">
+              <circle r="4" fill="#00e0ff">
                 <animateMotion
                   dur="2s"
                   begin="1s"
@@ -283,8 +283,8 @@ export const GlobalNetworkGraph: React.FC = () => {
 
             let fill = '#666666';
             if (node.isMe) fill = '#ffb700';
-            else if (node.status === 'connected') fill = '#00ff00';
-            else if (node.status === 'disconnected') fill = '#ff0000';
+            else if (node.status === 'connected') fill = '#2ee6a6';
+            else if (node.status === 'disconnected') fill = '#ef4444';
 
             const radius = node.isMe ? 20 : 15;
 
@@ -297,7 +297,7 @@ export const GlobalNetworkGraph: React.FC = () => {
                     cy={node.y}
                     r={radius + 15}
                     fill="none"
-                    stroke="#00ff00"
+                    stroke="#00e0ff"
                     strokeWidth="1"
                     opacity="0.3"
                   >
@@ -375,7 +375,7 @@ export const GlobalNetworkGraph: React.FC = () => {
           left: '10px',
           top: '60px',
           background: 'rgba(0, 0, 0, 0.9)',
-          border: '2px solid #00ff00',
+          border: '2px solid #00e0ff',
           borderRadius: '8px',
           padding: '12px',
           color: '#fff'
@@ -385,7 +385,7 @@ export const GlobalNetworkGraph: React.FC = () => {
             if (!node) return null;
             return (
               <div>
-                <div style={{ fontWeight: 'bold', color: '#00ff00', marginBottom: '8px' }}>
+                <div style={{ fontWeight: 'bold', color: '#00e0ff', marginBottom: '8px' }}>
                   🟢 PAIR P2P RÉEL
                 </div>
                 <div>ID: {node.id.substring(0, 8)}...</div>
@@ -408,16 +408,16 @@ export const GlobalNetworkGraph: React.FC = () => {
           bottom: '10px',
           right: '10px',
           background: 'rgba(0, 0, 0, 0.9)',
-          border: '2px solid #00ff00',
+          border: '2px solid #00e0ff',
           borderRadius: '8px',
           padding: '12px'
         }}>
-          <h4 style={{ margin: '0 0 12px 0', color: '#00ff00' }}>
+          <h4 style={{ margin: '0 0 12px 0', color: '#00e0ff' }}>
             Actions P2P avec {nodes.find(n => n.id === selectedPeer)?.name}
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button onClick={() => shareEnergy(selectedPeer)} style={{
-              background: '#00ff00',
+              background: '#00e0ff',
               color: '#000',
               border: 'none',
               padding: '8px',
@@ -428,7 +428,7 @@ export const GlobalNetworkGraph: React.FC = () => {
               ⚡ Partager Énergie (P2P)
             </button>
             <button onClick={() => syncConsciousness(selectedPeer)} style={{
-              background: '#00ff00',
+              background: '#00e0ff',
               color: '#000',
               border: 'none',
               padding: '8px',
@@ -469,8 +469,8 @@ export const GlobalNetworkGraph: React.FC = () => {
         <div className="peers-grid">
           {p2pService.getPeers().map(peer => (
             <div key={peer.id} className="peer-card" style={{
-              background: 'rgba(0, 255, 0, 0.1)',
-              border: '2px solid #00ff00',
+              background: 'rgba(0, 224, 255, 0.08)',
+              border: '2px solid #00e0ff',
               borderRadius: '8px',
               padding: '16px',
               marginBottom: '12px'
@@ -478,7 +478,7 @@ export const GlobalNetworkGraph: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '24px', marginRight: '12px' }}>🟢</span>
                 <div>
-                  <div style={{ fontWeight: 'bold', color: '#00ff00' }}>
+                  <div style={{ fontWeight: 'bold', color: '#00e0ff' }}>
                     {peer.organism?.name || 'Pair Anonyme'}
                   </div>
                   <div style={{ fontSize: '10px', color: '#888' }}>
@@ -524,7 +524,7 @@ export const GlobalNetworkGraph: React.FC = () => {
               <div key={i} style={{
                 marginBottom: '8px',
                 padding: '8px',
-                background: msg.from === p2pService.getMyOrganism().id ? '#003300' : '#000033',
+                background: msg.from === p2pService.getMyOrganism().id ? 'rgba(0, 224, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)',
                 borderRadius: '4px'
               }}>
                 <div style={{ fontSize: '10px', color: '#888', marginBottom: '4px' }}>
@@ -553,7 +553,7 @@ export const GlobalNetworkGraph: React.FC = () => {
             }}
           />
           <button onClick={sendChatMessage} style={{
-            background: '#00ff00',
+            background: '#00e0ff',
             color: '#000',
             border: 'none',
             padding: '8px 16px',
@@ -574,52 +574,52 @@ export const GlobalNetworkGraph: React.FC = () => {
 
       <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
         <div className="stat-card" style={{
-          background: 'rgba(0, 255, 0, 0.1)',
-          border: '1px solid #00ff00',
+          background: 'rgba(0, 224, 255, 0.08)',
+          border: '1px solid #00e0ff',
           borderRadius: '8px',
           padding: '16px',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ff00' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00e0ff' }}>
             {connectedPeers}
           </div>
           <div style={{ color: '#888', fontSize: '12px' }}>Pairs Connectés</div>
         </div>
 
         <div className="stat-card" style={{
-          background: 'rgba(0, 255, 0, 0.1)',
-          border: '1px solid #00ff00',
+          background: 'rgba(0, 224, 255, 0.08)',
+          border: '1px solid #00e0ff',
           borderRadius: '8px',
           padding: '16px',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ff00' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00e0ff' }}>
             P2P
           </div>
           <div style={{ color: '#888', fontSize: '12px' }}>Mode Décentralisé</div>
         </div>
 
         <div className="stat-card" style={{
-          background: 'rgba(0, 255, 0, 0.1)',
-          border: '1px solid #00ff00',
+          background: 'rgba(0, 224, 255, 0.08)',
+          border: '1px solid #00e0ff',
           borderRadius: '8px',
           padding: '16px',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ff00' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00e0ff' }}>
             {messages.length}
           </div>
           <div style={{ color: '#888', fontSize: '12px' }}>Messages Échangés</div>
         </div>
 
         <div className="stat-card" style={{
-          background: 'rgba(0, 255, 0, 0.1)',
-          border: '1px solid #00ff00',
+          background: 'rgba(0, 224, 255, 0.08)',
+          border: '1px solid #00e0ff',
           borderRadius: '8px',
           padding: '16px',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ff00' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00e0ff' }}>
             WebRTC
           </div>
           <div style={{ color: '#888', fontSize: '12px' }}>Protocole</div>
@@ -627,7 +627,7 @@ export const GlobalNetworkGraph: React.FC = () => {
       </div>
 
       <div style={{ marginTop: '24px', padding: '16px', background: '#111', borderRadius: '8px' }}>
-        <h4 style={{ color: '#00ff00', marginBottom: '12px' }}>🔐 Informations Techniques</h4>
+        <h4 style={{ color: '#00e0ff', marginBottom: '12px' }}>🔐 Informations Techniques</h4>
         <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#888' }}>
           <div>Protocole: WebRTC DataChannel</div>
           <div>Signaling: BroadcastChannel + WebSocket</div>
@@ -655,14 +655,18 @@ export const GlobalNetworkGraph: React.FC = () => {
             onClick={() => setActiveTab(tab.key as any)}
             className={`nav-btn ${activeTab === tab.key ? 'active' : ''}`}
             style={{
-              background: activeTab === tab.key ? '#00ff00' : 'transparent',
-              color: activeTab === tab.key ? '#000' : '#fff',
-              border: '1px solid #00ff00',
-              padding: '8px 16px',
+              background: activeTab === tab.key ? '#00e0ff' : 'transparent',
+              color: activeTab === tab.key ? '#001018' : '#8899a6',
+              border: activeTab === tab.key ? '1px solid #00e0ff' : '1px solid rgba(0, 224, 255, 0.2)',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              fontSize: '12px',
+              fontWeight: activeTab === tab.key ? 600 : 400,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '6px',
+              transition: 'all 0.2s ease'
             }}
           >
             <span>{tab.icon}</span>
