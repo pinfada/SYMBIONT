@@ -324,7 +324,8 @@ const organism = {
 
 ```bash
 # Compilation
-npm run build         # Build complet (extension + workers)
+npm run build         # Build complet (extension + workers, manifest Chrome)
+npm run build:firefox # Build Firefox (manifest dérivé automatiquement)
 npm run dev          # Mode watch avec hot-reload
 
 # Tests
