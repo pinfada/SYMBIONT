@@ -27,6 +27,7 @@ Les 6 pages de l'extension, en détail avec captures :
 - **[📊 Stats](Stats)** — les métriques d'évolution.
 - **[✨ Rituels](Rituels)** — les capacités actives (liste, actif, historique, secrets).
 - **[👥 Social](Social)** — codes d'invitation, guide, contacts, partage.
+- **[🧠 Cognition locale](Cognition)** — LLM WebGPU 100% local (chat + analyse anti-désinformation), opt-in.
 - **[⚙️ Paramètres](Parametres)** — réglages de rendu.
 
 Et aussi :

@@ -25,6 +25,11 @@ de façon automatisée (navigation + interactions).
 | Social | Sous-onglets Guide / Contacts / Partager | ✅ affichés | [page](Social) |
 | Paramètres | Réduire les animations (persisté) | ✅ vérifié | [page](Parametres) + tests |
 | Paramètres | Qualité du rendu → supersampling | ✅ vérifié | [page](Parametres) + tests |
+| Cognition | Détection WebGPU + repli NeuralMesh | ✅ vérifié | [page](Cognition) + tests |
+| Cognition | Catalogue de modèles + préférences | ✅ vérifié | [page](Cognition) + tests |
+| Cognition | Chat local (streaming) | 🧪 à valider en vrai | logique testée ; WebGPU non exécutable en CI |
+| Cognition | Analyse de fiabilité → signal organisme | ✅ logique vérifiée | [page](Cognition) + tests (parsing/nudge) |
+| Cognition | Moteur offscreen (persiste popup fermé) + repli | 🧪 à valider en vrai | protocole/repli/bail testés ; round-trip WebGPU à confirmer |
 
 ## Couverture de tests automatisés
 
@@ -34,10 +39,21 @@ de façon automatisée (navigation + interactions).
   mapping qualité).
 - `InviteCode.test.ts` — codec d'invitation (round-trip, unicode, rejet des codes
   corrompus/tronqués/expirés, expiration).
+- `src/shared/llm/__tests__/*` — module cognitif : détection WebGPU, catalogue de
+  modèles, moteur (load/stream/abort/unload), préférences, analyse de fiabilité
+  (parsing tolérant + fallback), signal organisme, client offscreen
+  (protocole/timeout), fabrique offscreen→popup.
 
 ## Ce qui reste à valider en conditions réelles
 
 Les **connexions P2P en direct** (partage d'énergie et synchronisation de
 conscience entre deux pairs effectivement connectés) demandent deux navigateurs
 réels reliés — elles seront validées lors de la QA multi-profils Firefox décrite
-dans le dépôt. Tout le reste est vérifié ici.
+dans le dépôt.
+
+Le **module Cognition** exécute un LLM via **WebGPU**, que l'environnement de CI
+ne peut pas faire tourner (ni télécharger un modèle). Toute la logique
+(détection, catalogue, protocole offscreen, repli, parsing, signal organisme)
+est couverte par des tests unitaires, mais le **round-trip inférence réel** doit
+être confirmé dans un Chrome/Edge récent avec l'extension chargée. Tout le reste
+est vérifié ici.
