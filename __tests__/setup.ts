@@ -97,24 +97,30 @@ class MockIDBDatabase {
   close = jest.fn();
 }
 
+// Fonctions SIMPLES (pas jest.fn) : survivent à resetMocks, qui sinon efface
+// l'implémentation et fait renvoyer undefined à indexedDB.open (→ erreur
+// « Cannot set onerror of undefined »).
 global.indexedDB = {
-  open: jest.fn((name: string, version?: number) => {
+  open: (_name: string, _version?: number) => {
     const db = new MockIDBDatabase();
     const request = new MockIDBRequest(db);
     (request as any).onupgradeneeded = null;
     (request as any).onsuccess = null;
     (request as any).onerror = null;
 
-    // Simulate async behavior
+    // Séquence réaliste : upgrade (création des object stores) puis success.
     setTimeout(() => {
+      if ((request as any).onupgradeneeded) {
+        (request as any).onupgradeneeded({ target: { result: db } });
+      }
       if ((request as any).onsuccess) {
         (request as any).onsuccess({ target: { result: db } });
       }
     }, 0);
 
     return request;
-  }),
-  deleteDatabase: jest.fn((name: string) => {
+  },
+  deleteDatabase: (_name: string) => {
     const request = new MockIDBRequest();
     (request as any).onsuccess = null;
     (request as any).onerror = null;
@@ -126,7 +132,7 @@ global.indexedDB = {
     }, 0);
 
     return request;
-  })
+  }
 } as any;
 
 // Mock WebGL
