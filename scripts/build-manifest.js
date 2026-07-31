@@ -15,7 +15,9 @@ const fs = require('fs');
 const path = require('path');
 
 const GECKO_ID = 'symbiont@pinfada.github.io';
-const GECKO_MIN_VERSION = '121.0';
+// 140 = ESR 2025 : requis pour optional_host_permissions et
+// data_collection_permissions (validés par le linter AMO)
+const GECKO_MIN_VERSION = '140.0';
 const UPDATE_URL = 'https://raw.githubusercontent.com/pinfada/SYMBIONT/main/updates.json';
 
 const target = process.argv[2];
@@ -39,12 +41,21 @@ if (target === 'firefox') {
   // L'API offscreen n'existe pas sur Firefox (la page d'événements a un DOM).
   manifest.permissions = manifest.permissions.filter(p => p !== 'offscreen');
 
+  // "windows" n'est pas une permission sur Firefox (API accessible sans elle).
+  if (manifest.optional_permissions) {
+    manifest.optional_permissions = manifest.optional_permissions.filter(p => p !== 'windows');
+  }
+
   // Requis pour la signature AMO et l'auto-update auto-hébergé.
+  // data_collection_permissions: exigence AMO — SYMBIONT ne collecte rien.
   manifest.browser_specific_settings = {
     gecko: {
       id: GECKO_ID,
       strict_min_version: GECKO_MIN_VERSION,
-      update_url: UPDATE_URL
+      update_url: UPDATE_URL,
+      data_collection_permissions: {
+        required: ['none']
+      }
     }
   };
 

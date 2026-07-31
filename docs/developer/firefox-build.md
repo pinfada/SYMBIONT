@@ -45,19 +45,45 @@ Constantes (ID gecko, version minimale, URL d'update) : en tête de
   `raw.githubusercontent.com`) est pointé par `update_url` dans le manifest :
   **les instances installées vérifient ce fichier et se mettent à jour seules.**
 
-### Publier une version
+### Publier une version — automatisé
 
-1. Monter la version dans `manifest.json` (et `package.json`).
-2. `npm run build:firefox`
-3. Signer : `npx web-ext sign --source-dir dist --channel unlisted` (nécessite des
-   [clés API AMO](https://addons.mozilla.org/developers/addon/api/key/)).
-4. Créer une GitHub Release `vX.Y.Z` et y attacher le `.xpi` signé sous le nom
-   `symbiont-X.Y.Z.xpi`.
-5. Ajouter l'entrée correspondante dans `updates.json` (version + `update_link`
-   vers l'asset de la release) et pousser sur `main`.
+Le workflow [`.github/workflows/release-firefox.yml`](../../.github/workflows/release-firefox.yml)
+fait tout au push d'un tag `vX.Y.Z` :
+
+1. Monter la version dans `manifest.json` et `package.json`, committer, pousser.
+2. `git tag v1.1.0 && git push origin v1.1.0`
+
+Le workflow build → lint AMO → signe (canal unlisted) → crée la GitHub Release
+avec le `.xpi` → met à jour `updates.json` sur `main`. Prérequis : les secrets
+`AMO_JWT_ISSUER` et `AMO_JWT_SECRET` ([clés API AMO](https://addons.mozilla.org/developers/addon/api/key/)).
+
+### Publier une version — manuel
+
+```bash
+npm run sign:firefox          # build + lint + signature AMO unlisted
+# → web-ext-artifacts/*.xpi
+node scripts/update-updates-json.js 1.1.0   # entrée d'auto-update
+```
+Puis attacher le `.xpi` (renommé `symbiont-1.1.0.xpi`) à une GitHub Release
+`v1.1.0` et committer `updates.json`.
 
 L'utilisateur final installe en ouvrant simplement le lien du `.xpi` depuis
 Firefox (installation en un clic, aucune manipulation développeur).
+
+### Scripts npm
+
+| Script | Rôle |
+|---|---|
+| `npm run build:firefox` | Build + manifest Firefox |
+| `npm run lint:firefox` | Lint AMO (mode self-hosted) |
+| `npm run package:firefox` | Build + lint + `.zip` non signé (test) |
+| `npm run sign:firefox` | Build + lint + `.xpi` signé AMO unlisted |
+
+Les `.map` et `.d.ts` sont exclus du paquet (source non distribuée, poids réduit).
+
+### QA avant release
+
+Voir [`firefox-qa-checklist.md`](firefox-qa-checklist.md).
 
 ## Polices auto-hébergées
 

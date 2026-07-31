@@ -1,0 +1,75 @@
+# Release Firefox auto-hébergée
+#
+# Déclenchée par un tag vX.Y.Z :
+#  1. build Firefox + lint AMO (mode self-hosted)
+#  2. signature AMO canal « unlisted » (Mozilla signe, ne publie pas)
+#  3. GitHub Release avec le .xpi signé attaché
+#  4. mise à jour d'updates.json sur main → les instances installées
+#     détectent la nouvelle version et se mettent à jour seules
+#
+# Secrets requis (Settings → Secrets → Actions) :
+#   AMO_JWT_ISSUER  — clé API AMO (https://addons.mozilla.org/developers/addon/api/key/)
+#   AMO_JWT_SECRET  — secret associé
+
+name: Release Firefox
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Firefox extension
+        run: npm run build:firefox
+
+      - name: Lint (AMO, self-hosted mode)
+        run: npm run lint:firefox
+
+      - name: Sign with AMO (unlisted channel)
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: npx web-ext sign --source-dir dist --channel unlisted --artifacts-dir web-ext-artifacts --ignore-files "**/*.map" "**/*.d.ts"
+
+      - name: Rename signed artifact
+        run: |
+          XPI=$(ls web-ext-artifacts/*.xpi | head -1)
+          mv "$XPI" "web-ext-artifacts/symbiont-${{ steps.version.outputs.version }}.xpi"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: web-ext-artifacts/symbiont-${{ steps.version.outputs.version }}.xpi
+          generate_release_notes: true
+
+      - name: Update updates.json on main
+        run: |
+          node scripts/update-updates-json.js "${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add updates.json
+          git commit -m "chore: publish ${{ steps.version.outputs.version }} in updates.json"
+          git push origin main
