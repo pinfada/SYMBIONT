@@ -10,19 +10,28 @@ class SessionManager {
   private sessions = new Map<string, SessionData>();
   private readonly maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
   private readonly maxSessions = 1000; // Prevent memory exhaustion
+  // Secret stable pour la durée de vie du manager : le token doit être
+  // REPRODUCTIBLE (même sessionId → même token) pour que la validation
+  // réussisse. Inclure Date.now() rendait le token non reproductible.
+  private readonly tokenSecret = Array.from(
+    { length: 16 },
+    () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0'),
+  ).join('');
 
   async createSession(userId: string): Promise<SessionToken> {
     // Cleanup expired sessions first
     this.cleanupExpiredSessions();
-    
-    // Prevent too many sessions
+
+    const sessionId = await this.generateSecureSessionId();
+    const token = await this.generateSessionToken(sessionId);
+
+    // Contrôle de capacité APRÈS les opérations async, juste avant le set :
+    // effectué de façon atomique (aucun await entre le test et le set) pour
+    // éviter la course qui laissait dépasser maxSessions sous forte concurrence.
     if (this.sessions.size >= this.maxSessions) {
       throw new Error('Maximum sessions limit reached');
     }
 
-    const sessionId = await this.generateSecureSessionId();
-    const token = await this.generateSessionToken(sessionId);
-    
     const sessionData: SessionData = {
       id: sessionId,
       userId,
@@ -101,7 +110,7 @@ class SessionManager {
   private async generateSessionToken(sessionId: string): Promise<string> {
     // In real implementation, this would be a cryptographically signed token
     const encoder = new TextEncoder();
-    const data = encoder.encode(sessionId + Date.now().toString());
+    const data = encoder.encode(sessionId + this.tokenSecret);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
