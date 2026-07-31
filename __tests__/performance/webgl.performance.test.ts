@@ -30,6 +30,16 @@ const createMockWebGLContext = () => ({
   clear: jest.fn(),
   drawArrays: jest.fn(),
   drawElements: jest.fn(),
+  // Textures
+  createTexture: jest.fn().mockReturnValue({}),
+  bindTexture: jest.fn(),
+  texImage2D: jest.fn(),
+  texParameteri: jest.fn(),
+  // Libération de ressources
+  deleteBuffer: jest.fn(),
+  deleteTexture: jest.fn(),
+  deleteProgram: jest.fn(),
+  deleteShader: jest.fn(),
   canvas: {
     width: 800,
     height: 600,
@@ -38,6 +48,8 @@ const createMockWebGLContext = () => ({
   // WebGL constants
   VERTEX_SHADER: 35633,
   FRAGMENT_SHADER: 35632,
+  COMPILE_STATUS: 35713,
+  LINK_STATUS: 35714,
   ARRAY_BUFFER: 34962,
   ELEMENT_ARRAY_BUFFER: 34963,
   STATIC_DRAW: 35044,
@@ -45,22 +57,31 @@ const createMockWebGLContext = () => ({
   TRIANGLES: 4,
   COLOR_BUFFER_BIT: 16384,
   DEPTH_BUFFER_BIT: 256,
-  DEPTH_TEST: 2929
+  DEPTH_TEST: 2929,
+  TEXTURE_2D: 3553,
+  RGBA: 6408,
+  UNSIGNED_BYTE: 5121
 });
 
-// Mock HTMLCanvasElement
-global.HTMLCanvasElement.prototype.getContext = jest.fn().mockImplementation((contextType) => {
-  if (contextType === 'webgl' || contextType === 'webgl2') {
-    return createMockWebGLContext();
-  }
-  return null;
-});
+// Installe le mock de getContext. Doit être (ré)appelé dans beforeEach car la
+// config Jest active `resetMocks: true`, qui efface l'implémentation des mocks
+// avant chaque test — un mock posé au niveau module renverrait alors undefined.
+function installGetContextMock(): void {
+  (global.HTMLCanvasElement.prototype.getContext as unknown) = jest
+    .fn()
+    .mockImplementation((contextType: string) =>
+      contextType === 'webgl' || contextType === 'webgl2'
+        ? createMockWebGLContext()
+        : null,
+    );
+}
 
 describe('Tests de Performance WebGL', () => {
   let canvas: HTMLCanvasElement;
   let gl: any;
 
   beforeEach(() => {
+    installGetContextMock();
     canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;

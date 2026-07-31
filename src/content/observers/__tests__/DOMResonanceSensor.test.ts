@@ -27,6 +27,11 @@ describe('DOMResonanceSensor', () => {
     // Clear all mocks
     jest.clearAllMocks();
 
+    // Ré-installe l'implémentation du mock (jest resetMocks:true efface les
+    // impls posées au niveau module) : sendMessage doit renvoyer une promesse,
+    // sinon le `.catch(...)` du code source plante sur undefined.
+    (global.chrome.runtime.sendMessage as jest.Mock).mockResolvedValue(undefined);
+
     // Setup MutationObserver mock
     mutationObserverMock = jest.fn();
     global.MutationObserver = jest.fn().mockImplementation(() => ({
