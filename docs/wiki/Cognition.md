@@ -121,6 +121,19 @@ révision en **fragment partageable sans texte ni URL** (`MeaningFragment`) et
 P2P live** et la **garantie de confidentialité** de l'agrégation restent un
 **chantier ouvert** — rien n'est diffusé pour l'instant.
 
+## 8. Agentivité — le droit de dire « non, pas ça »
+
+Le symbiote n'est pas un serviteur : il peut **négocier** avant de digérer. Mais
+de façon **acceptable, pas paternaliste** — sa grammaire :
+
+- il ne résiste que sur un **schéma** (jamais un item isolé) : régime peu fiable
+  répété, chambre d'écho (plusieurs lectures qui ne révisent rien), ou fatigue
+  (énergie basse) ;
+- il **explique** toujours pourquoi et **propose une alternative** (souvent le
+  fourrage) plutôt que de bloquer ;
+- tu peux **toujours passer outre** (« Digérer quand même ») — c'est un agent,
+  pas un cerbère.
+
 ## Confidentialité
 
 - Les poids sont récupérés depuis Hugging Face / MLC **au premier chargement

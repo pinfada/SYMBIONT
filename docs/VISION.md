@@ -144,7 +144,12 @@ n'existent pas sur le marché et qu'il faut créer. Ce sont les vrais sujets.
    signal collectif (`CollectiveSignal`) sont construites et testées. **Restent
    ouverts** : le transport P2P live et la **garantie de confidentialité** de
    l'agrégation (le vrai pari n°2).
-6. 🔨 **L'agentivité** — le droit de dire non (pari n°3).
+6. 🚧 **L'agentivité** — le droit de dire non, de façon *acceptable* : le symbiote
+   ne résiste que sur un **schéma** (régime peu fiable, chambre d'écho, fatigue),
+   **explique**, **redirige** plutôt que bloque, et tu peux **toujours passer
+   outre** (`decideAgency`/`DietLog` + négociation avant digestion). La *grammaire*
+   est posée et testée ; reste **ouvert** : savoir si elle est vécue comme utile
+   et non paternaliste — le vrai pari n°3, qui ne se tranche qu'à l'usage réel.
 
 ---
 

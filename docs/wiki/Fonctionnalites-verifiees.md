@@ -35,6 +35,7 @@ de façon automatisée (navigation + interactions).
 | Cognition | Écran « ce qui a bougé aujourd'hui » | ✅ vérifié | `WhatMovedPanel` + `partitionSurface` testé, réactif au journal |
 | Cognition | Fourrage (« ce que je cherche à comprendre ») | ✅ logique vérifiée | `selectForagingSeeds`/`deriveForagingTargets` testés ; recherche sur geste |
 | Cognition | Collectif — abstraction + intégration de fragments | ✅ logique vérifiée | `MeaningFragment`/`CollectiveSignal` testés ; **transport P2P + confidentialité = ouverts** |
+| Cognition | Agentivité (le symbiote négocie, toujours overridable) | ✅ logique vérifiée | `decideAgency`/`DietLog` testés (schéma seulement, override garanti) ; acceptabilité à valider à l'usage |
 
 ## Couverture de tests automatisés
 
@@ -54,7 +55,8 @@ de façon automatisée (navigation + interactions).
   nouveauté ne fait jamais surface), persistance (`KnowledgeStore`), journal de
   surface, service de lecture persistant, embedding sémantique (`SemanticEmbedder` :
   cache + repli, moteur injecté), fourrage (sélection de graines + génération de
-  questions), collectif (abstraction/coarsen + intégration de fragments).
+  questions), collectif (abstraction/coarsen + intégration de fragments),
+  agentivité (`decideAgency` : schéma-seulement + override garanti, `DietLog`).
 
 ## Ce qui reste à valider en conditions réelles
 

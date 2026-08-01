@@ -125,7 +125,12 @@ mesurer sur des humains réels — voici l'expérience minimale :
   sans texte/URL) + `integrateFragments` (fragments reçus → `CollectiveSignal`).
   Logique testée ; **transport P2P live + confidentialité de l'agrégation
   (pari n°2) = ouverts**, rien n'est diffusé.
-- 🔨 **Agentivité** (pari n°3) — le droit de dire non.
+- 🚧 **Agentivité** (`agency.ts`, pari n°3) — `decideAgency` : le symbiote négocie
+  avant de digérer, seulement sur un **schéma** (régime `faible` répété, chambre
+  d'écho ≥4 lectures sans révision, énergie basse), **explique**, **redirige** vers
+  le fourrage, `canOverride` **toujours vrai**. `DietLog` persiste le régime.
+  Câblé (négociation + « Digérer quand même »). Logique + invariants testés ;
+  reste à valider que c'est vécu comme utile, pas paternaliste (usage réel).
 
 **Pas encore fait :**
 - 🔨 Digestion **automatique de fond** — écartée volontairement : elle exigerait

@@ -122,7 +122,7 @@ Et surtout, deux boutons incarnent le cap produit ([`docs/VISION.md`](docs/VISIO
 - **🧫 Digérer la page active** — le symbiote lit, **accrète** la page à son **modèle du monde persistant**, et ne te fait **« surface »** que sur ce qui **révise ta compréhension** (invariant *anti-feed*, testé) ; l'écran **« ce qui a bougé aujourd'hui »** en montre le résultat.
 - **🔎 Ce que je cherche à comprendre** — l'organisme déduit de son modèle ce qu'il est *curieux d'explorer* (contradictions, zones minces) et propose des questions ; la recherche s'ouvre sur geste.
 
-Fondations aussi posées (logique testée) pour le **collectif** (fragments de sens partageables, sans texte ni URL) — le transport P2P et la confidentialité de l'agrégation restant un chantier ouvert. Captures et détails : [wiki Cognition](docs/wiki/Cognition.md).
+Le symbiote a aussi une **agentivité** : il peut *négocier* avant de digérer (régime peu fiable, chambre d'écho, fatigue) — mais seulement sur un **schéma**, en **expliquant** et en **proposant une alternative**, et tu peux **toujours passer outre**. Fondations enfin posées (logique testée) pour le **collectif** (fragments de sens partageables, sans texte ni URL) — le transport P2P et la confidentialité de l'agrégation restant un chantier ouvert. Captures et détails : [wiki Cognition](docs/wiki/Cognition.md).
 
 ### 🦠 Proprioception Numérique
 

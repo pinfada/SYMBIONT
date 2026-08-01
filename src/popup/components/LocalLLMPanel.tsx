@@ -35,10 +35,14 @@ import {
   hashingEmbedFn,
   selectForagingSeeds,
   deriveForagingTargets,
+  decideAgency,
+  DietLog,
   type EmbedFn,
   type ReadingOutcome,
   type ForagingTarget,
+  type AgencyVerdict,
 } from '@shared/comprehension';
+import { organismStateManager } from '@shared/services/OrganismStateManager';
 
 const C = {
   accent: '#00e0ff',
@@ -75,6 +79,8 @@ const LocalLLMPanel: React.FC = () => {
   const [digesting, setDigesting] = useState(false);
   const [foragingTargets, setForagingTargets] = useState<ForagingTarget[]>([]);
   const [foraging, setForaging] = useState(false);
+  const [agencyVerdict, setAgencyVerdict] = useState<AgencyVerdict | null>(null);
+  const dietLogRef = useRef(new DietLog());
   // Modèle du monde persistant + journal de surface (créés une fois).
   // Embedding par défaut = hachage (gratuit) ; le sémantique (2ᵉ modèle) est opt-in.
   const knowledgeRef = useRef(new KnowledgeStore());
@@ -218,9 +224,26 @@ const LocalLLMPanel: React.FC = () => {
 
   // Digestion persistante : le symbiote lit la page active, l'accrète à son
   // modèle du monde, et ne fait « surface » que sur ce qui révise ta compréhension.
-  const digestActivePage = useCallback(async () => {
+  const digestActivePage = useCallback(async (force = false) => {
     const engine = engineRef.current;
     if (!engine || !engine.isReady() || digesting) return;
+
+    // Agentivité : le symbiote peut négocier avant de digérer (jamais bloquer).
+    if (!force) {
+      let energy = 75;
+      try {
+        energy = organismStateManager.getState().energy;
+      } catch {
+        /* état indisponible : on garde une énergie neutre */
+      }
+      const verdict = decideAgency({ energy, recentDiet: await dietLogRef.current.load() });
+      if (verdict.stance !== 'accept') {
+        setAgencyVerdict(verdict);
+        return;
+      }
+    }
+    setAgencyVerdict(null);
+
     setDigesting(true);
     setError(null);
     try {
@@ -237,13 +260,15 @@ const LocalLLMPanel: React.FC = () => {
         { now: Date.now(), ...(page.domain ? { domain: page.domain } : {}) },
       );
       setDigest(outcome);
+      // Enregistre le régime récent (pour l'agentivité future).
+      void dietLogRef.current.record({ ts: Date.now(), surfaced: outcome.surface, dominantKind: outcome.dominantKind });
     } catch (e) {
       logger.error('LocalLLMPanel: digestion échouée', e as Error);
       setError('La digestion de la page a échoué.');
     } finally {
       setDigesting(false);
     }
-  }, [digesting]);
+  }, [digesting, currentEmbed]);
 
   // Fourrage : le symbiote déduit de son modèle ce qu'il est curieux de
   // comprendre — au lieu que tu cherches. Cliquer ouvre une recherche (geste
@@ -451,6 +476,27 @@ const LocalLLMPanel: React.FC = () => {
         />
         Embedding sémantique — meilleure mémoire (2ᵉ modèle ~240 Mo)
       </label>
+      {agencyVerdict && (
+        <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
+          <div style={{ color: '#f59e0b', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+            {agencyVerdict.stance === 'reluctant'
+              ? '😮‍💨 Ton organisme est réticent'
+              : '🔄 Ton organisme te propose autre chose'}
+          </div>
+          <p style={{ color: C.text, fontSize: 12, margin: '0 0 6px', lineHeight: 1.5 }}>{agencyVerdict.reason}</p>
+          {agencyVerdict.suggestion && (
+            <p style={{ color: C.dim, fontSize: 12, margin: '0 0 10px' }}>{agencyVerdict.suggestion}</p>
+          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button style={{ ...s.primaryBtn, padding: '8px 12px' }} onClick={() => void digestActivePage(true)}>
+              Digérer quand même
+            </button>
+            <button style={s.linkBtn} onClick={() => setAgencyVerdict(null)}>
+              OK, je te suis
+            </button>
+          </div>
+        </div>
+      )}
       {digest && (
         <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
           <div style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>

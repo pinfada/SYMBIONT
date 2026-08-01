@@ -30,3 +30,5 @@ export { selectForagingSeeds, deriveForagingTargets } from './foraging';
 export type { ForagingSeed, ForagingTarget } from './foraging';
 export { coarsen, abstractRevision, integrateFragments } from './collective';
 export type { MeaningFragment, CollectiveSignal } from './collective';
+export { decideAgency, DietLog } from './agency';
+export type { AgencyStance, AgencyVerdict, DietItem } from './agency';
