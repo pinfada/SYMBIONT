@@ -31,6 +31,7 @@ import {
   KnowledgeStore,
   SurfaceJournal,
   HashingEmbedder,
+  hashingEmbedFn,
   type ReadingOutcome,
 } from '@shared/comprehension';
 
@@ -68,8 +69,10 @@ const LocalLLMPanel: React.FC = () => {
   const [digest, setDigest] = useState<ReadingOutcome | null>(null);
   const [digesting, setDigesting] = useState(false);
   // Modèle du monde persistant + journal de surface (créés une fois).
-  const knowledgeRef = useRef(new KnowledgeStore(new HashingEmbedder()));
+  // Embedding par défaut = hachage (gratuit) ; le sémantique (2ᵉ modèle) est opt-in.
+  const knowledgeRef = useRef(new KnowledgeStore());
   const journalRef = useRef(new SurfaceJournal());
+  const embedRef = useRef(hashingEmbedFn(new HashingEmbedder()));
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -205,6 +208,7 @@ const LocalLLMPanel: React.FC = () => {
       const outcome = await readPage(
         engine,
         { store: knowledgeRef.current, journal: journalRef.current },
+        embedRef.current,
         page.text,
         { now: Date.now(), ...(page.domain ? { domain: page.domain } : {}) },
       );

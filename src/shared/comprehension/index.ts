@@ -10,9 +10,14 @@ export type {
 export { KIND_WEIGHT, SURFACE_THRESHOLD, SURFACING_KINDS } from './types';
 export { HashingEmbedder, cosineSimilarity } from './embedder';
 export type { Embedder } from './embedder';
+export { hashingEmbedFn } from './embedFn';
+export type { EmbedFn } from './embedFn';
+export { SemanticEmbedder, createEmbeddingEngine, DEFAULT_EMBEDDING_MODEL } from './SemanticEmbedder';
+export type { EmbeddingEngine } from './SemanticEmbedder';
 export { KnowledgeModel } from './KnowledgeModel';
 export { extractClaims, buildClaimPrompt, parseClaims } from './ClaimExtractor';
 export { assessDelta, buildRelationPrompt } from './ComprehensionDelta';
+export type { EmbeddedClaim } from './ComprehensionDelta';
 export { digestPage } from './digest';
 export type { DigestResult } from './digest';
 export { KnowledgeStore } from './KnowledgeStore';

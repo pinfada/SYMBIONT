@@ -6,7 +6,6 @@
 
 import { logger } from '@shared/utils/secureLogger';
 import type { Claim } from './types';
-import type { Embedder } from './embedder';
 import { KnowledgeModel } from './KnowledgeModel';
 
 /** Interface de stockage clé/valeur (chrome.storage.local en prod, mock en test). */
@@ -33,10 +32,7 @@ export class KnowledgeStore {
   private readonly storage: KVStorage | undefined;
   private readonly maxClaims: number;
 
-  constructor(
-    private readonly embedder: Embedder,
-    opts?: { storage?: KVStorage; maxClaims?: number },
-  ) {
+  constructor(opts?: { storage?: KVStorage; maxClaims?: number }) {
     this.storage = opts?.storage ?? chromeStorage();
     this.maxClaims = opts?.maxClaims ?? DEFAULT_MAX_CLAIMS;
   }
@@ -47,12 +43,12 @@ export class KnowledgeStore {
       if (this.storage) {
         const raw = await this.storage.get(KEY);
         const claims = raw?.[KEY] as Claim[] | undefined;
-        if (Array.isArray(claims)) return KnowledgeModel.fromJSON(this.embedder, claims);
+        if (Array.isArray(claims)) return KnowledgeModel.fromJSON(claims);
       }
     } catch (error) {
       logger.warn('KnowledgeStore: chargement échoué, modèle vide', error as Error);
     }
-    return new KnowledgeModel(this.embedder);
+    return new KnowledgeModel();
   }
 
   /** Persiste le modèle (borné à maxClaims). Retourne le nombre élagué. */

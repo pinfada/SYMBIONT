@@ -7,6 +7,7 @@
 
 import type { ChatCapable } from '../llm/ContentAnalysis';
 import { digestPage, type DigestResult } from './digest';
+import type { EmbedFn } from './embedFn';
 import type { KnowledgeStore } from './KnowledgeStore';
 import type { SurfaceJournal } from './SurfaceJournal';
 
@@ -27,12 +28,13 @@ export interface ReadingOutcome extends DigestResult {
 export async function readPage(
   engine: ChatCapable,
   deps: ReadingDeps,
+  embed: EmbedFn,
   text: string,
   opts: { domain?: string; now: number },
 ): Promise<ReadingOutcome> {
   const model = await deps.store.load();
 
-  const result = await digestPage(engine, model, text, {
+  const result = await digestPage(engine, model, embed, text, {
     now: opts.now,
     ...(opts.domain ? { domain: opts.domain } : {}),
   });

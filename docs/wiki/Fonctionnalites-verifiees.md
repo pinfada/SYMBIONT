@@ -50,7 +50,8 @@ de façon automatisée (navigation + interactions).
   déterministe, modèle du monde (assimilation/renforcement/récupération/prune),
   extraction de claims, classement de relation, **invariant anti-feed** (la
   nouveauté ne fait jamais surface), persistance (`KnowledgeStore`), journal de
-  surface, service de lecture persistant.
+  surface, service de lecture persistant, embedding sémantique (`SemanticEmbedder` :
+  cache + repli, moteur injecté).
 
 ## Ce qui reste à valider en conditions réelles
 

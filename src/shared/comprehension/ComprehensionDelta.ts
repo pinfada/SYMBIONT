@@ -108,21 +108,27 @@ function parseRelation(
   return { claimText: newClaim, kind: 'nouveau', confidence: 0.3, rationale: 'non classé' };
 }
 
+/** Une affirmation avec son vecteur (calculé en amont par une EmbedFn). */
+export interface EmbeddedClaim {
+  claim: string;
+  embedding: number[];
+}
+
 /**
- * Évalue le delta de compréhension d'un ensemble d'affirmations vis-à-vis du
- * modèle. NE MODIFIE PAS le modèle (l'accrétion est laissée à l'appelant, qui
- * décide quoi digérer). Pur et testable (moteur injecté).
+ * Évalue le delta de compréhension d'un ensemble d'affirmations (déjà
+ * vectorisées) vis-à-vis du modèle. NE MODIFIE PAS le modèle (l'accrétion est
+ * laissée à l'appelant). Pur et testable (moteur injecté).
  */
 export async function assessDelta(
   engine: ChatCapable,
   model: KnowledgeModel,
-  claims: string[],
+  items: EmbeddedClaim[],
   opts: { domain?: string } = {},
 ): Promise<DeltaReport> {
   const verdicts: RelationVerdict[] = [];
 
-  for (const claim of claims) {
-    const candidates = model.retrieve(claim, 5).map((r) => ({ id: r.claim.id, text: r.claim.text }));
+  for (const { claim, embedding } of items) {
+    const candidates = model.retrieve(embedding, 5).map((r) => ({ id: r.claim.id, text: r.claim.text }));
     const raw = await engine.chat(buildRelationPrompt(claim, candidates), {
       temperature: 0.1,
       maxTokens: 200,

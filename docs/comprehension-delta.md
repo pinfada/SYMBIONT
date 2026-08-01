@@ -34,8 +34,15 @@ Partitions (C→C) et connaissances activées (C→K) :
 - **`KnowledgeModel`** — l'ensemble accrété des croyances de l'utilisateur
   (`Claim` = proposition + embedding + salience + sources). Récupération par
   similarité ; **assimilation** (digestion) qui renforce au lieu de dupliquer.
-- **`HashingEmbedder`** — embedding déterministe sans dépendance, pour *récupérer*
-  les croyances candidates (remplaçable par un embedding du modèle local).
+- **Embedding découplé** — le `KnowledgeModel` ne connaît plus l'embedding : les
+  vecteurs sont calculés en amont via une `EmbedFn` et passés à
+  `assimilate`/`retrieve`. Deux implémentations derrière la même interface :
+  - `HashingEmbedder` (`hashingEmbedFn`) — déterministe, sans dépendance, gratuit
+    (défaut).
+  - `SemanticEmbedder` — embedding sémantique par modèle local WebLLM (ex.
+    `snowflake-arctic-embed-s`, ~240 Mo), avec cache et repli sur le hachage.
+    Bien meilleur pour rapprocher des croyances qui disent la même chose
+    autrement. **Opt-in** (2ᵉ modèle).
 - **`ClaimExtractor`** — le LLM extrait les affirmations atomiques d'une page.
 - **`ComprehensionDelta.assessDelta`** — pour chaque affirmation, le LLM **classe
   la relation** au modèle : `confirme | complète | contredit | déplace | nouveau`.
@@ -96,9 +103,15 @@ mesurer sur des humains réels — voici l'expérience minimale :
   l'onglet Cognition) : partitionne le journal aujourd'hui/avant (`partitionSurface`,
   testé), n'affiche que les révisions, réactif via `chrome.storage.onChanged`.
 
+**Embedding sémantique :**
+- ✅ `SemanticEmbedder` **implémenté et testé** (moteur injecté, cache, repli) +
+  découplage du `KnowledgeModel` (l'embedding est un `EmbedFn` interchangeable).
+  L'UI utilise le hachage par **défaut**.
+- 🔨 **Câblage live** : servir l'embedding sémantique depuis un 2ᵉ modèle chargé
+  dans l'offscreen (protocole `embed` + option utilisateur), puis valider la
+  qualité en vrai (WebGPU non exécutable en CI).
+
 **Pas encore fait :**
-- 🔨 Remplacer le `HashingEmbedder` par un **embedding sémantique** du modèle
-  local (meilleure récupération des candidats).
 - 🔨 Digestion **automatique de fond** — écartée volontairement : elle exigerait
   la permission `<all_urls>`, en tension avec la doctrine vie privée. La
   digestion reste sur geste.

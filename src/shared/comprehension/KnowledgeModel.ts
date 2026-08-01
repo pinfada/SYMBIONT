@@ -4,12 +4,16 @@
 // (Claim) assimilées au fil de ce qu'il a lu. C'est CE modèle qui rend le delta
 // possible — sans mémoire de ce que tu sais déjà, on ne peut pas distinguer
 // « révise ta pensée » de « nouveau ». Sérialisable (persistance locale).
+//
+// Le modèle est AGNOSTIQUE de l'embedding : les vecteurs sont calculés en amont
+// (HashingEmbedder synchrone, ou embedding sémantique asynchrone) et passés à
+// `assimilate`/`retrieve`. Ça permet de brancher un vrai embedding sémantique
+// sans rien changer ici.
 
 import type { Claim } from './types';
-import type { Embedder } from './embedder';
 import { cosineSimilarity } from './embedder';
 
-/** Au-dessus de cette similarité, deux textes sont « la même croyance ». */
+/** Au-dessus de cette similarité, deux vecteurs désignent « la même croyance ». */
 const SAME_BELIEF_SIM = 0.92;
 
 function fnv1a(str: string): number {
@@ -28,10 +32,7 @@ function claimId(text: string): string {
 export class KnowledgeModel {
   private claims = new Map<string, Claim>();
 
-  constructor(
-    private readonly embedder: Embedder,
-    initial?: Claim[],
-  ) {
+  constructor(initial?: Claim[]) {
     if (initial) for (const c of initial) this.claims.set(c.id, c);
   }
 
@@ -47,12 +48,11 @@ export class KnowledgeModel {
     return this.claims.get(id);
   }
 
-  /** Les `k` croyances les plus proches (cosinus) d'un texte, au-dessus de `min`. */
-  retrieve(text: string, k = 5, min = 0.15): Array<{ claim: Claim; sim: number }> {
-    const q = this.embedder.embed(text);
+  /** Les `k` croyances les plus proches (cosinus) d'un vecteur, au-dessus de `min`. */
+  retrieve(queryEmbedding: number[], k = 5, min = 0.15): Array<{ claim: Claim; sim: number }> {
     const scored: Array<{ claim: Claim; sim: number }> = [];
     for (const claim of this.claims.values()) {
-      const sim = cosineSimilarity(q, claim.embedding);
+      const sim = cosineSimilarity(queryEmbedding, claim.embedding);
       if (sim >= min) scored.push({ claim, sim });
     }
     scored.sort((a, b) => b.sim - a.sim);
@@ -60,12 +60,11 @@ export class KnowledgeModel {
   }
 
   /**
-   * Assimile une affirmation (la « digestion »). Si une croyance quasi
-   * identique existe déjà, elle est **renforcée** (salience +, source ajoutée) ;
-   * sinon une nouvelle croyance est créée. `now` est injecté (pas de Date.now
-   * caché → testable et déterministe).
+   * Assimile une affirmation (la « digestion »). Le vecteur est fourni par
+   * l'appelant. Si une croyance quasi identique existe déjà, elle est
+   * **renforcée** ; sinon une nouvelle croyance est créée. `now` est injecté.
    */
-  assimilate(text: string, opts: { domain?: string; now: number }): Claim {
+  assimilate(text: string, embedding: number[], opts: { domain?: string; now: number }): Claim {
     const clean = text.trim();
     const id = claimId(clean);
 
@@ -77,8 +76,7 @@ export class KnowledgeModel {
       return existing;
     }
 
-    // Croyance sémantiquement équivalente déjà présente ?
-    const [nearest] = this.retrieve(clean, 1, SAME_BELIEF_SIM);
+    const [nearest] = this.retrieve(embedding, 1, SAME_BELIEF_SIM);
     if (nearest) {
       nearest.claim.salience += 1;
       nearest.claim.lastSeen = opts.now;
@@ -91,7 +89,7 @@ export class KnowledgeModel {
     const claim: Claim = {
       id,
       text: clean,
-      embedding: this.embedder.embed(clean),
+      embedding,
       salience: 1,
       firstSeen: opts.now,
       lastSeen: opts.now,
@@ -119,7 +117,7 @@ export class KnowledgeModel {
     return this.all();
   }
 
-  static fromJSON(embedder: Embedder, claims: Claim[]): KnowledgeModel {
-    return new KnowledgeModel(embedder, claims);
+  static fromJSON(claims: Claim[]): KnowledgeModel {
+    return new KnowledgeModel(claims);
   }
 }
