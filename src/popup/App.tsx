@@ -11,6 +11,8 @@ import MetricsPanel from './components/MetricsPanel';
 import MysticalPanel from './components/MysticalPanel';
 import SocialPanel from './components/SocialPanel';
 import SettingsPanel from './components/SettingsPanel';
+// Léger (pas de WebLLM) : l'écran « ce qui a bougé » s'affiche instantanément.
+import WhatMovedPanel from './components/WhatMovedPanel';
 
 // Chargé en lazy : le gros chunk WebLLM ne part que si l'onglet est ouvert.
 const LocalLLMPanel = React.lazy(() => import('./components/LocalLLMPanel'));
@@ -217,6 +219,7 @@ const App: React.FC = () => {
               <span>🧠</span>
               <span>Cognition locale</span>
             </h2>
+            <WhatMovedPanel />
             <Suspense fallback={<LoadingComponent message="Chargement du module cognitif…" />}>
               <LocalLLMPanel />
             </Suspense>

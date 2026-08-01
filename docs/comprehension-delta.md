@@ -92,12 +92,13 @@ mesurer sur des humains réels — voici l'expérience minimale :
   (`SurfaceJournal`) — le modèle survit et grossit d'une session à l'autre.
 - ✅ **UI minimale** : le bouton de digestion affiche la taille du modèle et ce
   qui a fait surface (vs digéré en silence).
+- ✅ La vue **« ce qui a bougé aujourd'hui »** (`WhatMovedPanel`, en tête de
+  l'onglet Cognition) : partitionne le journal aujourd'hui/avant (`partitionSurface`,
+  testé), n'affiche que les révisions, réactif via `chrome.storage.onChanged`.
 
 **Pas encore fait :**
 - 🔨 Remplacer le `HashingEmbedder` par un **embedding sémantique** du modèle
   local (meilleure récupération des candidats).
-- 🔨 La vue **« les 3 choses qui ont bougé aujourd'hui »** (le `SurfaceJournal`
-  fournit déjà la donnée via `since(ts)` ; il manque l'écran).
 - 🔨 Digestion **automatique de fond** — écartée volontairement : elle exigerait
   la permission `<all_urls>`, en tension avec la doctrine vie privée. La
   digestion reste sur geste.

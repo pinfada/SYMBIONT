@@ -131,8 +131,9 @@ n'existent pas sur le marché et qu'il faut créer. Ce sont les vrais sujets.
 2. ✅ **La digestion persistante** — le symbiote lit (sur geste), accrète à un
    modèle du monde **persistant** (`KnowledgeStore`), et ne fait surface *que* sur
    delta (`SurfaceJournal`). Câblé dans l'onglet Cognition.
-3. 🔨 **La vue « ce qui a bougé »** — les 3 choses du jour (la donnée existe déjà
-   dans le journal ; il manque l'écran).
+3. ✅ **La vue « ce qui a bougé »** — l'écran « ce qui a bougé aujourd'hui »
+   (`WhatMovedPanel`) en tête de l'onglet Cognition : n'affiche que les révisions
+   de compréhension du journal, réactif aux nouvelles digestions.
 4. 🔨 **Le fourrage** — l'organisme va chercher, selon ses traits, au lieu que tu
    cherches.
 5. 🔨 **Le collectif** — réorienter le P2P de « menaces » vers « fragments de sens »

@@ -17,7 +17,7 @@ export { digestPage } from './digest';
 export type { DigestResult } from './digest';
 export { KnowledgeStore } from './KnowledgeStore';
 export type { KVStorage } from './KnowledgeStore';
-export { SurfaceJournal } from './SurfaceJournal';
+export { SurfaceJournal, partitionSurface } from './SurfaceJournal';
 export type { SurfaceEntry } from './SurfaceJournal';
 export { readPage } from './readingService';
 export type { ReadingDeps, ReadingOutcome } from './readingService';

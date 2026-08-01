@@ -91,6 +91,14 @@ assimilée). La **nouveauté pure ne remonte jamais** — c'est l'invariant anti
   (ou « digéré en silence » si rien ne révise ta carte du monde).
 - 100 % local, **sur geste** (aucune lecture automatique de toutes tes pages).
 
+En tête de l'onglet, l'écran **🌅 « Ce qui a bougé aujourd'hui »** présente le
+*moment aha* de la vision : il n'affiche **que** les révisions de compréhension
+du jour (contredit / complète / déplace), jamais la simple nouveauté. Vide au
+premier lancement, il se remplit au fil des digestions (et se met à jour tout
+seul quand tu digères une page).
+
+![Écran « ce qui a bougé aujourd'hui »](images/cognition-whatmoved.png)
+
 Détail technique et protocole de validation : [`comprehension-delta.md`](../comprehension-delta.md).
 
 ## Confidentialité

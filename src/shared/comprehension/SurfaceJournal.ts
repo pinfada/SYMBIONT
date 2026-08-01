@@ -80,3 +80,17 @@ export class SurfaceJournal {
     return (await this.load()).filter((e) => e.ts >= ts);
   }
 }
+
+/**
+ * Partitionne les entrées en « aujourd'hui » (≥ borne) et « avant ». Pur et
+ * testable — sous-tend l'écran « ce qui a bougé aujourd'hui ».
+ */
+export function partitionSurface(
+  entries: SurfaceEntry[],
+  boundaryTs: number,
+): { today: SurfaceEntry[]; earlier: SurfaceEntry[] } {
+  const today: SurfaceEntry[] = [];
+  const earlier: SurfaceEntry[] = [];
+  for (const e of entries) (e.ts >= boundaryTs ? today : earlier).push(e);
+  return { today, earlier };
+}
