@@ -78,6 +78,21 @@ l'organisme. Le texte de la page ne quitte jamais le poste.
 
 ![Rapport de fiabilité d'une page](images/cognition-analysis.png)
 
+## 5. Digestion — le delta de compréhension
+
+Le bouton **🧫 Digérer la page active** incarne la vision SYMBIONT (voir
+[`VISION.md`](../VISION.md)) : le symbiote **lit** la page, l'**accrète** à son
+**modèle du monde persistant**, et ne te fait **« surface »** que sur ce qui
+**révise ta compréhension** (contredit / complète / déplace une croyance déjà
+assimilée). La **nouveauté pure ne remonte jamais** — c'est l'invariant anti-feed.
+
+- Le modèle survit et grossit d'une session à l'autre (stockage local borné).
+- L'écran affiche combien de croyances ton organisme connaît, et ce qui a bougé
+  (ou « digéré en silence » si rien ne révise ta carte du monde).
+- 100 % local, **sur geste** (aucune lecture automatique de toutes tes pages).
+
+Détail technique et protocole de validation : [`comprehension-delta.md`](../comprehension-delta.md).
+
 ## Confidentialité
 
 - Les poids sont récupérés depuis Hugging Face / MLC **au premier chargement

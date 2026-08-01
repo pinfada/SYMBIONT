@@ -116,7 +116,9 @@ SYMBIONT transforme votre navigateur en un **exosquelette sensoriel**. Votre org
 
 Un **cerveau de langage exécuté 100 % sur le poste**, via WebGPU + [WebLLM](https://github.com/mlc-ai/web-llm) — **aucune donnée envoyée à un serveur**. Module **opt-in** : le modèle (à partir de ~350 Mo, Qwen2.5-0.5B par défaut) se télécharge une fois, est mis en cache, puis tourne sur le GPU. Sans WebGPU, l'organisme retombe gracieusement sur son réseau de neurones embarqué (NeuralMesh).
 
-En plus du chat local, le bouton **🔍 Analyser la page active** demande au modèle un **score de fiabilité** de la page courante et les **signaux de désinformation** détectés (sensationnalisme, sources absentes, appel émotionnel…) — le tout localement — puis **nudge la vigilance de l'organisme**. Captures et détails : [wiki Cognition](docs/wiki/Cognition.md).
+En plus du chat local, le bouton **🔍 Analyser la page active** demande au modèle un **score de fiabilité** de la page courante et les **signaux de désinformation** détectés (sensationnalisme, sources absentes, appel émotionnel…) — le tout localement — puis **nudge la vigilance de l'organisme**.
+
+Et surtout, le bouton **🧫 Digérer la page active** incarne le cap produit ([`docs/VISION.md`](docs/VISION.md)) : le symbiote lit, **accrète** la page à son **modèle du monde persistant**, et ne te fait **« surface »** que sur ce qui **révise ta compréhension** — la nouveauté pure ne remonte jamais (invariant *anti-feed*, testé). Captures et détails : [wiki Cognition](docs/wiki/Cognition.md).
 
 ### 🦠 Proprioception Numérique
 

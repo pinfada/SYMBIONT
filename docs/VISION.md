@@ -125,15 +125,19 @@ n'existent pas sur le marché et qu'il faut créer. Ce sont les vrais sujets.
 - Maille P2P de partage anonyme.
 
 **Le pivot** (transformer ces briques défensives en organe symbiotique) :
-1. **Le delta** — prototyper la mesure « ceci révise ta compréhension » sur le
-   moteur local (pari n°1). C'est la marche décisive.
-2. **La digestion silencieuse** — le symbiote lit en fond, n'accrète, ne fait
-   surface *que* sur delta. Réutilise rêve + mémoire vectorielle.
-3. **Le fourrage** — l'organisme va chercher, selon ses traits, au lieu que tu
+1. ✅ **Le delta** — la mesure « ceci révise ta compréhension » (pari n°1) est
+   construite et testée : `src/shared/comprehension/`, invariant anti-feed vérifié.
+   Voir [`comprehension-delta.md`](comprehension-delta.md).
+2. ✅ **La digestion persistante** — le symbiote lit (sur geste), accrète à un
+   modèle du monde **persistant** (`KnowledgeStore`), et ne fait surface *que* sur
+   delta (`SurfaceJournal`). Câblé dans l'onglet Cognition.
+3. 🔨 **La vue « ce qui a bougé »** — les 3 choses du jour (la donnée existe déjà
+   dans le journal ; il manque l'écran).
+4. 🔨 **Le fourrage** — l'organisme va chercher, selon ses traits, au lieu que tu
    cherches.
-4. **Le collectif** — réorienter le P2P de « menaces » vers « fragments de sens »
+5. 🔨 **Le collectif** — réorienter le P2P de « menaces » vers « fragments de sens »
    (pari n°2).
-5. **L'agentivité** — le droit de dire non (pari n°3).
+6. 🔨 **L'agentivité** — le droit de dire non (pari n°3).
 
 ---
 

@@ -101,6 +101,20 @@ export class KnowledgeModel {
     return claim;
   }
 
+  /**
+   * Borne la taille du modèle (contrainte de stockage local). Garde les
+   * croyances les plus saillantes, puis les plus récentes. Retourne le nombre
+   * de croyances supprimées.
+   */
+  prune(max: number): number {
+    if (this.claims.size <= max) return 0;
+    const sorted = this.all().sort((a, b) => b.salience - a.salience || b.lastSeen - a.lastSeen);
+    const keep = sorted.slice(0, max);
+    const removed = this.claims.size - keep.length;
+    this.claims = new Map(keep.map((c) => [c.id, c]));
+    return removed;
+  }
+
   toJSON(): Claim[] {
     return this.all();
   }

@@ -40,6 +40,12 @@ Partitions (C→C) et connaissances activées (C→K) :
 - **`ComprehensionDelta.assessDelta`** — pour chaque affirmation, le LLM **classe
   la relation** au modèle : `confirme | complète | contredit | déplace | nouveau`.
 - **`digestPage`** — l'acte de lecture : extrait → évalue → **accrète tout**.
+- **`KnowledgeStore`** — persiste le modèle (chrome.storage.local), borné aux N
+  croyances les plus saillantes (`prune`).
+- **`SurfaceJournal`** — journalise ce qui a fait surface (matière du « 3 choses
+  qui ont bougé aujourd'hui »), persistant et borné.
+- **`readPage`** — l'acte de lecture **persistant** : charge le modèle → digère →
+  sauvegarde → journalise les révisions. C'est ce qu'appelle l'UI.
 
 Règle de décision (dans `types.ts`) :
 
@@ -76,12 +82,23 @@ mesurer sur des humains réels — voici l'expérience minimale :
    revoir le juge (meilleur modèle, meilleure notion de « croyance »), pas
    l'enrober.
 
-## Prochaines marches (non faites, honnête)
+## État & prochaines marches (honnête)
 
-- Brancher `digestPage` sur le **moteur offscreen** (lecture de fond réelle).
-- **Persister** le `KnowledgeModel` (chrome.storage/IndexedDB) — le modèle doit
-  survivre et grossir.
-- Remplacer le `HashingEmbedder` par un **embedding sémantique** du modèle local
-  (meilleure récupération des candidats).
-- L'**UI de surface** : les « 3 choses qui ont bougé aujourd'hui ».
-- Lancer le **protocole de falsification** ci-dessus.
+**Fait & testé :**
+- ✅ Digestion branchée sur le **moteur** (via `readPage`, moteur injecté = le
+  moteur offscreen/popup existant — aucune permission nouvelle, digestion **sur
+  geste** dans l'onglet Cognition, bouton « Digérer la page active »).
+- ✅ **Persistance** du `KnowledgeModel` (`KnowledgeStore`) + journal de surface
+  (`SurfaceJournal`) — le modèle survit et grossit d'une session à l'autre.
+- ✅ **UI minimale** : le bouton de digestion affiche la taille du modèle et ce
+  qui a fait surface (vs digéré en silence).
+
+**Pas encore fait :**
+- 🔨 Remplacer le `HashingEmbedder` par un **embedding sémantique** du modèle
+  local (meilleure récupération des candidats).
+- 🔨 La vue **« les 3 choses qui ont bougé aujourd'hui »** (le `SurfaceJournal`
+  fournit déjà la donnée via `since(ts)` ; il manque l'écran).
+- 🔨 Digestion **automatique de fond** — écartée volontairement : elle exigerait
+  la permission `<all_urls>`, en tension avec la doctrine vie privée. La
+  digestion reste sur geste.
+- 🔨 Lancer le **protocole de falsification** ci-dessus (le vrai test de la thèse).

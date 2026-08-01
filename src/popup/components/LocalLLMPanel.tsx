@@ -26,6 +26,13 @@ import {
   feedReliabilityToOrganism,
   type ReliabilityReport,
 } from '@shared/llm';
+import {
+  readPage,
+  KnowledgeStore,
+  SurfaceJournal,
+  HashingEmbedder,
+  type ReadingOutcome,
+} from '@shared/comprehension';
 
 const C = {
   accent: '#00e0ff',
@@ -58,6 +65,11 @@ const LocalLLMPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<ReliabilityReport | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [digest, setDigest] = useState<ReadingOutcome | null>(null);
+  const [digesting, setDigesting] = useState(false);
+  // Modèle du monde persistant + journal de surface (créés une fois).
+  const knowledgeRef = useRef(new KnowledgeStore(new HashingEmbedder()));
+  const journalRef = useRef(new SurfaceJournal());
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -176,6 +188,34 @@ const LocalLLMPanel: React.FC = () => {
       setAnalyzing(false);
     }
   }, [analyzing]);
+
+  // Digestion persistante : le symbiote lit la page active, l'accrète à son
+  // modèle du monde, et ne fait « surface » que sur ce qui révise ta compréhension.
+  const digestActivePage = useCallback(async () => {
+    const engine = engineRef.current;
+    if (!engine || !engine.isReady() || digesting) return;
+    setDigesting(true);
+    setError(null);
+    try {
+      const page = await extractActivePageText();
+      if (!page.text || page.text.length < 40) {
+        setError("Pas assez de texte lisible sur cette page pour la digérer.");
+        return;
+      }
+      const outcome = await readPage(
+        engine,
+        { store: knowledgeRef.current, journal: journalRef.current },
+        page.text,
+        { now: Date.now(), ...(page.domain ? { domain: page.domain } : {}) },
+      );
+      setDigest(outcome);
+    } catch (e) {
+      logger.error('LocalLLMPanel: digestion échouée', e as Error);
+      setError('La digestion de la page a échoué.');
+    } finally {
+      setDigesting(false);
+    }
+  }, [digesting]);
 
   const levelColor = (lvl: ReliabilityReport['level']): string =>
     lvl === 'faible' ? C.danger : lvl === 'moyenne' ? '#f59e0b' : '#22c55e';
@@ -328,6 +368,53 @@ const LocalLLMPanel: React.FC = () => {
           <p style={{ color: C.dim, fontSize: 11, margin: '10px 0 0' }}>
             ↳ signal transmis à l&apos;organisme (vigilance +)
           </p>
+        </div>
+      )}
+
+      {/* Digestion : le symbiote lit et n'accrète ; il ne remonte que ce qui révise ta compréhension */}
+      <button
+        style={{ ...s.primaryBtn, marginBottom: 8 }}
+        onClick={() => void digestActivePage()}
+        disabled={digesting}
+      >
+        {digesting ? 'Digestion en cours…' : '🧫 Digérer la page active'}
+      </button>
+      {digest && (
+        <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
+          <div style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>
+            Ton organisme connaît <strong style={{ color: C.text }}>{digest.modelSize}</strong> croyances ·{' '}
+            {digest.claimCount} affirmation{digest.claimCount > 1 ? 's' : ''} digérée
+            {digest.claimCount > 1 ? 's' : ''}.
+          </div>
+          {digest.surface ? (
+            <>
+              <div style={{ color: C.accent, fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                Ça a bougé ta compréhension :
+              </div>
+              {digest.revisions.map((r, i) => (
+                <div key={i} style={{ marginBottom: 8 }}>
+                  <span
+                    style={{
+                      background: 'rgba(0,224,255,0.15)',
+                      color: C.accent,
+                      fontSize: 11,
+                      padding: '2px 7px',
+                      borderRadius: 10,
+                      marginRight: 6,
+                    }}
+                  >
+                    {r.kind}
+                  </span>
+                  <span style={{ color: C.text, fontSize: 12 }}>{r.claimText}</span>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div style={{ color: C.dim, fontSize: 12 }}>
+              Rien de neuf pour toi : digéré en silence. Le symbiote a grossi, mais ta carte du monde
+              n&apos;a pas bougé.
+            </div>
+          )}
         </div>
       )}
 

@@ -30,6 +30,8 @@ de façon automatisée (navigation + interactions).
 | Cognition | Chat local (streaming) | 🧪 à valider en vrai | logique testée ; WebGPU non exécutable en CI |
 | Cognition | Analyse de fiabilité → signal organisme | ✅ logique vérifiée | [page](Cognition) + tests (parsing/nudge) |
 | Cognition | Moteur offscreen (persiste popup fermé) + repli | 🧪 à valider en vrai | protocole/repli/bail testés ; round-trip WebGPU à confirmer |
+| Cognition | Delta de compréhension (anti-feed : nouveauté ≠ surface) | ✅ logique vérifiée | invariant testé — [comprehension-delta](../comprehension-delta.md) |
+| Cognition | Digestion persistante (modèle du monde qui grossit) | ✅ logique vérifiée | `KnowledgeStore`/`SurfaceJournal` + tests ; qualité LLM à valider en vrai |
 
 ## Couverture de tests automatisés
 
@@ -43,6 +45,11 @@ de façon automatisée (navigation + interactions).
   modèles, moteur (load/stream/abort/unload), préférences, analyse de fiabilité
   (parsing tolérant + fallback), signal organisme, client offscreen
   (protocole/timeout), fabrique offscreen→popup.
+- `src/shared/comprehension/__tests__/*` — delta de compréhension : embedding
+  déterministe, modèle du monde (assimilation/renforcement/récupération/prune),
+  extraction de claims, classement de relation, **invariant anti-feed** (la
+  nouveauté ne fait jamais surface), persistance (`KnowledgeStore`), journal de
+  surface, service de lecture persistant.
 
 ## Ce qui reste à valider en conditions réelles
 
