@@ -134,10 +134,16 @@ n'existent pas sur le marché et qu'il faut créer. Ce sont les vrais sujets.
 3. ✅ **La vue « ce qui a bougé »** — l'écran « ce qui a bougé aujourd'hui »
    (`WhatMovedPanel`) en tête de l'onglet Cognition : n'affiche que les révisions
    de compréhension du journal, réactif aux nouvelles digestions.
-4. 🔨 **Le fourrage** — l'organisme va chercher, selon ses traits, au lieu que tu
-   cherches.
-5. 🔨 **Le collectif** — réorienter le P2P de « menaces » vers « fragments de sens »
-   (pari n°2).
+4. ✅ **Le fourrage** — l'organisme déduit de son modèle ce qu'il est *curieux de
+   comprendre* (contradictions non résolues, zones minces) et propose des
+   questions à explorer (`selectForagingSeeds`/`deriveForagingTargets` +
+   section « ce que je cherche à comprendre » ; la recherche s'ouvre **sur
+   geste**, aucune permission invasive).
+5. 🚧 **Le collectif** — l'**abstraction** d'une révision en fragment partageable
+   sans texte/URL (`MeaningFragment`) et l'**intégration** de fragments reçus en
+   signal collectif (`CollectiveSignal`) sont construites et testées. **Restent
+   ouverts** : le transport P2P live et la **garantie de confidentialité** de
+   l'agrégation (le vrai pari n°2).
 6. 🔨 **L'agentivité** — le droit de dire non (pari n°3).
 
 ---

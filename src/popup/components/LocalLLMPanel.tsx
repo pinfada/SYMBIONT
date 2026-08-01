@@ -33,8 +33,11 @@ import {
   SurfaceJournal,
   HashingEmbedder,
   hashingEmbedFn,
+  selectForagingSeeds,
+  deriveForagingTargets,
   type EmbedFn,
   type ReadingOutcome,
+  type ForagingTarget,
 } from '@shared/comprehension';
 
 const C = {
@@ -70,6 +73,8 @@ const LocalLLMPanel: React.FC = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [digest, setDigest] = useState<ReadingOutcome | null>(null);
   const [digesting, setDigesting] = useState(false);
+  const [foragingTargets, setForagingTargets] = useState<ForagingTarget[]>([]);
+  const [foraging, setForaging] = useState(false);
   // Modèle du monde persistant + journal de surface (créés une fois).
   // Embedding par défaut = hachage (gratuit) ; le sémantique (2ᵉ modèle) est opt-in.
   const knowledgeRef = useRef(new KnowledgeStore());
@@ -239,6 +244,40 @@ const LocalLLMPanel: React.FC = () => {
       setDigesting(false);
     }
   }, [digesting]);
+
+  // Fourrage : le symbiote déduit de son modèle ce qu'il est curieux de
+  // comprendre — au lieu que tu cherches. Cliquer ouvre une recherche (geste
+  // utilisateur → aucune permission invasive).
+  const forage = useCallback(async () => {
+    const engine = engineRef.current;
+    if (!engine || !engine.isReady() || foraging) return;
+    setForaging(true);
+    setError(null);
+    try {
+      const model = await knowledgeRef.current.load();
+      const recent = await journalRef.current.load();
+      const seeds = selectForagingSeeds(model, recent);
+      if (seeds.length === 0) {
+        setForagingTargets([]);
+        setError("Pas encore assez de matière pour chercher — digère quelques pages d'abord.");
+        return;
+      }
+      setForagingTargets(await deriveForagingTargets(engine, seeds, { curiosity: 0.6 }));
+    } catch (e) {
+      logger.error('LocalLLMPanel: fourrage échoué', e as Error);
+      setError('Le fourrage a échoué.');
+    } finally {
+      setForaging(false);
+    }
+  }, [foraging]);
+
+  const openSearch = useCallback((q: string) => {
+    const url = 'https://duckduckgo.com/?q=' + encodeURIComponent(q);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = typeof chrome !== 'undefined' ? (chrome as any) : undefined;
+    if (c?.tabs?.create) c.tabs.create({ url });
+    else window.open(url, '_blank', 'noopener');
+  }, []);
 
   const levelColor = (lvl: ReliabilityReport['level']): string =>
     lvl === 'faible' ? C.danger : lvl === 'moyenne' ? '#f59e0b' : '#22c55e';
@@ -448,6 +487,40 @@ const LocalLLMPanel: React.FC = () => {
               n&apos;a pas bougé.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Fourrage : ce que l'organisme est curieux de comprendre */}
+      <button
+        style={{ ...s.primaryBtn, marginBottom: 8 }}
+        onClick={() => void forage()}
+        disabled={foraging}
+      >
+        {foraging ? 'Recherche…' : '🔎 Ce que je cherche à comprendre'}
+      </button>
+      {foragingTargets.length > 0 && (
+        <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
+          <div style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>Ton organisme est curieux de :</div>
+          {foragingTargets.map((t, i) => (
+            <div key={i} style={{ marginBottom: 8 }}>
+              <button
+                onClick={() => openSearch(t.question)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: C.accent,
+                  fontSize: 13,
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  padding: 0,
+                  lineHeight: 1.4,
+                }}
+              >
+                🔎 {t.question}
+              </button>
+              {t.rationale && <div style={{ color: C.dim, fontSize: 11, marginTop: 2 }}>{t.rationale}</div>}
+            </div>
+          ))}
         </div>
       )}
 

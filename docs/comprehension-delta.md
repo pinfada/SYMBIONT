@@ -116,6 +116,17 @@ mesurer sur des humains réels — voici l'expérience minimale :
   exécutable en CI ; à confirmer en navigateur, puis mesurer le gain de
   récupération vs hachage.
 
+**Paris suivants (au-delà du delta) :**
+- ✅ **Fourrage** (`foraging.ts`) — `selectForagingSeeds` (contradictions non
+  résolues + croyances minces) + `deriveForagingTargets` (le LLM en fait des
+  questions à explorer). Câblé : section « ce que je cherche à comprendre »,
+  recherche sur geste.
+- 🚧 **Collectif** (`collective.ts`) — `abstractRevision` (révision → fragment
+  sans texte/URL) + `integrateFragments` (fragments reçus → `CollectiveSignal`).
+  Logique testée ; **transport P2P live + confidentialité de l'agrégation
+  (pari n°2) = ouverts**, rien n'est diffusé.
+- 🔨 **Agentivité** (pari n°3) — le droit de dire non.
+
 **Pas encore fait :**
 - 🔨 Digestion **automatique de fond** — écartée volontairement : elle exigerait
   la permission `<all_urls>`, en tension avec la doctrine vie privée. La

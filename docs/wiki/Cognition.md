@@ -104,6 +104,23 @@ seul quand tu digères une page).
 
 Détail technique et protocole de validation : [`comprehension-delta.md`](../comprehension-delta.md).
 
+## 6. Fourrage — « ce que je cherche à comprendre »
+
+Le bouton **🔎 Ce que je cherche à comprendre** renverse la recherche : au lieu
+que *tu* cherches, l'organisme déduit **de son propre modèle du monde** ce qu'il
+est curieux d'explorer — ses contradictions non résolues et ses zones minces —
+et propose des **questions ouvertes**. Cliquer une question **ouvre une
+recherche** (geste utilisateur → aucune permission invasive).
+
+## 7. Collectif (fondations)
+
+Les briques du **collectif** existent en logique (testées) : abstraire une
+révision en **fragment partageable sans texte ni URL** (`MeaningFragment`) et
+**intégrer des fragments reçus** en un signal collectif (`CollectiveSignal`,
+« le réseau a bougé sur un sujet proche de ta croyance X »). ⚠️ Le **transport
+P2P live** et la **garantie de confidentialité** de l'agrégation restent un
+**chantier ouvert** — rien n'est diffusé pour l'instant.
+
 ## Confidentialité
 
 - Les poids sont récupérés depuis Hugging Face / MLC **au premier chargement

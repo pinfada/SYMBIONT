@@ -26,3 +26,7 @@ export { SurfaceJournal, partitionSurface } from './SurfaceJournal';
 export type { SurfaceEntry } from './SurfaceJournal';
 export { readPage } from './readingService';
 export type { ReadingDeps, ReadingOutcome } from './readingService';
+export { selectForagingSeeds, deriveForagingTargets } from './foraging';
+export type { ForagingSeed, ForagingTarget } from './foraging';
+export { coarsen, abstractRevision, integrateFragments } from './collective';
+export type { MeaningFragment, CollectiveSignal } from './collective';

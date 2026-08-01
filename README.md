@@ -118,7 +118,11 @@ Un **cerveau de langage exécuté 100 % sur le poste**, via WebGPU + [WebLLM](ht
 
 En plus du chat local, le bouton **🔍 Analyser la page active** demande au modèle un **score de fiabilité** de la page courante et les **signaux de désinformation** détectés (sensationnalisme, sources absentes, appel émotionnel…) — le tout localement — puis **nudge la vigilance de l'organisme**.
 
-Et surtout, le bouton **🧫 Digérer la page active** incarne le cap produit ([`docs/VISION.md`](docs/VISION.md)) : le symbiote lit, **accrète** la page à son **modèle du monde persistant**, et ne te fait **« surface »** que sur ce qui **révise ta compréhension** — la nouveauté pure ne remonte jamais (invariant *anti-feed*, testé). Captures et détails : [wiki Cognition](docs/wiki/Cognition.md).
+Et surtout, deux boutons incarnent le cap produit ([`docs/VISION.md`](docs/VISION.md)) :
+- **🧫 Digérer la page active** — le symbiote lit, **accrète** la page à son **modèle du monde persistant**, et ne te fait **« surface »** que sur ce qui **révise ta compréhension** (invariant *anti-feed*, testé) ; l'écran **« ce qui a bougé aujourd'hui »** en montre le résultat.
+- **🔎 Ce que je cherche à comprendre** — l'organisme déduit de son modèle ce qu'il est *curieux d'explorer* (contradictions, zones minces) et propose des questions ; la recherche s'ouvre sur geste.
+
+Fondations aussi posées (logique testée) pour le **collectif** (fragments de sens partageables, sans texte ni URL) — le transport P2P et la confidentialité de l'agrégation restant un chantier ouvert. Captures et détails : [wiki Cognition](docs/wiki/Cognition.md).
 
 ### 🦠 Proprioception Numérique
 

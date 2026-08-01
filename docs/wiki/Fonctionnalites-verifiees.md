@@ -33,6 +33,8 @@ de façon automatisée (navigation + interactions).
 | Cognition | Delta de compréhension (anti-feed : nouveauté ≠ surface) | ✅ logique vérifiée | invariant testé — [comprehension-delta](../comprehension-delta.md) |
 | Cognition | Digestion persistante (modèle du monde qui grossit) | ✅ logique vérifiée | `KnowledgeStore`/`SurfaceJournal` + tests ; qualité LLM à valider en vrai |
 | Cognition | Écran « ce qui a bougé aujourd'hui » | ✅ vérifié | `WhatMovedPanel` + `partitionSurface` testé, réactif au journal |
+| Cognition | Fourrage (« ce que je cherche à comprendre ») | ✅ logique vérifiée | `selectForagingSeeds`/`deriveForagingTargets` testés ; recherche sur geste |
+| Cognition | Collectif — abstraction + intégration de fragments | ✅ logique vérifiée | `MeaningFragment`/`CollectiveSignal` testés ; **transport P2P + confidentialité = ouverts** |
 
 ## Couverture de tests automatisés
 
@@ -51,7 +53,8 @@ de façon automatisée (navigation + interactions).
   extraction de claims, classement de relation, **invariant anti-feed** (la
   nouveauté ne fait jamais surface), persistance (`KnowledgeStore`), journal de
   surface, service de lecture persistant, embedding sémantique (`SemanticEmbedder` :
-  cache + repli, moteur injecté).
+  cache + repli, moteur injecté), fourrage (sélection de graines + génération de
+  questions), collectif (abstraction/coarsen + intégration de fragments).
 
 ## Ce qui reste à valider en conditions réelles
 
