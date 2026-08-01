@@ -22,12 +22,18 @@ export class OrganismFactory {
     }
 
     // Import dynamique pour éviter la circularité
+    // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require breaks a circular dependency
     const { OrganismCore } = require('../OrganismCore');
-    return new OrganismCore(dna, traits, this.dependencies.createNeuralMesh);
+    // OrganismCore attend des dépendances de la forme { neuralMesh }.
+    // On invoque donc la factory injectée pour produire le mesh concret.
+    return new OrganismCore(dna, traits, {
+      neuralMesh: this.dependencies.createNeuralMesh()
+    });
   }
 
   static createNeuralMesh(): INeuralMesh {
     // Import dynamique pour éviter la circularité
+    // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require breaks a circular dependency
     const { NeuralMesh } = require('../NeuralMesh');
     return new NeuralMesh();
   }

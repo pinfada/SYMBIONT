@@ -357,7 +357,7 @@ export class NetworkLatencyCollector {
     if (!window.RTCPeerConnection) return;
 
     const OriginalRTCPeerConnection = window.RTCPeerConnection;
-    const collector = this;
+    const monitorWebRTCStats = this.monitorWebRTCStats.bind(this);
 
     // Wrapper pour surveiller les connexions
     window.RTCPeerConnection = function(...args: any[]) {
@@ -366,7 +366,7 @@ export class NetworkLatencyCollector {
       // Surveiller les statistiques ICE
       pc.addEventListener('iceconnectionstatechange', async () => {
         if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-          collector.monitorWebRTCStats(pc);
+          monitorWebRTCStats(pc);
         }
       });
 

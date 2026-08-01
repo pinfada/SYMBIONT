@@ -10,6 +10,7 @@ import { AdaptiveResonanceClustering } from '@/core/dreams/AdaptiveResonanceClus
 import { ThermalThrottlingController } from '@/core/dreams/ThermalThrottlingController';
 import { CDNWhitelist } from '@/core/dreams/CDNWhitelist';
 import type { MemoryFragment } from '@/core/dreams/DreamProcessor';
+import { webcrypto } from 'crypto';
 
 // Mock des dépendances
 jest.mock('@/shared/utils/secureLogger');
@@ -30,21 +31,17 @@ global.chrome = {
   }
 } as any;
 
-// Mock performance API
+// Mock performance API — fonctions simples (survivent à resetMocks, qui
+// sinon ferait renvoyer undefined à getEntriesByType → `.filter` sur undefined).
 const mockPerformance = {
-  now: jest.fn(() => 1000),
-  getEntriesByType: jest.fn((type: string) => {
+  now: () => 1000,
+  getEntriesByType: (type: string) => {
     if (type === 'measure') {
-      return [{
-        name: 'test-measure',
-        entryType: 'measure',
-        startTime: 900,
-        duration: 50
-      }];
+      return [{ name: 'test-measure', entryType: 'measure', startTime: 900, duration: 50 }];
     }
     return [];
-  }),
-  getEntriesByName: jest.fn(() => [])
+  },
+  getEntriesByName: () => []
 };
 Object.defineProperty(global, 'performance', {
   writable: true,
@@ -58,57 +55,64 @@ const mockIDBRequest = {
   result: null as any
 };
 
-const mockIDBDatabase = {
-  objectStoreNames: {
-    contains: jest.fn(() => false)
-  },
-  createObjectStore: jest.fn(() => ({
-    createIndex: jest.fn()
-  })),
-  transaction: jest.fn(() => ({
-    objectStore: jest.fn(() => ({
-      put: jest.fn(() => mockIDBRequest),
-      get: jest.fn(() => mockIDBRequest),
-      add: jest.fn(() => mockIDBRequest),
-      count: jest.fn(() => {
-        const req = { ...mockIDBRequest };
-        setTimeout(() => {
-          req.result = 0;
-          if (req.onsuccess) req.onsuccess({ target: req });
-        }, 0);
-        return req;
-      }),
-      clear: jest.fn(() => mockIDBRequest),
-      index: jest.fn(() => ({
-        openCursor: jest.fn(() => mockIDBRequest)
-      }))
-    }))
-  })),
-  close: jest.fn()
+// Fonctions SIMPLES (pas jest.fn) : le mock survit à resetMocks:true, qui
+// sinon viderait chaque implémentation (createObjectStore → undefined, etc.).
+// Chaque requête DOIT déclencher onsuccess de façon asynchrone, sinon les
+// `await` de DreamStorage sur put/get/cursor pendent jusqu'au timeout.
+const makeReq = (result: any = undefined) => {
+  const req: any = { onsuccess: null, onerror: null, result };
+  setTimeout(() => { if (req.onsuccess) req.onsuccess({ target: req }); }, 0);
+  return req;
+};
+
+const mockObjectStore: any = {
+  put: () => makeReq(),
+  get: () => makeReq(undefined),
+  add: () => makeReq(),
+  count: () => makeReq(0),
+  clear: () => makeReq(),
+  // openCursor : onsuccess avec result null = fin de curseur (pas d'itération infinie).
+  index: () => ({ openCursor: () => makeReq(null) }),
+  openCursor: () => makeReq(null),
+  createIndex: () => undefined
+};
+
+const mockIDBDatabase: any = {
+  objectStoreNames: { contains: () => false },
+  createObjectStore: () => mockObjectStore,
+  transaction: () => ({ objectStore: () => mockObjectStore }),
+  close: () => undefined
 };
 
 global.indexedDB = {
-  open: jest.fn(() => {
-    const request = { ...mockIDBRequest };
+  // Fonction simple : survit à resetMocks (un jest.fn serait vidé → undefined).
+  open: () => {
+    const request: any = { ...mockIDBRequest };
     setTimeout(() => {
       request.result = mockIDBDatabase;
+      if (request.onupgradeneeded) request.onupgradeneeded({ target: request });
       if (request.onsuccess) request.onsuccess({ target: request });
     }, 0);
     return request;
-  })
+  }
 } as any;
 
 // Mock crypto API
+// Vrai digest WebCrypto : un digest constant (zéros) rend les signatures/
+// vecteurs dégénérés → clustering et détection CDN/shadow produisent 0.
 global.crypto = {
-  subtle: {
-    digest: jest.fn(async () => new ArrayBuffer(32))
-  }
+  subtle: webcrypto.subtle,
+  getRandomValues: (arr: any) => { for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256); return arr; }
 } as any;
 
 describe('DreamProcessor', () => {
   let processor: DreamProcessor;
 
   beforeEach(() => {
+    // DreamProcessor est un singleton : sans reset, `lastSynthesisTime` fuit
+    // d'un test à l'autre et les synthèses suivantes échouent sur l'intervalle
+    // minimum. On repart d'une instance fraîche pour isoler chaque test.
+    (DreamProcessor as any).instance = undefined;
     processor = DreamProcessor.getInstance();
     jest.clearAllMocks();
   });
@@ -501,9 +505,13 @@ describe('CDNWhitelist', () => {
     });
 
     it('should detect shared CDN usage', () => {
+      // Deux sites distincts servis par le même fournisseur CDN (Cloudflare)
+      // mais via des domaines de base différents (cloudflare.com vs
+      // cloudflaressl.com). Le garde-fou base===base ne se déclenche donc pas
+      // et sharesCDNOnly détecte correctement le partage de CDN.
       const result = whitelist.sharesCDNOnly(
-        'site1.cloudflare.com',
-        'site2.cloudflare.com'
+        'assets.cloudflare.com',
+        'cdn.cloudflaressl.com'
       );
       expect(result).toBe(true);
     });

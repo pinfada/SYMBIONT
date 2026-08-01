@@ -158,6 +158,7 @@ export class CountermeasureHandler {
         logger.debug('[CountermeasureHandler] Delaying tracker XHR:', url, delay + 'ms');
 
         const originalSend = this.send;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias -- delayed send must call the original XHR instance inside setTimeout
         const xhr = this;
         this.send = function(body?: Document | XMLHttpRequestBodyInit | null) {
           setTimeout(() => {
@@ -250,7 +251,7 @@ export class CountermeasureHandler {
    * Applique l'empoisonnement du fingerprinting
    */
   private applyFingerprintPoison(config: any): void {
-    const { timezoneNoise, canvasNoise, screenNoise, audioNoise, duration } = config;
+    const { timezoneNoise, canvasNoise, screenNoise, duration } = config;
 
     const poisonedFunctions: string[] = [];
 
@@ -259,6 +260,7 @@ export class CountermeasureHandler {
       this.originalFunctions.set('getTimezoneOffset', Date.prototype.getTimezoneOffset);
 
       // Ajouter du bruit au timezone
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- native prototype override rebinds `this`; handler alias reaches the instance
       const handler = this;
       (Date.prototype as any).getTimezoneOffset = function() {
         const original = handler.originalFunctions.get('getTimezoneOffset');
@@ -273,6 +275,7 @@ export class CountermeasureHandler {
       this.originalFunctions.set('toDataURL', HTMLCanvasElement.prototype.toDataURL);
 
       // Ajouter du bruit au canvas
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- native prototype override rebinds `this`; handler alias reaches the instance
       const handler = this;
       (HTMLCanvasElement.prototype as any).toDataURL = function(...args: any[]) {
         const ctx = this.getContext('2d');
@@ -581,9 +584,6 @@ export class CountermeasureHandler {
         } as IdleDeadline), 100);
       }
     }
-
-    // Analyser les patterns suspects
-    const suspiciousPatterns = this.analyzeSuspiciousPatterns(hiddenElements);
 
     // Retourner les résultats avec métadonnées
     return hiddenElements.slice(0, maxElements);

@@ -22,7 +22,7 @@ interface Invitation {
 export class SocialNetworkManager {
   private invitations: Invitation[] = []
   private memoryBank: OrganismMemoryBank
-  private security: SecurityManager
+  private security: SecurityManager
   private _collectiveSessions: Map<string, { participants: string[], traits: Record<string, number> }> = new Map()
 
   constructor(memoryBank: OrganismMemoryBank, security: SecurityManager) {
@@ -34,7 +34,7 @@ export class SocialNetworkManager {
     // Anonymisation du contexte comportemental
     const anonymizedContext = {
       ...context,
-      behaviorPattern: this.security.anonymizeForSharing(context.behaviorPattern as BehaviorPattern)
+      behaviorPattern: await this.security.anonymizeForSharing(context.behaviorPattern as BehaviorPattern)
     }
     const code = randomUUID()
     const invitation: Invitation = {
@@ -128,7 +128,7 @@ export class SocialNetworkManager {
       }
       await this.memoryBank.saveOrganismState(userId, org)
     }
-  }
+  }
   async triggerCollectiveWake(trigger: CollectiveTrigger, userIds: string[]): Promise<WakeResult> {
     const sync = await this.detectCollectiveSync(userIds)
     if (!sync) return { success: false, details: 'Pas assez de participants.' }

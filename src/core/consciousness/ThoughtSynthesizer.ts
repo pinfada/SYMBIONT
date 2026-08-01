@@ -330,7 +330,7 @@ export class ThoughtSynthesizer {
 
     if (shouldVerbalize) {
       // Traduction en langage naturel (simplifié pour l'instant)
-      content = this.translateToNaturalLanguage(intention, type, vector);
+      content = this.translateToNaturalLanguage(intention, type);
     }
 
     // Expression visuelle
@@ -353,8 +353,7 @@ export class ThoughtSynthesizer {
    */
   private translateToNaturalLanguage(
     intention: string,
-    type: ThoughtType,
-    vector: ThoughtVector
+    type: ThoughtType
   ): string {
     // Dictionnaire de traduction simplifiée
     const translations: { [key: string]: string[] } = {

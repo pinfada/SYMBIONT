@@ -205,7 +205,7 @@ export class TrackerInterceptor {
         this.notifyOrganism(signature);
 
         // Appliquer l'action configurée
-        await this.applyInterceptionAction(details, signature);
+        await this.applyInterceptionAction(details);
 
         // Log pour monitoring
         logger.debug('Tracker intercepted', {
@@ -418,8 +418,7 @@ export class TrackerInterceptor {
    * Applique l'action d'interception configurée
    */
   private async applyInterceptionAction(
-    details: chrome.webRequest.WebRequestBodyDetails,
-    signature: TrackerSignature
+    details: chrome.webRequest.WebRequestBodyDetails
   ): Promise<void> {
     switch (this.config.blockingMode) {
       case 'block':
@@ -427,7 +426,7 @@ export class TrackerInterceptor {
         logger.info('Tracker blocked', { url: details.url });
         break;
 
-      case 'delay':
+      case 'delay': {
         // Ajouter un délai artificiel
         const delay = SecureRandom.between(
           this.config.delayMin || 100,
@@ -437,6 +436,7 @@ export class TrackerInterceptor {
         await new Promise(resolve => setTimeout(resolve, delay));
         logger.debug('Tracker delayed', { url: details.url, delay });
         break;
+      }
 
       case 'monitor':
       default:

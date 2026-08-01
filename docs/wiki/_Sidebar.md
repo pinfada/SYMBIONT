@@ -8,6 +8,7 @@
 - [📊 Stats](Stats)
 - [✨ Rituels](Rituels)
 - [👥 Social](Social)
+- [🧠 Cognition locale](Cognition)
 - [⚙️ Paramètres](Parametres)
 
 **Référence**

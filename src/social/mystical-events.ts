@@ -4,22 +4,29 @@ import { SecureRandom } from '../shared/utils/secureRandom';
 import { logger } from '@shared/utils/secureLogger';
 
 export class MysticalEvents {
-  private channel: BroadcastChannel
+  private channel: BroadcastChannel | null
   private peerId: string
 
   constructor() {
     this.peerId = 'peer_' + SecureRandom.random().toString(36).substr(2, 8)
-    this.channel = new BroadcastChannel('symbiont_mystical')
-    this.channel.onmessage = (event) => this.handleMessage(event.data)
+    // BroadcastChannel n'existe que dans les contextes navigateur / service
+    // worker. On dégrade proprement dans les autres environnements (tests,
+    // Node) au lieu de lever une ReferenceError à la construction.
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.channel = new BroadcastChannel('symbiont_mystical')
+      this.channel.onmessage = (event) => this.handleMessage(event.data)
+    } else {
+      this.channel = null
+    }
   }
 
   triggerMysticalEvent(eventId: string, payload: any) {
-    this.channel.postMessage({ type: 'mystical', from: this.peerId, eventId, payload })
+    this.channel?.postMessage({ type: 'mystical', from: this.peerId, eventId, payload })
     logger.info(`[MysticalEvents] Événement mystique déclenché : ${eventId}`)
   }
 
   propagateToCommunity(eventId: string, payload: any) {
-    this.channel.postMessage({ type: 'mystical', from: this.peerId, eventId, payload })
+    this.channel?.postMessage({ type: 'mystical', from: this.peerId, eventId, payload })
     logger.info(`[MysticalEvents] Propagation à la communauté : ${eventId}`)
   }
 

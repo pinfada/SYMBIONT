@@ -67,13 +67,13 @@ class SimplePersistentQueue {
   }
 }
 
-export class ResilientMessageBus {
+export class ResilientMessageBus {
   private connectionState: 'connected' | 'degraded' | 'offline' = 'offline'
   private messageQueue = new SimplePersistentQueue()
   private failureStrategies: Map<string, FailureStrategy> = new Map()
-  private circuitBreaker = new SimpleCircuitBreaker()
-  private failureQueue: Message[] = []
-  private isConnected: boolean = false;
+  private circuitBreaker = new SimpleCircuitBreaker()
+  private failureQueue: Message[] = []
+  private isConnected: boolean = false;
   private connectionAttempts: number = 0;
 
   constructor() {
@@ -112,7 +112,7 @@ export class ResilientMessageBus {
     while (retries <= maxRetries) {
       try {
         // Simule l'envoi (à remplacer par chrome.runtime.sendMessage ou autre)
-        await this.simulateSend(message)
+        await this.simulateSend()
         this.circuitBreaker.recordSuccess()
         return { success: true }
       } catch (_error) {
@@ -127,8 +127,8 @@ export class ResilientMessageBus {
       }
     }
     return { success: false, queued: true, error: 'Unknown error' }
-  }
-  private async simulateSend(message: Message) {
+  }
+  private async simulateSend() {
     return { success: true, id: `sim_${Date.now()}` }
   }
 
@@ -151,11 +151,11 @@ export class ResilientMessageBus {
   private async processLocally(msg: Message) {
     logger.info('[ResilientMessageBus] fallback processLocally', msg)
     await swLocalStorage.setItem('symbiont_local_processing', JSON.stringify(msg))
-  }
+  }
   private _attemptConnection(): Promise<boolean> {
     return Promise.resolve(true)
-  }
-  private _processMessage(_message: Message): void {
+  }
+  private _processMessage(): void {
     // Traitement du message
   }
 }

@@ -204,7 +204,7 @@ export class NeuroCore {
     if (potentials.size === 0) return null;
 
     const actions = Array.from(potentials.entries());
-    const weights = actions.map(([_, weight]) => weight);
+    const weights = actions.map(([, weight]) => weight);
 
     // Application du softmax avec température
     const expWeights = weights.map(w => Math.exp(w / this.temperature));
@@ -266,7 +266,7 @@ export class NeuroCore {
     const thoughtVector: ThoughtVector = {
       intention,
       activation: globalActivation,
-      coherence: this.calculateCoherence(intention),
+      coherence: this.calculateCoherence(),
       novelty,
       urgency: this.calculateUrgency(),
       emotionalCharge: this.calculateEmotionalCharge()
@@ -291,7 +291,7 @@ export class NeuroCore {
     let totalActivation = 0;
     let activeNeurons = 0;
 
-    for (const [_, potential] of this.actionPotentials) {
+    for (const potential of this.actionPotentials.values()) {
       if (!potential.refractory) {
         // Stimulation basée sur la chimie
         const stimulation =
@@ -365,7 +365,7 @@ export class NeuroCore {
   /**
    * Calcule la cohérence avec la personnalité
    */
-  private calculateCoherence(intention: Float32Array): number {
+  private calculateCoherence(): number {
     // Basé sur la stabilité chimique
     const chemicalVariance =
       Math.abs(this.chemistry.adrenaline - 0.5) +

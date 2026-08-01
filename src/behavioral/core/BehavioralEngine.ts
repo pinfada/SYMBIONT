@@ -4,19 +4,19 @@ import { BehaviorPredictor } from './BehaviorPredictor';
 import { BehaviorAnalysis, NavigationEvent } from '../../types/behavioral';
 import { logger } from '@shared/utils/secureLogger';
 
-class SessionTracker {
-  track(data: unknown): void {
+class SessionTracker {
+  track(): void {
     // Simplified tracking
     logger.info('Tracking behavior');
   }
 }
 
 export class BehavioralEngine {
-  private static instance: BehavioralEngine;
+  private static instance: BehavioralEngine;
   private patterns: PatternAnalyzer;
   private analyzer: PatternAnalyzer;
-  private predictor: BehaviorPredictor;
-  private sessionTracker: SessionTracker;
+  private predictor: BehaviorPredictor;
+  private sessionTracker: SessionTracker;
   private storage: Map<string, any>;
   
   private constructor() {
@@ -57,7 +57,7 @@ export class BehavioralEngine {
   processBehavior(data: unknown): any {
     // Process behavior data
     const pattern = this.analyzer.analyzeBehavior([data]);
-    const prediction = this.predictor.predict([data]);
+    const prediction = this.predictor.predict();
     
     return {
       pattern,

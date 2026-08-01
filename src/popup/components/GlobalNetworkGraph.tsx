@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { p2pService, P2PPeer } from '../services/P2PService';
 import { logger } from '@shared/utils/secureLogger';
+import { PluginManager } from '../../core/PluginManager';
 
 interface Node {
   id: string;
@@ -453,7 +454,7 @@ export const GlobalNetworkGraph: React.FC = () => {
           <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔍</div>
           <p>Recherche de pairs en cours...</p>
           <p style={{ fontSize: '12px', marginTop: '20px' }}>
-            Assurez-vous que d'autres utilisateurs ont l'extension SYMBIONT installée
+            Assurez-vous que d&apos;autres utilisateurs ont l&apos;extension SYMBIONT installée
             et sont sur le même réseau ou connectés au serveur de signaling.
           </p>
           <div style={{ marginTop: '20px', padding: '10px', background: '#111', borderRadius: '8px' }}>
@@ -640,8 +641,26 @@ export const GlobalNetworkGraph: React.FC = () => {
     </div>
   );
 
+  // Visualisations fournies par les plugins enregistrés
+  const visualizationPlugins = PluginManager.getPlugins('visualization');
+
   return (
     <div className="global-network-panel">
+      {/* Visualisations plugins */}
+      {visualizationPlugins.length > 0 && (
+        <div className="plugin-visualizations">
+          <div>Visualisations disponibles :</div>
+          {visualizationPlugins.map(plugin => {
+            const Comp = plugin.component;
+            return (
+              <div key={plugin.id} className="plugin-visualization">
+                {Comp ? <Comp /> : plugin.name}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Navigation */}
       <div className="network-nav">
         {[

@@ -53,7 +53,7 @@ class ServiceWorkerMessageChannel {
 
   private setupMessageListener(): void {
     // Écouter les messages du runtime (depuis content scripts)
-    chrome.runtime.onMessage.addListener((message: any, _sender: chrome.runtime.MessageSender, _sendResponse: (response?: any) => void) => {
+    chrome.runtime.onMessage.addListener((message: any) => {
       if (message.type === 'CRYPTO_OPERATION') {
         // Traitement spécial pour les opérations crypto
         return true;

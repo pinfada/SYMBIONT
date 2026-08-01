@@ -16,7 +16,7 @@ interface OrganismTimelineProps {
 export const OrganismTimeline: React.FC<OrganismTimelineProps> = ({ events }) => {
   return (
     <div className="organism-timeline">
-      <h3 style={{ textAlign: 'center', color: '#00e0ff', marginBottom: 18 }}>Évolution de l'organisme</h3>
+      <h3 style={{ textAlign: 'center', color: '#00e0ff', marginBottom: 18 }}>Évolution de l&apos;organisme</h3>
       <ul className="timeline-list">
         {events.map((evt, idx) => (
           <li className={`timeline-event timeline-event--${evt.type}`} key={idx}>

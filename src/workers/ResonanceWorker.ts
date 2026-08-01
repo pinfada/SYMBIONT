@@ -4,7 +4,6 @@
  * Implémente l'architecture Sentinel-Flow avec traitement hors thread principal
  */
 
-import { PerformanceOptimizedRandom } from '@shared/utils/PerformanceOptimizedRandom';
 
 export interface ResonanceWorkerMessage {
   type: 'INIT_RESONANCE' | 'PROCESS_JITTER' | 'PROCESS_LATENCY' | 'ANALYZE_CORRELATION' | 'GET_METRICS' | 'RESET';

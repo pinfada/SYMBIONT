@@ -187,7 +187,7 @@ export class RitualBootstrap {
 
       // Vérifier la santé des circuit breakers
       const openBreakers = Object.entries(metrics.circuitBreakerStatus)
-        .filter(([_, isHealthy]) => !isHealthy)
+        .filter(([, isHealthy]) => !isHealthy)
         .map(([id]) => id);
 
       if (openBreakers.length > 0) {

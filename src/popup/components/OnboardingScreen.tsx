@@ -101,7 +101,7 @@ export const OnboardingScreen: React.FC = () => {
             <h1 className="step-title">Bienvenue dans SYMBIONT</h1>
             <p className="step-description">
               Découvrez un organisme numérique vivant qui évolue avec vous.
-              Une expérience unique d'intelligence artificielle symbiontique.
+              Une expérience unique d&apos;intelligence artificielle symbiontique.
             </p>
             <div className="features-preview">
               <div className="feature-item">
@@ -125,7 +125,7 @@ export const OnboardingScreen: React.FC = () => {
                 icon="🚀"
                 glowing
               >
-                Commencer l'aventure
+                Commencer l&apos;aventure
               </AnimatedButton>
             </div>
           </section>
@@ -144,7 +144,7 @@ export const OnboardingScreen: React.FC = () => {
                 <div className="permission-icon">📑</div>
                 <div className="permission-content">
                   <h4>Accès aux onglets</h4>
-                  <p>Observer les motifs de navigation pour l'évolution</p>
+                  <p>Observer les motifs de navigation pour l&apos;évolution</p>
                 </div>
                 <div className="permission-status granted">✓</div>
               </div>
@@ -152,7 +152,7 @@ export const OnboardingScreen: React.FC = () => {
                 <div className="permission-icon">🌐</div>
                 <div className="permission-content">
                   <h4>Accès aux sites web</h4>
-                  <p>Permettre à l'organisme d'interagir avec le web</p>
+                  <p>Permettre à l&apos;organisme d&apos;interagir avec le web</p>
                 </div>
                 <div className="permission-status granted">✓</div>
               </div>
@@ -167,7 +167,7 @@ export const OnboardingScreen: React.FC = () => {
             </div>
             <div className="privacy-note">
               <span className="privacy-icon">🔒</span>
-              <span>Aucune donnée personnelle n'est collectée ou transmise</span>
+              <span>Aucune donnée personnelle n&apos;est collectée ou transmise</span>
             </div>
             <div className="step-actions">
               <AnimatedButton 
@@ -190,9 +190,9 @@ export const OnboardingScreen: React.FC = () => {
         {step === 'invitation' && (
           <section className="onboarding-step invitation-step">
             <div className="step-icon">🔗</div>
-            <h2 className="step-title">Activation de l'organisme</h2>
+            <h2 className="step-title">Activation de l&apos;organisme</h2>
             <p className="step-description">
-              Utilisez un code d'invitation ou créez votre premier organisme.
+              Utilisez un code d&apos;invitation ou créez votre premier organisme.
             </p>
             <InvitationStep onActivated={handleActivation} />
             <div className="step-actions">

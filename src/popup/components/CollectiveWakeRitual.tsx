@@ -30,13 +30,13 @@ export const CollectiveWakeRitual: React.FC<{ userId: string }> = ({ userId }) =
       {status === 'idle' && (
         <>
           <h3>Rituel de réveil collectif</h3>
-          <p>Participez à un réveil synchronisé avec d'autres symbionts.</p>
+          <p>Participez à un réveil synchronisé avec d&apos;autres symbionts.</p>
           <button onClick={handleWake} aria-label="Participer au réveil collectif">Participer</button>
         </>
       )}
       {status === 'waiting' && (
         <div>
-          <p>En attente d'autres participants…</p>
+          <p>En attente d&apos;autres participants…</p>
           <div className="murmur-notification" role="status" aria-live="polite">Un murmure circule dans la communauté…</div>
         </div>
       )}

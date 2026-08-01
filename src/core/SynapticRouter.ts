@@ -57,7 +57,7 @@ export class SynapticRouter {
   }
 
   // @ts-expect-error Paramètre réservé pour usage futur
-  async route(message: Message, sender?: MessagePort): Promise<unknown> {
+  async route(message: Message, sender?: MessagePort): Promise<unknown> { // eslint-disable-line @typescript-eslint/no-unused-vars -- sender réservé pour usage futur
     // Simplified routing
     return Promise.resolve({ status: 'routed', data: message });
   }

@@ -40,40 +40,52 @@ global.crypto = {
   }
 } as any;
 
-// Mock IndexedDB minimal
-const mockDB = {
+// Mock IndexedDB. Fonctions SIMPLES (pas jest.fn) : avec `resetMocks: true`,
+// un jest.fn verrait son implémentation effacée avant chaque test et
+// indexedDB.open renverrait `undefined` (→ « Cannot set properties of undefined
+// (setting 'onerror') » dans DreamStorage). Chaque requête déclenche onsuccess
+// de façon asynchrone, sinon les `await` sur put/get/count pendent.
+const makeReq = (result: any = undefined) => {
+  const req: any = { onsuccess: null, onerror: null, result };
+  setTimeout(() => { if (req.onsuccess) req.onsuccess({ target: req }); }, 0);
+  return req;
+};
+
+const mockObjectStore: any = {
+  put: () => makeReq(),
+  add: () => makeReq(),
+  get: () => makeReq(undefined),
+  count: () => makeReq(0),
+  clear: () => makeReq(),
+  createIndex: () => undefined,
+  index: () => ({ openCursor: () => makeReq(null) }),
+  openCursor: () => makeReq(null)
+};
+
+const mockDB: any = {
   objectStoreNames: { contains: () => false },
-  createObjectStore: () => ({ createIndex: jest.fn() }),
-  transaction: () => ({
-    objectStore: () => ({
-      put: jest.fn(() => ({ onsuccess: null, onerror: null })),
-      add: jest.fn(() => ({ onsuccess: null, onerror: null })),
-      count: jest.fn(() => ({
-        onsuccess: null,
-        onerror: null,
-        result: 0
-      }))
-    })
-  }),
-  close: jest.fn()
+  createObjectStore: () => mockObjectStore,
+  transaction: () => ({ objectStore: () => mockObjectStore }),
+  close: () => undefined
 };
 
 global.indexedDB = {
-  open: jest.fn(() => ({
-    onsuccess: null,
-    onerror: null,
-    onupgradeneeded: null,
-    result: mockDB
-  }))
+  open: () => {
+    const request: any = { onsuccess: null, onerror: null, onupgradeneeded: null, result: mockDB };
+    setTimeout(() => {
+      if (request.onupgradeneeded) request.onupgradeneeded({ target: request });
+      if (request.onsuccess) request.onsuccess({ target: request });
+    }, 0);
+    return request;
+  }
 } as any;
 
 describe('Dream System Integration Test', () => {
-  let processor: DreamProcessor;
   let collector: MemoryFragmentCollector;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    processor = DreamProcessor.getInstance();
+    DreamProcessor.getInstance();
     collector = MemoryFragmentCollector.getInstance();
     collector.reset();
   });
@@ -192,9 +204,13 @@ describe('Dream System Integration Test', () => {
       // Devrait créer des fragments de test automatiquement
       await expect(circadianCycle.forceDreamSynthesis()).resolves.not.toThrow();
 
-      // Vérifier que des fragments ont été créés
-      const fragments = collector.exportFragments();
-      expect(fragments.length).toBeGreaterThan(0);
+      // Vérifier que des fragments ont été créés. On s'appuie sur le compteur
+      // cumulatif `totalCollected` plutôt que sur `exportFragments()` : une
+      // synthèse réussie purge les fragments traités (clearProcessedFragments),
+      // donc le contenu vivant peut être vide alors que des fragments ont bien
+      // été générés.
+      const stats = collector.getStatistics();
+      expect(stats.totalCollected).toBeGreaterThan(0);
     });
   });
 

@@ -152,7 +152,7 @@ describe('DOMResonanceSensor', () => {
       sensor.start();
 
       // Manually trigger shadow activity with varying intensities
-      const initialResonance = sensor.getMetrics().smoothedResonance;
+      sensor.getMetrics();
 
       // Simulate shadow activity (this would normally be triggered by DOM mutations)
       // Since we can't easily trigger the internal methods, we test the public interface

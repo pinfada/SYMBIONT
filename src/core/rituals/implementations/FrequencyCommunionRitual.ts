@@ -19,7 +19,6 @@ import {
   RitualHealth
 } from '../interfaces/IRitual';
 import { logger } from '@/shared/utils/secureLogger';
-import { SecureRandom } from '@/shared/utils/secureRandom';
 import { MessageBus, MessageType } from '@/shared/messaging/MessageBus';
 import { PeerNetwork, PeerInfo } from '@/services/p2p/PeerNetwork';
 
@@ -458,7 +457,7 @@ export class FrequencyCommunionRitual implements IRitual {
     channels: Map<string, RTCDataChannel>
   ): Promise<void> {
     // Intercepter les requêtes sortantes
-    const interceptor = this.createNetworkInterceptor(routes, channels);
+    const interceptor = this.createNetworkInterceptor(routes);
 
     // Installer l'intercepteur
     await this.installNetworkInterceptor(interceptor);
@@ -474,8 +473,7 @@ export class FrequencyCommunionRitual implements IRitual {
    * Utilise une approche proxy-based sans modifier window.fetch
    */
   private createNetworkInterceptor(
-    routes: RelayRoute[],
-    channels: Map<string, RTCDataChannel>
+    routes: RelayRoute[]
   ): string {
     // CORRECTION: Pas de mutation de window.fetch !
     // Utilise une factory function pour créer un fetch sécurisé

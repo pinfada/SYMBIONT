@@ -8,7 +8,7 @@ import { MessageType, Message } from '../../shared/messaging/MessageBus';
 
 export const useMessaging = () => {
   const messageBus = useMessageBus();
-  const handlersRef = useRef<Map<string, Function>>(new Map());
+  const handlersRef = useRef<Map<string, (message: Message) => void>>(new Map());
   
   const subscribe = (type: MessageType, handler: (message: Message) => void) => {
     messageBus.on(type, handler);

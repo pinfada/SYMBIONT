@@ -40,7 +40,7 @@ export const InvitationLanding: React.FC<{ onActivated?: () => void }> = ({ onAc
   return (
     <div style={{ maxWidth: 400, margin: '40px auto', padding: 32, background: '#181c22', borderRadius: 12, boxShadow: '0 2px 12px #0008', color: '#fff' }}>
       <h2 style={{ color: '#00e0ff', marginBottom: 16 }}>Activation par invitation</h2>
-      <p>Entrez votre code d'invitation pour activer votre organisme SYMBIONT.</p>
+      <p>Entrez votre code d&apos;invitation pour activer votre organisme SYMBIONT.</p>
       <input
         type="text"
         value={code}

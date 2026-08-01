@@ -33,7 +33,7 @@ describe('InviteCode', () => {
   it('produit un token préfixé et transportable (copier-coller)', () => {
     const token = encodeInvite(base);
     expect(token.startsWith('SYMB1-')).toBe(true);
-    expect(token).toMatch(/^[A-Za-z0-9_\-]+$/); // sûr en URL / presse-papier
+    expect(token).toMatch(/^[A-Za-z0-9_-]+$/); // sûr en URL / presse-papier
   });
 
   it('rejette un token vide, mal préfixé ou corrompu', () => {

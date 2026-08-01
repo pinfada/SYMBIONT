@@ -307,14 +307,6 @@ export class RitualManager {
         item.retries++;
         this.executionQueue.unshift(item);
       } else {
-        const result: RitualResult = {
-          success: false,
-          status: RitualStatus.FAILED,
-          effects: [],
-          metrics: { executionTime: 0, resourcesUsed: 0, impactScore: 0 },
-          error: error as Error
-        };
-
         ritual.status = RitualStatus.FAILED;
         reject(error);
       }
@@ -422,7 +414,7 @@ export class RitualManager {
     this.executionQueue = [];
 
     // Annuler les rituels actifs
-    for (const [id, ritual] of this.rituals) {
+    for (const ritual of this.rituals.values()) {
       if (ritual.status === RitualStatus.EXECUTING) {
         await ritual.cancel();
       }

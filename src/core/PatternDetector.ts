@@ -24,7 +24,7 @@ export class PatternDetector {
     const counts: Record<string, number> = {};
     for (const e of events) counts[e.type] = (counts[e.type] || 0) + 1;
     return Object.entries(counts)
-      .filter(([_, c]) => c >= minCount)
+      .filter(([, c]) => c >= minCount)
       .map(([type, c]) => ({ type: 'repetition', score: c, details: { eventType: type } }));
   }
 

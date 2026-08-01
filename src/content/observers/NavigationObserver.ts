@@ -192,7 +192,7 @@ export class NavigationObserver extends EventTarget {
   private handlePopState(event: PopStateEvent): void {
     const newUrl = window.location.href;
     const isBack = this.isBackNavigation(newUrl);
-    const isForward = this.isForwardNavigation(newUrl);
+    const isForward = this.isForwardNavigation();
     
     if (isBack) this.backNavigationCount++;
     if (isForward) this.forwardNavigationCount++;
@@ -410,8 +410,8 @@ export class NavigationObserver extends EventTarget {
     // Simple heuristic: check if new URL was visited recently
     const recentUrls = this.navigationHistory.slice(-5).map(h => h.url);
     return recentUrls.includes(newUrl) && newUrl !== this.currentUrl;
-  }
-  private isForwardNavigation(newUrl: string): boolean {
+  }
+  private isForwardNavigation(): boolean {
     // Simple forward navigation detection
     return true;
   }

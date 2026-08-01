@@ -17,8 +17,6 @@ import { AdversarialDefense } from './AdversarialDefense';
 
 const HIGH_FACTOR_THRESHOLD = 0.6;
 const INTERACTION_BOOST_INCREMENT = 0.15;
-const BENIGN_MATCH_ATTENUATION = 0.3;
-const BENIGN_MATCH_THRESHOLD = 0.85;
 
 export class AnomalyScorer {
   private ragStore: ActiveRAGStore;
@@ -53,7 +51,7 @@ export class AnomalyScorer {
 
     // 4. Recherche RAG pour correspondances
     let matchedSignatures: SignatureMatch[] = [];
-    let ragAttenuation = 1.0;
+    const ragAttenuation = 1.0;
 
     try {
       const signaturePattern = this.buildQuickPattern(signal);

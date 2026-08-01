@@ -8,16 +8,8 @@
  */
 
 import { logger } from '@/shared/utils/secureLogger';
-import { generateSecureUUID } from '@/shared/utils/uuid';
 import { DreamStorage } from './DreamStorage';
 import type { MemoryFragment } from './DreamProcessor';
-
-interface FragmentSource {
-  domain: string;
-  timestamp: number;
-  data: any;
-  type: 'dom_resonance' | 'network_latency' | 'tracker_detection' | 'protocol_analysis';
-}
 
 /**
  * Singleton collector for memory fragments across the extension
@@ -67,7 +59,7 @@ export class MemoryFragmentCollector {
       friction: data.friction,
       latency: data.timestamps.emitted - data.timestamps.detected,
       trackers: this.extractTrackersFromMutations(data.mutations),
-      hiddenElements: data.hiddenElements,
+      hiddenElements: this.sanitizeHiddenElements(data.hiddenElements),
       protocolSignature: 'unknown',
       resourceTimings: []
     };
@@ -189,7 +181,7 @@ export class MemoryFragmentCollector {
     const now = Date.now();
     const timeWindow = 60000; // 1 minute window for aggregation
 
-    for (const [key, fragment] of this.fragments) {
+    for (const [, fragment] of this.fragments) {
       if (fragment.domain === domain &&
           now - fragment.timestamp < timeWindow) {
         return fragment;
@@ -197,6 +189,24 @@ export class MemoryFragmentCollector {
     }
 
     return null;
+  }
+
+  /**
+   * Sanitizes hidden DOM elements into a non-identifying, abstract form.
+   *
+   * Only the element count and a generic type marker are retained; raw
+   * attributes such as `id` (which may embed personal data, e.g. "user-email")
+   * are stripped. This mirrors how DOM mutations are reduced to abstract
+   * tracker signatures and upholds the project's no-PII persistence guarantee.
+   */
+  private sanitizeHiddenElements(hiddenElements: any[]): Array<{ type: string }> {
+    if (!Array.isArray(hiddenElements)) {
+      return [];
+    }
+
+    return hiddenElements.map(element => ({
+      type: typeof element?.type === 'string' ? element.type : 'hidden'
+    }));
   }
 
   /**
@@ -228,7 +238,7 @@ export class MemoryFragmentCollector {
     const fragments: MemoryFragment[] = [];
 
     // Get from memory first
-    for (const [key, fragment] of this.fragments) {
+    for (const [, fragment] of this.fragments) {
       if (now - fragment.timestamp < this.MAX_FRAGMENT_AGE) {
         fragments.push(fragment);
         if (fragments.length >= limit) break;

@@ -21,7 +21,7 @@ export class SecuritySanitizer {
   ];
 
   // Caractères autorisés pour l'ADN (base64 safe + quelques caractères spéciaux)
-  private static readonly DNA_SAFE_CHARS = /^[A-Za-z0-9\-_=+\/]*$/;
+  private static readonly DNA_SAFE_CHARS = /^[A-Za-z0-9\-_=+/]*$/;
   
   // Caractères autorisés pour les identifiants
   private static readonly ID_SAFE_CHARS = /^[A-Za-z0-9\-_]*$/;

@@ -78,13 +78,21 @@ describe('Scan de vulnérabilités', () => {
         // element.innerHTML = userInput; // Cette ligne devrait être détectée
       `;
       
+      // On ignore le code commenté : une vulnérabilité en commentaire n'est pas
+      // exécutée, donc n'est pas une vraie vulnérabilité. On retire les commentaires
+      // de ligne avant de scanner.
+      const codeOnly = mockFileContent
+        .split('\n')
+        .map(line => line.replace(/\/\/.*$/, ''))
+        .join('\n');
+
       let vulnerabilitiesFound = 0;
       xssPatterns.forEach(pattern => {
-        if (pattern.test(mockFileContent)) {
+        if (pattern.test(codeOnly)) {
           vulnerabilitiesFound++;
         }
       });
-      
+
       // Dans ce test, on s'attend à ne pas trouver de vulnérabilités car elles sont commentées
       expect(vulnerabilitiesFound).toBe(0);
     });

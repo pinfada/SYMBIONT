@@ -2,8 +2,51 @@ import { HybridStorageManager } from '../src/storage/hybrid-storage-manager'
 
 describe('HybridStorageManager - Stress & Failover', () => {
   let storage: HybridStorageManager
+  let chromeStore: Record<string, any>
 
   beforeEach(() => {
+    // Mock chrome.storage.local FONCTIONNEL (en mémoire). Le mock global de
+    // setup.ts expose get/set/remove comme des jest.fn SANS implémentation :
+    // les callbacks ne sont jamais invoqués, donc les Promises de store()/
+    // retrieve() ne se résolvent jamais et la suite pend jusqu'au timeout
+    // (~240s). On installe ici de vraies fonctions (pas jest.fn → survivent à
+    // resetMocks) qui appellent bien leurs callbacks.
+    chromeStore = {}
+    const g = global as any
+    g.chrome = g.chrome || {}
+    g.chrome.runtime = g.chrome.runtime || {}
+    g.chrome.runtime.lastError = undefined
+    g.chrome.storage = {
+      local: {
+        get: (keys: any, cb: any) => {
+          const result: Record<string, any> = {}
+          if (keys === null || keys === undefined) {
+            Object.assign(result, chromeStore)
+          } else if (Array.isArray(keys)) {
+            for (const k of keys) if (k in chromeStore) result[k] = chromeStore[k]
+          } else if (typeof keys === 'string') {
+            if (keys in chromeStore) result[keys] = chromeStore[keys]
+          } else if (typeof keys === 'object') {
+            for (const k of Object.keys(keys)) result[k] = (k in chromeStore) ? chromeStore[k] : keys[k]
+          }
+          cb(result)
+        },
+        set: (obj: Record<string, any>, cb?: any) => {
+          Object.assign(chromeStore, obj)
+          if (cb) cb()
+        },
+        remove: (keys: any, cb?: any) => {
+          const arr = Array.isArray(keys) ? keys : [keys]
+          for (const k of arr) delete chromeStore[k]
+          if (cb) cb()
+        },
+        clear: (cb?: any) => {
+          chromeStore = {}
+          if (cb) cb()
+        }
+      }
+    }
+
     storage = new HybridStorageManager()
   })
 

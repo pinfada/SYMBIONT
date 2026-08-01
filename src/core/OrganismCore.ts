@@ -17,7 +17,7 @@ import { PerformanceOptimizedRandom } from '../shared/utils/PerformanceOptimized
 
 export interface OrganismDependencies {
   neuralMesh: INeuralMesh;
-  logger?: { debug: Function; info: Function; error: Function };
+  logger?: { debug: (...args: unknown[]) => void; info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
 }
 
 export class OrganismCore implements IOrganismCore {
@@ -25,14 +25,16 @@ export class OrganismCore implements IOrganismCore {
   private readonly dna: string;
   private health: number = 100;
   private lastMutation: number = Date.now();
+  private mutationCount: number = 0;      // nombre total d'appels à mutate()
+  private mutationTraitWrites: number = 0; // nombre de traits effectivement mutés
   
   // Services spécialisés (injection de dépendances)
   private readonly traitService: TraitService;
   private readonly energyService: EnergyService;
   private readonly neuralService: NeuralService;
-  private readonly metricsService: RealMetricsService;
+  private readonly metricsService: RealMetricsService;
   private readonly featureFlags: FeatureFlagService;
-  private readonly logger: { debug: Function; info: Function; error: Function } | undefined;
+  private readonly logger: { debug: (...args: unknown[]) => void; info: (...args: unknown[]) => void; error: (...args: unknown[]) => void } | undefined;
 
   constructor(
     dna: string, 
@@ -42,6 +44,13 @@ export class OrganismCore implements IOrganismCore {
     // Validation d'entrée
     const validation = this.validateInput(dna, initialTraits);
     if (!validation.isValid) {
+      // Report to the centralized error handler before failing hard.
+      errorHandler.logSimpleError(
+        'OrganismCore',
+        'constructor',
+        new Error(validation.errors.join(', ')),
+        'error'
+      );
       throw new Error(`OrganismCore creation failed: ${validation.errors.join(', ')}`);
     }
 
@@ -62,6 +71,7 @@ export class OrganismCore implements IOrganismCore {
       this.neuralService = new NeuralService(dependencies.neuralMesh);
     } else {
       // Fallback pour compatibilité
+      // eslint-disable-next-line @typescript-eslint/no-var-requires -- lazy require preserves fallback loading semantics
       const { NeuralMesh } = require('./NeuralMesh');
       this.neuralService = new NeuralService(new NeuralMesh());
     }
@@ -419,6 +429,18 @@ export class OrganismCore implements IOrganismCore {
    * Mutate organism with given rate
    */
   mutate(rate: number = 0.01): void {
+    // Validation du taux de mutation : signalée au gestionnaire d'erreurs
+    // centralisé sans interrompre le système (opération non bloquante).
+    if (typeof rate !== 'number' || !Number.isFinite(rate) || rate < 0 || rate > 1) {
+      errorHandler.logSimpleError(
+        'OrganismCore',
+        'mutate',
+        new Error(`Invalid mutation rate: ${rate}`),
+        'warning'
+      );
+      return;
+    }
+
     const traits = this.traitService.getAllTraits();
     const mutations: { [key: string]: number } = {};
     
@@ -433,11 +455,26 @@ export class OrganismCore implements IOrganismCore {
     });
     
     // Apply mutations
+    this.mutationCount++;
     if (Object.keys(mutations).length > 0) {
+      this.mutationTraitWrites += Object.keys(mutations).length;
       this.traitService.updateTraits(mutations as Partial<OrganismTraits>, 'mutation');
       this.lastMutation = Date.now();
       this.logger?.debug('Mutation applied', { id: this.id, mutations });
     }
+  }
+
+  /**
+   * Applique immédiatement toute mutation en attente.
+   *
+   * `mutate()` applique déjà les mutations de façon synchrone (pas de file
+   * d'attente interne) ; cette méthode existe pour fournir un contrat d'API
+   * de « flush » cohérent (batching côté appelant) et se résout donc
+   * immédiatement. Idempotente.
+   */
+  async flushMutations(): Promise<void> {
+    // Rien à vider : les mutations sont appliquées dans mutate().
+    return Promise.resolve();
   }
 
   /**
@@ -452,6 +489,19 @@ export class OrganismCore implements IOrganismCore {
    * Set traits (partial update)
    */
   setTraits(traits: Partial<OrganismTraits>): void {
+    // Signale les valeurs de traits invalides au gestionnaire d'erreurs
+    // centralisé. TraitService clampe/ignore ensuite les valeurs de façon
+    // sûre, donc l'opération reste non bloquante.
+    Object.entries(traits).forEach(([key, value]) => {
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+        errorHandler.logSimpleError(
+          'OrganismCore',
+          'setTraits',
+          new Error(`Invalid trait value for ${key}: ${String(value)}`),
+          'warning'
+        );
+      }
+    });
     this.traitService.updateTraits(traits, 'external_update');
   }
 
@@ -461,11 +511,22 @@ export class OrganismCore implements IOrganismCore {
   async getPerformanceMetrics() {
     const neuralMetrics = this.neuralService.getPerformanceMetrics();
     
+    // Statistiques de mutation : plusieurs écritures de traits sont appliquées
+    // en un seul updateTraits par appel à mutate() → ratio de compression.
+    const compressionRatio = this.mutationCount > 0
+      ? Math.max(1, this.mutationTraitWrites / this.mutationCount)
+      : 1;
+
     return {
       cpu: await this.metricsService.getCPUUsage(),
       memory: await this.metricsService.getMemoryUsage(),
       neuralActivity: neuralMetrics?.neuralActivity || 0,
-      connectionStrength: neuralMetrics?.connectionStrength || 0
+      connectionStrength: neuralMetrics?.connectionStrength || 0,
+      mutationStats: {
+        totalRequests: this.mutationCount,
+        traitWrites: this.mutationTraitWrites,
+        compressionRatio
+      }
     };
   }
 

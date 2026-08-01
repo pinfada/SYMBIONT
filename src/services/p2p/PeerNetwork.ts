@@ -419,31 +419,33 @@ export class PeerNetwork {
       setTimeout(() => resolve(false), CONNECTION_TIMEOUT_MS);
     });
 
-    const connection = new Promise<boolean>(async (resolve) => {
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
+    const connection = new Promise<boolean>((resolve) => {
+      void (async () => {
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
 
-        await this.sendSignal({
-          type: 'offer',
-          from: this.localPeerId,
-          to: peerId,
-          payload: offer,
-          timestamp: Date.now(),
-          ttl: 30000,
-        });
+          await this.sendSignal({
+            type: 'offer',
+            from: this.localPeerId,
+            to: peerId,
+            payload: offer,
+            timestamp: Date.now(),
+            ttl: 30000,
+          });
 
-        pc.onconnectionstatechange = () => {
-          if (pc.connectionState === 'connected') resolve(true);
-          if (pc.connectionState === 'failed') {
-            this.cleanupConnection(peerId);
-            resolve(false);
-          }
-        };
-      } catch {
-        this.cleanupConnection(peerId);
-        resolve(false);
-      }
+          pc.onconnectionstatechange = () => {
+            if (pc.connectionState === 'connected') resolve(true);
+            if (pc.connectionState === 'failed') {
+              this.cleanupConnection(peerId);
+              resolve(false);
+            }
+          };
+        } catch {
+          this.cleanupConnection(peerId);
+          resolve(false);
+        }
+      })();
     });
 
     return Promise.race([connection, timeout]);
@@ -649,7 +651,7 @@ export class PeerNetwork {
 
   getConnectedPeers(): string[] {
     return Array.from(this.dataChannels.entries())
-      .filter(([_, ch]) => ch.readyState === 'open')
+      .filter(([, ch]) => ch.readyState === 'open')
       .map(([id]) => id);
   }
 

@@ -16,18 +16,26 @@ describe('Content Security Policy Tests', () => {
       }
       
       expect(manifest.content_security_policy).toBeDefined();
-      
-      const csp = manifest.content_security_policy;
-      
+
+      // Manifest V3 : content_security_policy est un objet { extension_pages: "..." }.
+      const cspRaw = manifest.content_security_policy;
+      const csp: string = typeof cspRaw === 'string' ? cspRaw : cspRaw.extension_pages;
+      expect(typeof csp).toBe('string');
+
       // Vérifier que script-src est restrictif
       expect(csp).toContain("script-src 'self'");
-      expect(csp).not.toContain("'unsafe-eval'");
-      expect(csp).not.toContain("'unsafe-inline'");
-      
+
+      // Le durcissement critique porte sur script-src : aucun script inline/eval
+      // arbitraire. On isole la directive script-src pour ne pas confondre avec
+      // style-src (qui peut légitimement autoriser 'unsafe-inline').
+      const scriptSrc = csp.split(';').find(d => d.trim().startsWith('script-src')) || '';
+      expect(scriptSrc).not.toContain("'unsafe-eval'"); // 'wasm-unsafe-eval' reste autorisé (WASM)
+      expect(scriptSrc).not.toContain("'unsafe-inline'");
+
       // Vérifier object-src est bloqué
       expect(csp).toContain("object-src 'none'");
-      
-      // Vérifier base-uri est restrictif  
+
+      // Vérifier base-uri est restrictif
       expect(csp).toContain("base-uri 'self'");
     });
   });
@@ -43,9 +51,11 @@ describe('Content Security Policy Tests', () => {
         'data:text/html,<script>alert(1)</script>'
       ];
       
+      // Motif de détection des vecteurs XSS courants (balise, protocole, handler inline).
+      const dangerousPattern = /<script|javascript:|on\w+\s*=|data:text\/html/i;
       xssPayloads.forEach(payload => {
-        // Ces payloads ne doivent jamais être exécutés
-        expect(payload).toContain('<'); // Simple validation que c'est du HTML/JS
+        // Ces payloads doivent être reconnus comme dangereux (donc bloqués par CSP).
+        expect(payload).toMatch(dangerousPattern);
         // Dans une vraie extension, ces payloads seraient bloqués par CSP
       });
     });
@@ -68,9 +78,13 @@ describe('Content Security Policy Tests', () => {
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#x27;');
         
+        // La garantie de l'échappement HTML : plus aucun caractère de contrôle
+        // brut (< > ") ne subsiste, donc aucune balise ni attribut exécutable ne
+        // peut se former, même si une sous-chaîne comme "onerror=" reste en texte.
+        expect(escaped).not.toContain('<');
+        expect(escaped).not.toContain('>');
+        expect(escaped).not.toContain('"');
         expect(escaped).not.toContain('<script>');
-        expect(escaped).not.toContain('onerror=');
-        expect(escaped).not.toContain('javascript:');
       });
     });
   });

@@ -184,6 +184,7 @@ export class OrganismStateManager {
    */
   private hashState(state: OrganismState): string {
     // On ignore lastUpdate car il change toujours
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructured to omit lastUpdate from the hash
     const { lastUpdate, ...stateWithoutTimestamp } = state;
     return JSON.stringify(stateWithoutTimestamp);
   }

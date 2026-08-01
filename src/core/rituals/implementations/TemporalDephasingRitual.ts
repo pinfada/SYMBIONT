@@ -15,7 +15,6 @@ import {
   RitualHealth
 } from '../interfaces/IRitual';
 import { logger } from '@/shared/utils/secureLogger';
-import { SecureRandom } from '@/shared/utils/secureRandom';
 import { MessageBus, MessageType } from '@/shared/messaging/MessageBus';
 
 interface TrackerPattern {
@@ -110,7 +109,7 @@ export class TemporalDephasingRitual implements IRitual {
       logger.info(`[TemporalDephasing] Identified ${trackers.length} potential trackers`);
 
       // Phase 2: Injecter les contre-mesures
-      const interceptorResults = await Promise.all([
+      await Promise.all([
         this.injectNetworkLatency(trackers),
         this.injectDOMNoise(),
         this.poisonFingerprinting()

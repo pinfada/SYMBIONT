@@ -72,7 +72,7 @@ export const SettingsPanel: React.FC = () => {
       }}>
         <div style={{ color: c.text, fontSize: 14, fontWeight: 600 }}>Qualité du rendu</div>
         <div style={{ color: c.dim, fontSize: 12, margin: '2px 0 10px' }}>
-          Netteté de l'organisme vs consommation
+          Netteté de l&apos;organisme vs consommation
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {QUALITY_OPTIONS.map((opt) => {
@@ -115,9 +115,9 @@ export const SettingsPanel: React.FC = () => {
           💡 Comment utiliser SYMBIONT ?
         </div>
         <ul style={{ margin: 0, paddingLeft: 18, color: c.dim, fontSize: 12, lineHeight: 1.7 }}>
-          <li>L'organisme évolue automatiquement pendant votre navigation</li>
+          <li>L&apos;organisme évolue automatiquement pendant votre navigation</li>
           <li>Onglet <strong style={{ color: c.text }}>Organisme</strong> : voir sa forme et son état</li>
-          <li>Onglet <strong style={{ color: c.text }}>Stats</strong> : ses métriques d'évolution</li>
+          <li>Onglet <strong style={{ color: c.text }}>Stats</strong> : ses métriques d&apos;évolution</li>
           <li>Onglet <strong style={{ color: c.text }}>Social</strong> : transmettre sa lignée</li>
         </ul>
       </div>

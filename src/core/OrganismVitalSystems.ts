@@ -17,8 +17,7 @@ import {
   neuromodulation,
   backpressureController,
   circadianCycle,
-  type CircadianPhase,
-  type DigestTask
+  type CircadianPhase
 } from './metabolic';
 
 // Couche Cognitive

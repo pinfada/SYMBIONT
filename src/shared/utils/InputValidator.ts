@@ -20,7 +20,7 @@ export class InputValidator {
   private static readonly ORGANISM_NAME_REGEX = /^[a-zA-Z0-9\s\-_]{3,50}$/;
   private static readonly UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   private static readonly SESSION_ID_REGEX = /^[a-f0-9]{32,}$/i;
-  private static readonly SAFE_PATH_REGEX = /^[a-zA-Z0-9._\-\/]+$/;
+  private static readonly SAFE_PATH_REGEX = /^[a-zA-Z0-9._\-/]+$/;
   
   // XSS patterns to detect and remove
   private static readonly XSS_PATTERNS = [
@@ -83,6 +83,7 @@ export class InputValidator {
     }
 
     // Supprimer les caractères de contrôle potentiellement dangereux
+    // eslint-disable-next-line no-control-regex -- intentionally stripping control characters
     sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
     // Encoder les caractères HTML de base
@@ -209,6 +210,7 @@ export class InputValidator {
     let sanitized = this.sanitizeUserInput(path, 500);
 
     // Supprimer les caractères potentiellement dangereux pour les systèmes de fichiers
+    // eslint-disable-next-line no-control-regex -- intentionally stripping control characters
     sanitized = sanitized.replace(/[<>:"|?*\x00-\x1f]/g, '_');
 
     // Vérifier que le chemin est dans la liste des caractères sûrs

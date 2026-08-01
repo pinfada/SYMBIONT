@@ -114,12 +114,21 @@ export class MutationBatcher {
       return;
     }
 
-    // Schedule debounced processing
+    // Schedule debounced processing.
+    // Le délai ne doit jamais dépasser le temps d'attente max restant de la
+    // mutation la plus ancienne : sinon une mutation isolée resterait bloquée
+    // jusqu'au debounce complet, ignorant maxWaitTimeMs.
+    const now = Date.now();
+    const oldestAge = Array.from(this.pendingMutations.values())
+      .reduce((maxAge, m) => Math.max(maxAge, now - m.timestamp), 0);
+    const remainingWait = Math.max(0, this.config.maxWaitTimeMs - oldestAge);
+    const delay = Math.min(this.config.debounceMs, remainingWait);
+
     this.debounceTimer = setTimeout(() => {
       this.processPendingMutations().catch(error => {
         errorHandler.logSimpleError('MutationBatcher', 'debounceTimer', error);
       });
-    }, this.config.debounceMs);
+    }, delay);
   }
 
   /**

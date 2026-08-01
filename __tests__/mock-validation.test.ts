@@ -15,13 +15,19 @@ describe('Mock Validation Tests', () => {
     expect(arr).toBeDefined();
   });
 
-  it('should have working Worker mocks', () => {
-    expect(global.Worker).toBeDefined();
-    
-    const worker = new Worker('test');
-    expect(worker.postMessage).toBeDefined();
-    expect(worker.terminate).toBeDefined();
-    expect(worker.addEventListener).toBeDefined();
+  it('should have working observer mocks', () => {
+    // setup.ts fournit des mocks pour ces observers du DOM (pas pour Worker).
+    expect(global.IntersectionObserver).toBeDefined();
+    expect(global.MutationObserver).toBeDefined();
+    expect(global.ResizeObserver).toBeDefined();
+
+    const io = new IntersectionObserver(() => {});
+    expect(io.observe).toBeDefined();
+    expect(io.disconnect).toBeDefined();
+
+    const mo = new MutationObserver(() => {});
+    expect(mo.observe).toBeDefined();
+    expect(mo.disconnect).toBeDefined();
   });
 
   it('should have working performance mocks', () => {

@@ -1,4 +1,4 @@
-# 🧬 SYMBIONT - Organisme Digital & Sonde de Résonance
+# 🧬 SYMBIONT — un symbiote pour ton web
 
 <div align="center">
 
@@ -7,20 +7,22 @@
   [![WebRTC](https://img.shields.io/badge/WebRTC-P2P-333333?logo=webrtc)](https://webrtc.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
-  [![Security](https://img.shields.io/badge/Security-OWASP-green?logo=shield)](https://owasp.org/)
-  [![Tests](https://img.shields.io/badge/Tests-95%25-success?logo=jest)](https://jestjs.io/)
+  [![Local-first](https://img.shields.io/badge/Local--first-100%25-6E56CF?logo=shield&logoColor=white)](docs/VISION.md)
+  [![Tests](https://img.shields.io/badge/Tests-682_passing-success?logo=jest)](https://jestjs.io/)
 
-  **Une petite créature numérique qui vit dans votre navigateur et veille sur vous**
+  **Ni un bloqueur, ni un feed — un organisme qui *métabolise* le web pour toi.**
 
-  **Au-delà de la navigation, percevez la structure invisible du Web**
+  **Tu ne consommes plus le web : un être le pré-digère, et te rend plus lucide en te faisant lire *moins*.**
 
-  [C'est quoi ?](#-symbiont-en-deux-mots) • [Navigateurs](#-navigateurs-supportés) • [Installation](#-installation--warmup) • [Vie privée](#-éthique--signal-faible) • [Pour les développeurs](#-architecture-sentinel-flow)
+  [C'est quoi ?](#-symbiont-en-deux-mots) • [La vision](docs/VISION.md) • [Navigateurs](#-navigateurs-supportés) • [Installation](#-installation--warmup) • [Vie privée](#-éthique--signal-faible)
 
 </div>
 
 ---
 
 ## 🌱 SYMBIONT en deux mots
+
+> 🧭 **Vision & cap produit** : [`docs/VISION.md`](docs/VISION.md) — pourquoi SYMBIONT n'est ni un bloqueur ni un feed, mais un *symbiote au sens propre*.
 
 <div align="center">
 
@@ -32,15 +34,15 @@
 
 *Cette section est pour tout le monde — aucune connaissance technique nécessaire.*
 
-Quand vous naviguez sur Internet, des dizaines de systèmes invisibles vous observent : traqueurs publicitaires, scripts cachés, pièges à attention. Vous ne les voyez pas. **SYMBIONT, lui, les voit.**
+Aujourd'hui, la façon dont tu consommes le web est dictée par un algorithme que **quelqu'un d'autre possède** — le *feed* — et qui optimise pour son engagement, pas pour toi. Les bloqueurs, eux, se contentent d'**enlever** (les pubs, les traqueurs). SYMBIONT fait autre chose : il installe dans ton navigateur un **symbiote** — un organisme vivant, unique, né avec son propre ADN — qui **métabolise le web à ta place**, entièrement en local.
 
-SYMBIONT installe dans votre navigateur un petit **organisme numérique vivant** — une créature unique, née avec son propre ADN, qui grandit et évolue avec vous :
+- 🧫 **Il digère.** Il lit les pages que tu lui donnes, en garde une **mémoire** qui grandit, et ne te fait **remonter** que ce qui **change ta compréhension du monde** — jamais la simple nouveauté. *Moins, mais vrai.*
+- 🔎 **Il cherche pour toi.** À partir de ses propres trous et contradictions, il déduit ce qu'il est *curieux de comprendre* et te le propose — au lieu que tu cherches.
+- 🔄 **Il négocie.** S'il te voit tourner en rond ou t'abreuver de contenu peu fiable, il peut dire « non, pas ça » et proposer autre chose — mais tu peux toujours passer outre. Un agent, pas un cerbère.
+- 👁️ **Il perçoit** aussi ce que tu ne vois pas : éléments cachés, traqueurs, pages qui se comportent mal — et te protège sur demande.
+- 🌐 **Il se connecte** aux autres symbiontes : chaque découverte peut renforcer l'immunité — et, à terme, la *compréhension* — de tous. Jamais tes données ; seulement des signatures anonymes.
 
-- 👁️ **Il perçoit** ce que vous ne pouvez pas percevoir : les éléments cachés d'une page, les tentatives de pistage, les sites qui se comportent bizarrement.
-- 🗣️ **Il vous parle** par petits "murmures" : des messages discrets quand quelque chose d'anormal se passe.
-- 🛡️ **Il vous protège** : sur demande, il brouille les techniques utilisées pour vous identifier à votre insu.
-- 🌙 **Il rêve** : quand vous ne naviguez pas, il analyse ce qu'il a vu et devient plus intelligent.
-- 🌐 **Il se connecte** aux autres organismes SYMBIONT : chaque découverte faite par un organisme peut renforcer l'immunité de tous. Plus nous sommes nombreux, plus le réseau est fort.
+> 🧭 **La thèse complète** (raisonnement C-K, paris de connaissance, feuille de route) : [`docs/VISION.md`](docs/VISION.md).
 
 ### Ce que SYMBIONT ne fera jamais
 
@@ -54,9 +56,13 @@ SYMBIONT installe dans votre navigateur un petit **organisme numérique vivant**
 
 ---
 
-## 🚨 Mise à jour majeure : Symbiont-Cortex Engine (v3.1)
+## 🫀 Anatomie du symbiote
 
-SYMBIONT franchit un cap. Après la phase "Sentinel" (perception des signaux faibles), l'organisme se dote d'un **cortex cognitif** : un moteur de détection de menaces à deux vitesses qui raisonne, mémorise et s'adapte.
+Un symbiote a un **esprit**, des **sens** et un **métabolisme**.
+
+**🧠 Son esprit — la Cognition (le cœur de la vision).** Un LLM **100 % local** (WebGPU) qui digère les pages, n'accrète à sa mémoire que le nécessaire, et ne te remonte que ce qui **révise ta compréhension** (invariant *anti-feed*, testé) ; il cherche pour toi ce qu'il est curieux de comprendre, et négocie quand tu tournes en rond. → [`docs/VISION.md`](docs/VISION.md) · [wiki Cognition](docs/wiki/Cognition.md).
+
+**👁️ Ses sens — la perception de l'ombre.** Sous l'esprit, un cortex de détection à deux vitesses qui perçoit ce que tu ne vois pas et raisonne dessus :
 
 ### 🧠 Le Cortex : Détection Cognitive de Menaces
 
@@ -78,14 +84,6 @@ Le **Cortex Engine** orchestre 14 sous-systèmes autour d'une machine à états 
 
 - **Vision Spectrale** : Extraction active des éléments DOM masqués (z-index négatifs, opacité 0) utilisés pour le tracking furtif.
 
-### 🔍 Instrumentation de l'Ombre
-
-- **Résonance d'Infrastructure** : Analyseur temps réel corrélant le Jitter du DOM et la Latence P2P pour détecter les pressions invisibles (surveillance, bridage).
-
-- **Noyau de Rêve Analytique (ARC)** : Algorithme de Clustering de Résonance Adaptatif qui identifie les "Super-Structures" (cartels de données) pendant les phases de repos.
-
-- **Vision Spectrale** : Extraction active des éléments DOM masqués (z-index négatifs, opacité 0) utilisés pour le tracking furtif.
-
 ### 🛡️ Rituels de Décodage (Contre-mesures)
 
 - **Protection Anti-Fingerprinting Déterministe** : Bruit déterministe à portée de session sur Canvas, AudioContext, WebGL, Navigator et Timing — mêmes résultats au sein d'une session, différents entre sessions, donc indétectable par comparaison répétée.
@@ -100,15 +98,25 @@ Le **Cortex Engine** orchestre 14 sous-systèmes autour d'une machine à états 
 
 ---
 
-## 🌟 Qu'est-ce que SYMBIONT ?
+## 🔄 Son métabolisme — la symbiose
 
-SYMBIONT transforme votre navigateur en un **exosquelette sensoriel**. Votre organisme digital agit comme un miroir de la physiologie du Web :
+Le web nourrit l'organisme ; l'organisme te rend lucide. Ses découvertes — signatures anonymes de menaces, et à terme *fragments de sens* — peuvent renforcer tout le réseau : une immunité **et** une compréhension collectives, **sans jamais partager tes données**.
 
-- 🧠 **Perception** : Il détecte la "toxicité structurelle" d'une page avant même qu'elle ne ralentisse.
-- 🔄 **Évolution** : Il mute biologiquement en développant de l'Intuition face aux prédateurs numériques.
-- 🌐 **Symbiose** : Il partage ses découvertes de résonance avec le réseau global pour une immunité collective.
+> ⚖️ **Honnêteté.** L'esprit (Cognition) et les sens (perception) sont **construits et testés** (682 tests). Mais les trois *paris de fond* de la vision ne seront tranchés qu'à l'usage réel : le delta mesure-t-il vraiment « ce qui change ta pensée » ? peut-on agréger du sens en P2P **sans fuite** ? l'agentivité est-elle vécue comme utile, pas paternaliste ? Ce qui est livré vs. ce qui reste ouvert est marqué explicitement dans [`docs/VISION.md`](docs/VISION.md).
 
 ## ✨ Fonctionnalités Avancées
+
+### 🧠 Cognition locale (LLM WebGPU)
+
+Un **cerveau de langage exécuté 100 % sur le poste**, via WebGPU + [WebLLM](https://github.com/mlc-ai/web-llm) — **aucune donnée envoyée à un serveur**. Module **opt-in** : le modèle (à partir de ~350 Mo, Qwen2.5-0.5B par défaut) se télécharge une fois, est mis en cache, puis tourne sur le GPU. Sans WebGPU, l'organisme retombe gracieusement sur son réseau de neurones embarqué (NeuralMesh).
+
+En plus du chat local, le bouton **🔍 Analyser la page active** demande au modèle un **score de fiabilité** de la page courante et les **signaux de désinformation** détectés (sensationnalisme, sources absentes, appel émotionnel…) — le tout localement — puis **nudge la vigilance de l'organisme**.
+
+Et surtout, deux boutons incarnent le cap produit ([`docs/VISION.md`](docs/VISION.md)) :
+- **🧫 Digérer la page active** — le symbiote lit, **accrète** la page à son **modèle du monde persistant**, et ne te fait **« surface »** que sur ce qui **révise ta compréhension** (invariant *anti-feed*, testé) ; l'écran **« ce qui a bougé aujourd'hui »** en montre le résultat.
+- **🔎 Ce que je cherche à comprendre** — l'organisme déduit de son modèle ce qu'il est *curieux d'explorer* (contradictions, zones minces) et propose des questions ; la recherche s'ouvre sur geste.
+
+Le symbiote a aussi une **agentivité** : il peut *négocier* avant de digérer (régime peu fiable, chambre d'écho, fatigue) — mais seulement sur un **schéma**, en **expliquant** et en **proposant une alternative**, et tu peux **toujours passer outre**. Fondations enfin posées (logique testée) pour le **collectif** (fragments de sens partageables, sans texte ni URL) — le transport P2P et la confidentialité de l'agrégation restant un chantier ouvert. Captures et détails : [wiki Cognition](docs/wiki/Cognition.md).
 
 ### 🦠 Proprioception Numérique
 
@@ -254,7 +262,7 @@ SYMBIONT inverse la logique extractiviste :
 - Données de formulaires
 - Identifiants ou cookies
 
-## 💡 Pourquoi utiliser la sonde SYMBIONT ?
+## 💡 Pourquoi vivre avec un symbiote ?
 
 ### 🎯 Valeur pour l'Analyse des Angles Morts
 
@@ -280,6 +288,11 @@ SYMBIONT inverse la logique extractiviste :
 - Comprendre la "physiologie" cachée des sites web
 - Découvrir les connexions invisibles entre domaines
 - Explorer les signaux faibles du réseau
+
+**Pour qui veut *penser* mieux, pas consommer plus** :
+- Ne recevoir que ce qui **change** vraiment sa compréhension (fin du feed sans fin)
+- Se faire proposer par son organisme ce qu'il vaut la peine de creuser
+- Garder la main : un compagnon qui te rend lucide, **100 % en local**
 
 ## 🌐 Navigateurs supportés
 

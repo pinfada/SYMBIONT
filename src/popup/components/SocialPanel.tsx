@@ -36,7 +36,7 @@ interface ContactData {
 const SocialPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'invite' | 'onboard' | 'contacts' | 'share'>('invite');
   const [inviteCode, setInviteCode] = useState('');
-  const [accepted, setAccepted] = useState(false);
+  const [, setAccepted] = useState(false);
   const [generatedInvite, setGeneratedInvite] = useState<InviteData | null>(null);
   const [generatedToken, setGeneratedToken] = useState('');
   const [tokenCopied, setTokenCopied] = useState(false);
@@ -397,7 +397,7 @@ const SocialPanel: React.FC = () => {
     <div className="social-tab-content">
       <div className="invite-section">
         <h3>🎯 Générer une Invitation</h3>
-        <p>Créez un code d'invitation avec vos traits génétiques pour permettre à d'autres de rejoindre votre lignée.</p>
+        <p>Créez un code d&apos;invitation avec vos traits génétiques pour permettre à d&apos;autres de rejoindre votre lignée.</p>
 
         <button
           className="btn-primary"
@@ -445,7 +445,7 @@ const SocialPanel: React.FC = () => {
 
       <div className="accept-section">
         <h3>🔗 Accepter une Invitation</h3>
-        <p>Entrez un code pour hériter des traits génétiques d'une lignée existante.</p>
+        <p>Entrez un code pour hériter des traits génétiques d&apos;une lignée existante.</p>
 
         <div className="input-group">
           <textarea
@@ -704,7 +704,7 @@ const SocialPanel: React.FC = () => {
           <ul>
             <li>1 partage = +2% conscience</li>
             <li>5 partages = Mutation rare</li>
-            <li>10 partages = Titre "Ambassadeur"</li>
+            <li>10 partages = Titre &quot;Ambassadeur&quot;</li>
           </ul>
         </div>
       </div>

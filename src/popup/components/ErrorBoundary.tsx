@@ -94,17 +94,17 @@ class ErrorBoundary extends Component<Props, State> {
             
             <div className="error-text">
               <h2 id="error-title" className="error-title">
-                Oups ! Une erreur s'est produite
+                Oups ! Une erreur s&apos;est produite
               </h2>
               
               <p id="error-description" className="error-description">
-                Cette section de l'application a rencontré un problème inattendu. 
-                Vos données sont sécurisées et aucune information n'a été perdue.
+                Cette section de l&apos;application a rencontré un problème inattendu. 
+                Vos données sont sécurisées et aucune information n&apos;a été perdue.
               </p>
 
               {this.state.errorId && (
                 <p className="error-id">
-                  <span className="error-id-label">ID d'erreur :</span>
+                  <span className="error-id-label">ID d&apos;erreur :</span>
                   <code className="error-id-value">{this.state.errorId}</code>
                 </p>
               )}
@@ -135,10 +135,10 @@ class ErrorBoundary extends Component<Props, State> {
 
           <div className="error-help">
             <p id="retry-help" className="help-text">
-              Cliquez sur "Réessayer" pour recharger cette section.
+              Cliquez sur &quot;Réessayer&quot; pour recharger cette section.
             </p>
             <p id="report-help" className="help-text">
-              "Copier les détails" place les informations techniques dans votre presse-papiers 
+              &quot;Copier les détails&quot; place les informations techniques dans votre presse-papiers 
               pour nous aider à diagnostiquer le problème.
             </p>
           </div>

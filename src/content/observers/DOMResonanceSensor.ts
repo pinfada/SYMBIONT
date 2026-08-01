@@ -1,5 +1,4 @@
 import { logger } from '@/shared/utils/secureLogger';
-import { SecureRandom } from '@/shared/utils/secureRandom';
 
 /**
  * DOMResonanceSensor - Détection de signaux faibles via l'analyse de friction DOM
@@ -198,6 +197,12 @@ export class DOMResonanceSensor {
    */
   private updateJitterMetrics(): void {
     if (this.jitterBuffer.length === 0) return;
+
+    // Garantit l'invariant du buffer circulaire (50 échantillons max) quelle
+    // que soit la façon dont les échantillons ont été ajoutés.
+    if (this.jitterBuffer.length > 50) {
+      this.jitterBuffer = this.jitterBuffer.slice(-50);
+    }
 
     const sum = this.jitterBuffer.reduce((a, b) => a + b, 0);
     this.metrics.averageJitter = sum / this.jitterBuffer.length;

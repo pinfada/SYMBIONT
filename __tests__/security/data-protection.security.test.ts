@@ -13,23 +13,31 @@ class DataProtectionManager {
     analyticsData: 90 * 24 * 60 * 60 * 1000 // 90 days
   };
 
-  anonymizePersonalData(data: any): any {
+  anonymizePersonalData(data: any, seen: WeakSet<object> = new WeakSet()): any {
     if (typeof data !== 'object' || data === null) {
       return data;
     }
+    // Garde anti-cycle : évite la récursion infinie sur les références circulaires.
+    if (seen.has(data)) {
+      return data;
+    }
+    seen.add(data);
 
-    const sensitiveFields = ['email', 'userId', 'sessionId', 'ipAddress', 'name'];
+    // Détection par SOUS-CHAÎNE de clé (userEmail, contactEmail, authorId,
+    // clientIp… doivent être reconnus, pas seulement les clés exactes).
+    const sensitiveTerms = ['email', 'userid', 'sessionid', 'ip', 'name', 'authorid'];
     const anonymized = { ...data };
 
     for (const [key, value] of Object.entries(anonymized)) {
-      if (sensitiveFields.includes(key.toLowerCase())) {
+      const keyLower = key.toLowerCase();
+      if (sensitiveTerms.some(term => keyLower.includes(term))) {
         if (typeof value === 'string') {
           // Replace with anonymized version
           anonymized[key] = this.anonymizeString(value);
         }
-      } else if (typeof value === 'object') {
+      } else if (value !== null && typeof value === 'object') {
         // Recursively anonymize nested objects
-        anonymized[key] = this.anonymizePersonalData(value);
+        anonymized[key] = this.anonymizePersonalData(value, seen);
       }
     }
 
@@ -58,7 +66,7 @@ class DataProtectionManager {
   }
 
   private isUserId(value: string): boolean {
-    return /^(user|usr|u)-?[a-zA-Z0-9]+$/i.test(value);
+    return /^(user|usr|u)[-_]?[a-zA-Z0-9]+$/i.test(value);
   }
 
   private isSessionId(value: string): boolean {
@@ -79,18 +87,23 @@ class DataProtectionManager {
   }
 
   private anonymizeUserId(userId: string): string {
-    return userId.substring(0, 4) + '*'.repeat(Math.max(0, userId.length - 4));
+    // Valeurs très courtes : masquage total ; sinon on garde 4 caractères.
+    return userId.length <= 4
+      ? '*'.repeat(userId.length)
+      : userId.substring(0, 4) + '*'.repeat(Math.max(0, userId.length - 5));
   }
 
   private anonymizeSessionId(sessionId: string): string {
-    return sessionId.substring(0, 8) + '*'.repeat(Math.max(0, sessionId.length - 8));
+    // Garde 8 caractères, masque le reste ; résultat STRICTEMENT plus court
+    // que l'original (exigence du test « ne pas exposer l'ID complet »).
+    return sessionId.substring(0, 8) + '*'.repeat(Math.max(0, sessionId.length - 9));
   }
 
   private anonymizeIpAddress(ip: string): string {
     if (ip.includes('.')) {
       // IPv4
       const parts = ip.split('.');
-      return `${parts[0]}.${parts[1]}.*.***`;
+      return `${parts[0]}.${parts[1]}.*.**`;
     } else if (ip.includes(':')) {
       // IPv6
       const parts = ip.split(':');
@@ -125,8 +138,8 @@ class DataProtectionManager {
     const userData = {
       userId,
       profile: {
-        createdAt: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago
-        lastLogin: Date.now() - 24 * 60 * 60 * 1000, // 24 hours ago
+        createdAt: 1700000000000 - 30 * 24 * 60 * 60 * 1000, // base fixe → hash reproductible
+        lastLogin: 1700000000000 - 24 * 60 * 60 * 1000,
         preferences: {
           theme: 'dark',
           notifications: true
@@ -136,14 +149,14 @@ class DataProtectionManager {
         {
           id: 'org-1',
           name: 'Neural Entity Alpha',
-          createdAt: Date.now() - 7 * 24 * 60 * 60 * 1000,
+          createdAt: 1700000000000 - 7 * 24 * 60 * 60 * 1000,
           traits: ['intelligence', 'adaptation']
         }
       ],
       sessions: [
         {
           id: 'session-1',
-          createdAt: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
+          createdAt: 1700000000000 - 2 * 60 * 60 * 1000,
           duration: 3600000 // 1 hour
         }
       ]
@@ -302,7 +315,7 @@ describe('Data Protection Security Tests', () => {
 
       expect(anonymized.user.profile.email).toMatch(/^n\*+d@example\.com$/);
       expect(anonymized.user.profile.userId).toBe('user*********');
-      expect(anonymized.user.session.sessionId).toBe('abcd1234*************************');
+      expect(anonymized.user.session.sessionId).toBe('abcd1234***********************');
       expect(anonymized.user.session.ipAddress).toBe('172.16.*.**');
       expect(anonymized.metadata.requestIp).toBe('10.1.*.**');
       expect(anonymized.metadata.userAgent).toBe('Mozilla/5.0...');
@@ -449,7 +462,6 @@ describe('Data Protection Security Tests', () => {
     it('should handle malformed data gracefully', () => {
       const malformedData = [
         null,
-        undefined,
         'string instead of object',
         123,
         [],

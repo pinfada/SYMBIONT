@@ -114,7 +114,7 @@ const App: React.FC = () => {
             </div>
             <ErrorBoundary>
               <div className="organism-display">
-                <Suspense fallback={<div className="panel-loading">🧬 Chargement de l'organisme...</div>}>
+                <Suspense fallback={<div className="panel-loading">🧬 Chargement de l&apos;organisme...</div>}>
                   <OrganismViewer />
                 </Suspense>
               </div>

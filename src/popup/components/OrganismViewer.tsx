@@ -241,7 +241,7 @@ export const OrganismViewer: React.FC = () => {
             <div className="quantum-ring"></div>
             <div className="quantum-core"></div>
           </div>
-          <p className="loading-text">Initialisation de l'organisme quantique...</p>
+          <p className="loading-text">Initialisation de l&apos;organisme quantique...</p>
           <div className="loading-progress">
             <div className="progress-bar"></div>
           </div>

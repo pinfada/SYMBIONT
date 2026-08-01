@@ -1,7 +1,7 @@
 // Analyseur de patterns
 
-export class PatternAnalyzer {
-  analyzeSequence(data: unknown[]): any {
+export class PatternAnalyzer {
+  analyzeSequence(): any {
     // Pattern analysis logic
     return { pattern: 'unknown', confidence: 0.5 };
   }

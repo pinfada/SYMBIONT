@@ -11,8 +11,13 @@ import MetricsPanel from './components/MetricsPanel';
 import MysticalPanel from './components/MysticalPanel';
 import SocialPanel from './components/SocialPanel';
 import SettingsPanel from './components/SettingsPanel';
+// Léger (pas de WebLLM) : l'écran « ce qui a bougé » s'affiche instantanément.
+import WhatMovedPanel from './components/WhatMovedPanel';
 
-type ViewType = 'organism' | 'network' | 'metrics' | 'mystical' | 'social' | 'settings';
+// Chargé en lazy : le gros chunk WebLLM ne part que si l'onglet est ouvert.
+const LocalLLMPanel = React.lazy(() => import('./components/LocalLLMPanel'));
+
+type ViewType = 'organism' | 'network' | 'metrics' | 'mystical' | 'social' | 'cognition' | 'settings';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('organism');
@@ -27,6 +32,7 @@ const App: React.FC = () => {
     { id: 'metrics', label: 'Stats', icon: '📊', view: 'metrics' as ViewType },
     { id: 'mystical', label: 'Rituels', icon: '✨', view: 'mystical' as ViewType },
     { id: 'social', label: 'Social', icon: '👥', view: 'social' as ViewType },
+    { id: 'cognition', label: 'Cognition', icon: '🧠', view: 'cognition' as ViewType },
     { id: 'settings', label: 'Params', icon: '⚙️', view: 'settings' as ViewType },
   ];
 
@@ -65,33 +71,35 @@ const App: React.FC = () => {
     },
     nav: {
       display: 'flex',
-      padding: '0 8px',
-      gap: '2px',
+      padding: '0 6px',
+      gap: '1px',
       backgroundColor: '#0a0d13',
       borderBottom: '1px solid rgba(0, 224, 255, 0.1)',
-      overflowX: 'auto' as const,
-      scrollbarWidth: 'none' as const
+      overflowX: 'hidden' as const
     },
+    // flex: 1 + minWidth: 0 → les 7 onglets se partagent équitablement la
+    // largeur du popup (400px) sans débordement ni scroll horizontal.
     navButton: (isActive: boolean) => ({
-      padding: '10px 12px',
+      flex: '1 1 0',
+      minWidth: 0,
+      padding: '8px 2px',
       backgroundColor: isActive ? 'rgba(0, 224, 255, 0.1)' : 'transparent',
       color: isActive ? '#00e0ff' : '#8899a6',
       border: 'none',
       borderBottom: isActive ? '2px solid #00e0ff' : '2px solid transparent',
       cursor: 'pointer',
-      fontSize: '11px',
+      fontSize: '9px',
       fontWeight: '500',
       transition: 'all 0.2s ease',
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
-      gap: '4px',
-      minWidth: '60px',
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.5px'
+      gap: '3px',
+      whiteSpace: 'nowrap' as const,
+      letterSpacing: '0.2px'
     }),
     navIcon: {
-      fontSize: '16px'
+      fontSize: '15px'
     },
     content: {
       flex: 1,
@@ -200,6 +208,20 @@ const App: React.FC = () => {
             </h2>
             <Suspense fallback={<LoadingComponent message="Chargement du réseau social..." />}>
               <SocialPanel />
+            </Suspense>
+          </div>
+        );
+
+      case 'cognition':
+        return (
+          <div>
+            <h2 style={appStyles.sectionTitle}>
+              <span>🧠</span>
+              <span>Cognition locale</span>
+            </h2>
+            <WhatMovedPanel />
+            <Suspense fallback={<LoadingComponent message="Chargement du module cognitif…" />}>
+              <LocalLLMPanel />
             </Suspense>
           </div>
         );

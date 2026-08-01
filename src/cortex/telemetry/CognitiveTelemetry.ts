@@ -16,7 +16,6 @@ import { generateSecureUUID } from '@shared/utils/uuid';
 
 const BUFFER_FLUSH_SIZE = 20;
 const MAX_TOTAL_ENTRIES = 1000;
-const MAX_AGE_MS = 604_800_000; // 7 jours
 const STORE_KEY_PREFIX = 'cortex_telemetry_';
 
 interface RunningMetrics {

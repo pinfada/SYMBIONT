@@ -818,7 +818,7 @@ const MysticalPanel: React.FC = () => {
   const sanitizeHostname = useCallback((hostname: string): string => {
     // Remove caractères dangereux
     return hostname
-      .replace(/[<>\"'&]/g, '')
+      .replace(/[<>"'&]/g, '')
       .slice(0, 100); // Limite de longueur
   }, []);
 
@@ -1013,7 +1013,7 @@ const MysticalPanel: React.FC = () => {
   const renderSecretsTab = () => (
     <div className="secrets-section">
       <h3>🔮 Rituels Secrets</h3>
-      <p>Certains rituels ne peuvent être activés qu'avec des codes secrets spéciaux...</p>
+      <p>Certains rituels ne peuvent être activés qu&apos;avec des codes secrets spéciaux...</p>
       
       <div className="secret-input-section">
         <input
@@ -1036,9 +1036,9 @@ const MysticalPanel: React.FC = () => {
       <div className="hints-section">
         <h4>💡 Indices</h4>
         <ul className="hint-list">
-          <li>🤝 L'union fait la force...</li>
-          <li>🧬 La vie s'épanouit par la coopération</li>
-          <li>🌱 Deux organismes peuvent ne faire qu'un</li>
+          <li>🤝 L&apos;union fait la force...</li>
+          <li>🧬 La vie s&apos;épanouit par la coopération</li>
+          <li>🌱 Deux organismes peuvent ne faire qu&apos;un</li>
         </ul>
       </div>
       
@@ -1070,7 +1070,7 @@ const MysticalPanel: React.FC = () => {
       {/* Murmures mystiques (Phase 1.1 - Feedback de résonance DOM) */}
       {murmurs.length > 0 && (
         <div className="murmurs-container">
-          <div className="murmurs-header">🔮 Murmures de l'Ombre</div>
+          <div className="murmurs-header">🔮 Murmures de l&apos;Ombre</div>
           {murmurs.map((murmur) => (
             <div
               key={murmur.timestamp}

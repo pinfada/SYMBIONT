@@ -222,6 +222,7 @@ class RealMetricsService {
       const totalIterations = 50000;
       const chunkSize = 1000; // Process in smaller chunks
       let currentIteration = 0;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- accumulateur de charge CPU pour le benchmark (évite l'élision de la boucle mesurée)
       let result = 0;
 
       // Break work into chunks to avoid blocking the event loop

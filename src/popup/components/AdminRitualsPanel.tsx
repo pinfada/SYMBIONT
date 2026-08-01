@@ -12,9 +12,10 @@ export const AdminRitualsPanel: React.FC = () => {
 
   // Sécurité simple : clé admin dans localStorage
   const adminKey = localStorage.getItem('symbiont_admin_key');
-  if (!adminKey) return <div style={{color:'#ff4b6e',margin:24}}>Accès réservé à l'admin.</div>;
+  if (!adminKey) return <div style={{color:'#ff4b6e',margin:24}}>Accès réservé à l&apos;admin.</div>;
 
   const refresh = () => getRituals().then(setRituals);
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- preserving existing early-return-before-effect behavior
   useEffect(() => {
     refresh();
     // WebSocket notifications
@@ -24,7 +25,7 @@ export const AdminRitualsPanel: React.FC = () => {
       try {
         const msg = JSON.parse(event.data);
         if (['created','updated','deleted'].includes(msg.type)) refresh();
-      } catch {}
+      } catch { /* ignore malformed messages */ }
     };
     return () => ws.close();
   }, []);
@@ -68,7 +69,7 @@ export const AdminRitualsPanel: React.FC = () => {
       </div>
       {error && <div className="text-[#ff4b6e] mb-3" role="alert">{error}</div>}
       <div className="my-6 p-4 bg-[#eaf6fa] rounded-lg">
-        <b>Effacement RGPD (tous les rituels d'un utilisateur) :</b><br/>
+        <b>Effacement RGPD (tous les rituels d&apos;un utilisateur) :</b><br/>
         <label htmlFor="rgpd-user-id" className="font-semibold">ID utilisateur</label>
         <input id="rgpd-user-id" value={rgpdUserId} onChange={e=>setRgpdUserId(e.target.value)} placeholder="ID utilisateur…" className="ml-2 outline-[#00e0ff] border border-[#eaf6fa] rounded-md px-3 py-1" />
         <button onClick={async()=>{
@@ -92,7 +93,7 @@ export const AdminRitualsPanel: React.FC = () => {
             <tr key={r._id} style={{background:'#fffbe6'}}>
               <td><input value={form._id||''} onChange={e=>setForm(f=>({...f,_id:e.target.value}))} style={{outline:'2px solid #00e0ff'}} aria-label="ID du rituel" /></td>
               <td><input value={form.type||''} onChange={e=>setForm(f=>({...f,type:e.target.value}))} style={{outline:'2px solid #00e0ff'}} aria-label="Type du rituel" /></td>
-              <td><textarea value={JSON.stringify(form,null,2)} onChange={e=>{try{setForm(JSON.parse(e.target.value));}catch{}}} style={{width:220,outline:'2px solid #00e0ff'}} aria-label="Payload du rituel" /></td>
+              <td><textarea value={JSON.stringify(form,null,2)} onChange={e=>{try{setForm(JSON.parse(e.target.value));}catch{/* ignore invalid JSON */}}} style={{width:220,outline:'2px solid #00e0ff'}} aria-label="Payload du rituel" /></td>
               <td>
                 <button onClick={handleSave} aria-label="Enregistrer les modifications">Enregistrer</button>
                 <button onClick={()=>{setEditing(null);setForm({});}} aria-label="Annuler l'édition">Annuler</button>
@@ -113,7 +114,7 @@ export const AdminRitualsPanel: React.FC = () => {
             <tr style={{background:'#eaf6fa'}}>
               <td><input value={form._id||''} onChange={e=>setForm(f=>({...f,_id:e.target.value}))} style={{outline:'2px solid #00e0ff'}} aria-label="ID du rituel" /></td>
               <td><input value={form.type||''} onChange={e=>setForm(f=>({...f,type:e.target.value}))} style={{outline:'2px solid #00e0ff'}} aria-label="Type du rituel" /></td>
-              <td><textarea value={JSON.stringify(form,null,2)} onChange={e=>{try{setForm(JSON.parse(e.target.value));}catch{}}} style={{width:220,outline:'2px solid #00e0ff'}} aria-label="Payload du rituel" /></td>
+              <td><textarea value={JSON.stringify(form,null,2)} onChange={e=>{try{setForm(JSON.parse(e.target.value));}catch{/* ignore invalid JSON */}}} style={{width:220,outline:'2px solid #00e0ff'}} aria-label="Payload du rituel" /></td>
               <td>
                 <button onClick={handleAdd} aria-label="Ajouter le rituel">Ajouter</button>
                 <button onClick={()=>{setAdding(false);setForm({});}} aria-label="Annuler l\'ajout">Annuler</button>

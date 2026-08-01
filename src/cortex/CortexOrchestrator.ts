@@ -9,7 +9,6 @@ import {
   CortexState,
   CortexSignal,
   CortexMetrics,
-  ResourceBudget,
   isTransitionValid,
 } from './CortexTypes';
 import { DynamicThresholdEngine } from './threshold/DynamicThresholdEngine';

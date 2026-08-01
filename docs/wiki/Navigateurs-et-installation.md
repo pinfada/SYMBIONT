@@ -16,6 +16,13 @@ familles de navigateurs.
 > mises à jour automatiques — sans passer par un store. Chrome réserve
 > l'installation grand public au Chrome Web Store.
 
+### 🧠 Module Cognition (LLM local) — WebGPU requis
+
+L'onglet **[Cognition](Cognition)** (LLM 100% local) est **optionnel** et nécessite
+**WebGPU** : Chrome/Edge 113+, ou Firefox récent avec WebGPU activé. Sans WebGPU,
+l'onglet le signale et l'organisme continue avec son réseau de neurones embarqué
+(NeuralMesh). Un GPU compatible (machines ~2018+) est recommandé.
+
 ---
 
 ## Installation Firefox (recommandé)
@@ -52,7 +59,10 @@ empaquetée** → sélectionner `dist/`.
 ## Vie privée
 
 - **Tout le traitement est local.** Aucune donnée personnelle transmise.
-- L'interface ne fait **aucune requête externe** (polices auto-hébergées).
+- L'interface ne fait **aucune requête externe** (polices auto-hébergées). **Seule
+  exception, opt-in :** le module [Cognition](Cognition) télécharge **une fois** les
+  poids du modèle depuis Hugging Face (puis cache local) ; ni vos conversations ni
+  le contenu des pages analysées ne quittent le poste.
 - Ce qui est partagé en P2P : uniquement des **signatures anonymes** de menaces
   et des traits abstraits d'organisme — jamais votre historique, vos URLs ou vos
   contenus.

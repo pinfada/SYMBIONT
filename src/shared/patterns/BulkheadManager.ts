@@ -60,9 +60,8 @@ export class BulkheadManager {
    * Exécute une fonction dans un bulkhead isolé
    */
   async execute<T>(
-    bulkheadName: string, 
-    operation: () => Promise<T>,
-    _context?: string
+    bulkheadName: string,
+    operation: () => Promise<T>
   ): Promise<T> {
     const bulkhead = this.bulkheads.get(bulkheadName);
     if (!bulkhead) {

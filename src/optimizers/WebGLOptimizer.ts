@@ -4,7 +4,7 @@
  * - Nettoyage des buffers/textures
  * - Adaptation dynamique de la qualité
  */
-export class WebGLOptimizer {
+export class WebGLOptimizer {
   private gl: WebGLRenderingContext | WebGL2RenderingContext
   private targetFPS: number
   constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, targetFPS = 60) {
@@ -34,7 +34,8 @@ export class WebGLOptimizer {
 
   /**
    * Change dynamiquement la qualité de rendu
-   */
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub d'API : le niveau de qualité sera branché ultérieurement sur le moteur de rendu
   setQuality(level: 'low' | 'medium' | 'high') {
     // À brancher sur le moteur de rendu
     // Ex : réduire la résolution, simplifier la géométrie, etc.

@@ -21,8 +21,8 @@ export const SecretRitualNotification: React.FC = () => {
   if (!visible) return null;
 
   let effectText = '';
-  if (effect === 'mutation_unique') effectText = `Le code secret « ${code} » a déclenché une mutation unique !`;
-  else effectText = `Un rituel secret a été accompli !`;
+  if (effect === 'mutation_unique') effectText = `Le code secret «\u202F${code}\u202F» a déclenché une mutation unique\u202F!`;
+  else effectText = `Un rituel secret a été accompli\u202F!`;
 
   return (
     <div className="secret-ritual-notification">
