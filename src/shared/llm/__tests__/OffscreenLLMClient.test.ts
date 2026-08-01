@@ -81,6 +81,17 @@ describe('OffscreenLLMClient', () => {
     expect(report.level).toBe('faible');
   });
 
+  it('returns a semantic embedding', async () => {
+    const fake = installFakeRuntime();
+    const client = new OffscreenLLMClient({ timeoutMs: 1000 });
+    await client.ensure();
+    const p = client.embed('texte à vectoriser');
+    await tick();
+    const id = fake.lastRequestId()!;
+    fake.emit({ source: LLM_TARGET, id, event: 'done', result: { kind: 'embed', embedding: [0.1, 0.2, 0.3] } });
+    expect(await p).toEqual([0.1, 0.2, 0.3]);
+  });
+
   it('rejects on error event and removes its listener', async () => {
     const fake = installFakeRuntime();
     const client = new OffscreenLLMClient({ timeoutMs: 1000 });

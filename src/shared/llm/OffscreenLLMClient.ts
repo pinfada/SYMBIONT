@@ -171,4 +171,22 @@ export class OffscreenLLMClient {
     if (res.kind !== 'analyze') throw new Error('Réponse d’analyse inattendue.');
     return res.report;
   }
+
+  /**
+   * Embedding sémantique servi par l'offscreen (2ᵉ modèle, chargé paresseusement
+   * côté offscreen au premier appel). `onProgress` reçoit la progression du
+   * téléchargement du modèle d'embedding lors du tout premier embed.
+   */
+  async embed(
+    text: string,
+    opts: { modelId?: string; onProgress?: (p: { progress: number; text: string }) => void } = {},
+  ): Promise<number[]> {
+    if (!this.ensured) await this.ensure();
+    const res = await this.request(
+      { kind: 'embed', text, ...(opts.modelId ? { modelId: opts.modelId } : {}) },
+      opts.onProgress ? { onProgress: opts.onProgress } : {},
+    );
+    if (res.kind !== 'embed') throw new Error('Réponse d’embedding inattendue.');
+    return res.embedding;
+  }
 }

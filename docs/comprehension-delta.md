@@ -106,10 +106,15 @@ mesurer sur des humains réels — voici l'expérience minimale :
 **Embedding sémantique :**
 - ✅ `SemanticEmbedder` **implémenté et testé** (moteur injecté, cache, repli) +
   découplage du `KnowledgeModel` (l'embedding est un `EmbedFn` interchangeable).
-  L'UI utilise le hachage par **défaut**.
-- 🔨 **Câblage live** : servir l'embedding sémantique depuis un 2ᵉ modèle chargé
-  dans l'offscreen (protocole `embed` + option utilisateur), puis valider la
-  qualité en vrai (WebGPU non exécutable en CI).
+- ✅ **Câblé en live** : l'offscreen héberge un 2ᵉ modèle d'embedding, chargé
+  paresseusement au premier `embed` (protocole `embed` + `OffscreenLLMClient.embed`).
+  Un **toggle opt-in** dans l'onglet Cognition (préférence `semanticEmbedding`)
+  bascule la digestion sur l'embedding sémantique, avec **repli automatique sur
+  le hachage**. Défaut = hachage (pas de 2ᵉ téléchargement imposé). Protocole,
+  client et handler testés.
+- 🔨 **Valider la qualité en vrai** : le round-trip WebGPU (2ᵉ modèle) n'est pas
+  exécutable en CI ; à confirmer en navigateur, puis mesurer le gain de
+  récupération vs hachage.
 
 **Pas encore fait :**
 - 🔨 Digestion **automatique de fond** — écartée volontairement : elle exigerait

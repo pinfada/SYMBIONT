@@ -18,6 +18,7 @@ export type LLMRequestPayload =
   | { kind: 'load'; modelId: string }
   | { kind: 'chat'; messages: ChatMessage[]; temperature?: number; maxTokens?: number }
   | { kind: 'analyze'; text: string; domain?: string }
+  | { kind: 'embed'; text: string; modelId?: string }
   | { kind: 'status' };
 
 export type LLMRequest = LLMRequestPayload & { target: typeof LLM_TARGET; id: string };
@@ -32,6 +33,7 @@ export type LLMResult =
   | { kind: 'load'; modelId: string | null }
   | { kind: 'chat'; text: string }
   | { kind: 'analyze'; report: ReliabilityReport }
+  | { kind: 'embed'; embedding: number[] }
   | { kind: 'status'; status: string; modelId: string | null };
 
 export function isLLMRequest(m: unknown): m is LLMRequest {

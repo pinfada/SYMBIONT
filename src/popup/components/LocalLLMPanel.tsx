@@ -24,6 +24,7 @@ import {
   type ChatMessage,
   extractActivePageText,
   feedReliabilityToOrganism,
+  OffscreenLLMClient,
   type ReliabilityReport,
 } from '@shared/llm';
 import {
@@ -32,6 +33,7 @@ import {
   SurfaceJournal,
   HashingEmbedder,
   hashingEmbedFn,
+  type EmbedFn,
   type ReadingOutcome,
 } from '@shared/comprehension';
 
@@ -72,7 +74,24 @@ const LocalLLMPanel: React.FC = () => {
   // Embedding par défaut = hachage (gratuit) ; le sémantique (2ᵉ modèle) est opt-in.
   const knowledgeRef = useRef(new KnowledgeStore());
   const journalRef = useRef(new SurfaceJournal());
-  const embedRef = useRef(hashingEmbedFn(new HashingEmbedder()));
+  const hashingEmbedRef = useRef(hashingEmbedFn(new HashingEmbedder()));
+  const embedClientRef = useRef<OffscreenLLMClient | null>(null);
+
+  // Choisit l'embedding selon la préférence : sémantique (offscreen, 2ᵉ modèle)
+  // avec repli sur le hachage, ou hachage seul.
+  const currentEmbed = useCallback((): EmbedFn => {
+    if (!prefs.semanticEmbedding) return hashingEmbedRef.current;
+    if (!embedClientRef.current) embedClientRef.current = new OffscreenLLMClient();
+    const client = embedClientRef.current;
+    const fallback = hashingEmbedRef.current;
+    return async (t: string) => {
+      try {
+        return await client.embed(t);
+      } catch {
+        return fallback(t);
+      }
+    };
+  }, [prefs.semanticEmbedding]);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -208,7 +227,7 @@ const LocalLLMPanel: React.FC = () => {
       const outcome = await readPage(
         engine,
         { store: knowledgeRef.current, journal: journalRef.current },
-        embedRef.current,
+        currentEmbed(),
         page.text,
         { now: Date.now(), ...(page.domain ? { domain: page.domain } : {}) },
       );
@@ -377,12 +396,22 @@ const LocalLLMPanel: React.FC = () => {
 
       {/* Digestion : le symbiote lit et n'accrète ; il ne remonte que ce qui révise ta compréhension */}
       <button
-        style={{ ...s.primaryBtn, marginBottom: 8 }}
+        style={{ ...s.primaryBtn, marginBottom: 6 }}
         onClick={() => void digestActivePage()}
         disabled={digesting}
       >
         {digesting ? 'Digestion en cours…' : '🧫 Digérer la page active'}
       </button>
+      <label
+        style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.dim, fontSize: 11, marginBottom: 8, cursor: 'pointer' }}
+      >
+        <input
+          type="checkbox"
+          checked={prefs.semanticEmbedding}
+          onChange={(e) => void llmPreferences.update({ semanticEmbedding: e.target.checked })}
+        />
+        Embedding sémantique — meilleure mémoire (2ᵉ modèle ~240 Mo)
+      </label>
       {digest && (
         <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
           <div style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>

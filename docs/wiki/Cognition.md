@@ -90,6 +90,9 @@ assimilée). La **nouveauté pure ne remonte jamais** — c'est l'invariant anti
 - L'écran affiche combien de croyances ton organisme connaît, et ce qui a bougé
   (ou « digéré en silence » si rien ne révise ta carte du monde).
 - 100 % local, **sur geste** (aucune lecture automatique de toutes tes pages).
+- Option **« Embedding sémantique »** (opt-in) : charge un 2ᵉ petit modèle
+  (~240 Mo) dans l'offscreen pour mieux rapprocher les croyances proches — sinon
+  un embedding par hachage, gratuit, est utilisé par défaut (repli automatique).
 
 En tête de l'onglet, l'écran **🌅 « Ce qui a bougé aujourd'hui »** présente le
 *moment aha* de la vision : il n'affiche **que** les révisions de compréhension

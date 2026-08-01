@@ -3,7 +3,7 @@ import { LLM_TARGET, type LLMRequest, type LLMResponse } from '@/shared/llm/offs
 
 // Installe un faux chrome.runtime, capture le listener de installOffscreenLLM et
 // les réponses envoyées.
-function setup(engine: unknown) {
+function setup(engine: unknown, embeddingFactory?: (id: string) => Promise<unknown>) {
   let handler: ((m: unknown) => unknown) | undefined;
   const sent: LLMResponse[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +16,7 @@ function setup(engine: unknown) {
       },
     },
   };
-  installOffscreenLLM(() => engine as never);
+  installOffscreenLLM(() => engine as never, embeddingFactory as never);
   return { dispatch: (r: LLMRequest) => handler?.(r), sent };
 }
 
@@ -79,6 +79,19 @@ describe('installOffscreenLLM', () => {
     await flush();
     const err = sent.find((m) => m.event === 'error');
     expect(err && err.event === 'error' && err.message).toBe('gpu boom');
+  });
+
+  it('handles an embed request via a lazily-loaded embedding engine', async () => {
+    const engine = { load: jest.fn(), chat: jest.fn(), getStatus: () => 'idle', getModelId: () => null };
+    const embeddingFactory = jest.fn(async () => ({
+      embeddings: { create: async () => ({ data: [{ embedding: [0.5, 0.6] }] }) },
+    }));
+    const { dispatch, sent } = setup(engine, embeddingFactory);
+    dispatch({ target: LLM_TARGET, kind: 'embed', id: '9', text: 'vectorise-moi' });
+    await flush();
+    expect(embeddingFactory).toHaveBeenCalled();
+    const done = sent.find((m) => m.event === 'done');
+    expect(done && done.event === 'done' && done.result).toEqual({ kind: 'embed', embedding: [0.5, 0.6] });
   });
 
   it('ignores messages that are not LLM requests', () => {

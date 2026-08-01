@@ -17,6 +17,11 @@ export interface LLMPreferences {
    * (plusieurs centaines de Mo). Sépare « activé » de « a accepté le coût ».
    */
   downloadConsented: boolean;
+  /**
+   * Utiliser l'embedding sémantique (2ᵉ modèle ~240 Mo, meilleure récupération
+   * des croyances) au lieu du hachage local. Opt-in.
+   */
+  semanticEmbedding: boolean;
 }
 
 const STORAGE_KEY = 'symbiont_llm_preferences';
@@ -25,6 +30,7 @@ const DEFAULTS: LLMPreferences = {
   enabled: false,
   modelId: DEFAULT_MODEL_ID,
   downloadConsented: false,
+  semanticEmbedding: false,
 };
 
 type Listener = (prefs: LLMPreferences) => void;
@@ -63,6 +69,7 @@ class LLMPreferencesStore {
           enabled: raw.enabled ?? DEFAULTS.enabled,
           modelId: normalizeModelId(raw.modelId),
           downloadConsented: raw.downloadConsented ?? DEFAULTS.downloadConsented,
+          semanticEmbedding: raw.semanticEmbedding ?? DEFAULTS.semanticEmbedding,
         };
       }
     } catch (error) {
