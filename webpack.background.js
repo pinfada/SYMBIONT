@@ -1,8 +1,10 @@
 const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const { manifestCopyPattern } = require('./scripts/build-manifest');
 
-module.exports = {
+// `env` vient de `--env browser=firefox` ; défaut = chrome.
+module.exports = (env) => ({
   mode: process.env.NODE_ENV || 'production',
   entry: './src/background/index.ts',
   output: {
@@ -40,9 +42,9 @@ module.exports = {
     new CleanWebpackPlugin(),
     new CopyPlugin({
       patterns: [
-        { from: 'manifest.json', to: 'manifest.json' },
+        manifestCopyPattern(env),
         { from: 'public/assets', to: 'assets', noErrorOnMissing: true }
       ]
     })
   ]
-}; 
+});
