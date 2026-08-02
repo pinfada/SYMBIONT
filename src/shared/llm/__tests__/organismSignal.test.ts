@@ -18,6 +18,16 @@ const report = (level: ReliabilityReport['level'], score: number): ReliabilityRe
   score,
   summary: 's',
   signals: [],
+  parsed: true,
+});
+
+/** Rapport d'échec tel que le produit parseReport quand rien n'est exploitable. */
+const unparsedReport = (): ReliabilityReport => ({
+  level: 'moyenne',
+  score: 50,
+  summary: 'Analyse indisponible.',
+  signals: [],
+  parsed: false,
 });
 
 describe('vigilanceDelta', () => {
@@ -25,6 +35,10 @@ describe('vigilanceDelta', () => {
     expect(vigilanceDelta(report('faible', 10))).toBeGreaterThan(vigilanceDelta(report('moyenne', 50)));
     expect(vigilanceDelta(report('moyenne', 50))).toBeGreaterThan(vigilanceDelta(report('élevée', 90)));
     expect(vigilanceDelta(report('élevée', 90))).toBeGreaterThan(0);
+  });
+
+  it('returns zero for an unparsed report', () => {
+    expect(vigilanceDelta(unparsedReport())).toBe(0);
   });
 });
 
@@ -48,5 +62,10 @@ describe('feedReliabilityToOrganism', () => {
 
   it('never throws', async () => {
     await expect(feedReliabilityToOrganism(report('élevée', 88))).resolves.toBeUndefined();
+  });
+
+  it('leaves the organism untouched when the analysis could not be parsed', async () => {
+    await feedReliabilityToOrganism(unparsedReport());
+    expect(mockUpdates).toHaveLength(0);
   });
 });

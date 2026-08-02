@@ -19,7 +19,9 @@ import {
   getModelInfo,
   llmPreferences,
   type LLMPreferences,
-  createCognitiveEngine,
+  getEngine,
+  peekEngine,
+  resumeEngine,
   type CognitiveEngine,
   type ChatMessage,
   extractActivePageText,
@@ -61,6 +63,36 @@ type UIState = 'detecting' | 'unsupported' | 'setup' | 'loading' | 'ready';
 interface Bubble {
   role: 'user' | 'assistant';
   content: string;
+}
+
+/**
+ * Traduit l'échec de chargement en cause actionnable.
+ *
+ * Un message générique « vérifiez votre connexion » est trompeur : la panne la
+ * plus probable n'est pas le réseau mais une origine absente du CSP ou des
+ * host_permissions. Les poids passent par une redirection vers le CDN
+ * HuggingFace (`*.hf.co`) : si cette origine manque, la requête est coupée et
+ * l'erreur ressemble à une panne réseau.
+ */
+function describeLoadFailure(error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error);
+
+  if (/content security policy|blocked by csp|not allowed by/i.test(detail)) {
+    return `origine bloquée par le CSP de l'extension. Détail : ${detail}`;
+  }
+  if (/failed to fetch|networkerror|load failed/i.test(detail)) {
+    return (
+      'téléchargement interrompu. Origine bloquée (CSP / host_permissions) ' +
+      `ou réseau indisponible. Détail : ${detail}`
+    );
+  }
+  if (/webgpu|adapter|device/i.test(detail)) {
+    return `GPU indisponible pour ce modèle. Détail : ${detail}`;
+  }
+  if (/quota|storage|space/i.test(detail)) {
+    return `espace de stockage insuffisant pour les poids. Détail : ${detail}`;
+  }
+  return detail;
 }
 
 const LocalLLMPanel: React.FC = () => {
@@ -115,7 +147,39 @@ const LocalLLMPanel: React.FC = () => {
       if (cancelled) return;
       setPrefs(llmPreferences.get());
       setSupport(sup);
-      setUiState(sup.available ? 'setup' : 'unsupported');
+
+      if (!sup.available) {
+        setUiState('unsupported');
+        return;
+      }
+
+      // Le moteur survit au démontage du panneau (changement d'onglet) : si un
+      // modèle est déjà chargé, on revient directement à l'état prêt au lieu de
+      // redemander « activer et télécharger ».
+      const live = peekEngine();
+      if (live?.isReady()) {
+        engineRef.current = live;
+        setUiState('ready');
+        return;
+      }
+
+      // Popup rouvert : le moteur peut vivre ailleurs et être déjà prêt (sur
+      // Chrome, le document offscreen survit à la fermeture du popup). On
+      // n'interroge que si l'utilisateur a déjà activé le module — inutile de
+      // créer un offscreen pour quelqu'un qui n'a jamais opté pour le LLM.
+      const saved = llmPreferences.get();
+      if (saved.enabled && saved.downloadConsented) {
+        setProgress({ pct: 0, text: 'Reprise de la session…' });
+        const resumed = await resumeEngine();
+        if (cancelled) return;
+        if (resumed) {
+          engineRef.current = resumed;
+          setUiState('ready');
+          return;
+        }
+      }
+
+      setUiState('setup');
     })();
     const unsub = llmPreferences.subscribe((p) => setPrefs(p));
     return () => {
@@ -134,7 +198,7 @@ const LocalLLMPanel: React.FC = () => {
     setUiState('loading');
     setProgress({ pct: 0, text: 'Initialisation…' });
     await llmPreferences.update({ enabled: true, modelId, downloadConsented: true });
-    const engine = engineRef.current ?? (await createCognitiveEngine());
+    const engine = await getEngine();
     engineRef.current = engine;
     try {
       await engine.load(modelId, (p) => {
@@ -143,7 +207,7 @@ const LocalLLMPanel: React.FC = () => {
       setUiState('ready');
     } catch (e) {
       logger.error('LocalLLMPanel: échec du chargement', e as Error);
-      setError('Le chargement du modèle a échoué. Vérifiez votre connexion et réessayez.');
+      setError(`Le chargement du modèle a échoué : ${describeLoadFailure(e)}`);
       setUiState('setup');
     }
   }, []);
@@ -394,7 +458,24 @@ const LocalLLMPanel: React.FC = () => {
       >
         {analyzing ? 'Analyse en cours…' : '🔍 Analyser la page active'}
       </button>
-      {report && (
+      {/* Échec de parsing : surtout pas de jauge ni de niveau — ce serait un
+          verdict que le modèle n'a jamais rendu. */}
+      {report && !report.parsed && (
+        <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
+          <div style={{ color: C.dim, fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
+            Analyse indisponible
+          </div>
+          {report.domain && (
+            <div style={{ color: C.dim, fontSize: 12, marginBottom: 6 }}>{report.domain}</div>
+          )}
+          <p style={{ color: C.text, fontSize: 12, margin: 0, lineHeight: 1.5 }}>
+            Le modèle n&apos;a pas renvoyé de résultat structuré. Aucun score n&apos;est retenu et
+            l&apos;organisme n&apos;a reçu aucun signal. Les modèles les plus légers échouent
+            souvent à produire du JSON : un modèle plus grand donne des sorties exploitables.
+          </p>
+        </div>
+      )}
+      {report?.parsed && (
         <div style={{ ...s.card, padding: 12, marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <div

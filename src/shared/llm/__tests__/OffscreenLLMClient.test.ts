@@ -110,4 +110,45 @@ describe('OffscreenLLMClient', () => {
     await client.ensure();
     await expect(client.chat([{ role: 'user', content: 'hi' }])).rejects.toThrow(/délai/i);
   });
+
+  // Popup rouvert : le document offscreen a gardé son modèle, mais le client
+  // est neuf et l'ignore. Sans syncStatus, l'UI réaffiche le téléchargement.
+  it('adopts the live offscreen state on syncStatus', async () => {
+    const fake = installFakeRuntime();
+    const client = new OffscreenLLMClient({ timeoutMs: 1000 });
+    expect(client.isReady()).toBe(false);
+
+    const p = client.syncStatus();
+    await tick();
+    const id = fake.lastRequestId()!;
+    fake.emit({
+      source: LLM_TARGET,
+      id,
+      event: 'done',
+      result: { kind: 'status', status: 'ready', modelId: 'M' },
+    });
+    await p;
+
+    expect(client.isReady()).toBe(true);
+    expect(client.getModelId()).toBe('M');
+  });
+
+  it('stays not-ready when the offscreen holds no model', async () => {
+    const fake = installFakeRuntime();
+    const client = new OffscreenLLMClient({ timeoutMs: 1000 });
+
+    const p = client.syncStatus();
+    await tick();
+    const id = fake.lastRequestId()!;
+    fake.emit({
+      source: LLM_TARGET,
+      id,
+      event: 'done',
+      result: { kind: 'status', status: 'idle', modelId: null },
+    });
+    await p;
+
+    expect(client.isReady()).toBe(false);
+    expect(client.getModelId()).toBeNull();
+  });
 });

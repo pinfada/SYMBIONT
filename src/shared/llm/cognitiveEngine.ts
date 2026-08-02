@@ -18,6 +18,15 @@ export interface CognitiveEngine {
   isReady(): boolean;
   getStatus(): string;
   getModelId(): string | null;
+  /**
+   * Resynchronise l'état depuis l'emplacement réel du moteur.
+   *
+   * Présent uniquement quand le moteur survit au contexte appelant : le
+   * document offscreen garde son modèle après la fermeture du popup, mais un
+   * client neuf l'ignore. Absent sur le moteur in-popup, dont l'état local
+   * fait autorité.
+   */
+  syncStatus?(): Promise<void>;
 }
 
 /** Adaptateur du moteur in-popup vers l'interface commune. */
