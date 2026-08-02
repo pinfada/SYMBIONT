@@ -88,6 +88,8 @@ class BackgroundService {
   private security: SecurityManager = new SecurityManager();
   private _organismFactory: OrganismFactory;
   private initialized: boolean = false;
+  /** Garde d'idempotence de setupMessageHandlers() — cf. son commentaire. */
+  private messageHandlersInstalled: boolean = false;
   private networkLatencyCollector: NetworkLatencyCollector;
   private ritualBootstrap: RitualBootstrap | null = null;
 
@@ -293,6 +295,16 @@ class BackgroundService {
   }
 
   private setupMessageHandlers(): void {
+    // Idempotent : le catch d'initialize() rappelle cette méthode en secours,
+    // alors qu'elle a déjà pu s'exécuter. Sans garde, tout handler est
+    // enregistré deux fois et chaque message traité en double — travail et
+    // écritures dupliqués sur toute la durée de vie du service worker.
+    if (this.messageHandlersInstalled) {
+      logger.debug('[BackgroundService] Message handlers already installed, skipping');
+      return;
+    }
+    this.messageHandlersInstalled = true;
+
     // Handle GET_ORGANISM request from popup
     this.messageBus.on(MessageType.GET_ORGANISM, async () => {
       logger.info('[BackgroundService] GET_ORGANISM request received');

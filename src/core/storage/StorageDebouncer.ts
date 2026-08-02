@@ -12,11 +12,36 @@ import { OrganismState } from '../../shared/types/organism';
 import { IndexedDBCoordinator } from './IndexedDBCoordinator';
 import { logger } from '../../shared/utils/secureLogger';
 
+/** Un appelant qui attend que son écriture soit réellement passée. */
+interface Waiter {
+  resolve: () => void;
+  reject: (error: unknown) => void;
+}
+
 interface DebouncedOperation<T> {
   data: T;
-  timer: NodeJS.Timeout;
+  timer: ReturnType<typeof setTimeout>;
   timestamp: number;
-  flushCallback?: () => void;
+  /**
+   * Tous les appelants en attente de cette écriture.
+   *
+   * Un `saveX()` qui en supplante un autre DOIT hériter de ses waiters. Sans
+   * ça, la promesse supplantée ne se résout jamais : la frame async de son
+   * appelant est retenue indéfiniment. `updateOrganismTraits()` faisant un
+   * `await saveOrganism()` à chaque visite de page, la moindre navigation
+   * rapide fuyait une frame — d'où la montée mémoire en usage prolongé.
+   */
+  waiters: Waiter[];
+}
+
+/** Vide la liste et résout tout le monde. Vider évite un double-règlement. */
+function resolveAll(waiters: Waiter[]): void {
+  for (const waiter of waiters.splice(0)) waiter.resolve();
+}
+
+/** Vide la liste et rejette tout le monde avec la même erreur. */
+function rejectAll(waiters: Waiter[], error: unknown): void {
+  for (const waiter of waiters.splice(0)) waiter.reject(error);
 }
 
 export class StorageDebouncer {
@@ -50,50 +75,13 @@ export class StorageDebouncer {
     if (!this.coordinator) {
       throw new Error('Coordinator not set');
     }
-
-    const key = 'organism-' + organism.id;
-    const now = Date.now();
-
-    // Annuler le timer précédent s'il existe
-    const existing = this.pendingOrganisms.get(key);
-    if (existing) {
-      clearTimeout(existing.timer);
-
-      // Si l'opération est en attente depuis trop longtemps, flush immédiatement
-      if (now - existing.timestamp > this.MAX_PENDING_TIME_MS) {
-        logger.debug('[StorageDebouncer] Max pending time reached, flushing immediately', {
-          organismId: organism.id,
-          pendingTime: now - existing.timestamp
-        });
-        await this._flushOrganism(key, organism);
-        return;
-      }
-    }
-
-    // Créer un nouveau timer
-    return new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(async () => {
-        try {
-          await this._flushOrganism(key, organism);
-          resolve();
-        } catch (error) {
-          logger.error('[StorageDebouncer] Failed to flush organism', error);
-          reject(error);
-        }
-      }, this.DEBOUNCE_MS);
-
-      this.pendingOrganisms.set(key, {
-        data: organism,
-        timer,
-        timestamp: existing?.timestamp || now,
-        flushCallback: () => resolve()
-      });
-
-      logger.debug('[StorageDebouncer] Organism save debounced', {
-        organismId: organism.id,
-        debounceMs: this.DEBOUNCE_MS
-      });
-    });
+    return this.schedule(
+      this.pendingOrganisms,
+      'organism-' + organism.id,
+      organism,
+      (key, data) => this._flushOrganism(key, data),
+      { organismId: organism.id }
+    );
   }
 
   /**
@@ -103,46 +91,85 @@ export class StorageDebouncer {
     if (!this.coordinator) {
       throw new Error('Coordinator not set');
     }
+    return this.schedule(
+      this.pendingBehaviors,
+      'behavior-' + behavior.url,
+      behavior,
+      (key, data) => this._flushBehavior(key, data),
+      { url: behavior.url }
+    );
+  }
 
-    const key = 'behavior-' + behavior.url;
+  /**
+   * Planifie une écriture debounced et renvoie une promesse qui se résout
+   * quand l'écriture est réellement passée.
+   *
+   * Chemin unique pour organismes et behaviors : les deux avaient la même
+   * logique dupliquée, donc le même défaut à corriger deux fois.
+   *
+   * @param pending registre des opérations en attente pour ce type
+   * @param key clé de coalescence (une écriture en vol par clé)
+   * @param data données à écrire ; la plus récente gagne
+   * @param flush écriture effective
+   * @param logContext champs ajoutés aux logs de debug
+   */
+  private async schedule<T>(
+    pending: Map<string, DebouncedOperation<T>>,
+    key: string,
+    data: T,
+    flush: (key: string, data: T) => Promise<void>,
+    logContext: Record<string, unknown>
+  ): Promise<void> {
     const now = Date.now();
+    const existing = pending.get(key);
 
-    // Annuler le timer précédent
-    const existing = this.pendingBehaviors.get(key);
+    // Les appelants déjà en attente sur cette clé seront servis par l'écriture
+    // qu'on planifie ici (elle porte des données plus récentes) : on reprend
+    // leurs resolvers. Les perdre laissait leurs promesses pendantes à jamais.
+    const inherited = existing ? existing.waiters : [];
+    const startedAt = existing ? existing.timestamp : now;
+
     if (existing) {
       clearTimeout(existing.timer);
+      pending.delete(key);
+    }
 
-      // Flush immédiat si en attente depuis trop longtemps
-      if (now - existing.timestamp > this.MAX_PENDING_TIME_MS) {
-        logger.debug('[StorageDebouncer] Max pending time reached for behavior, flushing', {
-          url: behavior.url
-        });
-        await this._flushBehavior(key, behavior);
-        return;
+    // En attente depuis trop longtemps : on écrit maintenant plutôt que de
+    // repousser le flush indéfiniment sous un flux d'appels continu.
+    if (existing && now - startedAt > this.MAX_PENDING_TIME_MS) {
+      logger.debug('[StorageDebouncer] Max pending time reached, flushing immediately', {
+        ...logContext,
+        pendingTime: now - startedAt
+      });
+      try {
+        await flush(key, data);
+      } catch (error) {
+        rejectAll(inherited, error);
+        throw error;
       }
+      resolveAll(inherited);
+      return;
     }
 
     return new Promise<void>((resolve, reject) => {
+      const waiters: Waiter[] = [...inherited, { resolve, reject }];
+
       const timer = setTimeout(async () => {
         try {
-          await this._flushBehavior(key, behavior);
-          resolve();
+          await flush(key, data);
+          resolveAll(waiters);
         } catch (error) {
-          logger.error('[StorageDebouncer] Failed to flush behavior', error);
-          reject(error);
+          logger.error('[StorageDebouncer] Failed to flush', error);
+          rejectAll(waiters, error);
         }
       }, this.DEBOUNCE_MS);
 
-      this.pendingBehaviors.set(key, {
-        data: behavior,
-        timer,
-        timestamp: existing?.timestamp || now,
-        flushCallback: () => resolve()
-      });
+      pending.set(key, { data, timer, timestamp: startedAt, waiters });
 
-      logger.debug('[StorageDebouncer] Behavior save debounced', {
-        url: behavior.url,
-        debounceMs: this.DEBOUNCE_MS
+      logger.debug('[StorageDebouncer] Save debounced', {
+        ...logContext,
+        debounceMs: this.DEBOUNCE_MS,
+        waiting: waiters.length
       });
     });
   }
@@ -194,19 +221,28 @@ export class StorageDebouncer {
       pendingBehaviors: this.pendingBehaviors.size
     });
 
-    const promises: Promise<void>[] = [];
+    // Chaque opération doit régler ses waiters, sinon un flushAll() (shutdown,
+    // dispose) laisse pendantes toutes les promesses en attente — la même
+    // fuite que sur le chemin de supplantation.
+    const drain = <T>(
+      pending: Map<string, DebouncedOperation<T>>,
+      flush: (key: string, data: T) => Promise<void>
+    ): Promise<void>[] =>
+      [...pending].map(async ([key, operation]) => {
+        clearTimeout(operation.timer);
+        try {
+          await flush(key, operation.data);
+          resolveAll(operation.waiters);
+        } catch (error) {
+          rejectAll(operation.waiters, error);
+          throw error;
+        }
+      });
 
-    // Flush organisms
-    for (const [key, operation] of this.pendingOrganisms) {
-      clearTimeout(operation.timer);
-      promises.push(this._flushOrganism(key, operation.data));
-    }
-
-    // Flush behaviors
-    for (const [key, operation] of this.pendingBehaviors) {
-      clearTimeout(operation.timer);
-      promises.push(this._flushBehavior(key, operation.data));
-    }
+    const promises = [
+      ...drain(this.pendingOrganisms, (key, data) => this._flushOrganism(key, data)),
+      ...drain(this.pendingBehaviors, (key, data) => this._flushBehavior(key, data))
+    ];
 
     try {
       await Promise.all(promises);

@@ -353,8 +353,14 @@ export class NetworkLatencyCollector {
    * Configure le monitoring WebRTC pour les connexions P2P
    */
   private setupWebRTCMonitoring(): void {
-    // Intercepter les connexions WebRTC si l'extension utilise P2P
-    if (!window.RTCPeerConnection) return;
+    // Intercepter les connexions WebRTC si l'extension utilise P2P.
+    //
+    // `window` n'existe pas dans un service worker MV3 : une référence nue y
+    // lève une ReferenceError au lieu d'être un test falsy. Elle remontait
+    // jusqu'au catch d'initialize(), qui réenregistrait alors les handlers de
+    // messages une seconde fois — chaque message traité en double — et
+    // laissait health checks et rituels jamais démarrés.
+    if (typeof window === 'undefined' || !window.RTCPeerConnection) return;
 
     const OriginalRTCPeerConnection = window.RTCPeerConnection;
     const monitorWebRTCStats = this.monitorWebRTCStats.bind(this);
