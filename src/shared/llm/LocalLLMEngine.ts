@@ -66,7 +66,7 @@ export type CreateEngineFn = (
 
 /** Fabrique par défaut : import() dynamique de WebLLM (chunk séparé). */
 const defaultCreateEngine: CreateEngineFn = async (modelId, opts) => {
-  const webllm = (await import('@mlc-ai/web-llm')) as unknown as {
+  const webllm = (await import(/* webpackChunkName: "webllm" */ '@mlc-ai/web-llm')) as unknown as {
     CreateMLCEngine: CreateEngineFn;
   };
   return webllm.CreateMLCEngine(modelId, opts);

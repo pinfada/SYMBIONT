@@ -68,7 +68,7 @@ export async function createEmbeddingEngine(
   modelId: string,
   onProgress?: (report: { progress: number; text: string }) => void,
 ): Promise<EmbeddingEngine> {
-  const webllm = (await import('@mlc-ai/web-llm')) as unknown as {
+  const webllm = (await import(/* webpackChunkName: "webllm" */ '@mlc-ai/web-llm')) as unknown as {
     CreateMLCEngine: (
       id: string,
       opts: { initProgressCallback?: (r: { progress: number; text: string }) => void },

@@ -10,7 +10,7 @@
     "build:background": "webpack --config webpack.background.js",
     "build:full": "npm run build && npm run check-manifest",
     "build:firefox": "npm run build && node scripts/build-manifest.js firefox",
-    "lint:firefox": "web-ext lint --source-dir dist --self-hosted",
+    "lint:firefox": "web-ext lint --source-dir dist --self-hosted --ignore-files \"webllm/index.js\" \"webllm/index.js.map\"",
     "package:firefox": "npm run build:firefox && npm run lint:firefox && web-ext build --source-dir dist --artifacts-dir web-ext-artifacts --overwrite-dest --ignore-files \"**/*.map\" \"**/*.d.ts\"",
     "sign:firefox": "npm run build:firefox && npm run lint:firefox && web-ext sign --source-dir dist --channel unlisted --artifacts-dir web-ext-artifacts --ignore-files \"**/*.map\" \"**/*.d.ts\"",
     "build:all": "npm run build:full && cd backend && npm run build",
