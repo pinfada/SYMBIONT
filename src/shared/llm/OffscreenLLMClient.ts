@@ -60,6 +60,25 @@ export class OffscreenLLMClient {
     return this.status === 'ready';
   }
 
+  /**
+   * Interroge l'état réel du moteur offscreen et met à jour le cache local.
+   *
+   * Un client fraîchement construit croit toujours qu'aucun modèle n'est
+   * chargé. Or le document offscreen survit à la fermeture du popup et garde
+   * son modèle en mémoire : sans cette synchronisation, rouvrir le popup
+   * réaffichait l'écran de téléchargement alors que le modèle était prêt.
+   *
+   * Délai court : si aucun offscreen ne répond, mieux vaut retomber vite sur
+   * l'écran d'activation que bloquer sur le timeout de requête normal.
+   */
+  async syncStatus(timeoutMs = 3000): Promise<void> {
+    if (!this.ensured) await this.ensure();
+    const res = await this.request({ kind: 'status' }, { timeoutMs });
+    if (res.kind !== 'status') throw new Error('Réponse de statut inattendue.');
+    this.status = res.status;
+    this.modelId = res.modelId;
+  }
+
   /** Demande au service worker de garantir le document offscreen. */
   async ensure(): Promise<void> {
     const rt = getRuntime();

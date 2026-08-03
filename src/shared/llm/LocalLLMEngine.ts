@@ -11,6 +11,7 @@
 
 import { logger } from '@shared/utils/secureLogger';
 import { normalizeModelId } from './modelCatalog';
+import { createWebLLMEngine } from './webllmRuntime';
 
 export type ChatRole = 'system' | 'user' | 'assistant';
 
@@ -64,13 +65,9 @@ export type CreateEngineFn = (
   opts: { initProgressCallback?: (report: { progress: number; text: string }) => void },
 ) => Promise<MLCLikeEngine>;
 
-/** Fabrique par défaut : import() dynamique de WebLLM (chunk séparé). */
-const defaultCreateEngine: CreateEngineFn = async (modelId, opts) => {
-  const webllm = (await import('@mlc-ai/web-llm')) as unknown as {
-    CreateMLCEngine: CreateEngineFn;
-  };
-  return webllm.CreateMLCEngine(modelId, opts);
-};
+/** Fabrique par défaut : WebLLM via le runtime partagé (chunk séparé + cache IndexedDB). */
+const defaultCreateEngine: CreateEngineFn = (modelId, opts) =>
+  createWebLLMEngine<MLCLikeEngine>(modelId, opts);
 
 export class LocalLLMEngine {
   private engine: MLCLikeEngine | null = null;

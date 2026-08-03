@@ -25,6 +25,10 @@ export class MemoryFragmentCollector {
   private readonly MAX_FRAGMENTS_IN_MEMORY = 1000;
   private readonly MAX_FRAGMENT_AGE = 3600000; // 1 hour
   private readonly BATCH_PERSIST_SIZE = 100;
+  /** Au-delà, `domainStats` est ramené à la moitié (les plus fréquents). */
+  private readonly MAX_TRACKED_DOMAINS = 500;
+  /** Clés déjà écrites en base ; borné par `fragments` via forgetFragment(). */
+  private persistedKeys = new Set<string>();
 
   // Metrics
   private totalCollected = 0;
@@ -159,6 +163,7 @@ export class MemoryFragmentCollector {
     // Update domain statistics
     const count = this.domainStats.get(fragment.domain) || 0;
     this.domainStats.set(fragment.domain, count + 1);
+    this.capDomainStats();
 
     logger.debug('[FragmentCollector] Fragment added', {
       domain: fragment.domain,
@@ -283,7 +288,7 @@ export class MemoryFragmentCollector {
     }
 
     for (const key of keysToRemove) {
-      this.fragments.delete(key);
+      this.forgetFragment(key);
     }
 
     this.totalProcessed += keysToRemove.length;
@@ -307,7 +312,7 @@ export class MemoryFragmentCollector {
     });
 
     for (let i = 0; i < toEvict && i < sortedKeys.length; i++) {
-      this.fragments.delete(sortedKeys[i]);
+      this.forgetFragment(sortedKeys[i]);
     }
 
     logger.debug('[FragmentCollector] Evicted old fragments', {
@@ -320,19 +325,56 @@ export class MemoryFragmentCollector {
    * Persists fragment batch to storage
    */
   private async persistFragmentBatch(): Promise<void> {
-    const fragmentsToStore = Array.from(this.fragments.values())
-      .slice(0, this.BATCH_PERSIST_SIZE);
+    // Ne persister que ce qui ne l'a pas déjà été. Auparavant on reprenait
+    // toujours les 100 plus anciens : comme `storeFragments` fait un `add()`
+    // à clé auto-incrémentée, chaque passage recréait les mêmes
+    // enregistrements. L'éviction faisant osciller `size` autour du seuil,
+    // le batch repartait en boucle — écriture IndexedDB sans fin.
+    const batch: Array<[string, MemoryFragment]> = [];
+    for (const entry of this.fragments) {
+      if (this.persistedKeys.has(entry[0])) continue;
+      batch.push(entry);
+      if (batch.length >= this.BATCH_PERSIST_SIZE) break;
+    }
 
-    if (fragmentsToStore.length === 0) return;
+    if (batch.length === 0) return;
 
     try {
-      await this.storage.storeFragments(fragmentsToStore);
+      await this.storage.storeFragments(batch.map(([, fragment]) => fragment));
+      for (const [key] of batch) this.persistedKeys.add(key);
       logger.debug('[FragmentCollector] Persisted fragment batch', {
-        count: fragmentsToStore.length
+        count: batch.length
       });
     } catch (error) {
       logger.error('[FragmentCollector] Failed to persist fragments', error);
     }
+  }
+
+  /**
+   * Oublie une clé évincée : `persistedKeys` doit rester borné par
+   * `fragments`, sinon on remplace une fuite par une autre.
+   */
+  private forgetFragment(key: string): void {
+    this.fragments.delete(key);
+    this.persistedKeys.delete(key);
+  }
+
+  /**
+   * Borne le compteur par domaine : une entrée par domaine visité, jamais
+   * purgée, croissait indéfiniment en usage prolongé. On ne garde que les
+   * plus fréquents — seuls le top 10 et le total sont exposés.
+   */
+  private capDomainStats(): void {
+    if (this.domainStats.size <= this.MAX_TRACKED_DOMAINS) return;
+
+    const keep = Array.from(this.domainStats.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, Math.floor(this.MAX_TRACKED_DOMAINS / 2));
+
+    this.domainStats = new Map(keep);
+    logger.debug('[FragmentCollector] Domain stats capped', {
+      remaining: this.domainStats.size
+    });
   }
 
   /**
@@ -358,7 +400,7 @@ export class MemoryFragmentCollector {
     }
 
     for (const key of keysToRemove) {
-      this.fragments.delete(key);
+      this.forgetFragment(key);
     }
 
     if (keysToRemove.length > 0) {
@@ -405,6 +447,7 @@ export class MemoryFragmentCollector {
    */
   public reset(): void {
     this.fragments.clear();
+    this.persistedKeys.clear();
     this.domainStats.clear();
     this.totalCollected = 0;
     this.totalProcessed = 0;

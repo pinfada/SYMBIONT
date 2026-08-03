@@ -5,6 +5,7 @@
     "description": "A living digital organism that evolves with your browsing patterns",
     "permissions": [
       "storage",
+      "unlimitedStorage",
       "alarms",
       "idle",
       "activeTab",
@@ -23,6 +24,7 @@
     "host_permissions": [
       "https://huggingface.co/*",
       "https://*.huggingface.co/*",
+      "https://*.hf.co/*",
       "https://raw.githubusercontent.com/*"
     ],
     "optional_host_permissions": [
@@ -30,7 +32,7 @@
       "http://127.0.0.1/*"
     ],
     "content_security_policy": {
-      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests; connect-src 'self' wss://symbiont-ytla.onrender.com wss://*.onrender.com ws://localhost:* ws://127.0.0.1:* https://huggingface.co https://*.huggingface.co https://raw.githubusercontent.com; img-src 'self' data:; media-src 'self'"
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests; connect-src 'self' wss://symbiont-ytla.onrender.com wss://*.onrender.com ws://localhost:* ws://127.0.0.1:* https://huggingface.co https://*.huggingface.co https://*.hf.co https://raw.githubusercontent.com; img-src 'self' data:; media-src 'self'"
     },
     "background": {
       "service_worker": "background/index.js",

@@ -4,8 +4,10 @@ const HtmlPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { merge } = require('webpack-merge');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { manifestCopyPattern } = require('./scripts/build-manifest');
 
-module.exports = {
+// `env` vient de `--env browser=firefox` ; défaut = chrome.
+module.exports = (env) => ({
   mode: process.env.NODE_ENV || 'production',
   entry: {
     content: './src/content/index.ts',
@@ -102,10 +104,10 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'manifest.json', to: 'manifest.json', noErrorOnMissing: true },
+        manifestCopyPattern(env),
         { from: 'public/offscreen.html', to: 'offscreen.html' },
         // { from: 'src/assets', to: 'assets', noErrorOnMissing: true },
       ]
     })
   ]
-}
+})

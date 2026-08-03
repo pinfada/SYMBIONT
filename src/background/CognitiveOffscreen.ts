@@ -46,10 +46,13 @@ async function offscreenExists(): Promise<boolean> {
  * tolère un document déjà créé (par le pont WebGL ou un appel précédent).
  */
 export async function ensureOffscreenForLLM(): Promise<void> {
-  leaseHeld = true;
+  // Ne poser le bail qu'une fois l'API validée : sur Firefox (pas d'offscreen)
+  // ce chemin lève, et un bail posé trop tôt resterait tenu indéfiniment pour
+  // un document qui n'existe pas.
   if (typeof chrome === 'undefined' || !chrome.offscreen?.createDocument) {
     throw new Error('API offscreen indisponible.');
   }
+  leaseHeld = true;
   if (await offscreenExists()) return;
   try {
     await chrome.offscreen.createDocument({

@@ -24,6 +24,17 @@ export interface ReliabilityReport {
   signals: string[];
   /** Domaine analysé, si connu. */
   domain?: string;
+  /**
+   * `false` quand le modèle n'a rien produit d'exploitable : le rapport est
+   * alors un marqueur d'échec, pas un verdict.
+   *
+   * Sans ce drapeau, l'échec renvoyait `score: 50 / level: 'moyenne'`, que
+   * rien ne distinguait d'une vraie évaluation « moyenne » : l'UI affichait un
+   * verdict inventé et l'organisme recevait un signal de vigilance fondé sur
+   * du vide. Tout consommateur doit traiter `parsed: false` comme « pas
+   * d'analyse », jamais comme un score.
+   */
+  parsed: boolean;
 }
 
 /** Interface minimale attendue du moteur (LocalLLMEngine la satisfait). */
@@ -70,44 +81,131 @@ export function buildAnalysisPrompt(text: string, opts: AnalyzeOptions = {}): Ch
   ];
 }
 
+/** Retire les clôtures markdown (```json …  ```) dont les petits modèles entourent souvent leur JSON. */
+function stripFences(raw: string): string {
+  return raw.replace(/```(?:json)?/gi, '');
+}
+
 /**
- * Parse la réponse brute du modèle en `ReliabilityReport`. Tolérant : extrait
- * le premier objet JSON présent, valide les champs, et retombe sur un rapport
- * neutre si rien d'exploitable.
+ * Extrait le premier objet JSON *complet* par comptage d'accolades, en
+ * ignorant celles situées dans une chaîne. Plus sûr que `indexOf('{')` +
+ * `lastIndexOf('}')`, qui agrège deux objets distincts en une tranche invalide.
+ * Renvoie null si aucun objet complet — cas fréquent d'une génération tronquée.
+ */
+function firstBalancedObject(text: string): string | null {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i];
+    if (escaped) {
+      escaped = false;
+    } else if (ch === '\\') {
+      escaped = true;
+    } else if (ch === '"') {
+      inString = !inString;
+    } else if (!inString) {
+      if (ch === '{') depth += 1;
+      else if (ch === '}' && --depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/** Champs bruts attendus du modèle, avant validation. */
+interface RawFields {
+  score?: unknown;
+  summary?: unknown;
+  signals?: unknown;
+}
+
+/**
+ * Récupération de dernier recours sur une sortie tronquée ou presque-JSON.
+ * On n'accepte que si une clé "score" est présente : c'est la preuve que le
+ * modèle a tenté le format demandé. Sans elle, on refuse d'inventer un verdict.
+ */
+function salvageFields(text: string): RawFields | null {
+  const score = /"score"\s*:\s*(-?\d+(?:\.\d+)?)/.exec(text);
+  if (!score) return null;
+
+  const summary = /"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(text);
+  const signalsBlock = /"signals"\s*:\s*\[([^\]]*)\]/.exec(text);
+  const signals = signalsBlock
+    ? [...signalsBlock[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1])
+    : [];
+
+  return {
+    score: Number(score[1]),
+    ...(summary ? { summary: summary[1] } : {}),
+    signals,
+  };
+}
+
+/**
+ * Valide les champs bruts. Renvoie null si le score est inexploitable : un
+ * JSON valide mais sans score n'est pas un verdict, et le compter comme tel
+ * fabriquerait un 50/100 que le modèle n'a jamais donné.
+ */
+function toReport(fields: RawFields, domain?: string): ReliabilityReport | null {
+  const raw = typeof fields.score === 'string' ? Number(fields.score) : fields.score;
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return null;
+
+  const score = clampScore(raw);
+  const signals = Array.isArray(fields.signals)
+    ? fields.signals.filter((s): s is string => typeof s === 'string').slice(0, 8)
+    : [];
+  const summary =
+    typeof fields.summary === 'string' && fields.summary.trim()
+      ? fields.summary.trim()
+      : 'Évaluation générée par le modèle local.';
+
+  const report = { score, level: levelFromScore(score), summary, signals, parsed: true };
+  return domain ? { ...report, domain } : report;
+}
+
+/**
+ * Parse la réponse brute du modèle en `ReliabilityReport`, du plus strict au
+ * plus tolérant. Si rien n'est exploitable, renvoie un rapport marqué
+ * `parsed: false` — un marqueur d'échec, pas un verdict à 50/100.
  */
 export function parseReport(raw: string, domain?: string): ReliabilityReport {
-  const withDomain = (r: Omit<ReliabilityReport, 'domain'>): ReliabilityReport =>
-    domain ? { ...r, domain } : r;
+  const text = stripFences(raw);
 
-  try {
-    const start = raw.indexOf('{');
-    const end = raw.lastIndexOf('}');
-    if (start !== -1 && end > start) {
-      const parsed = JSON.parse(raw.slice(start, end + 1)) as {
-        score?: unknown;
-        summary?: unknown;
-        signals?: unknown;
-      };
-      const score = clampScore(parsed.score);
-      const signals = Array.isArray(parsed.signals)
-        ? parsed.signals.filter((s): s is string => typeof s === 'string').slice(0, 8)
-        : [];
-      const summary =
-        typeof parsed.summary === 'string' && parsed.summary.trim()
-          ? parsed.summary.trim()
-          : 'Évaluation générée par le modèle local.';
-      return withDomain({ score, level: levelFromScore(score), summary, signals });
+  const objectText = firstBalancedObject(text);
+  if (objectText) {
+    try {
+      const report = toReport(JSON.parse(objectText) as RawFields, domain);
+      if (report) return report;
+      logger.warn('ContentAnalysis: JSON valide mais score absent ou non numérique');
+    } catch (error) {
+      logger.warn('ContentAnalysis: objet JSON non parsable', error as Error);
     }
-  } catch (error) {
-    logger.warn('ContentAnalysis: JSON non parsable, rapport neutre', error as Error);
   }
 
-  return withDomain({
+  // Sortie tronquée (max_tokens atteint) ou JSON approximatif : on tente de
+  // récupérer les champs plutôt que de jeter une réponse qui existe.
+  const salvaged = salvageFields(text);
+  if (salvaged) {
+    const report = toReport(salvaged, domain);
+    if (report) {
+      logger.warn('ContentAnalysis: JSON incomplet, champs récupérés en format libre');
+      return report;
+    }
+  }
+
+  logger.warn('ContentAnalysis: aucune sortie structurée exploitable');
+  const failed = {
     score: 50,
-    level: 'moyenne',
+    level: 'moyenne' as ReliabilityLevel,
     summary: 'Analyse indisponible (le modèle n’a pas renvoyé de résultat structuré).',
     signals: [],
-  });
+    parsed: false,
+  };
+  return domain ? { ...failed, domain } : failed;
 }
 
 /**

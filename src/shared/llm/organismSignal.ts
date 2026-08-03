@@ -10,6 +10,10 @@ import type { ReliabilityReport } from './ContentAnalysis';
 
 /** Gain de conscience/vigilance selon le niveau de fiabilité détecté. */
 export function vigilanceDelta(report: ReliabilityReport): number {
+  // Pas de verdict → pas de signal. Un rapport non parsé porte `level:
+  // 'moyenne'` par défaut ; le compter ferait évoluer l'organisme sur du bruit.
+  if (!report.parsed) return 0;
+
   switch (report.level) {
     case 'faible':
       return 2.5; // A repéré une menace → forte montée de vigilance.
@@ -27,6 +31,11 @@ export function vigilanceDelta(report: ReliabilityReport): number {
  * l'analyse reste utile même si l'organisme n'est pas disponible.
  */
 export async function feedReliabilityToOrganism(report: ReliabilityReport): Promise<void> {
+  if (!report.parsed) {
+    logger.info('organismSignal: analyse inexploitable, aucun signal transmis', undefined, 'llm');
+    return;
+  }
+
   try {
     const { organismStateManager } = await import('@shared/services/OrganismStateManager');
     const state = organismStateManager.getState();

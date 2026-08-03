@@ -11,6 +11,7 @@
 // Le moteur d'embedding est injecté (interface minimale) → testable sans WebGPU.
 
 import { logger } from '@shared/utils/secureLogger';
+import { createWebLLMEngine } from '@shared/llm/webllmRuntime';
 import type { EmbedFn } from './embedFn';
 
 /** Interface minimale d'un moteur d'embedding (satisfaite par WebLLM). */
@@ -68,13 +69,9 @@ export async function createEmbeddingEngine(
   modelId: string,
   onProgress?: (report: { progress: number; text: string }) => void,
 ): Promise<EmbeddingEngine> {
-  const webllm = (await import('@mlc-ai/web-llm')) as unknown as {
-    CreateMLCEngine: (
-      id: string,
-      opts: { initProgressCallback?: (r: { progress: number; text: string }) => void },
-    ) => Promise<EmbeddingEngine>;
-  };
-  return webllm.CreateMLCEngine(modelId, {
+  // Passe par le runtime partagé : sinon WebLLM retombe sur le Cache API, qui
+  // ne persiste pas pour une origine moz-extension:// (cf. webllmRuntime).
+  return createWebLLMEngine<EmbeddingEngine>(modelId, {
     ...(onProgress ? { initProgressCallback: onProgress } : {}),
   });
 }
