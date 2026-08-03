@@ -285,7 +285,12 @@ export class SymbiontStorage {
 
       const cleanup = () => {
         if (this.broadcastChannel) {
-          this.broadcastChannel.onmessage = null;
+          // Restaurer, pas supprimer : ce handler temporaire est posé PAR-DESSUS
+          // celui de setupBroadcastChannel(). Le mettre à null coupait
+          // définitivement les réponses HEARTBEAT / PING / REQUEST_CLOSE de ce
+          // contexte, dès la première initialisation — les autres contextes ne
+          // recevaient plus d'ACK et retombaient sur leurs timeouts.
+          this.broadcastChannel.onmessage = originalHandler ?? null;
         }
         clearTimeout(timeoutId);
       };
@@ -357,7 +362,8 @@ export class SymbiontStorage {
 
       const cleanup = () => {
         if (this.broadcastChannel) {
-          this.broadcastChannel.onmessage = null;
+          // Restaurer le handler permanent — cf. requestOtherContextsToClose().
+          this.broadcastChannel.onmessage = originalHandler ?? null;
         }
         clearTimeout(timeoutId);
       };

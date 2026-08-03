@@ -27,6 +27,14 @@ export class RitualManager {
   private rateLimiters: Map<string, RateLimiter> = new Map();
   private messageBus: MessageBus;
   private isProcessing: boolean = false;
+  /**
+   * Timer du processeur de queue, actif seulement quand il y a du travail.
+   *
+   * Il tournait auparavant toutes les 100 ms en permanence, sans jamais être
+   * stocké ni arrêté : shutdown() ne pouvait pas le couper, et ce réveil
+   * continu empêchait le service worker MV3 de se laisser suspendre.
+   */
+  private queueTimer: ReturnType<typeof setInterval> | null = null;
 
   // Configuration
   private readonly config = {
@@ -189,6 +197,8 @@ export class RitualManager {
 
       this.executionQueue.push(queueItem);
       this.executionQueue.sort((a, b) => b.priority - a.priority);
+      // Le processeur s'arrête quand la queue se vide : le réveiller ici.
+      this.startQueueProcessor();
     });
 
     this.activeExecutions.set(ritual.id, executionPromise);
@@ -204,9 +214,17 @@ export class RitualManager {
   /**
    * Processeur de queue asynchrone
    */
-  private async startQueueProcessor(): Promise<void> {
-    setInterval(async () => {
-      if (this.isProcessing || this.executionQueue.length === 0) {
+  private startQueueProcessor(): void {
+    if (this.queueTimer !== null) return;
+
+    this.queueTimer = setInterval(async () => {
+      if (this.isProcessing) {
+        return;
+      }
+      if (this.executionQueue.length === 0) {
+        // Plus rien à faire : on rend la main plutôt que de sonder à vide.
+        // enqueueRitual() relancera le timer au prochain rituel.
+        this.stopQueueProcessor();
         return;
       }
 
@@ -231,6 +249,13 @@ export class RitualManager {
         this.isProcessing = false;
       }
     }, 100); // Check every 100ms
+  }
+
+  /** Arrête le sondage de la queue (plus de travail, ou shutdown). */
+  private stopQueueProcessor(): void {
+    if (this.queueTimer === null) return;
+    clearInterval(this.queueTimer);
+    this.queueTimer = null;
   }
 
   /**
@@ -306,6 +331,8 @@ export class RitualManager {
         logger.info(`[RitualManager] Retrying ritual ${ritual.id} (attempt ${item.retries + 1})`);
         item.retries++;
         this.executionQueue.unshift(item);
+        // Le retry peut arriver après l'arrêt du processeur : le relancer.
+        this.startQueueProcessor();
       } else {
         ritual.status = RitualStatus.FAILED;
         reject(error);
@@ -409,6 +436,9 @@ export class RitualManager {
    */
   public async shutdown(): Promise<void> {
     logger.info('[RitualManager] Shutting down...');
+
+    // Couper le sondage avant tout : sinon il survivait au shutdown.
+    this.stopQueueProcessor();
 
     // Annuler tous les rituels en queue
     this.executionQueue = [];

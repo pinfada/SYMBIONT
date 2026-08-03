@@ -16,6 +16,9 @@ export interface RitualVisualEffect {
   easing: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'bounce';
 }
 
+/** Cadence du repli sans requestAnimationFrame (~60 fps). */
+const FRAME_INTERVAL_MS = 16;
+
 export class RitualVisualEffectsManager {
   private static instance: RitualVisualEffectsManager | null = null;
   private activeEffects: Map<string, RitualVisualEffect> = new Map();
@@ -323,13 +326,38 @@ export class RitualVisualEffectsManager {
       }
 
       if (hasActiveEffects) {
-        this.animationFrameId = requestAnimationFrame(animate);
+        this.animationFrameId = this.scheduleFrame(animate);
       } else {
         this.animationFrameId = null;
       }
     };
 
     animate();
+  }
+
+  /**
+   * Planifie la frame suivante.
+   *
+   * `requestAnimationFrame` n'existe pas dans un service worker MV3, où ce
+   * manager tourne : la référence nue y levait une ReferenceError qui
+   * remontait jusqu'à applyVisualEffect(). L'effet partait une seule fois puis
+   * la boucle mourait. Repli sur un timer ~60 fps, les frames n'étant de toute
+   * façon que des messages envoyés au renderer.
+   */
+  private scheduleFrame(callback: () => void): number {
+    if (typeof requestAnimationFrame === 'function') {
+      return requestAnimationFrame(callback);
+    }
+    return setTimeout(callback, FRAME_INTERVAL_MS) as unknown as number;
+  }
+
+  /** Annule une frame planifiée, quel que soit le planificateur utilisé. */
+  private cancelFrame(handle: number): void {
+    if (typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(handle);
+    } else {
+      clearTimeout(handle);
+    }
   }
 
   /**
@@ -444,7 +472,7 @@ export class RitualVisualEffectsManager {
     }
 
     if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
+      this.cancelFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
   }

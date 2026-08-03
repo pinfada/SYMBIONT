@@ -22,7 +22,35 @@ interface SimulatedPeer {
   id: string;
   trustScore: number;
   lastSeen: number;
+  /**
+   * Données simulées détenues par le pair. Personne ne les relit : elles ne
+   * servent qu'à donner du corps à la simulation. Bornées par
+   * MAX_SHARED_ENTRIES_PER_PEER — sans plafond, updatePeerActivity() y ajoutait
+   * une entrée toutes les 30 s indéfiniment.
+   */
   sharedData: Map<string, any>;
+}
+
+/** Plafond FIFO des données simulées par pair. */
+const MAX_SHARED_ENTRIES_PER_PEER = 50;
+
+/**
+ * localStorage n'existe pas dans un service worker MV3. Le « transport
+ * localStorage partagé » de ce rituel est de la simulation sans consommateur :
+ * plutôt que de laisser une ReferenceError faire échouer tout le rituel à
+ * chaque exécution sur Chrome, on saute cette étape quand l'API est absente.
+ */
+function getLocalStorageOrNull(): Storage | null {
+  return typeof localStorage === 'undefined' ? null : localStorage;
+}
+
+/** Insère en bornant le pair : le plus ancien sort quand le plafond est atteint. */
+function addSharedData(peer: SimulatedPeer, key: string, value: unknown): void {
+  if (peer.sharedData.size >= MAX_SHARED_ENTRIES_PER_PEER) {
+    const oldest = peer.sharedData.keys().next().value as string | undefined;
+    if (oldest !== undefined) peer.sharedData.delete(oldest);
+  }
+  peer.sharedData.set(key, value);
 }
 
 interface DataPacket {
@@ -221,14 +249,18 @@ export class SimplifiedFrequencyCommunionRitual implements IRitual {
     const fragments = this.fragmentData(dataToDistribute);
 
     // Distribuer les fragments entre les pairs
+    const store = getLocalStorageOrNull();
+    if (!store) {
+      logger.debug('[FrequencyCommunion] localStorage indisponible (service worker), transport simulé ignoré');
+    }
+
     let fragmentIndex = 0;
     for (const fragment of fragments) {
       const peer = peers[fragmentIndex % peers.length];
-      peer.sharedData.set(fragment.id, fragment.data);
+      addSharedData(peer, fragment.id, fragment.data);
 
       // Simuler l'envoi via localStorage partagé
-      const storageKey = `symbiont_p2p_${peer.id}_${fragment.id}`;
-      localStorage.setItem(storageKey, JSON.stringify(fragment));
+      store?.setItem(`symbiont_p2p_${peer.id}_${fragment.id}`, JSON.stringify(fragment));
 
       fragmentIndex++;
     }
@@ -383,8 +415,7 @@ export class SimplifiedFrequencyCommunionRitual implements IRitual {
 
         // Parfois, le pair partage de nouvelles données
         if (SecureRandom.random() > 0.7) {
-          const dataId = `data-${SecureRandom.generateId(8)}`;
-          peer.sharedData.set(dataId, {
+          addSharedData(peer, `data-${SecureRandom.generateId(8)}`, {
             timestamp: now,
             value: SecureRandom.generateId(16)
           });
@@ -439,11 +470,13 @@ export class SimplifiedFrequencyCommunionRitual implements IRitual {
   public async cancel(): Promise<void> {
     this.status = RitualStatus.CANCELLED;
 
-    // Nettoyer le localStorage
-    const keys = Object.keys(localStorage);
-    for (const key of keys) {
-      if (key.startsWith('symbiont_p2p_')) {
-        localStorage.removeItem(key);
+    // Nettoyer le localStorage (absent en service worker — cf. distributeData)
+    const store = getLocalStorageOrNull();
+    if (store) {
+      for (const key of Object.keys(store)) {
+        if (key.startsWith('symbiont_p2p_')) {
+          store.removeItem(key);
+        }
       }
     }
 
