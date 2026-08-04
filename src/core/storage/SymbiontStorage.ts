@@ -55,6 +55,7 @@ export class SymbiontStorage {
   private readonly OPERATION_TIMEOUT: number;
   private readonly MAX_STORAGE_SIZE_MB = 50; // Maximum storage size in MB
   private quotaWarningIssued = false;
+  private pendingCleanupRetentionDays: number | null = null;
   private broadcastChannel: BroadcastChannel | null = null;
   private contextId: string;
   private contextType: string;
@@ -506,6 +507,7 @@ export class SymbiontStorage {
         logger.info(`[SymbiontStorage:${this.contextId}] Initialization attempt ${attempt}/${maxRetries}`);
         await this.attemptInitialize(attempt === maxRetries);
         logger.info(`[SymbiontStorage:${this.contextId}] Initialization completed successfully`);
+        await this.runPendingCleanup();
         return; // Succès, on sort
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
@@ -1030,7 +1032,7 @@ export class SymbiontStorage {
    */
   private async checkStorageQuota(): Promise<void> {
     if (!navigator.storage || !navigator.storage.estimate) {
-      console.warn('Storage API not available, skipping quota check');
+      logger.warn(`[SymbiontStorage:${this.contextId}] Storage API not available, skipping quota check`);
       return;
     }
 
@@ -1040,32 +1042,89 @@ export class SymbiontStorage {
       const quotaInMB = (estimate.quota || 0) / (1024 * 1024);
       const usagePercent = quotaInMB > 0 ? (usageInMB / quotaInMB) * 100 : 0;
 
-      console.info('Storage quota:', {
+      // estimate.usage covers the whole origin, including the local LLM model
+      // cache (hundreds of MB). The absolute MAX_STORAGE_SIZE_MB budget only
+      // applies to our own IndexedDB data, so it is checked against the
+      // per-storage-system breakdown when the browser reports one (Chromium);
+      // Firefox does not expose usageDetails, so only the relative quota
+      // thresholds apply there.
+      const usageDetails = (estimate as { usageDetails?: { indexedDB?: number } }).usageDetails;
+      const indexedDBUsageInMB = typeof usageDetails?.indexedDB === 'number'
+        ? usageDetails.indexedDB / (1024 * 1024)
+        : null;
+
+      logger.info(`[SymbiontStorage:${this.contextId}] Storage quota`, {
         usageInMB: usageInMB.toFixed(2),
         quotaInMB: quotaInMB.toFixed(2),
-        usagePercent: usagePercent.toFixed(2) + '%'
+        usagePercent: usagePercent.toFixed(2) + '%',
+        indexedDBUsageInMB: indexedDBUsageInMB !== null ? indexedDBUsageInMB.toFixed(2) : 'unavailable'
       });
 
-      // Warn if usage is above 80%
+      // Warn if origin usage is above 80% of the browser-granted quota
       if (usagePercent > 80 && !this.quotaWarningIssued) {
         this.quotaWarningIssued = true;
-        console.warn('STORAGE WARNING: Usage above 80%, consider cleanup');
+        logger.warn(`[SymbiontStorage:${this.contextId}] Storage usage above 80% of origin quota`);
 
-        // Trigger automatic cleanup if above 90%
+        // Schedule automatic cleanup if above 90%. À ce niveau le navigateur
+        // peut commencer à évincer des données de l'origine : purger nos
+        // mutations de plus de 15 jours réduit notre propre empreinte avant
+        // cette éviction. Ce nettoyage ne touche que le store `mutations`
+        // (jamais le cache de poids LLM, qui domine pourtant l'usage) et est
+        // idempotent : les exécutions répétées entre contextes ne suppriment
+        // rien de plus.
         if (usagePercent > 90) {
-          console.warn('STORAGE CRITICAL: Usage above 90%, triggering automatic cleanup');
-          await this.cleanup(15); // Keep only last 15 days
+          logger.warn(`[SymbiontStorage:${this.contextId}] Storage usage above 90% of origin quota, scheduling cleanup`);
+          this.scheduleCleanup(15); // Keep only last 15 days
         }
       }
 
-      // Check if we're approaching browser limits
-      if (usageInMB > this.MAX_STORAGE_SIZE_MB * 0.9) {
-        console.error('STORAGE CRITICAL: Approaching maximum storage size limit');
-        // Aggressive cleanup
-        await this.cleanup(7); // Keep only last 7 days
+      // Check if our own IndexedDB data is approaching the internal budget
+      if (indexedDBUsageInMB !== null && indexedDBUsageInMB > this.MAX_STORAGE_SIZE_MB * 0.9) {
+        logger.warn(`[SymbiontStorage:${this.contextId}] IndexedDB usage approaching internal budget, scheduling aggressive cleanup`, {
+          indexedDBUsageInMB: indexedDBUsageInMB.toFixed(2),
+          budgetMB: this.MAX_STORAGE_SIZE_MB
+        });
+        this.scheduleCleanup(7); // Keep only last 7 days
       }
     } catch (error) {
-      console.error('Failed to check storage quota:', error);
+      logger.warn(`[SymbiontStorage:${this.contextId}] Failed to check storage quota`, error);
+    }
+  }
+
+  /**
+   * Records a cleanup request. The quota check runs during initialization,
+   * before the database connection is open, so cleanup must never run
+   * inline there — it is deferred until initialization completes. If the
+   * database is already open (e.g. the quota check resolved after its 3s
+   * timeout, once initialization finished), the cleanup runs right away so
+   * the request is never left orphaned until the next initialize().
+   */
+  private scheduleCleanup(retentionDays: number): void {
+    this.pendingCleanupRetentionDays = this.pendingCleanupRetentionDays === null
+      ? retentionDays
+      : Math.min(this.pendingCleanupRetentionDays, retentionDays);
+
+    if (this.db) {
+      void this.runPendingCleanup();
+    }
+  }
+
+  /**
+   * Runs any cleanup deferred by the quota check. Called once the database
+   * connection is established; failures are logged, never propagated.
+   */
+  private async runPendingCleanup(): Promise<void> {
+    const retentionDays = this.pendingCleanupRetentionDays;
+    if (retentionDays === null || !this.db) {
+      return;
+    }
+    this.pendingCleanupRetentionDays = null;
+
+    try {
+      await this.cleanup(retentionDays);
+      logger.info(`[SymbiontStorage:${this.contextId}] Deferred cleanup completed`, { retentionDays });
+    } catch (error) {
+      logger.warn(`[SymbiontStorage:${this.contextId}] Deferred cleanup failed`, error);
     }
   }
 
