@@ -48,6 +48,10 @@ export class ConsciousOrganismController {
   private currentPageUrl: string = window.location.href;
   private hasVisitedCurrentPage: boolean = false;
 
+  // Dernière observation publiée dans l'état partagé : sert à n'écrire que
+  // sur changement réel (cf. syncWithStateManager).
+  private lastPublishedObservation: { currentPageType: string; isActive: boolean } | null = null;
+
   // Métriques temps réel
   private tabCount: number = 0;
   private cpuUsage: number = 0;
@@ -447,7 +451,6 @@ export class ConsciousOrganismController {
    * Synchronise avec le gestionnaire d'état centralisé
    */
   private async syncWithStateManager(): Promise<void> {
-    const chemistry = this.neuroCore.getChemistry();
     const circadianState = this.circadianRhythm.getState();
 
     // Vérifier si l'URL a changé (navigation détectée)
@@ -460,33 +463,30 @@ export class ConsciousOrganismController {
       logger.info(`[ConsciousController] Navigation détectée vers: ${currentUrl}`);
     }
 
-    // Déterminer l'humeur basée sur la chimie
-    let mood: any = 'curious';
-    if (chemistry.melatonin > 0.6) {
-      mood = 'tired';
-    } else if (chemistry.dopamine > 0.6) {
-      mood = 'happy';
-    } else if (chemistry.adrenaline > 0.6) {
-      mood = 'excited';
-    } else if (chemistry.serotonin > 0.7) {
-      mood = 'meditating';
-    } else if (chemistry.cortisol > 0.6) {
-      mood = 'hungry';
-    }
-
-    // Calculer la conscience basée sur l'activité neuronale
-    const consciousness =
-      (1 - chemistry.melatonin) * 50 + // Éveil
-      chemistry.acetylcholine * 30 +    // Focus
-      (chemistry.dopamine + chemistry.serotonin) * 10; // Bien-être
-
-    await organismStateManager.updateState({
-      energy: (1 - chemistry.cortisol) * 100,
-      consciousness: Math.min(100, consciousness),
-      mood,
+    // Le script de contenu ne publie que ce qu'il OBSERVE. energy,
+    // consciousness et mood appartiennent au modèle métabolique de
+    // OrganismStateManager (décroissance, feed, seuils d'humeur) : les écraser
+    // ici à partir de la neurochimie effaçait chaque seconde tout gain de
+    // feed() — un rituel à +30 d'énergie disparaissait avant d'être affiché,
+    // et l'onglet stats montrait une valeur sans rapport avec le modèle.
+    const observation = {
       currentPageType: this.pageAnalysis.type,
       isActive: circadianState.phase === SleepPhase.AWAKE
-    });
+    };
+
+    // N'écrire que sur changement réel : cette méthode tourne toutes les
+    // secondes dans CHAQUE onglet, et updateState() écrit dans
+    // chrome.storage.local puis notifie tous les contextes. Écrire
+    // inconditionnellement produisait une écriture par seconde et par onglet.
+    const changed =
+      this.lastPublishedObservation === null ||
+      this.lastPublishedObservation.currentPageType !== observation.currentPageType ||
+      this.lastPublishedObservation.isActive !== observation.isActive;
+
+    if (changed) {
+      this.lastPublishedObservation = observation;
+      await organismStateManager.updateState(observation);
+    }
 
     // Enregistrer la visite de page si c'est une nouvelle page
     if (!this.hasVisitedCurrentPage) {
