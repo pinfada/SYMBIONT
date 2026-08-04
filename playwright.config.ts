@@ -17,7 +17,20 @@ export default defineConfig({
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: {
+        ...devices['Desktop Firefox'],
+        launchOptions: {
+          firefoxUserPrefs: {
+            // Les runners CI n'ont pas de GPU : Firefox headless y désactive
+            // WebGL et le smoke test de rendu échouait systématiquement
+            // (« WebGL indisponible sur firefox »). Forcer le rendu logiciel
+            // (WebRender software) garde WebGL fonctionnel sans GPU ; sans
+            // effet notable sur un poste avec GPU.
+            'webgl.force-enabled': true,
+            'gfx.webrender.software': true,
+          },
+        },
+      },
     },
     {
       name: 'webkit',

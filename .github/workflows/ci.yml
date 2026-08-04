@@ -34,6 +34,11 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm install
+      # Le global-setup Playwright exige une extension buildée (dist/) ;
+      # sans cette étape le job échouait à chaque exécution avant même de
+      # lancer un test (« Extension not built! »).
+      - name: Build extension
+        run: npm run build
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Run E2E tests
