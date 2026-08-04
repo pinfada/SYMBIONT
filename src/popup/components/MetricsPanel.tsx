@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useOrganism } from '../hooks/useOrganism';
 import { organismStateManager } from '@shared/services/OrganismStateManager';
 import type { OrganismState } from '@shared/services/OrganismStateManager';
+import { toTraitPercent, clampPercent, traitLabel, moodLabel, pageTypeLabel, formatAge } from './metricsFormat';
 
 interface Stat {
   label: string;
@@ -161,17 +162,11 @@ export const MetricsPanel: React.FC = () => {
     );
   }
 
-  // Calculs des statistiques
-  const ageInMinutes = Math.floor((Date.now() - (organism?.createdAt || Date.now())) / 1000 / 60);
-  const ageInHours = Math.floor(ageInMinutes / 60);
-  const ageInDays = Math.floor(ageInHours / 24);
-
-  const formatAge = () => {
-    if (ageInDays > 0) return `${ageInDays}j ${ageInHours % 24}h`;
-    if (ageInHours > 0) return `${ageInHours}h ${ageInMinutes % 60}m`;
-    return `${ageInMinutes}m`;
-  };
-
+  // Date de naissance : createdAt en priorité, birthTime en repli (les
+  // organismes plus anciens n'ont que birthTime). Jamais Date.now() — un âge
+  // de « 0m, né aujourd'hui » serait un mensonge, formatAge affiche
+  // « Inconnu » quand la date manque.
+  const birthTimestamp = organism.createdAt ?? organism.birthTime ?? null;
 
   const stats: Stat[] = [
     {
@@ -183,10 +178,12 @@ export const MetricsPanel: React.FC = () => {
     },
     {
       label: 'Âge',
-      value: formatAge(),
+      value: formatAge(birthTimestamp),
       icon: '⏰',
       color: '#4fc3f7',
-      description: `Né le ${new Date(organism.createdAt || Date.now()).toLocaleDateString()}`
+      description: birthTimestamp
+        ? `Né le ${new Date(birthTimestamp).toLocaleDateString()}`
+        : 'Date de naissance non enregistrée'
     },
     {
       label: 'Pages visitées',
@@ -204,14 +201,14 @@ export const MetricsPanel: React.FC = () => {
     },
     {
       label: 'Énergie',
-      value: `${Math.round(sharedState.energy)}%`,
+      value: `${clampPercent(sharedState.energy)}%`,
       icon: '⚡',
       color: sharedState.energy < 30 ? '#ff9800' : '#ffd93d',
       description: 'Niveau d\'énergie synchronisé'
     },
     {
       label: 'Conscience',
-      value: `${Math.round(sharedState.consciousness)}%`,
+      value: `${clampPercent(sharedState.consciousness)}%`,
       icon: '🧠',
       color: '#ff9ff3',
       description: 'Niveau de conscience synchronisé'
@@ -225,16 +222,19 @@ export const MetricsPanel: React.FC = () => {
     },
     {
       label: 'Humeur',
-      value: sharedState.mood,
+      value: moodLabel(sharedState.mood),
       icon: '😊',
       color: '#48dbfb',
-      description: `Page actuelle: ${sharedState.currentPageType}`
+      description: `Page actuelle : ${pageTypeLabel(sharedState.currentPageType)}`
     }
   ];
 
+  // toTraitPercent normalise les deux échelles héritées (0-1 pour l'organisme
+  // par défaut du popup, 0-100 pour celui du background) : sans elle, un
+  // trait background de 73,4 s'affichait « 7340 % ».
   const traits: ChartData[] = Object.entries(organism.traits).map(([key, value]) => ({
-    label: key.charAt(0).toUpperCase() + key.slice(1),
-    value: Math.round(value * 100),
+    label: traitLabel(key),
+    value: toTraitPercent(value),
     max: 100
   }));
 
@@ -285,9 +285,10 @@ export const MetricsPanel: React.FC = () => {
       <div style={styles.dnaSection}>
         <div style={styles.dnaTitle}>🧬 Signature ADN</div>
         <div style={styles.dnaCode}>
-          {organism.dna.substring(0, 32)}...
+          {organism.dna.substring(0, 32)}
           <br />
-          {organism.dna.substring(32, 64)}...
+          {organism.dna.substring(32, 64)}
+          {organism.dna.length > 64 ? '…' : ''}
         </div>
       </div>
 
