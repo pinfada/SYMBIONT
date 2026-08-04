@@ -22,6 +22,15 @@ export interface LLMPreferences {
    * des croyances) au lieu du hachage local. Opt-in.
    */
   semanticEmbedding: boolean;
+  /**
+   * Modèles dont les poids ont été téléchargés avec succès au moins une fois
+   * (cache IndexedDB de WebLLM). Écrit au succès de load(), jamais avant —
+   * `downloadConsented` signifie seulement « a accepté le coût », pas « les
+   * poids sont sur le disque ». Permet de distinguer un premier téléchargement
+   * d'une réactivation depuis le cache quand le moteur a été perdu (fermeture
+   * du popup sur Firefox, fermeture du document offscreen sur Chrome).
+   */
+  cachedModelIds: string[];
 }
 
 const STORAGE_KEY = 'symbiont_llm_preferences';
@@ -31,6 +40,7 @@ const DEFAULTS: LLMPreferences = {
   modelId: DEFAULT_MODEL_ID,
   downloadConsented: false,
   semanticEmbedding: false,
+  cachedModelIds: [],
 };
 
 type Listener = (prefs: LLMPreferences) => void;
@@ -70,6 +80,9 @@ class LLMPreferencesStore {
           modelId: normalizeModelId(raw.modelId),
           downloadConsented: raw.downloadConsented ?? DEFAULTS.downloadConsented,
           semanticEmbedding: raw.semanticEmbedding ?? DEFAULTS.semanticEmbedding,
+          cachedModelIds: Array.isArray(raw.cachedModelIds)
+            ? raw.cachedModelIds.filter((id): id is string => typeof id === 'string')
+            : [],
         };
       }
     } catch (error) {
@@ -97,6 +110,17 @@ class LLMPreferencesStore {
     }
     this.notify();
     return this.cache;
+  }
+
+  /**
+   * Enregistre qu'un modèle est présent dans le cache de poids local.
+   * À appeler uniquement après un `load()` réussi. Idempotent.
+   */
+  async markModelCached(modelId: string): Promise<LLMPreferences> {
+    if (this.cache.cachedModelIds.includes(modelId)) {
+      return this.cache;
+    }
+    return this.update({ cachedModelIds: [...this.cache.cachedModelIds, modelId] });
   }
 
   subscribe(listener: Listener): () => void {

@@ -32,8 +32,12 @@ export class ServiceWorkerWebGLBridge {
 
       await chrome.offscreen.createDocument({
         url: chrome.runtime.getURL('offscreen.html'),
-        reasons: ['DISPLAY_MEDIA'],
-        justification: 'WebGL rendering for organism evolution visualization'
+        // Ensemble identique à celui de CognitiveOffscreen : le document
+        // offscreen est unique par extension et le premier créateur fixe les
+        // raisons pour tous. Sans WORKERS, l'inférence WebGPU du module LLM
+        // tournerait dans un document déclaré pour le seul rendu.
+        reasons: ['WORKERS', 'DISPLAY_MEDIA'] as chrome.offscreen.Reason[],
+        justification: 'Inférence IA locale (WebGPU) et rendu de l’organisme, 100% sur le poste.'
       });
 
       this.offscreenCreated = true;
@@ -108,7 +112,7 @@ export class ServiceWorkerWebGLBridge {
     if (this.offscreenCreated) {
       // v3 : ne pas fermer le document offscreen si le moteur LLM y tient un
       // modèle chargé (bail). On abandonne juste notre référence WebGL.
-      if (isOffscreenLLMLeaseHeld()) {
+      if (await isOffscreenLLMLeaseHeld()) {
         this.offscreenCreated = false;
         this.pendingRequests.clear();
         logger.info('Offscreen WebGL released (LLM lease held, document kept alive)');

@@ -11,16 +11,58 @@
 import { logger } from '@/shared/utils/secureLogger';
 import { ENSURE_OFFSCREEN_LLM } from '@/shared/llm/offscreenProtocol';
 
+const LEASE_KEY = 'symbiont_offscreen_llm_lease';
+
+// Cache mémoire du bail. La source de vérité est chrome.storage.session : le
+// service worker MV3 est tué après ~30 s d'inactivité et une variable module
+// repart à false au réveil — alors que le document offscreen, lui, survit avec
+// le modèle chargé. storage.session a exactement la bonne durée de vie
+// (survit aux redémarrages du SW, effacé au redémarrage du navigateur, comme
+// le document offscreen).
 let leaseHeld = false;
 
-/** Le module cognitif tient-il l'offscreen ? (consulté par le pont WebGL.) */
-export function isOffscreenLLMLeaseHeld(): boolean {
+function leaseStore(): chrome.storage.StorageArea | null {
+  if (typeof chrome === 'undefined' || !chrome.storage) return null;
+  return (chrome.storage as { session?: chrome.storage.StorageArea }).session ?? null;
+}
+
+async function persistLease(value: boolean): Promise<void> {
+  leaseHeld = value;
+  const store = leaseStore();
+  if (!store) return;
+  try {
+    if (value) {
+      await store.set({ [LEASE_KEY]: true });
+    } else {
+      await store.remove(LEASE_KEY);
+    }
+  } catch (error) {
+    logger.warn('CognitiveOffscreen: persistance du bail LLM impossible', error as Error);
+  }
+}
+
+/**
+ * Le module cognitif tient-il l'offscreen ? (consulté par le pont WebGL avant
+ * de fermer le document.) Consulte storage.session si le cache mémoire dit
+ * non : après un redémarrage du service worker, seul le stockage sait qu'un
+ * modèle est encore chargé dans l'offscreen.
+ */
+export async function isOffscreenLLMLeaseHeld(): Promise<boolean> {
+  if (leaseHeld) return true;
+  const store = leaseStore();
+  if (!store) return false;
+  try {
+    const stored = await store.get(LEASE_KEY);
+    leaseHeld = stored?.[LEASE_KEY] === true;
+  } catch (error) {
+    logger.warn('CognitiveOffscreen: lecture du bail LLM impossible', error as Error);
+  }
   return leaseHeld;
 }
 
 /** Libère explicitement le bail (ex. déchargement du modèle). */
 export function releaseOffscreenLLMLease(): void {
-  leaseHeld = false;
+  void persistLease(false);
 }
 
 async function offscreenExists(): Promise<boolean> {
@@ -52,7 +94,7 @@ export async function ensureOffscreenForLLM(): Promise<void> {
   if (typeof chrome === 'undefined' || !chrome.offscreen?.createDocument) {
     throw new Error('API offscreen indisponible.');
   }
-  leaseHeld = true;
+  await persistLease(true);
   if (await offscreenExists()) return;
   try {
     await chrome.offscreen.createDocument({
@@ -64,7 +106,7 @@ export async function ensureOffscreenForLLM(): Promise<void> {
   } catch (error) {
     // « Only a single offscreen document may be created » → déjà présent : OK.
     if (error instanceof Error && /single offscreen/i.test(error.message)) return;
-    leaseHeld = false;
+    await persistLease(false);
     logger.error('CognitiveOffscreen: création offscreen échouée', error as Error);
     throw error;
   }

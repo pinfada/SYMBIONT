@@ -64,4 +64,36 @@ describe('llmPreferences', () => {
     unsub();
     expect(seen[seen.length - 1]).toBe(true);
   });
+
+  it('starts with an empty cached-models list', async () => {
+    const p = await llmPreferences.load();
+    expect(p.cachedModelIds).toEqual([]);
+  });
+
+  it('records a cached model exactly once and persists it', async () => {
+    await llmPreferences.load();
+
+    await llmPreferences.markModelCached('Llama-3.2-1B-Instruct-q4f16_1-MLC');
+    await llmPreferences.markModelCached('Llama-3.2-1B-Instruct-q4f16_1-MLC');
+    const p = llmPreferences.get();
+    expect(p.cachedModelIds).toEqual(['Llama-3.2-1B-Instruct-q4f16_1-MLC']);
+
+    // La liste survit à un rechargement depuis le stockage — c'est elle qui
+    // permet la réactivation automatique après la perte du moteur.
+    const reloaded = await llmPreferences.load();
+    expect(reloaded.cachedModelIds).toEqual(['Llama-3.2-1B-Instruct-q4f16_1-MLC']);
+  });
+
+  it('sanitizes a corrupted cached-models list on load', async () => {
+    installMemoryStorage({
+      symbiont_llm_preferences: {
+        enabled: true,
+        downloadConsented: true,
+        cachedModelIds: ['valid-id', 42, null, 'other-id'],
+      },
+    });
+
+    const p = await llmPreferences.load();
+    expect(p.cachedModelIds).toEqual(['valid-id', 'other-id']);
+  });
 });
