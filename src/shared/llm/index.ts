@@ -25,7 +25,7 @@ export { extractActivePageText } from './pageText';
 export type { PageText } from './pageText';
 export { createCognitiveEngine } from './cognitiveEngine';
 export type { CognitiveEngine } from './cognitiveEngine';
-export { getEngine, peekEngine, resumeEngine, resetEngineSession } from './engineSession';
+export { getEngine, loadEngine, peekEngine, resumeEngine, resetEngineSession } from './engineSession';
 export { OffscreenLLMClient } from './OffscreenLLMClient';
 export {
   LLM_TARGET,

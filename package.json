@@ -10,7 +10,7 @@
     "build:background": "webpack --config webpack.background.js",
     "build:full": "npm run build && npm run check-manifest",
     "build:firefox": "npm run build:workers && webpack --config webpack.background.js --env browser=firefox && webpack --config webpack.config.js --env browser=firefox",
-    "lint:firefox": "web-ext lint --source-dir dist --self-hosted",
+    "lint:firefox": "web-ext lint --source-dir dist --self-hosted --ignore-files webllm/index.js",
     "setup:firefox-profile": "node scripts/firefox-dev-profile.js",
     "run:firefox": "npm run setup:firefox-profile && web-ext run --source-dir dist --target firefox-desktop --firefox-profile symbiont-dev --keep-profile-changes",
     "dev:firefox": "concurrently -k \"npm run build:workers -- --watch\" \"webpack --config webpack.background.js --env browser=firefox --watch\" \"webpack --config webpack.config.js --env browser=firefox --watch\" \"npm run run:firefox\"",

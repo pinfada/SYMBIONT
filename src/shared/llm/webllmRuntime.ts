@@ -27,10 +27,20 @@ interface WebLLMModule {
 
 let modulePromise: Promise<WebLLMModule> | null = null;
 
-/** Charge WebLLM (chunk séparé), une seule fois par document. */
+/**
+ * Charge WebLLM (chunk séparé), une seule fois par document.
+ *
+ * Le nom de chunk est fixé (`webllm/index.js`) : la bibliothèque est un module
+ * monolithique de ~6 Mo que l'analyseur AMO refuse de parser (FILE_TOO_LARGE,
+ * limite 5 Mo) et que webpack ne peut pas scinder. `lint:firefox` exclut ce
+ * fichier précis via --ignore-files ; sans nom stable, l'identifiant numérique
+ * du chunk changerait au gré des builds et l'exclusion se briserait.
+ */
 function loadWebLLM(): Promise<WebLLMModule> {
   if (!modulePromise) {
-    modulePromise = import('@mlc-ai/web-llm') as unknown as Promise<WebLLMModule>;
+    modulePromise = import(
+      /* webpackChunkName: "webllm" */ '@mlc-ai/web-llm'
+    ) as unknown as Promise<WebLLMModule>;
   }
   return modulePromise;
 }

@@ -42,6 +42,67 @@ export async function getEngine(): Promise<CognitiveEngine> {
   return pending;
 }
 
+type LoadProgress = { progress: number; text: string };
+
+let activeLoad: {
+  modelId: string;
+  promise: Promise<CognitiveEngine>;
+  subscribers: Set<(p: LoadProgress) => void>;
+} | null = null;
+
+/**
+ * Charge un modèle dans le moteur de session, en dé-dupliquant les appels
+ * concurrents.
+ *
+ * `activate()` est déclenché automatiquement au montage du panneau quand les
+ * poids sont déjà en cache ; un démontage/remontage (changement d'onglet)
+ * pendant un chargement relancerait sinon un second `engine.load()` concurrent
+ * sur le même moteur — aucune couche en aval (LocalLLMEngine,
+ * OffscreenLLMClient, handler offscreen) n'est réentrante. Les appels
+ * concurrents pour le même modèle partagent donc la même promesse, et chaque
+ * appelant peut brancher son propre rapport de progression.
+ */
+export function loadEngine(
+  modelId: string,
+  onProgress?: (p: LoadProgress) => void
+): Promise<CognitiveEngine> {
+  if (activeLoad && activeLoad.modelId === modelId) {
+    if (onProgress) activeLoad.subscribers.add(onProgress);
+    return activeLoad.promise;
+  }
+
+  const subscribers = new Set<(p: LoadProgress) => void>();
+  if (onProgress) subscribers.add(onProgress);
+
+  // Si un chargement d'un AUTRE modèle est en cours, attendre sa fin (succès
+  // ou échec) avant de lancer le nôtre : jamais deux load() simultanés.
+  const previous = activeLoad ? activeLoad.promise.catch(() => undefined) : Promise.resolve(undefined);
+
+  const promise = previous.then(async () => {
+    const engine = await getEngine();
+    await engine.load(modelId, (p) => {
+      for (const subscriber of subscribers) {
+        try {
+          subscriber(p);
+        } catch (error) {
+          logger.warn('engineSession: rapport de progression en erreur', error as Error);
+        }
+      }
+    });
+    return engine;
+  });
+
+  const entry = { modelId, promise, subscribers };
+  activeLoad = entry;
+  promise
+    .catch(() => undefined)
+    .finally(() => {
+      if (activeLoad === entry) activeLoad = null;
+    });
+
+  return promise;
+}
+
 /**
  * Reprend une session déjà en cours, sans rien recharger.
  *

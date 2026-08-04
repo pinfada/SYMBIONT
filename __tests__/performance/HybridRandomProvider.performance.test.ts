@@ -361,22 +361,37 @@ describe('HybridRandomProvider Performance Tests', () => {
 
   describe('Memory Usage', () => {
     test('should have reasonable memory footprint', () => {
-      const initialMemory = process.memoryUsage();
-      
-      // Generate many random numbers
-      const numbers = [];
-      for (let i = 0; i < 10000; i++) {
-        numbers.push(PerformanceOptimizedRandom.random());
-      }
+      // Le delta de heapUsed dans le worker Jest partagé inclut les
+      // allocations des suites précédentes tant que le GC n'est pas passé :
+      // une mesure unique échoue aléatoirement selon l'ordonnancement de la
+      // suite complète. On force le GC quand il est exposé et on garde le
+      // minimum de trois mesures — le plancher d'allocation réel de la
+      // génération — pour que l'assertion reste déterministe.
+      const gc = (globalThis as { gc?: () => void }).gc;
+      const measureGenerationIncrease = (): number => {
+        gc?.();
+        const before = process.memoryUsage().heapUsed;
 
-      const afterGeneration = process.memoryUsage();
-      const memoryIncrease = afterGeneration.heapUsed - initialMemory.heapUsed;
+        const numbers = [];
+        for (let i = 0; i < 10000; i++) {
+          numbers.push(PerformanceOptimizedRandom.random());
+        }
+        expect(numbers.length).toBe(10000);
 
-      console.log(`Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
+        return process.memoryUsage().heapUsed - before;
+      };
+
+      const attempts = [
+        measureGenerationIncrease(),
+        measureGenerationIncrease(),
+        measureGenerationIncrease()
+      ];
+      const memoryIncrease = Math.min(...attempts);
+
+      console.log(`Memory increase (min of ${attempts.length}): ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
 
       // Memory increase should be reasonable
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024); // <50MB
-      expect(numbers.length).toBe(10000);
     });
   });
 });

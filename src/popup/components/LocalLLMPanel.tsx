@@ -19,7 +19,7 @@ import {
   getModelInfo,
   llmPreferences,
   type LLMPreferences,
-  getEngine,
+  loadEngine,
   peekEngine,
   resumeEngine,
   type CognitiveEngine,
@@ -138,6 +138,35 @@ const LocalLLMPanel: React.FC = () => {
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  const activate = useCallback(async (modelId: string, opts?: { fromCache?: boolean }) => {
+    const fromCache = opts?.fromCache ?? false;
+    setError(null);
+    setUiState('loading');
+    setProgress({
+      pct: 0,
+      text: fromCache ? 'Réactivation du modèle depuis le cache local…' : 'Initialisation…',
+    });
+    await llmPreferences.update({ enabled: true, modelId, downloadConsented: true });
+    try {
+      // loadEngine dé-duplique les chargements concurrents : un remontage du
+      // panneau pendant un chargement (changement d'onglet) rejoint la
+      // promesse en cours au lieu de relancer un second load() sur le moteur.
+      const engine = await loadEngine(modelId, (p) => {
+        setProgress({ pct: Math.round(p.progress * 100), text: p.text });
+      });
+      engineRef.current = engine;
+      // Écrit APRÈS le succès du chargement : c'est la seule preuve que les
+      // poids sont réellement dans le cache IndexedDB (`downloadConsented`,
+      // lui, est écrit avant le téléchargement et ne prouve rien).
+      await llmPreferences.markModelCached(modelId);
+      setUiState('ready');
+    } catch (e) {
+      logger.error('LocalLLMPanel: échec du chargement', e as Error);
+      setError(`Le chargement du modèle a échoué : ${describeLoadFailure(e)}`);
+      setUiState('setup');
+    }
+  }, []);
+
   // Détection WebGPU + chargement des préférences au montage.
   useEffect(() => {
     let cancelled = false;
@@ -177,6 +206,15 @@ const LocalLLMPanel: React.FC = () => {
           setUiState('ready');
           return;
         }
+
+        // Moteur perdu (popup fermé sur Firefox, document offscreen fermé sur
+        // Chrome) mais poids déjà téléchargés : réactivation automatique depuis
+        // le cache IndexedDB, sans repasser par l'écran de consentement au
+        // téléchargement. Perdre le moteur n'est pas perdre le modèle.
+        if (saved.cachedModelIds.includes(saved.modelId)) {
+          void activate(saved.modelId, { fromCache: true });
+          return;
+        }
       }
 
       setUiState('setup');
@@ -187,30 +225,11 @@ const LocalLLMPanel: React.FC = () => {
       unsub();
       abortRef.current?.abort();
     };
-  }, []);
+  }, [activate]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, busy]);
-
-  const activate = useCallback(async (modelId: string) => {
-    setError(null);
-    setUiState('loading');
-    setProgress({ pct: 0, text: 'Initialisation…' });
-    await llmPreferences.update({ enabled: true, modelId, downloadConsented: true });
-    const engine = await getEngine();
-    engineRef.current = engine;
-    try {
-      await engine.load(modelId, (p) => {
-        setProgress({ pct: Math.round(p.progress * 100), text: p.text });
-      });
-      setUiState('ready');
-    } catch (e) {
-      logger.error('LocalLLMPanel: échec du chargement', e as Error);
-      setError(`Le chargement du modèle a échoué : ${describeLoadFailure(e)}`);
-      setUiState('setup');
-    }
-  }, []);
 
   const send = useCallback(async () => {
     const engine = engineRef.current;
@@ -393,9 +412,14 @@ const LocalLLMPanel: React.FC = () => {
   }
 
   if (uiState === 'loading') {
+    const modelCached = prefs.cachedModelIds.includes(prefs.modelId);
     return (
       <div style={s.card}>
-        <p style={{ color: C.text, marginBottom: 12 }}>Téléchargement / initialisation du modèle…</p>
+        <p style={{ color: C.text, marginBottom: 12 }}>
+          {modelCached
+            ? 'Réactivation du modèle (déjà téléchargé)…'
+            : 'Téléchargement / initialisation du modèle…'}
+        </p>
         <div style={s.progressTrack}>
           <div style={{ ...s.progressFill, width: `${progress.pct}%` }} />
         </div>
@@ -403,7 +427,9 @@ const LocalLLMPanel: React.FC = () => {
           {progress.pct}% — {progress.text}
         </p>
         <p style={{ color: C.dim, fontSize: 12, marginTop: 12 }}>
-          Le premier chargement télécharge les poids (mis en cache ensuite). Les suivants sont rapides.
+          {modelCached
+            ? 'Les poids sont déjà dans le cache local : rien n’est re-téléchargé, seule l’initialisation GPU est refaite.'
+            : 'Le premier chargement télécharge les poids (mis en cache ensuite). Les suivants sont rapides.'}
         </p>
       </div>
     );
@@ -440,8 +466,17 @@ const LocalLLMPanel: React.FC = () => {
           {getModelInfo(prefs.modelId)?.description}
         </p>
 
-        <button style={s.primaryBtn} onClick={() => void activate(prefs.modelId)}>
-          Activer & télécharger ({getModelInfo(prefs.modelId)?.sizeLabel})
+        <button
+          style={s.primaryBtn}
+          onClick={() =>
+            void activate(prefs.modelId, {
+              fromCache: prefs.cachedModelIds.includes(prefs.modelId),
+            })
+          }
+        >
+          {prefs.cachedModelIds.includes(prefs.modelId)
+            ? 'Réactiver le modèle (déjà téléchargé)'
+            : `Activer & télécharger (${getModelInfo(prefs.modelId)?.sizeLabel})`}
         </button>
       </div>
     );
