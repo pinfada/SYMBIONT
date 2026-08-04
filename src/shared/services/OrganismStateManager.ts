@@ -89,6 +89,11 @@ export class OrganismStateManager {
       if (result.organism_state) {
         this.state = { ...this.state, ...result.organism_state };
         logger.info('Organism state loaded from storage');
+        // Le chargement est asynchrone : les composants abonnés ont déjà
+        // rendu avec l'état par défaut (énergie 75, stade 1, 0 page visitée).
+        // Sans notification, l'onglet stats affichait ces valeurs par défaut
+        // au lieu de l'état réel persisté.
+        this.notifyListeners();
       }
     } catch (error) {
       logger.error('Failed to load organism state:', error);
@@ -138,6 +143,11 @@ export class OrganismStateManager {
   private async performAdaptiveSync(): Promise<void> {
     // Mettre à jour le métabolisme (toujours)
     this.updateMetabolism();
+
+    // Le métabolisme change énergie, humeur et conscience à chaque tick :
+    // notifier pour que l'affichage (onglet stats) suive en temps réel au
+    // lieu de rester figé sur la valeur du premier rendu.
+    this.notifyListeners();
 
     // Vérifier si la feature storage est active
     if (!softwareEpigenetics.isFeatureActive('core_storage')) {
@@ -282,12 +292,14 @@ export class OrganismStateManager {
       case 'ritual':
         energyGain = 30;
         xpGain = 50;
-        this.state.consciousness += 10;
+        // Borné comme l'énergie : sans clamp, l'onglet stats affichait des
+        // niveaux de conscience au-delà de 100 % après quelques rituels.
+        this.state.consciousness = Math.min(100, this.state.consciousness + 10);
         break;
       case 'knowledge':
         energyGain = 15;
         xpGain = 25;
-        this.state.consciousness += 5;
+        this.state.consciousness = Math.min(100, this.state.consciousness + 5);
         this.state.knowledgeGained += 1;
         break;
       case 'social':
